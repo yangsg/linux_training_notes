@@ -1,0 +1,36 @@
+$TTL 1D
+@       IN SOA  mytraining.com. 1234567.qq.com. (
+                                        0       ; serial
+                                        1D      ; refresh
+                                        1H      ; retry
+                                        1W      ; expire
+                                        3H )    ; minimum
+                   NS	          ns01
+                   NS	          ns02
+ns01               A            192.168.175.170
+ns02               A            192.168.175.171
+
+1       PTR          mail01.mytraining.com.
+2       PTR          mail02.mytraining.com.
+
+3       PTR          ftp.mytraining.com.
+4       PTR          www.mytraining.com.
+4       PTR          web.mytraining.com.
+
+5       PTR          test.mytraining.com.
+6       PTR          test.mytraining.com.
+
+7       PTR          book.mytraining.com.
+;192.168.20.7       PTR         *.book   ;<<<=== 注：不要加上此行,否则会无法启动同时报错
+
+; 检查该配置语法正确与否的命令：
+; named-checkzone mytraining.com  /var/named/chroot/var/named/192.168.175.zone
+
+; 另注：
+; 通过如下命令可以知道 dns服务进程是通过'named'用户启动的
+;    ss -anptl |grep named
+; 所以关于权限问题，如果严格一点，可以使用如下命令设置文件的所属和访问规则：
+;    chmod --reference=/etc/named.conf /var/named/chroot/var/named/192.168.175.zone
+;    chown --reference=/etc/named.conf /var/named/chroot/var/named/192.168.175.zone
+
+
