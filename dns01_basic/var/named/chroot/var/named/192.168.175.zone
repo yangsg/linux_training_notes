@@ -1,0 +1,29 @@
+$TTL 1D
+; SOA: Start of Authority
+; 注： The @ symbol places the $ORIGIN directive (or the zone's name if the $ORIGINdirective is not set) as the namespace being defined by this SOA resource record.
+@       IN SOA  mytraining.com. 1234567.qq.com. (
+                                        0       ; serial
+                                        1D      ; refresh
+                                        1H      ; retry
+                                        1W      ; expire
+                                        3H )    ; minimum
+                   NS	          ns01.mytraining.com.
+                   NS	          ns02.mytraining.com.
+ns01               A            192.168.175.170
+ns02               A            192.168.175.171
+
+; 注：PTR类型的格式为： last-IP-digit IN PTR FQDN-of-system
+170    PTR          ns01.mytraining.com.
+171    PTR          ns02.mytraining.com.
+
+; 检查该配置语法正确与否的命令：
+; named-checkzone mytraining.com  /var/named/chroot/var/named/192.168.175.zone
+
+; 另注：
+; 通过如下命令可以知道 dns服务进程是通过'named'用户启动的
+;    ss -anptl |grep named
+; 所以关于权限问题，如果严格一点，可以使用如下命令设置文件的所属和访问规则：
+;    chmod --reference=/etc/named.conf /var/named/chroot/var/named/192.168.175.zone
+;    chown --reference=/etc/named.conf /var/named/chroot/var/named/192.168.175.zone
+
+
