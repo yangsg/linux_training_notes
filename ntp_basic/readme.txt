@@ -1,0 +1,8 @@
+
+yum -y install ntp
+
+
+
+
+
+
