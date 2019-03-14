@@ -11,7 +11,7 @@
 #LOCKD_UDPPORT=32769
 #
 # Optional arguments passed to rpc.nfsd. See rpc.nfsd(8)
-RPCNFSDARGS=""
+RPCNFSDARGS="-N 2 -N 3 -U"
 # Number of nfs server processes to be started.
 # The default is 8. 
 #RPCNFSDCOUNT=16
@@ -23,7 +23,8 @@ RPCNFSDARGS=""
 #NFSD_V4_LEASE=90
 #
 # Optional arguments passed to rpc.mountd. See rpc.mountd(8)
-RPCMOUNTDOPTS=""
+# -u is optional, disables UDP
+RPCMOUNTDOPTS="-N 2 -N 3 -u"
 # Port rpc.mountd should listen on.
 #MOUNTD_PORT=892
 #
