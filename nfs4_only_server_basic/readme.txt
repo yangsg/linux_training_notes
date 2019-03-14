@@ -6,41 +6,49 @@ https://help.ubuntu.com/community/NFSv4Howto
 
 服务器端：
 基本信息
-[root@ntf4server ~]# cat /etc/redhat-release
+[root@nfs4server ~]# cat /etc/redhat-release
     CentOS Linux release 7.4.1708 (Core)
-[root@ntf4server ~]# uname -r
+[root@nfs4server ~]# uname -r
     3.10.0-693.el7.x86_64
 
 
-[root@ntf4server ~]# yum install nfs-utils
-[root@ntf4server ~]# rpm -q nfs-utils
+[root@nfs4server ~]# yum -y install nfs-utils
+[root@nfs4server ~]# rpm -q nfs-utils
     nfs-utils-1.3.0-0.61.el7.x86_64
 
-[root@ntf4server ~]# vim /etc/sysconfig/nfs
+[root@nfs4server ~]# vim /etc/sysconfig/nfs
 
     RPCNFSDARGS="-N 2 -N 3 -U"
     # -u is optional, disables UDP
     RPCMOUNTDOPTS="-N 2 -N 3 -u"
 
-[root@ntf4server ~]# cat /run/sysconfig/nfs-utils   #确认该文件是否为如下内容，如果不是，可命令`systemctl restart nfs-config`后再确认一次
+[root@nfs4server ~]# systemctl restart nfs-config
+[root@nfs4server ~]# cat /run/sysconfig/nfs-utils   #确认 /etc/sysconfig/nfs 中的修改是否生效
     RPCNFSDARGS="-N 2 -N 3 -U 8"
     RPCMOUNTDARGS="-N 2 -N 3 -u"
 
-[root@ntf4server ~]# systemctl mask --now rpc-statd.service rpcbind.service rpcbind.socket
-[root@ntf4server ~]# systemctl is-active rpc-statd.service rpcbind.service rpcbind.socket
+[root@nfs4server ~]# systemctl mask --now rpc-statd.service rpcbind.service rpcbind.socket
+[root@nfs4server ~]# systemctl is-active rpc-statd.service rpcbind.service rpcbind.socket
 
-[root@ntf4server ~]# systemctl start nfs-server
-[root@ntf4server ~]# systemctl enable nfs-server
+[root@nfs4server ~]# systemctl start nfs-server
+[root@nfs4server ~]# systemctl enable nfs-server
 
-[root@ntf4server ~]# netstat -anptu | grep 2049
-[root@ntf4server ~]# netstat -aptu  | grep nfs
+[root@nfs4server ~]# netstat -anptu | grep 2049
+[root@nfs4server ~]# netstat -aptu  | grep nfs
 
 // 准备目录 /nfs4_share/data 并导出共享
-[root@ntf4server ~]# mkdir -p /nfs4_share/data
-[root@ntf4server ~]# vim /etc/exports
+[root@nfs4server ~]# mkdir -p /nfs4_share/data
+[root@nfs4server ~]# vim /etc/exports
+
+      # man 5 exports   #/EXAMPLE
+      # exportfs -rav   #man exportfs  #/EXAMPLES
+
+      # 注意给目录 /nfs4_share/data/ 合适的权限,包括mount磁盘时提供合适的options
+      /nfs4_share/data/  192.168.175.10(rw,sync,no_root_squash)  192.168.2.0/24(rw,root_squash,anonuid=150,anongid=100)
 
 
-[root@ntf4server ~]# exportfs -rav
+
+[root@nfs4server ~]# exportfs -rav
 
 
 客户端：
