@@ -1,0 +1,6 @@
+# man 5 exports   #/EXAMPLE
+# exportfs -rav   #man exportfs  #/EXAMPLES
+
+# 注意给目录 /nfs4_share/data/ 合适的权限,包括mount磁盘时提供合适的options
+/nfs4_share/data/  192.168.175.10(rw,sync,no_root_squash)  192.168.2.0/24(rw,root_squash,anonuid=150,anongid=100)
+
