@@ -56,7 +56,7 @@ Windows上XShell客户端:
 
 -----------
 
-// ssh 服务端的安全及连接速度设置
+// ssh 服务端的安全及连接速度设置(注意：和设置防火墙类似，不要将自己"锁在门外")
 [root@server ~]# vim /etc/ssh/sshd_config
         Port 44444
         PermitRootLogin no
