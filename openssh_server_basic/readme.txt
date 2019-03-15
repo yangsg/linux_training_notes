@@ -56,6 +56,17 @@ Windows上XShell客户端:
 
 -----------
 
+// ssh 服务端的安全及连接速度设置
+[root@server ~]# vim /etc/ssh/sshd_config
+        Port 44444
+        PermitRootLogin no
+        MaxAuthTries 1
+        PasswordAuthentication no
+        GSSAPIAuthentication no
+        UseDNS no
+
+
+
 
 
 
