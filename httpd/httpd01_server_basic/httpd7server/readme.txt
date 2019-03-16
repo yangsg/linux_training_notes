@@ -1,5 +1,6 @@
 
 
+
 [root@httpd7server ~]# yum -y install httpd
 [root@httpd7server ~]# rpm -q httpd
     httpd-2.4.6-88.el7.centos.x86_64
@@ -15,6 +16,49 @@
         # https://httpd.apache.org/docs/2.4/en/mod/core.html#enablesendfile
         EnableSendfile on
 
+
+
+虚拟主机
+参考：https://www.2daygeek.com/setup-apache-virtual-hosts-on-centos-rhel-fedora/
+[root@httpd7server ~]# mkdir /etc/httpd/sites-available
+[root@httpd7server ~]# mkdir /etc/httpd/sites-enabled
+
+[root@httpd7server ~]# touch /etc/httpd/sites-available/name01.based.com.conf
+[root@httpd7server ~]# touch /etc/httpd/sites-available/name02.based.com.conf
+[root@httpd7server ~]# touch /etc/httpd/sites-available/ip01.based.com.conf
+[root@httpd7server ~]# touch /etc/httpd/sites-available/ip02.based.com.conf
+
+[root@httpd7server ~]# vim /etc/httpd/conf/httpd.conf
+      IncludeOptional sites-enabled/*.conf
+
+
+[root@httpd7server ~]# vim /etc/httpd/sites-available/name01.based.com.conf
+
+[root@httpd7server ~]# tree /etc/httpd/sites-available
+/etc/httpd/sites-available
+├── ip01.based.com
+├── ip02.based.com
+├── name01.based.com
+└── name02.based.com
+
+
+[root@httpd7server ~]# ln -s /etc/httpd/sites-available/ip01.based.com.conf    /etc/httpd/sites-enabled/ip01.based.com.conf
+[root@httpd7server ~]# ln -s /etc/httpd/sites-available/ip02.based.com.conf    /etc/httpd/sites-enabled/ip02.based.com.conf
+[root@httpd7server ~]# ln -s /etc/httpd/sites-available/name02.based.com.conf  /etc/httpd/sites-enabled/name02.based.com.conf
+[root@httpd7server ~]# ln -s /etc/httpd/sites-available/name01.based.com.conf  /etc/httpd/sites-enabled/name01.based.com.conf
+
+
+[root@httpd7server ~]# mkdir /var/www/ip01.based.com
+[root@httpd7server ~]# mkdir /var/www/ip02.based.com
+[root@httpd7server ~]# mkdir /var/www/name02.based.com
+[root@httpd7server ~]# mkdir /var/www/name01.based.com
+
+[root@httpd7server ~]# echo 'ip01.based.com' > /var/www/ip01.based.com/index.html
+[root@httpd7server ~]# echo 'ip02.based.com' > /var/www/ip02.based.com/index.html
+[root@httpd7server ~]# echo 'name02.based.com' > /var/www/name02.based.com/index.html
+[root@httpd7server ~]# echo 'name01.based.com' > /var/www/name01.based.com/index.html
+
+[root@httpd7server ~]# systemctl restart httpd
 
 
 
