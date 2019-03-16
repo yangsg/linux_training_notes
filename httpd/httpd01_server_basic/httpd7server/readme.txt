@@ -142,7 +142,28 @@
 // windows操作系统可以通过修改文件 C:\Windows\System32\drivers\etc\hosts 来测试
 
 
+---------------------------------------------------------
 
+[root@httpd7server ~]# vim  /etc/httpd/sites-available/www.serveralias.com.conf
+    <VirtualHost *:80>
+        ServerName     www.serveralias.com
+        ServerAlias    demo.serveralias.com serveralias.com
+        ServerAlias    *.serveralias.com
+        DocumentRoot   /var/www/www.serveralias.com
+        ErrorLog       /var/log/httpd/www.serveralias.com/error.log
+        CustomLog      /var/log/httpd/www.serveralias.com/access.log combined
 
+        <Directory "/var/www/www.serveralias.com">
+            Require all granted
+        </Directory>
+    </VirtualHost>
+
+[root@httpd7server ~]# mkdir /var/www/www.serveralias.com
+[root@httpd7server ~]# mkdir /var/log/httpd/www.serveralias.com
+[root@httpd7server ~]# echo 'www.serveralias.com'  >  /var/www/www.serveralias.com/index.html
+[root@httpd7server ~]# ln -s /etc/httpd/sites-available/www.serveralias.com.conf  /etc/httpd/sites-enabled/www.serveralias.com.conf
+
+[root@httpd7server ~]# systemctl restart httpd
+-----------------------------------------------------------
 
 
