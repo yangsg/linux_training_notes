@@ -26,43 +26,67 @@
 [root@httpd7server ~]# mkdir /etc/httpd/sites-enabled
 
 // 创建虚拟主机的配置文件
-[root@httpd7server ~]# touch /etc/httpd/sites-available/name01.based.com.conf
-[root@httpd7server ~]# touch /etc/httpd/sites-available/name02.based.com.conf
 [root@httpd7server ~]# touch /etc/httpd/sites-available/ip01.based.com.conf
 [root@httpd7server ~]# touch /etc/httpd/sites-available/ip02.based.com.conf
+[root@httpd7server ~]# touch /etc/httpd/sites-available/name01.based.com.conf
+[root@httpd7server ~]# touch /etc/httpd/sites-available/name02.based.com.conf
 
 [root@httpd7server ~]# vim /etc/httpd/conf/httpd.conf
       IncludeOptional sites-enabled/*.conf
 
 
+// 通过别名为网卡添加额外的ip地址(基于ip的虚拟主机用)
+// 临时添加ip的方法
+[root@httpd7server ~]# ip addr add 192.168.175.20/24 dev ens33 label 'ens33:0'
+
+// 持久化修改ip的方法
+[root@httpd7server ~]# vim /etc/sysconfig/network-scripts/ifcfg-ens33:0
+      TYPE=Ethernet
+      BOOTPROTO=none
+      NAME=ens33:0
+      DEVICE=ens33:0
+      ONBOOT=yes
+
+      IPADDR=192.168.175.20
+      PREFIX=24
+
+[root@httpd7server ~]# nmcli conn reload
+[root@httpd7server ~]# nmcli conn up ens33
+
 [root@httpd7server ~]# vim /etc/httpd/sites-available/name01.based.com.conf
 
 [root@httpd7server ~]# tree /etc/httpd/sites-available
-/etc/httpd/sites-available
-├── ip01.based.com
-├── ip02.based.com
-├── name01.based.com
-└── name02.based.com
+    /etc/httpd/sites-available
+    ├── ip01.based.com.conf
+    ├── ip02.based.com.conf
+    ├── name01.based.com.conf
+    └── name02.based.com.conf
 
 
 
 // 创建虚拟主机内容目录
 [root@httpd7server ~]# mkdir /var/www/ip01.based.com
 [root@httpd7server ~]# mkdir /var/www/ip02.based.com
-[root@httpd7server ~]# mkdir /var/www/name02.based.com
 [root@httpd7server ~]# mkdir /var/www/name01.based.com
+[root@httpd7server ~]# mkdir /var/www/name02.based.com
+
+// 创建虚拟主机的日志目录
+[root@httpd7server ~]# mkdir /var/log/httpd/ip01.based.com
+[root@httpd7server ~]# mkdir /var/log/httpd/ip02.based.com
+[root@httpd7server ~]# mkdir /var/log/httpd/name01.based.com
+[root@httpd7server ~]# mkdir /var/log/httpd/name02.based.com
 
 // 为虚拟主机创建首页
 [root@httpd7server ~]# echo 'ip01.based.com'    >    /var/www/ip01.based.com/index.html
 [root@httpd7server ~]# echo 'ip02.based.com'    >    /var/www/ip02.based.com/index.html
-[root@httpd7server ~]# echo 'name02.based.com'  >    /var/www/name02.based.com/index.html
 [root@httpd7server ~]# echo 'name01.based.com'  >    /var/www/name01.based.com/index.html
+[root@httpd7server ~]# echo 'name02.based.com'  >    /var/www/name02.based.com/index.html
 
 // 发布虚拟主机
 [root@httpd7server ~]# ln -s /etc/httpd/sites-available/ip01.based.com.conf    /etc/httpd/sites-enabled/ip01.based.com.conf
 [root@httpd7server ~]# ln -s /etc/httpd/sites-available/ip02.based.com.conf    /etc/httpd/sites-enabled/ip02.based.com.conf
-[root@httpd7server ~]# ln -s /etc/httpd/sites-available/name02.based.com.conf  /etc/httpd/sites-enabled/name02.based.com.conf
 [root@httpd7server ~]# ln -s /etc/httpd/sites-available/name01.based.com.conf  /etc/httpd/sites-enabled/name01.based.com.conf
+[root@httpd7server ~]# ln -s /etc/httpd/sites-available/name02.based.com.conf  /etc/httpd/sites-enabled/name02.based.com.conf
 
 [root@httpd7server ~]# systemctl restart httpd
 
@@ -72,6 +96,28 @@
 [root@httpd7server ~]# httpd -t -D DUMP_VHOSTS   # 显示虚拟主机
 [root@httpd7server ~]# httpd -t -D DUMP_MODULES  # 显示加载的module
 [root@httpd7server ~]# httpd -t -D DUMP_VHOSTS -D DUMP_MODULES
+
+
+
+客户端测试：
+[root@client ~]# vim /etc/hosts
+    192.168.175.10           ip01.based.com
+    192.168.175.20           ip02.based.com
+    192.168.175.10           name02.based.com
+    192.168.175.10           name01.based.com
+
+[root@client ~]# curl ip01.based.com
+[root@client ~]# curl ip02.based.com
+[root@client ~]# curl name01.based.com
+[root@client ~]# curl name02.based.com
+
+// 也可以利用 elinks 访问
+[root@client ~]# yum -y install elinks
+[root@client ~]# elinks ip01.based.com
+
+// windows操作系统可以通过修改文件 C:\Windows\System32\drivers\etc\hosts 来测试
+
+
 
 
 
