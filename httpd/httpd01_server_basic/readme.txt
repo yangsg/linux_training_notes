@@ -7,7 +7,7 @@ Why nginx is faster than Apache, and why you needn’t necessarily care
     Apache(即httpd):采用"synchronous blocking I/O",多线程工作模式
     Nginx: 采用基于事件驱动(event-driven)的异步io(Asynchronous I/O)
        结果：
-       Nginx比apache更快： Apache因IO阻塞需频繁的进程上下文切换(thread context switching),虽然单个线程(被称为轻量级进程)相对进程来说虽然上下文切换的开销虽然很小，但积少成多，大量的thread上下文切换也会造成大量cpu开销和cpu时间片的浪费。且如果apache的固定数量的thread都发生block,则apache服务器将处于长时间的空闲(idle)状态，所以降低了cpu的利用率
+       Nginx比apache更快： Apache因IO阻塞需频繁的线程上下文切换(thread context switching),虽然单个线程(被称为轻量级进程)相对进程来说上下文切换的开销已经很小了，但积少成多，大量的thread上下文切换也会造成大量cpu开销和cpu时间片的浪费。且如果apache的固定数量的thread都发生block,则apache服务器还将处于长时间的空闲(idle)状态，所以降低了cpu的利用率
        Nginx比apache内存占用率更低：apache维护大量的thread需要额外的元数据和控制信息，频繁的thread上下文切换也会造成大量状态信息的保存和恢复。
 
 
