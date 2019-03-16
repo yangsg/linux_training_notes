@@ -53,7 +53,31 @@
 [root@httpd7server ~]# nmcli conn reload
 [root@httpd7server ~]# nmcli conn up ens33
 
-[root@httpd7server ~]# vim /etc/httpd/sites-available/name01.based.com.conf
+[root@httpd7server ~]# cat /etc/httpd/sites-available/ip01.based.com.conf    #此处省略了 ip02.based.com.conf 的内容
+    <VirtualHost 192.168.175.10:80>
+        ServerName     ip01.based.com
+        DocumentRoot   /var/www/ip01.based.com
+        ErrorLog       /var/log/httpd/ip01.based.com/error.log
+        CustomLog      /var/log/httpd/ip01.based.com/access.log combined
+
+        <Directory "/var/www/ip01.based.com">
+            Require all granted
+        </Directory>
+    </VirtualHost>
+
+[root@httpd7server ~]# vim /etc/httpd/sites-available/name01.based.com.conf  #此处省略了 name02.based.com.conf 的内容
+    <VirtualHost *:80>
+        ServerName     name01.based.com
+        DocumentRoot   /var/www/name01.based.com
+        ErrorLog       /var/log/httpd/name01.based.com/error.log
+        CustomLog      /var/log/httpd/name01.based.com/access.log combined
+
+        <Directory "/var/www/name01.based.com">
+            Require all granted
+        </Directory>
+    </VirtualHost>
+
+
 
 [root@httpd7server ~]# tree /etc/httpd/sites-available
     /etc/httpd/sites-available
