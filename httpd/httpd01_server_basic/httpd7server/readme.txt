@@ -13,6 +13,9 @@
 [root@httpd7server ~]# rpm -q httpd
     httpd-2.4.6-88.el7.centos.x86_64
 
+// 禁用httpd自带的测试页
+[root@httpd7server ~]# mv /etc/httpd/conf.d/welcome.conf /etc/httpd/conf.d/welcome.conf.disable
+
 [root@httpd7server ~]# vim /etc/httpd/conf/httpd.conf  #更多具体修改见配置文件
         #启用长连接
         KeepAlive On
