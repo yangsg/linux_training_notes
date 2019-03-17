@@ -45,6 +45,22 @@ served by the corresponding main server or virtual host.
 If it does not match, then the URI remains untouched and the request is taken to be a proxy request.
 
 
+# 结论：
+  -  Name-based virtual hosting 是在server已经选择了最佳 IP-based virtual host 之后才被应用的处理过程。
+  -  如果你不关心客户端的请求的connection具体所连接到的是那个ip地址，使用通配符"*"作为所有每个虚拟主机的地址，
+     那么 name-based virtual hosting 的处理将可应用于所有配置中的虚拟主机
+  -  只有针对特定的ip地址中的那些 name-based vhosts, 其顺序才是有意义的(即此时这些虚拟主机的位置顺序才会有产生影响)。
+     配置文件中第一个(最先)出现的 name-based vhosts 具有最高优先级(for its corresponding address set.)。
+  -  Any port in the Host: header field is never used during the matching process.
+     Apache always uses the real port to which the client sent the request.
+  -  If two vhosts have an address in common, those common addresses act as name-based virtual hosts implicitly. This is new behavior as of 2.3.11.
+  -  The main server is only used to serve a request if the IP address and port number to which the client
+     connected does not match any vhost (including a * vhost). In other words, the main server only catches
+     a request for an unspecified address/port combination (unless there is a _default_ vhost which matches that port).
+  -  You should never specify DNS names in VirtualHost directives because it will force your server to rely on DNS to boot.
+     Furthermore it poses a security threat if you do not control the DNS for all the domains listed.
+     There's more information available on this and the next two topics.
+  -  总是应该为每个虚拟主机vhosts 设置 ServerName ，否则，每个虚拟主机都需要一次DNS查询。
 
 
 
