@@ -368,7 +368,6 @@ https 示例
 
 [root@httpd7server ~]# systemctl restart httpd
 
--------------------------------------------------
 
 
 客户端:
@@ -388,6 +387,56 @@ https 示例
 
 
 
+-------------------------------------------------
+
+php 示例
+
+[root@httpd7server ~]# yum -y install php
+[root@httpd7server ~]# ls /etc/httpd/modules/ | grep libphp5.so
+[root@httpd7server ~]# cat /etc/httpd/conf.modules.d/10-php.conf
+      #
+      # PHP is an HTML-embedded scripting language which attempts to make it
+      # easy for developers to write dynamically generated webpages.
+      #
+      <IfModule prefork.c>
+        LoadModule php5_module modules/libphp5.so
+      </IfModule>
+
+[root@httpd7server ~]# mkdir /var/www/php.demo.com
+[root@httpd7server ~]# mkdir /var/log/httpd/php.demo.com
+[root@httpd7server ~]# vim /etc/httpd/sites-available/php.demo.com.conf
+      <VirtualHost *:80>
+      # warning:
+      #     don't use 'ip-based vhosts'(eg: <VirtualHost 192.168.175.10:80>) together with the 'name-based vhosts' of which
+      #     ip specified by wildcard '*'(eg: <VirtualHost *:80>), becase
+      #     Name-based virtual hosting is a process applied after the server has selected the best matching IP-based virtual host.
+      #     and
+      #     the wildcard (*) matches are considered only when there are no exact matches for the address and port.
+      #     otherwise, your 'name-based vhosts'(eg: <VirtualHost *:80>) will never serve the client on the same ip:port as the
+      #     'ip-based vhosts'(eg: <VirtualHost 192.168.175.10:80>)
+      # for more details: https://httpd.apache.org/docs/2.4/en/vhosts/details.html
+          ServerName     php.demo.com
+          DocumentRoot   /var/www/php.demo.com
+          ErrorLog       /var/log/httpd/php.demo.com/error.log
+          CustomLog      /var/log/httpd/php.demo.com/access.log combined
+
+          <Directory "/var/www/php.demo.com">
+              Require all granted
+          </Directory>
+      </VirtualHost>
+
+
+[root@httpd7server ~]# vim /var/www/php.demo.com/test.php
+    <?php
+      phpinfo();
+    ?>
+
+[root@httpd7server ~]# ln -s /etc/httpd/sites-available/php.demo.com.conf  /etc/httpd/sites-enabled/php.demo.com.conf
+[root@httpd7server ~]# systemctl restart httpd
+
+
+客户端：
+浏览器访问     http://php.demo.com/test.php
 
 
 
