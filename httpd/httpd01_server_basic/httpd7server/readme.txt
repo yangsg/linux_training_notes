@@ -244,6 +244,10 @@
               </RequireAll>
           </Directory>
 
+#警告：
+#  htpasswd 的 -c 选项只能第一次在创建密码文件时使用，否则会truncate现有的密码文件内容
+# [root@httpd7server ~]# htpasswd -c /etc/httpd/.webuser Bob
+# [root@httpd7server ~]# htpasswd    /etc/httpd/.webuser Alice  #此处不能再使用-c选项
           <Directory "/var/www/require.demo.com/allow_by_auth">
               AuthType Basic
               AuthName "Need to Login: "
