@@ -356,6 +356,14 @@ https 示例
 
 [root@httpd7server ~]# systemctl restart httpd
 
+禁用默认的httpd自带的默认ssl virtualhost
+[root@httpd7server ~]# cp /etc/httpd/conf.d/ssl.conf /etc/httpd/conf.d/ssl.conf.bak
+[root@httpd7server ~]# vim /etc/httpd/conf.d/ssl.conf   #删除其中的虚拟主机部分
+
+[root@httpd7server ~]# systemctl restart httpd
+
+-------------------------------------------------
+
 
 客户端:
 
