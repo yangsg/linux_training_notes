@@ -1,5 +1,13 @@
 
 
+//警告：
+//     除非清楚自己在做什么或者就是想要这种效果，否则不要将 'IP-based vhost'
+//     与在 VirtualHost指令中用通配符 '*' 指定ip的'name-based vhosts'混用,
+//     否则'name-based vhosts'永远无法在与'IP-based vhost'相同的ip:port上对客户端请求
+//     进行响应(因为'IP-based vhost'的处理过程总是先于'name-based vhosts')。
+//
+//虚拟主机的匹配规则见 https://httpd.apache.org/docs/2.4/en/vhosts/details.html
+
 
 [root@httpd7server ~]# yum -y install httpd
 [root@httpd7server ~]# rpm -q httpd
