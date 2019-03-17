@@ -13,7 +13,13 @@
 [root@httpd7server ~]# rpm -q httpd
     httpd-2.4.6-88.el7.centos.x86_64
 
-[root@httpd7server ~]# vim /etc/httpd/conf/httpd.conf
+[root@httpd7server ~]# vim /etc/httpd/conf/httpd.conf  #更多具体修改见配置文件
+        #启用长连接
+        KeepAlive On
+        #长连接的超时时间，单位秒；支持ms
+        KeepAliveTimeout 5
+        #长连接传输文件的次数
+        MaxKeepAliveRequests 100
 
         # 启用memory-mapping内存映射功能,可将部分内核与httpd进程的虚拟的内存地址空间映射到同一块相同的物理内存区域，
         # 减少数据在内核空间与用户空间的拷贝过程，从而提升httpd的性能。
@@ -158,7 +164,7 @@
 
 
 ---------------------------------------------------------
-
+// ServerAlias 示例
 [root@httpd7server ~]# vim  /etc/httpd/sites-available/www.serveralias.com.conf
     <VirtualHost *:80>
         ServerName     www.serveralias.com
