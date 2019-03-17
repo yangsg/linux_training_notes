@@ -208,6 +208,54 @@
       Bob:$apr1$9.mw4Cy0$9/2gjmBwwqihoar6VOVg6/
       Alice:$apr1$DmQf49FR$x2k0dlaVvVFe5A/sbRbxm.
 
+[root@httpd7server ~]# vim /etc/httpd/sites-available/require.demo.com.conf
+      <VirtualHost *:80>
+      # warning:
+      #     don't use 'ip-based vhosts'(eg: <VirtualHost 192.168.175.10:80>) together with the 'name-based vhosts' of which
+      #     ip specified by wildcard '*'(eg: <VirtualHost *:80>), becase
+      #     Name-based virtual hosting is a process applied after the server has selected the best matching IP-based virtual host.
+      #     and
+      #     the wildcard (*) matches are considered only when there are no exact matches for the address and port.
+      #     otherwise, your 'name-based vhosts'(eg: <VirtualHost *:80>) will never serve the client on the same ip:port as the
+      #     'ip-based vhosts'(eg: <VirtualHost 192.168.175.10:80>)
+      # for more details: https://httpd.apache.org/docs/2.4/en/vhosts/details.html
+          ServerName     require.demo.com
+          DocumentRoot   /var/www/require.demo.com
+          ErrorLog       /var/log/httpd/require.demo.com/error.log
+          CustomLog      /var/log/httpd/require.demo.com/access.log combined
+
+      # https://httpd.apache.org/docs/2.4/en/mod/mod_authz_core.html#require
+          <Directory "/var/www/require.demo.com">
+              Require all granted
+          </Directory>
+
+          <Directory "/var/www/require.demo.com/private_dir">
+              Require all denied
+          </Directory>
+
+          <Directory "/var/www/require.demo.com/allow_dir_by_ip">
+              Require ip 192.168.175.20
+          </Directory>
+
+          <Directory "/var/www/require.demo.com/allow_dir_except_ip">
+              <RequireAll>
+                Require all granted
+                Require not ip 192.168.175.44
+              </RequireAll>
+          </Directory>
+
+          <Directory "/var/www/require.demo.com/allow_by_auth">
+              AuthType Basic
+              AuthName "Need to Login: "
+              AuthUserFile "/etc/httpd/.webuser"
+              Require valid-user
+          </Directory>
+
+      </VirtualHost>
+
+
+
+
 [root@httpd7server ~]# ln -s /etc/httpd/sites-available/require.demo.com.conf  /etc/httpd/sites-enabled/require.demo.com.conf
 [root@httpd7server ~]# systemctl restart httpd
 
