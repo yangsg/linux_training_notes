@@ -265,14 +265,121 @@
 
 
 
-
-
-
-
-
-
-
-
 -----------------------------------------------------------
+
+# https://httpd.apache.org/docs/2.4/ssl/ssl_howto.html
+# https://www.digitalocean.com/community/tutorials/how-to-create-an-ssl-certificate-on-apache-for-centos-7
+# https://www.sslshopper.com/article-how-to-create-and-install-an-apache-self-signed-certificate.html
+# https://www.linode.com/docs/security/ssl/ssl-apache2-centos/
+
+
+https 示例
+
+
+服务器端
+[root@httpd7server ~]# yum -y install mod_ssl
+[root@httpd7server ~]# rpm -q mod_ssl
+      mod_ssl-2.4.6-88.el7.centos.x86_64
+
+[root@httpd7server ~]# ls /etc/httpd/modules/ | grep mod_ssl.so
+[root@httpd7server ~]# cat /etc/httpd/conf.modules.d/00-ssl.conf
+      LoadModule ssl_module modules/mod_ssl.so
+
+[root@httpd7server ~]# apachectl -M | grep ssl
+
+
+// 生成密钥
+[root@httpd7server ~]# mkdir /etc/httpd/ssl
+[root@httpd7server ~]# openssl genrsa 1024 > /etc/httpd/ssl/ssl.com.key
+
+// 生成证书请求文件
+[root@httpd7server ~]# openssl req -new -key /etc/httpd/ssl/ssl.com.key > /etc/httpd/ssl/ssl.com.csr
+            You are about to be asked to enter information that will be incorporated
+            into your certificate request.
+            What you are about to enter is what is called a Distinguished Name or a DN.
+            There are quite a few fields but you can leave some blank
+            For some fields there will be a default value,
+            If you enter '.', the field will be left blank.
+            -----
+            Country Name (2 letter code) [XX]:cn
+            State or Province Name (full name) []:cn
+            Locality Name (eg, city) [Default City]:bj
+            Organization Name (eg, company) [Default Company Ltd]:ssl
+            Organizational Unit Name (eg, section) []:ssl
+            Common Name (eg, your name or your server's hostname) []:www.ssl.com
+            Email Address []:12345@qq.com
+
+            Please enter the following 'extra' attributes
+            to be sent with your certificate request
+            A challenge password []:
+            An optional company name []:
+
+
+
+// 颁发证书 (自签名证书)
+[root@httpd7server ~]#  openssl req -x509 -days 365 -key /etc/httpd/ssl/ssl.com.key -in /etc/httpd/ssl/ssl.com.csr > /etc/httpd/ssl/ssl.com.crt
+[root@httpd7server ~]# ls /etc/httpd/ssl/
+      ssl.com.crt  ssl.com.csr  ssl.com.key
+
+[root@httpd7server ~]# chmod 400 /etc/httpd/ssl/*
+[root@httpd7server ~]# ls -l /etc/httpd/ssl/*
+      -r-------- 1 root root 1005 Mar 17 17:09 /etc/httpd/ssl/ssl.com.crt
+      -r-------- 1 root root  672 Mar 17 17:06 /etc/httpd/ssl/ssl.com.csr
+      -r-------- 1 root root  887 Mar 17 17:01 /etc/httpd/ssl/ssl.com.key
+
+
+[root@httpd7server ~]# mkdir /var/www/www.ssl.com
+[root@httpd7server ~]# mkdir /var/log/httpd/www.ssl.com
+
+[root@httpd7server ~]# vim /etc/httpd/sites-available/www.ssl.com.conf
+      <VirtualHost *:443>
+      # https://httpd.apache.org/docs/2.4/ssl/ssl_howto.html
+          SSLEngine On
+          SSLCertificateFile      /etc/httpd/ssl/ssl.com.crt
+          SSLCertificateKeyFile   /etc/httpd/ssl/ssl.com.key
+
+          ServerAdmin    info@ssl.com
+          ServerName     www.ssl.com
+          ServerAlias    ssl.com
+          ServerAlias    *.ssl.com
+          DocumentRoot   /var/www/www.ssl.com
+          ErrorLog       /var/log/httpd/www.ssl.com/error.log
+          CustomLog      /var/log/httpd/www.ssl.com/access.log combined
+
+          <Directory "/var/www/www.ssl.com">
+              Require all granted
+          </Directory>
+      </VirtualHost>
+
+
+[root@httpd7server ~]# ln -s /etc/httpd/sites-available/www.ssl.com.conf  /etc/httpd/sites-enabled/www.ssl.com.conf
+
+[root@httpd7server ~]# systemctl restart httpd
+
+
+客户端:
+
+[root@client ~]# vim /etc/hosts
+    192.168.175.10   www.ssl.com
+    192.168.175.10   ssl.com
+    192.168.175.10   web.ssl.com
+
+
+[root@client ~]# curl --insecure https://www.ssl.com
+[root@client ~]# curl --insecure https://ssl.com
+[root@client ~]# curl --insecure https://web.ssl.com
+
+[root@client ~]# wget --no-check-certificate https://www.ssl.com
+
+
+
+
+
+
+
+
+
+
+
 
 
