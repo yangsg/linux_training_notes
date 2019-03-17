@@ -288,6 +288,9 @@ https 示例
 [root@httpd7server ~]# cat /etc/httpd/conf.modules.d/00-ssl.conf
       LoadModule ssl_module modules/mod_ssl.so
 
+// man httpd
+//      -M     Dump a list of loaded Static and Shared Modules.
+[root@httpd7server ~]# httpd -M | grep ssl
 [root@httpd7server ~]# apachectl -M | grep ssl
 
 
