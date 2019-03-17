@@ -187,4 +187,40 @@
 [root@httpd7server ~]# systemctl restart httpd
 -----------------------------------------------------------
 
+// Require 指令示例
+
+[root@httpd7server ~]# mkdir -p /var/www/require.demo.com
+[root@httpd7server ~]# mkdir -p /var/www/require.demo.com/private_dir
+[root@httpd7server ~]# mkdir -p /var/www/require.demo.com/allow_dir_by_ip
+[root@httpd7server ~]# mkdir -p /var/www/require.demo.com/allow_dir_except_ip
+[root@httpd7server ~]# mkdir -p /var/www/require.demo.com/allow_by_auth
+
+[root@httpd7server ~]# mkdir /var/log/httpd/require.demo.com/
+
+# 警告：如果存放密码的文件已存在，则htpasswd不要再加-c选项了
+#    -c     Create the passwdfile. If passwdfile already exists, it is rewritten and truncated.
+[root@httpd7server ~]# htpasswd -c /etc/httpd/.webuser Bob  #警告: 只有在创建新密码文件时才能加-c选项
+[root@httpd7server ~]# cat /etc/httpd/.webuser
+      Bob:$apr1$9.mw4Cy0$9/2gjmBwwqihoar6VOVg6/
+
+[root@httpd7server ~]#  htpasswd  /etc/httpd/.webuser Alice   #警告：这里千万不要再加-c选项了，否则已有数据会被truncated
+[root@httpd7server ~]# cat /etc/httpd/.webuser
+      Bob:$apr1$9.mw4Cy0$9/2gjmBwwqihoar6VOVg6/
+      Alice:$apr1$DmQf49FR$x2k0dlaVvVFe5A/sbRbxm.
+
+[root@httpd7server ~]# ln -s /etc/httpd/sites-available/require.demo.com.conf  /etc/httpd/sites-enabled/require.demo.com.conf
+[root@httpd7server ~]# systemctl restart httpd
+
+
+
+
+
+
+
+
+
+
+
+-----------------------------------------------------------
+
 
