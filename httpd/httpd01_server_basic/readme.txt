@@ -25,3 +25,6 @@ This new architecture, leveraging non-blocking sockets(注：这里只是non-blo
 The total amount of connections that a single process/threads block can handle is regulated by the AsyncRequestWorkerFactor directive.
 
 
+// 命令
+[root@httpd7server ~]# httpd -V   # -V     Print the version and build parameters of httpd, and then exit.
+
