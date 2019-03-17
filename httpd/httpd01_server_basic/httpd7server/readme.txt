@@ -117,6 +117,13 @@
 // 发布虚拟主机
 [root@httpd7server ~]# ln -s /etc/httpd/sites-available/ip01.based.com.conf    /etc/httpd/sites-enabled/ip01.based.com.conf
 [root@httpd7server ~]# ln -s /etc/httpd/sites-available/ip02.based.com.conf    /etc/httpd/sites-enabled/ip02.based.com.conf
+
+// 警告：
+//     因为我的配置中 ip-based 的虚拟主机和name-based的虚拟主机有冲突
+//     (即'<VirtualHost 192.168.175.10:80>' 与'<VirtualHost *:80>'冲突)
+//     所以单独测试name-based的虚拟主机时可以先disable掉ip-based的虚拟主机
+[root@httpd7server ~]# mv /etc/httpd/sites-enabled/ip01.based.com.conf /etc/httpd/sites-enabled/ip01.based.com.conf.disabled
+[root@httpd7server ~]# mv /etc/httpd/sites-enabled/ip02.based.com.conf /etc/httpd/sites-enabled/ip02.based.com.conf.disabled
 [root@httpd7server ~]# ln -s /etc/httpd/sites-available/name01.based.com.conf  /etc/httpd/sites-enabled/name01.based.com.conf
 [root@httpd7server ~]# ln -s /etc/httpd/sites-available/name02.based.com.conf  /etc/httpd/sites-enabled/name02.based.com.conf
 
