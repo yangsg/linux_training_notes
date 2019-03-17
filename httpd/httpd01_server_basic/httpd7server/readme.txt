@@ -442,6 +442,23 @@ php 示例
 压力测试工具
 [root@client ~]# ab -n 200 -c 30 http://php.demo.com/test.php
 
+        Time taken for tests:   1.496 seconds           //完成所有请求消耗的时间
+        Failed requests:        0                                       //失败的请求数
+        Requests per second:    6685.26 [#/sec] (mean)  //每秒可以处理的请求数, 并发连接  qps
+
+[root@httpd7server ~]# ulimit -n
+1024
+[root@httpd7server ~]# ulimit -n 65535
+[root@httpd7server ~]# ulimit -n
+65535
+
+[root@client ~]# ulimit -n
+1024
+[root@client ~]# ulimit -n 65535
+[root@client ~]# ulimit -n
+65535
+
+
 
 
 
