@@ -19,17 +19,33 @@ server确定由那个虚拟主机用于响应客户request的策略如下：
 in the order they were in the configuration file.)//在我们后续讨论的步骤中, 将使用单词 "list" 表示和引用这些被匹配到的虚拟主机vhosts,且它们的顺序
 与其在配置文件中定义的顺序一致。
 
-If the connection is using SSL, the server supports Server Name Indication, and the SSL client handshake includes the TLS extension with the requested hostname, then that hostname is used below just like the Host: header would be used on a non-SSL connection. Otherwise, the first name-based vhost whose address matched is used for SSL connections. This is significant because the vhost determines which certificate the server will use for the connection.
+If the connection is using SSL, the server supports Server Name Indication,
+and the SSL client handshake includes the TLS extension with the requested hostname,
+then that hostname is used below just like the Host: header would be used on a non-SSL connection.
+Otherwise, the first name-based vhost whose address matched is used for SSL connections.
+This is significant because the vhost determines which certificate the server will use for the connection.
 
-If the request contains a Host: header field, the list is searched for the first vhost with a matching ServerName or ServerAlias, and the request is served from that vhost. A Host: header field can contain a port number, but Apache always ignores it and matches against the real port to which the client sent the request.
+If the request contains a Host: header field, the list is searched for the first vhost with a matching ServerName or ServerAlias,
+and the request is served from that vhost.
+A Host: header field can contain a port number, but Apache always ignores it and matches against the real port to which the client sent the request.
 
-The first vhost in the config file with the specified IP address has the highest priority and catches any request to an unknown server name, or a request without a Host: header field (such as a HTTP/1.0 request).
+The first vhost in the config file with the specified IP address has the highest priority and catches any request to an unknown server name,
+or a request without a Host: header field (such as a HTTP/1.0 request).
 
 Persistent connections
-The IP lookup described above is only done once for a particular TCP/IP session while the name lookup is done on every request during a KeepAlive/persistent connection. In other words, a client may request pages from different name-based vhosts during a single persistent connection.
+The IP lookup described above is only done once for a particular TCP/IP session while
+the name lookup is done on every request during a KeepAlive/persistent connection. 
+In other words, a client may request pages from different name-based vhosts during a single persistent connection.
 
 Absolute URI
-If the URI from the request is an absolute URI, and its hostname and port match the main server or one of the configured virtual hosts and match the address and port to which the client sent the request, then the scheme/hostname/port prefix is stripped off and the remaining relative URI is served by the corresponding main server or virtual host. If it does not match, then the URI remains untouched and the request is taken to be a proxy request.
+If the URI from the request is an absolute URI, and its hostname and port match the main server or
+one of the configured virtual hosts and match the address and port to which the client sent the request,
+then the scheme/hostname/port prefix is stripped off and the remaining relative URI is
+served by the corresponding main server or virtual host.
+If it does not match, then the URI remains untouched and the request is taken to be a proxy request.
+
+
+
 
 
 
