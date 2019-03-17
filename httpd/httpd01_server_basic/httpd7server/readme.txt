@@ -439,6 +439,9 @@ php 示例
 浏览器访问     http://php.demo.com/test.php
 
 
+压力测试工具
+[root@client ~]# ab -n 200 -c 30 http://php.demo.com/test.php
+
 
 
 
