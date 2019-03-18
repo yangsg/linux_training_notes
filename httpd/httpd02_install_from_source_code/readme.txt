@@ -42,6 +42,8 @@
 [root@httpd7server apr-util-1.6.1]# make install
 
 // 安装httpd
+//  pcre: Perl-compatible regular expression library 兼容于perl正则表达式的库
+[root@httpd7server ~]# yum -y install pcre-devel openssl-devel
 [root@httpd7server download]# tar -xvf httpd-2.4.38.tar.gz
 [root@httpd7server download]# cd httpd-2.4.38/
 [root@httpd7server httpd-2.4.38]# ./configure \
@@ -57,8 +59,31 @@
                                      --enable-mpm-shared=all \
                                      --with-mpm=event
 
+[root@httpd7server httpd-2.4.38]# make
+[root@httpd7server httpd-2.4.38]# make install
+
+-------------------------------------------------------
+报了一个错误，错误信息如下：
+      collect2: error: ld returned 1 exit status
+      make[2]: *** [htpasswd] Error 1
+      make[2]: Leaving directory `/root/download/httpd-2.4.38/support'
+      make[1]: *** [install-recursive] Error 1
+      make[1]: Leaving directory `/root/download/httpd-2.4.38/support'
+      make: *** [install-recursive] Error 1
+
+解决的参考资料：
+https://my.oschina.net/yuanhaohao/blog/1933528
+http://httpd.apache.org/docs/2.4/install.html      //APR and APR-Util
+[root@httpd7server httpd-2.4.38]# less INSTALL
 
 
+
+
+
+
+
+
+-------------------------------------------------------
 
 
 
