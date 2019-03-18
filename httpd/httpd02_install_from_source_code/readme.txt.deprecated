@@ -78,6 +78,29 @@ http://httpd.apache.org/docs/2.4/install.html      //APR and APR-Util
 
 
 
+./configure \
+--prefix=/app/httpd \
+--with-included-apr \
+--enable-so \
+--enable-rewrite \
+--enable-ssl \
+--enable-cgi --enable-cgid \
+--enable-modules=most \
+--enable-mods-shared=most \
+--enable-mpm-shared=all \
+--with-mpm=event
+
+
+-------
+[root@httpd7server download]# tar -xvf httpd-2.4.38.tar.gz
+[root@httpd7server download]# tar -xvf apr-1.6.5.tar.gz
+[root@httpd7server download]# tar -xvf apr-util-1.6.1.tar.gz
+[root@httpd7server download]# cp -r apr-1.6.5 httpd-2.4.38/srclib/apr
+[root@httpd7server download]# cp -r apr-util-1.6.1 httpd-2.4.38/srclib/apr-util
+
+
+
+
 
 
 
