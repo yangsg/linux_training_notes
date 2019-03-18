@@ -139,6 +139,14 @@
 
 [root@httpd7server ~]# netstat -anptu  | grep httpd
 
+// 设置开机自启
+[root@httpd7server ~]# vim /etc/rc.d/rc.local
+      /app/httpd/bin/httpd -k start
+
+[root@httpd7server ~]# chmod +x /etc/rc.d/rc.local
+
+
+
 
 相关参考：
     https://my.oschina.net/yuanhaohao/blog/1933528
