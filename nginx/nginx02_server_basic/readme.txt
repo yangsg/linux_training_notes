@@ -30,6 +30,13 @@
 
 
 
+[root@nginx7server ~]# mkdir /app/nginx/{sites-available,sites-enabled}
+
+[root@nginx7server ~]# ln -s /app/nginx/sites-available/location.match.demo.com.conf /app/nginx/sites-enabled/location.match.demo.com.conf
+
+[root@nginx7server ~]# /app/nginx/sbin/nginx -t
+[root@nginx7server ~]# /app/nginx/sbin/nginx -s reload
+
 
 
 
