@@ -32,7 +32,7 @@ nginx中关于location的一个很奇怪的特性，该特性如不注意在某�
 (如上面中'/user' + '/' = '/user/')
 
 注：上面官方的解决方案在某些情况下也有可能并不完美，
-    因为重定向是无法浏览器两次请求之间自动保留请求信息的。
+    因为重定向是无法在浏览器两次请求之间自动保留请求信息的。
 
 如上示例更多信息见
 https://github.com/yangsg/linux_training_notes/blob/master/nginx/nginx02_server_basic/nginx7server/app/nginx/sites-available/location.match.demo.com.conf
