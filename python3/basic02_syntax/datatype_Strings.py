@@ -1,7 +1,7 @@
 #//  https://docs.python.org/3.6/tutorial/introduction.html#strings
 
 
-#//  python字符串支持单引号和双引号, 还可使用反斜线'\'转义
+#//  python字符串支持单引号和双引号(这点类似于javascript), 还可使用反斜线'\'转义
 'spam eggs'  #单引号
 "spam eggs"  #双引号
 'doesn\'t'   #斜线'\'转义
