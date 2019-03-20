@@ -41,6 +41,7 @@
 
 // 测试安装
 [root@python3lang ~]# python3.6 --version
+[root@python3lang ~]# python3.6 -c 'print("hello world")'
 
 
 
