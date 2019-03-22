@@ -10,5 +10,13 @@ sep_str_join('-', '1', '2', '3')
 sep_str_join('-', *['1', '2', '3'])
 sep_str_join('-', *('1', '2', '3'))
 
+#//demo02
+def concat(*args, sep='/'):
+    print(sep.join(args))
+
+concat('1', '2', '3', sep='/')
+concat('1', '2', '3', sep='-')
+concat(*('1', '2', '3'), sep='-')
+concat(*['1', '2', '3'], sep='-')
 
 
