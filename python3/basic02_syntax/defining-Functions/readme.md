@@ -1,4 +1,4 @@
-# Defining Functions
+# [Defining Functions](https://docs.python.org/3.6/tutorial/controlflow.html#defining-functions)
 
 > The execution of a function introduces a new symbol table used for the local
 > variables of the function. More precisely, all variable assignments in
