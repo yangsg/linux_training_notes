@@ -23,6 +23,8 @@ http://nginx.org/en/docs/control.html
 
 
 // 准备旧版的nginx环境用于后面升级替换
+见 https://github.com/yangsg/linux_training_notes/blob/master/nginx/nginx03_upgrade_executable_on_the_fly/install_old_nginx-1.12.2.txt
+
 
 // 开始实际的升级操作--------------------------------------------------
 
