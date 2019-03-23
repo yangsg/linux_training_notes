@@ -1,0 +1,62 @@
+参考 https://github.com/yangsg/linux_training_notes/tree/master/nginx/nginx01_install_from_source_code
+
+[root@nginx7server ~]# yum -y install gcc gcc-c++ autoconf automake
+
+[root@nginx7server ~]# yum install -y pcre-devel openssl-devel
+
+[root@nginx7server ~]# mkdir /app
+
+[root@nginx7server ~]# useradd -M -s /sbin/nologin nginx
+
+[root@nginx7server ~]# mkdir download
+[root@nginx7server ~]# cd download/
+
+[root@nginx7server download]# wget http://nginx.org/download/nginx-1.12.2.tar.gz
+
+[root@nginx7server download]# tar -xvf nginx-1.12.2.tar.gz
+[root@nginx7server download]# cd nginx-1.12.2/
+
+[root@nginx7server nginx-1.12.2]# mkdir -p /var/tmp/nginx/{client,proxy,fastcgi,uwsgi,scgi}
+
+[root@nginx7server nginx-1.12.2]# ./configure \
+  --prefix=/app/nginx \
+  --user=nginx \
+  --group=nginx \
+  --with-http_ssl_module \
+  --with-http_flv_module \
+  --with-http_stub_status_module \
+  --with-http_gzip_static_module \
+  --with-pcre \
+  --with-file-aio \
+  --with-http_secure_link_module \
+  --with-threads \
+  --http-client-body-temp-path=/var/tmp/nginx/client \
+  --http-proxy-temp-path=/var/tmp/nginx/proxy \
+  --http-fastcgi-temp-path=/var/tmp/nginx/fastcgi \
+  --http-uwsgi-temp-path=/var/tmp/nginx/uwsgi \
+  --http-scgi-temp-path=/var/tmp/nginx/scgi \
+
+
+[root@nginx7server nginx-1.12.2]# make
+[root@nginx7server nginx-1.12.2]# make install
+
+[root@nginx7server ~]# /app/nginx/sbin/nginx
+
+[root@nginx7server ~]# vim /etc/rc.d/rc.local
+    /app/nginx/sbin/nginx
+
+[root@nginx7server ~]# chmod +x /etc/rc.d/rc.local
+
+[root@nginx7server ~]# netstat -anptu | grep nginx
+    tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      4342/nginx: master
+
+[root@nginx7server ~]# ps -elf | grep nginx
+    1 S root       4342      1  0  80   0 - 11489 sigsus 11:02 ?        00:00:00 nginx: master process /app/nginx/sbin/nginx
+    5 S nginx      4343   4342  0  80   0 - 11605 ep_pol 11:02 ?        00:00:00 nginx: worker process
+    0 R root       4364   1307  0  80   0 - 28177 -      11:04 pts/2    00:00:00 grep --color=auto nginx
+
+
+
+
+
+
