@@ -117,6 +117,9 @@ configure arguments: --prefix=/app/nginx --user=nginx --group=nginx --with-http_
 
 // 如果使用了inspect_webserver_status.sh来观察升级过程，记得升级完后关闭相应的观察进程
 
+// 注：
+// 完成升级后不用急于删除旧的nginx可执行程序(即现在的/app/nginx/sbin/nginx.oldbin),
+// 这样在新版的nginx出现问题后还有机会再切换会旧的nginx版本
 
 
 
