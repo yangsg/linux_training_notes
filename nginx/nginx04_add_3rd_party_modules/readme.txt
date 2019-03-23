@@ -101,7 +101,7 @@ configure arguments: --prefix=/app/nginx --user=nginx --group=nginx --with-http_
 
 
 [root@nginx7server ~]# mkdir /app/nginx/{sites-available,sites-enabled}
-
+[root@nginx7server ~]# vim /app/nginx/sites-available/lua.3rd.add.module.demo.com.conf
 
 
 
