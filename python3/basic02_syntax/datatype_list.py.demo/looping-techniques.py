@@ -1,4 +1,5 @@
 #// https://docs.python.org/3.6/tutorial/datastructures.html#looping-techniques
+#// https://docs.python.org/3.6/library/functions.html
 
 
 def iterate_dict():
