@@ -1,5 +1,7 @@
 #// https://docs.python.org/3.6/tutorial/datastructures.html#sets
 
+#// https://docs.python.org/3.6/library/stdtypes.html#set-types-set-frozenset
+
 empty=set()   #创建空set必须用set()语法，而不能用{}, 应为{}这种语法已经预留给dict字典了
 
 

@@ -1,6 +1,7 @@
 #// https://docs.python.org/3.6/tutorial/datastructures.html#dictionaries
 #// https://docs.python.org/3.6/library/stdtypes.html#typesmapping
 
+#// https://docs.python.org/3.6/library/stdtypes.html#mapping-types-dict
 
 #// 字典的key只能是不可变数据类型，因为如果可变类型能作为key, 那么dict内部的数据结构容易遭到破坏
 #// keys, which can be any immutable type; strings and numbers can always be keys.

@@ -1,5 +1,7 @@
 #//  https://docs.python.org/3.6/tutorial/introduction.html#strings
 
+#// https://docs.python.org/3.6/library/stdtypes.html#text-sequence-type-str
+
 
 #//  python字符串支持单引号和双引号(这点类似于javascript), 还可使用反斜线'\'转义
 'spam eggs'  #单引号

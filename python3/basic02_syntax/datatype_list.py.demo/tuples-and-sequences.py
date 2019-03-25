@@ -1,6 +1,8 @@
 #// https://docs.python.org/3.6/tutorial/datastructures.html#tuples-and-sequences
 #// https://docs.python.org/3.6/library/stdtypes.html#typesseq
 
+#// https://docs.python.org/3.6/library/stdtypes.html#sequence-types-list-tuple-range
+
 
 #// tuples 是不可变数据类型
 
