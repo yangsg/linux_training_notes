@@ -5,6 +5,8 @@
 [root@mysql5server ~]# uname -r
     3.10.0-693.el7.x86_64
 
+本机ip: 192.168.175.36/24
+
 
 
 https://dev.mysql.com/downloads/repo/yum/
