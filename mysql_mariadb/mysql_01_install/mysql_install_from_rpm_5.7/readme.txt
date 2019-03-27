@@ -128,6 +128,14 @@ https://dev.mysql.com/doc/mysql-yum-repo-quick-guide/en/
 mysql> ALTER USER 'root'@'localhost' IDENTIFIED BY 'WWW.1.com';
 mysql> exit
 
+
+// 查看启动信息
+[root@mysql5server ~]# netstat -anptu  | grep mysql
+    tcp6       0      0 :::3306                 :::*                    LISTEN      5975/mysqld
+[root@mysql5server ~]# ps -elf | grep mysql
+    1 S mysql      5975      1  0  80   0 - 279981 poll_s 19:35 ?       00:00:02 /usr/sbin/mysqld --daemonize --pid-file=/var/run/mysqld/mysqld.pid
+
+
 #// 其他更多与安装mysql的信息，都可以查看访问 https://dev.mysql.com/doc/mysql-yum-repo-quick-guide/en/
 
 
