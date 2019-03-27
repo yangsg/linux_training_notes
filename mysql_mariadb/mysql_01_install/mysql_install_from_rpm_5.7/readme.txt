@@ -1,4 +1,12 @@
 
+// 操作系统信息
+[root@mysql5server ~]# cat /etc/redhat-release
+    CentOS Linux release 7.4.1708 (Core)
+[root@mysql5server ~]# uname -r
+    3.10.0-693.el7.x86_64
+
+
+
 https://dev.mysql.com/downloads/repo/yum/
 
 // MySQL Yum Repository快速指南
