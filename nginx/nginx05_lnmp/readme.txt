@@ -1,3 +1,10 @@
+Difference between PHP-CGI and PHP-FPM
+  https://www.basezap.com/difference-php-cgi-php-fpm/
+Differences and dis/advanages between: Fast-CGI, CGI, Mod-PHP, SuPHP, PHP-FPM
+  https://serverfault.com/questions/645755/differences-and-dis-advanages-between-fast-cgi-cgi-mod-php-suphp-php-fpm
+
+
+
 
 #// 安装php-fpm server --------------------------------------------
 [root@phpfpm7server ~]# yum -y install gcc gcc-c++ autoconf automake
