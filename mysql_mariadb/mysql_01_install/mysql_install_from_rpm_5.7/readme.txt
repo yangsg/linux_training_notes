@@ -88,6 +88,50 @@ https://dev.mysql.com/doc/mysql-yum-repo-quick-guide/en/
 #//
 
 
+// 启动 mysql server
+[root@mysql5server ~]# systemctl start mysqld.service     #//centos6 可使用命令 `sudo service mysqld start`
+[root@mysql5server ~]# systemctl status mysqld.service    # service mysqld status
+
+#// mysql的一些初始化行为如下: https://dev.mysql.com/doc/mysql-yum-repo-quick-guide/en/
+#// MySQL Server Initialization (as of MySQL 5.7): At the initial start up of the server,
+#// the following happens, given that the data directory of the server is empty:
+#//
+#//    The server is initialized.
+#//
+#//    An SSL certificate and key files are generated in the data directory.
+#//
+#//    The validate_password plugin is installed and enabled.
+#//
+#//    A superuser account 'root'@'localhost' is created. A password for the superuser is set and stored in the error log file. To reveal it, use the following command:
+#//
+#//        shell> sudo grep 'temporary password' /var/log/mysqld.log
+#//
+#// Change the root password as soon as possible by logging in with the generated, temporary password and set a custom password for the superuser account:
+#//        shell> mysql -uroot -p
+#//        mysql> ALTER USER 'root'@'localhost' IDENTIFIED BY 'MyNewPass4!';
+#//
+#// Note:
+#// MySQL's validate_password plugin is installed by default. This will require that passwords contain at least
+#// one upper case letter, one lower case letter, one digit, and one special character, and that the total password length is at least 8 characters.
+#// 密码规则：至少1个大写字母，1个小写字母，1个数字，1个特殊字符, 长度至少8字符
+
+// 找出默认初始密码
+[root@mysql5server ~]# grep 'temporary password' /var/log/mysqld.log
+      2019-03-27T11:35:04.494744Z 1 [Note] A temporary password is generated for root@localhost: h!SJ,1/1)ufB
+
+// 修改密码
+[root@mysql5server ~]# mysql -uroot -p
+mysql> ALTER USER 'root'@'localhost' IDENTIFIED BY 'WWW.1.com';
+mysql> exit
+
+#// 其他更多与安装mysql的信息，都可以查看访问 https://dev.mysql.com/doc/mysql-yum-repo-quick-guide/en/
+
+
+
+
+
+
+
 
 
 
