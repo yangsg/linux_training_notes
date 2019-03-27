@@ -1,10 +1,4 @@
 
-
-#// [root@mysql5server ~]# mkdir download
-#// [root@mysql5server ~]# cd download/
-#// [root@mysql5server ~]# wget https://cdn.mysql.com//Downloads/MySQL-5.7/mysql-community-server-5.7.25-1.el7.x86_64.rpm
-
-
 https://dev.mysql.com/downloads/repo/yum/
 
 // MySQL Yum Repository快速指南
