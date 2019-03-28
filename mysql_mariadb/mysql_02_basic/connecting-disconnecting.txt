@@ -59,7 +59,7 @@ MySQL [(none)]> select user(), now(), version();
 
 // 查看mysql读取的配置文件
 [root@client ~]# mysql --help | grep my.cnf
-    /etc/mysql/my.cnf /etc/my.cnf ~/.my.cnf
+    /etc/mysql/my.cnf /etc/my.cnf ~/.my.cnf     #注：最后读取的配置文件的同一配置具有高优先级
 
 // 填写客户端登录选项信息
 [root@client ~]# vim ~/.my.cnf
