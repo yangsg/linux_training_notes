@@ -22,6 +22,8 @@ You asked for help about help category: "Contents"
    User-Defined Functions
    Utility
 
+```
+
 ```text
 mysql> help
 
