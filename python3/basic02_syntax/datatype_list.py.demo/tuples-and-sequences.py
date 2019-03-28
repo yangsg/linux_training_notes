@@ -26,6 +26,10 @@ v = ([1, 2, 3], [3, 2, 1])
 v
 
 
+# 如下这种方式创建的是 generator object, 而非元组 tuple
+(x for x in range(1, 11))
+
+
 
 
 
