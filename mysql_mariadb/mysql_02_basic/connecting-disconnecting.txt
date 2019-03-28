@@ -108,6 +108,10 @@ Threads: 3  Questions: 54  Slow queries: 0  Opens: 120  Flush tables: 1  Open ta
 [root@mysql5server ~]# mysql db01
 [root@mysql5server ~]# mysql db01 -e 'show tables'
 
+[root@client ~]# echo 'show databases' > script.sql
+[root@client ~]# mysql < script.sql
+
+
 
 
 
