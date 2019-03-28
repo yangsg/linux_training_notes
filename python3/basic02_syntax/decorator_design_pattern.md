@@ -18,3 +18,23 @@ def f():
 if __name__ == '__main__':
     f()
 ```
+
+```javascript
+function wolf(func) {
+    return function() {
+        console.log('>>>>>>>>>>>>>>>>>');
+        var ret_value = func.apply(this, arguments);
+        console.log('<<<<<<<<<<<<<<<<<');
+        return ret_value;
+    };
+}
+
+function sheep() {
+    console.log('咩咩咩咩咩咩咩咩咩');
+}
+
+var wolfSheep = wolf(sheep);
+wolfSheep();
+```
+
+
