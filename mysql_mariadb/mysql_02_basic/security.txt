@@ -1,0 +1,15 @@
+https://dev.mysql.com/doc/refman/5.7/en/security.html
+
+
+mysql安装时安全考虑的范围或因素:
+一般安全因素： 好的密码，最小必要授权，防止sql注入及数据破坏   https://dev.mysql.com/doc/refman/5.7/en/general-security-issues.html
+安装本身的安全：data文件，log文件，所有安装的文件不能被未授权用户读写  https://dev.mysql.com/doc/refman/5.7/en/postinstallation.html
+访问控制和数据库系统本身安全：用户,数据库授权(包括表，视图，存储过程等) https://dev.mysql.com/doc/refman/5.7/en/privilege-system.html   https://dev.mysql.com/doc/refman/5.7/en/user-account-management.html 
+相关安全插件的特性      https://dev.mysql.com/doc/refman/5.7/en/security-plugins.html
+mysql及系统的网络安全：
+足够和适当的备份：包括备份 database files, configuration and log files. 规划恰当的还原方案并及时测试以确保能从备份中成功的还原。
+                            https://dev.mysql.com/doc/refman/5.7/en/backup-and-recovery.html
+
+
+
+

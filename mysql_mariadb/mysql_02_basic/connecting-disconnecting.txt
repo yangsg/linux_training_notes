@@ -1,0 +1,118 @@
+
+https://dev.mysql.com/doc/refman/5.7/en/connecting-disconnecting.html
+
+mysql工具
+https://dev.mysql.com/doc/refman/5.7/en/programs-client.html
+https://dev.mysql.com/doc/refman/5.7/en/mysql-command-options.html
+
+
+// 查看登录帮助
+[root@mysql5server ~]# man mysql
+
+// 本地登录
+[root@mysql5server ~]# mysql --host=localhost --user=root --port=3306 --password --pager='less -Fi'
+[root@mysql5server ~]# mysql -u root -p  -S /var/lib/mysql/mysql.sock     #通过unix domain socket登录
+[root@mysql5server ~]# mysql -h localhost -u root -p
+
+
+// 远程登录
+// 本地服务器准备好远程客户端访问的database 和 用户账号
+mysql> create database db01 charset utf8;
+mysql> show databases;
+
+mysql> show grants;
++---------------------------------------------------------------------+
+| Grants for root@localhost                                           |
++---------------------------------------------------------------------+
+| GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' WITH GRANT OPTION |
+| GRANT PROXY ON ''@'' TO 'root'@'localhost' WITH GRANT OPTION        |
++---------------------------------------------------------------------+
+
+#// 创建远程用户账号并授权
+mysql> grant all on `db01`.* to 'root'@'192.168.175.10' identified by 'WWW.1.com';
+mysql> show grants for 'root'@'192.168.175.10';
++-------------------------------------------------------------+
+| Grants for root@192.168.175.10                              |
++-------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'root'@'192.168.175.10'               |
+| GRANT ALL PRIVILEGES ON `db01`.* TO 'root'@'192.168.175.10' |
++-------------------------------------------------------------+
+
+
+// 安装mysql客户端工具
+[root@client ~]# yum -y install mariadb
+[root@client ~]# mysql -h 192.168.175.36 -u root -p -P 3306
+
+MySQL [(none)]> status;
+MySQL [(none)]> show status;
+
+MySQL [(none)]> select user(), now(), version();
++---------------------+---------------------+-----------+
+| user()              | now()               | version() |
++---------------------+---------------------+-----------+
+| root@192.168.175.10 | 2019-03-28 08:46:22 | 5.7.25    |
++---------------------+---------------------+-----------+
+
+
+
+// 通过option文件登录-----------  https://dev.mysql.com/doc/refman/5.7/en/option-files.html
+
+// 查看mysql读取的配置文件
+[root@client ~]# mysql --help | grep my.cnf
+    /etc/mysql/my.cnf /etc/my.cnf ~/.my.cnf     #注：最后读取的配置文件的同一配置具有高优先级
+
+// 填写客户端登录选项信息
+[root@client ~]# vim ~/.my.cnf
+    [client]
+    user = root
+    password = WWW.1.com   #生产环境中不要填写密码等敏感信息
+    host = 192.168.175.36
+    port = 3306
+    pager = 'less -Fi'
+
+// 如果是在本地访问，还可使用下面unix domain socket的形式
+[root@mysql5server ~]# vim /etc/my.cnf
+    [client]
+    port=3306
+    user=root
+    password=WWW.1.com  #实际环境中不要填写password这种敏感信息
+    socket=/var/lib/mysql/mysql.sock
+
+mysql> status
+--------------
+mysql  Ver 14.14 Distrib 5.7.25, for Linux (x86_64) using  EditLine wrapper
+
+Connection id:          13
+Current database:
+Current user:           root@localhost
+SSL:                    Not in use
+Current pager:          stdout
+Using outfile:          ''
+Using delimiter:        ;
+Server version:         5.7.25 MySQL Community Server (GPL)
+Protocol version:       10
+Connection:             Localhost via UNIX socket   #<< 查看连接方式
+Server characterset:    latin1
+Db     characterset:    latin1
+Client characterset:    utf8
+Conn.  characterset:    utf8
+UNIX socket:            /var/lib/mysql/mysql.sock
+Uptime:                 1 hour 21 min 52 sec
+
+Threads: 3  Questions: 54  Slow queries: 0  Opens: 120  Flush tables: 1  Open tables: 113  Queries per second avg: 0.010
+--------------
+
+
+// 其他 mysql 使用方式
+[root@mysql5server ~]# mysql -e 'show databases'
+[root@mysql5server ~]# mysql db01
+[root@mysql5server ~]# mysql db01 -e 'show tables'
+
+[root@client ~]# echo 'show databases' > script.sql
+[root@client ~]# mysql < script.sql
+
+
+
+
+
+
