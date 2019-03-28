@@ -33,8 +33,8 @@ function sheep() {
     console.log('咩咩咩咩咩咩咩咩咩');
 }
 
-var wolfSheep = wolf(sheep);
-wolfSheep();
+var sheep = wolf(sheep);
+sheep();
 ```
 
 
