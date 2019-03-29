@@ -55,11 +55,22 @@ https://dev.mysql.com/downloads/
 
 [root@dbserver ~]# source /etc/profile
 
+// 初始化数据库
 // https://dev.mysql.com/doc/refman/5.7/en/data-directory-initialization.html
 [root@dbserver ~]# mysqld --initialize --user=mysql --basedir=/app/mysql/  --datadir=/mydata/data
 
+// 准备mysql的配置文件
 // 注：从mysql5.7.18开始，安装后不再有support-files/my-default.cnf 文件了, 见  https://dev.mysql.com/doc/refman/5.7/en/server-configuration-defaults.html
 //     解决办法，从其他版本的安装目录中的support-files目录下copy一份过来
+[root@dbserver ~]# wget -O  /etc/my.cnf https://raw.githubusercontent.com/yangsg/linux_training_notes/master/mysql_mariadb/mysql_01_install/mysql_install_from_source_5.7/support-files/my-default.cnf
+
+
+
+
+
+
+
+
 
 
 
