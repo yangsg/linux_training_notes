@@ -48,7 +48,7 @@ https://dev.mysql.com/doc/refman/5.7/en/data-directory-initialization.html
 -DWITH_ARCHIVE_STORAGE_ENGINE=1 \
 -DWITH_BLACKHOLE_STORAGE_ENGINE=1 \
 
-[root@dbserver bld]# make
+[root@dbserver build]# make
 [root@dbserver build]# make install
 
 [root@dbserver ~]# chown -R root:mysql /app/mysql/
