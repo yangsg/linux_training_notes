@@ -1,0 +1,83 @@
+
+// https://dev.mysql.com/doc/refman/5.7/en/slow-query-log.html
+
+// slow query log默认是禁用的
+mysql> show global variables like '%slow_query%';
++---------------------+--------------------------------+
+| Variable_name       | Value                          |
++---------------------+--------------------------------+
+| slow_query_log      | OFF                            |
+| slow_query_log_file | /mydata/data/dbserver-slow.log |
++---------------------+--------------------------------+
+
+// 开启slow query log 慢查询日志
+[root@dbserver ~]# vim /etc/my.cnf
+    [mysqld]
+    slow_query_log=ON
+    long_query_time=5   #default: 10 seconds
+    #slow_query_log_file=/mydata/data/dbserver-slow.log  #slow_query_log_file可以用于指定日志目标，默认为 host_name-slow.log
+
+// 重新加载配置文件
+[root@dbserver ~]# /etc/init.d/mysqld reload #在5.7.25版本中 reload 不起作用,所以需要restart,或使用set 方式,如下:
+
+mysql> SET @@GLOBAL.slow_query_log=ON;
+// 关于如何设置global, session 变量参考 https://dev.mysql.com/doc/refman/5.7/en/using-system-variables.html
+
+
+[root@dbserver ~]# /etc/init.d/mysqld restart
+
+mysql> show global variables like '%slow_query%';
++---------------------+--------------------------------+
+| Variable_name       | Value                          |
++---------------------+--------------------------------+
+| slow_query_log      | ON                             |
+| slow_query_log_file | /mydata/data/dbserver-slow.log |
++---------------------+--------------------------------+
+
+
+// 测试实际效果
+mysql> select sleep(10);
+
+[root@dbserver ~]# less /mydata/data/dbserver-slow.log
+      /app/mysql/bin/mysqld, Version: 5.7.25-log (Source distribution). started with:
+      Tcp port: 3306  Unix socket: /tmp/mysql.sock
+      Time                 Id Command    Argument
+      # Time: 2019-03-29T10:53:49.442993Z
+      # User@Host: root[root] @ localhost []  Id:     4
+      # Query_time: 10.000803  Lock_time: 0.000000 Rows_sent: 1  Rows_examined: 0
+      SET timestamp=1553856829;
+      select sleep(10);
+
+
+//------------------------------------------------------------------------------
+// 分析慢查询日志的辅助工具 mysqldumpslow 使用示例:
+[root@dbserver ~]# mysqldumpslow
+
+    Reading mysql slow query log from /mydata/data/dbserver-slow.log
+    Count: 1  Time=10.00s (10s)  Lock=0.00s (0s)  Rows=1.0 (1), root[root]@localhost
+      select sleep(N)
+
+
+[root@dbserver ~]# mysqldumpslow /mydata/data/dbserver-slow.log
+
+    Reading mysql slow query log from /mydata/data/dbserver-slow.log
+    Count: 1  Time=10.00s (10s)  Lock=0.00s (0s)  Rows=1.0 (1), root[root]@localhost
+      select sleep(N)
+
+[root@dbserver ~]# mysqldumpslow --verbose
+    basedir=/app/mysql
+
+    Reading mysql slow query log from /mydata/data/dbserver-slow.log
+    Count: 1  Time=10.00s (10s)  Lock=0.00s (0s)  Rows=1.0 (1), root[root]@localhost
+      select sleep(N)
+
+
+[root@dbserver ~]# mysqldumpslow --help
+//------------------------------------------------------------------------------
+
+
+
+
+
+
+
