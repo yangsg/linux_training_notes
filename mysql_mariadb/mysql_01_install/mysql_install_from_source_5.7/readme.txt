@@ -2,6 +2,9 @@ https://dev.mysql.com/doc/refman/5.7/en/source-installation.html
 
 https://dev.mysql.com/doc/refman/5.7/en/getting-mysql.html
 https://dev.mysql.com/downloads/
+https://dev.mysql.com/doc/refman/5.7/en/postinstallation.html
+https://dev.mysql.com/doc/refman/5.7/en/data-directory-initialization.html
+
 
 // 删除mariadb, 避免冲突
 [root@dbserver ~]#  rpm -qa | grep mariadb
@@ -57,13 +60,47 @@ https://dev.mysql.com/downloads/
 
 // 初始化数据库
 // https://dev.mysql.com/doc/refman/5.7/en/data-directory-initialization.html
-[root@dbserver ~]# mysqld --initialize --user=mysql --basedir=/app/mysql/  --datadir=/mydata/data
+[root@dbserver ~]# mysqld --initialize --user=mysql --basedir=/app/mysql/  --datadir=/mydata/data     #注意记录下该命令生成的临时密码
+      2019-03-29T04:23:41.694432Z 1 [Note] A temporary password is generated for root@localhost: 4-fHhZ.?DiIf    #<<<<<<<记下临时密码
 
 // 准备mysql的配置文件
 // 注：从mysql5.7.18开始，安装后不再有support-files/my-default.cnf 文件了, 见  https://dev.mysql.com/doc/refman/5.7/en/server-configuration-defaults.html
 //     解决办法，从其他版本的安装目录中的support-files目录下copy一份过来
 [root@dbserver ~]# wget -O  /etc/my.cnf https://raw.githubusercontent.com/yangsg/linux_training_notes/master/mysql_mariadb/mysql_01_install/mysql_install_from_source_5.7/support-files/my-default.cnf
 
+[root@dbserver ~]# vim /etc/my.cnf
+      [mysqld]
+      basedir=/app/mysql
+      datadir=/mydata/data
+      port=3306
+      server_id=136
+      socket=/tmp/mysql.sock
+
+
+// 启动mysqld服务
+[root@dbserver ~]# cp /app/mysql/support-files/mysql.server  /etc/init.d/mysqld
+[root@dbserver ~]# chmod a+x /etc/init.d/mysqld
+[root@dbserver ~]# chkconfig --add mysqld
+[root@dbserver ~]# chkconfig mysqld on
+[root@dbserver ~]# chkconfig --list mysqld
+[root@dbserver ~]# /etc/init.d/mysqld start
+[root@dbserver ~]# netstat -antp | grep :3306
+    tcp6       0      0 :::3306                 :::*                    LISTEN      1711/mysqld
+
+
+// 数据库初始化安全设置 https://dev.mysql.com/doc/refman/5.7/en/mysql-secure-installation.html
+[root@dbserver ~]# mysql_secure_installation
+
+
+[root@dbserver ~]# mysql -h localhost -u root -p
+mysql> pager less -Fi
+mysql> show global variables like '%log%';
+
+
+
+#其他一些小技巧：
+https://www.psce.com/en/blog/2012/06/02/how-to-find-mysql-binary-logs-error-logs-temporary-files/
+  lsof -nc mysqld | grep -vE '(.so(..*)?$|.frm|.MY?|.ibd|ib_logfile|ibdata|TCP)'
 
 
 
@@ -75,7 +112,7 @@ https://dev.mysql.com/downloads/
 
 
 
-// https://dev.mysql.com/doc/refman/5.7/en/mysql-secure-installation.html
+
 
 
 
