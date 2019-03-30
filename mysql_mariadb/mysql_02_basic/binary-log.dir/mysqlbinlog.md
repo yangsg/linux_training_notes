@@ -27,6 +27,9 @@ mysql> delete from user where id = 2;
 
 ```bash
 [root@dbserver ~]# mysqlbinlog /mydata/bin-log/mysql_bin.000003  | less
+```
+
+```output
 
 /*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
 /*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
