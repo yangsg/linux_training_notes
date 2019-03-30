@@ -1,0 +1,66 @@
+
+https://dev.mysql.com/doc/refman/5.7/en/error-log.html
+https://dev.mysql.com/doc/refman/5.7/en/error-log-unix.html
+
+// rpm 安装
+mysql> show variables like '%error%';
++---------------------+---------------------+
+| Variable_name       | Value               |
++---------------------+---------------------+
+| binlog_error_action | ABORT_SERVER        |
+| error_count         | 0                   |
+| log_error           | /var/log/mysqld.log |   <-- rpm安装的默认错误文件位置
+| log_error_verbosity | 3                   |
+| max_connect_errors  | 100                 |
+| max_error_count     | 64                  |
+| slave_skip_errors   | OFF                 |
++---------------------+---------------------+
+
+// source code安装
+mysql> show variables like '%error%';
++---------------------+----------------+
+| Variable_name       | Value          |
++---------------------+----------------+
+| binlog_error_action | ABORT_SERVER   |
+| error_count         | 0              |
+| log_error           | ./dbserver.err | <-- source code安装的默认错误文件位置, data directory下的 host_name.err
+| log_error_verbosity | 3              |
+| max_connect_errors  | 100            |
+| max_error_count     | 64             |
+| slave_skip_errors   | OFF            |
++---------------------+----------------+
+
+
+
+
+
+// 修改默认error log的位置
+[root@mysql5server ~]# vim /etc/my.cnf
+log-error=/var/log/mysqld.log
+
+// 或
+[root@dbserver ~]# vim /etc/my.cnf
+log-error=/mydata/data/dbserver.err
+
+
+// 修改后重启(因为--log-error不是Dynamic的)
+// https://dev.mysql.com/doc/refman/5.7/en/server-options.html#option_mysqld_log-error
+// --log-error[=file_name]
+//    Property                Value
+//    Command-Line Format     --log-error[=file_name]
+//    System Variable         log_error
+//    Scope                   Global
+//    Dynamic                 No
+//    Type                    File name
+
+
+
+
+
+
+
+
+
+
+
+

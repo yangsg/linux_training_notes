@@ -4,6 +4,11 @@
 - [15 mysqlbinlog Command Examples for MySQL Binary Log Files](https://www.thegeekstuff.com/2017/08/mysqlbinlog-examples/)
 
 
+```bash
+[root@dbserver ~]# man mysqlbinlog
+[root@dbserver ~]# mysqlbinlog --help | less
+```
+
 
 
 

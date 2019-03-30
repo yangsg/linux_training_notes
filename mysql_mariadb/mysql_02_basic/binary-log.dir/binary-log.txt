@@ -15,7 +15,7 @@ binary log 有两个重要的用途：
 // 包含password的语句被记录到binary log时会被server重写而不会以纯文本的字面值存在 https://dev.mysql.com/doc/refman/5.7/en/password-logging.html
 
 // 启用二进制日志功能：
-//     二进制日志默认存放目录为data directory, 如果要改变默认目录，在base_name前以绝对路径作为前缀,
+//     二进制日志默认存放目录为data directory(生产环境中建议与data directory分开存放), 如果要改变默认目录，在base_name前以绝对路径作为前缀,
 //     推荐( It is recommended)总是明确指定base_name二不只依赖默认使用的host name
 --log-bin[=base_name]    #启用bin log功能是一定要明确指定base_name,不要依赖默认规则, 也不要执行后缀名(base_name.extension),因为指了也没用(因其会被悄悄删除和忽略掉)
 
@@ -25,7 +25,7 @@ mysqld追加数字扩展名到bin log日志的base name后以生成 binary log f
 server产生或创建新的bin log的时机：
      1. 每次start时
      2. 每次flush the log时
-     3. 当前bin log大小达到 max_binlog_size 时会自动创建新的bin log。
+     3. 当前bin log大小达到 max_binlog_size(默认1G) 时会自动创建新的bin log。 https://dev.mysql.com/doc/refman/5.7/en/replication-options-binary-log.html#sysvar_max_binlog_size
         注：实际中bin log的大小可能会超出 max_binlog_size 的大小(如果使用了很大的事务transactions)，
             因为事务绝不允许以片段的形式被切分写入多个文件中。(其实这也与事务acid中的atomic原子性相呼应)
 // 原文:
