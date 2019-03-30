@@ -38,6 +38,21 @@ mysql> show global variables like '%log_bin%';
 
 [root@dbserver ~]# /etc/init.d/mysqld restart    # 如果重启成功，至此，二进制日志功能已经启动
 
+mysql> show global variables like '%log_bin%';
++---------------------------------+---------------------------------+
+| Variable_name                   | Value                           |
++---------------------------------+---------------------------------+
+| log_bin                         | ON                              |
+| log_bin_basename                | /mydata/bin-log/mysql_bin       |
+| log_bin_index                   | /mydata/bin-log/mysql_bin.index |
+| log_bin_trust_function_creators | OFF                             |
+| log_bin_use_v1_row_events       | OFF                             |
++---------------------------------+---------------------------------+
+
+
+
+
+
 
 // 下面演示创建新的binary log的时机(每次start server和手动执行flush logs命令时)
 // 另外，当 binary 大小操作 max_binlog_size (默认1G)时，也会自动创建新的binary log文件。
