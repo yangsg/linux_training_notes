@@ -56,24 +56,162 @@ The term “binary log” collectively denotes the set of numbered binary log fi
 
 
 
+//其他一些可能不常用，但可能需要知道一点儿的参数:
+binlog_checksum        <--可通过此参数使server写入checksum来验证event是否被正确写入
+master_verify_checksum
+slave_sql_verify_checksum
+
+// 关于 binary logging format 的文档：
+    https://dev.mysql.com/doc/refman/5.7/en/binary-log-formats.html
+    https://dev.mysql.com/doc/internals/en/binary-log.html
+
+
+// https://dev.mysql.com/doc/refman/5.7/en/replication-rules-db-options.html
+--binlog-do-db
+--binlog-ignore-db
+--replicate-do-db
+--replicate-ignore-db
+
+// 针对 chain replication servers 链式主从复制时需要关注的选项: --log-slave-updates   --log-bin
+// 原文：
+//     A replication slave server by default does not write to its own binary log any data modifications
+//     that are received from the replication master. To log these modifications,
+//     start the slave with the --log-slave-updates option in addition to the --log-bin option
+//     (see Section 16.1.6.3, “Replication Slave Options and Variables”).
+//            https://dev.mysql.com/doc/refman/5.7/en/replication-options-slave.html
+//     This is done when a slave is also to act as a master to other slaves in chained replication.
+
+// 删除binary log相关的语句
+RESET MASTER  删除所有binary log files   https://dev.mysql.com/doc/refman/5.7/en/reset.html
+PURGE BINARY LOGS  删除binary log files 的一个子集  https://dev.mysql.com/doc/refman/5.7/en/purge-binary-logs.html
+
+// 如果正在使用主从复制，禁止删除master上的 old binary log files 除非你确定 no slave still needs to use them
+//    If you are using replication, you should not delete old binary log files on the master until you are
+//    sure that no slave still needs to use them. For example, if your slaves never run more than three days behind,
+//    once a day you can execute mysqladmin flush-logs on the master and then remove any logs that are more
+//    than three days old. You can remove the files manually, but it is preferable to use PURGE BINARY LOGS,
+//    which also safely updates the binary log index file for you (and which can take a date argument).
+//    See Section 13.4.1.1, “PURGE BINARY LOGS Syntax”.  https://dev.mysql.com/doc/refman/5.7/en/purge-binary-logs.html
+
+
+//  与binary log 相关的工具  https://dev.mysql.com/doc/refman/5.7/en/mysqlbinlog.html
+mysqlbinlog
+mysqlbinlog log_file | mysql -h server_name     # 利用该工具更新数据库(可用于 recovery)
+
+mysqlbinlog 工具还可用于显示 slave relay log file contents, 因为其和binary log files 使用了相同的 format.
+
+关于更多关于binary log和还原恢复 recovery 的操作, 见 https://dev.mysql.com/doc/refman/5.7/en/point-in-time-recovery.html
 
 
 
+//  Binary logging 完成与 语句或事务结束之后且 locks 被释放 or any commit is done 之前
+//  原文:
+//     Binary logging is done immediately after a statement or transaction completes but before any locks are released or any commit is done.
+//     This ensures that the log is logged in commit order.
+// 对非事务表的更新在执行之后会立即被写入 binary log
+// 原文：
+// Updates to nontransactional tables are stored in the binary log immediately after execution.
+
+
+// 在尚未提交的事务中，所有会修改事务表(如 update, delete or insert)的更新操作只是被cached 直到 commit 语句
+// 被服务器接收，在那一刻，其在commit 被 executed 之前, mysqld 会将 entire transaction 写入到 the binary log
+// 原文：
+// Within an uncommitted transaction, all updates (UPDATE, DELETE, or INSERT) that change transactional tables
+// such as InnoDB tables are cached until a COMMIT statement is received by the server. At that point,
+// mysqld writes the entire transaction to the binary log before the COMMIT is executed.
+
+// 严禁在事务操作中混合使用事务表和非事务表, 原因如下：
+// 原文:
+// Modifications to nontransactional tables cannot be rolled back. If a transaction that is rolled back
+// includes modifications to nontransactional tables, the entire transaction is logged with a ROLLBACK
+// statement at the end to ensure that the modifications to those tables are replicated.
+
+// 线程在处理事务开始时，它会分配大小为 binlog_cache_size 缓冲来 buffer statements. 如果 statements 超过这个大小，
+// 该线程会打开 a temporary file 来 store the transaction. 该 temporary file 在线程终止时会被 deleted.
+// 原文：
+//   When a thread that handles the transaction starts, it allocates a buffer of binlog_cache_size to buffer statements.
+//   If a statement is bigger than this, the thread opens a temporary file to store the transaction.
+//   The temporary file is deleted when the thread ends.
+
+// 状态变量 Binlog_cache_use 和 Binlog_cache_disk_use 可用于调节 binlog_cache_size 大小
+// 原文：
+// The Binlog_cache_use status variable shows the number of transactions that used this buffer(and possibly a temporary file)
+// for storing statements. The Binlog_cache_disk_use status variable shows how many of those transactions actually had to use
+// a temporary file. These two variables can be used for tuning binlog_cache_size to a large enough value that avoids the use of temporary files.
+
+// max_binlog_cache_size (默认4G,且也已经是最大值, 最小值为4096 bytes)系统变量可限制 a multiple-statement transaction 的cache的总大小，
+// 如果一个事务超过这个大小，其会失败和被回滚
+// 原文：
+// The max_binlog_cache_size system variable (default 4GB, which is also the maximum)
+// can be used to restrict the total size used to cache a multiple-statement transaction.
+// If a transaction is larger than this many bytes, it fails and rolls back. The minimum value is 4096.
+
+// 并发插入的语句在基于row based logging 会发生转换
+// 原文：
+// If you are using the binary log and row based logging, concurrent inserts are converted to normal inserts for
+// CREATE ... SELECT or INSERT ... SELECT statements. This is done to ensure that you can re-create an exact copy
+// of your tables by applying the log during a backup operation.
+// If you are using statement-based logging, the original statement is written to the log.
+
+// binary log format 中影响 recovery from backups 的限制见 https://dev.mysql.com/doc/refman/5.7/en/replication-features.html
+// 原文：
+// The binary log format has some known limitations that can affect recovery from backups. See Section 16.4.1, “Replication Features and Issues”.
+
+
+// 存储程序的 Binary logging 处理见 https://dev.mysql.com/doc/refman/5.7/en/stored-programs-logging.html
+// 原文:
+// Binary logging for stored programs is done as described in Section 23.7, “Stored Program Binary Logging”.
+
+// 由于复制操作的改善, binary log format 在mysql5.7版本和之前版本中是有差异的, 见 https://dev.mysql.com/doc/refman/5.7/en/replication-compatibility.html
+// 原文：
+// Note that the binary log format differs in MySQL 5.7 from previous versions of MySQL,
+// due to enhancements in replication. See Section 16.4.2, “Replication Compatibility Between MySQL Versions”.
+
+// 主从复制过程中 binary 的一些异常处理：
+//  If the server is unable to write to the binary log, flush binary log files, or synchronize the binary log to disk,
+//  the binary log on the replication master can become inconsistent and replication slaves can lose synchronization
+//  with the master. The binlog_error_action system variable controls the action taken if an error of this type is encountered with the binary log.
+//
+//  The default setting, ABORT_SERVER, makes the server halt binary logging and shut down. At this point, you can identify
+//  and correct the cause of the error. On restart, recovery proceeds as in the case of an unexpected server halt
+//  (see Section 16.3.2, “Handling an Unexpected Halt of a Replication Slave”).  https://dev.mysql.com/doc/refman/5.7/en/replication-solutions-unexpected-slave-halt.html
+//
+//
+// 关于IGNORE_ERROR的设置见官网： https://dev.mysql.com/doc/refman/5.7/en/binary-log.html
+
+
+// 默认，sync_binlog=1，这时最安全的设置, 因为此时每次写入都会将the binary log同步到磁盘上，避免了日志丢失
+// 原文：
+// By default, the binary log is synchronized to disk at each write (sync_binlog=1). If sync_binlog was not enabled,
+// and the operating system or machine (not only the MySQL server) crashed, there is a chance that the last statements
+// of the binary log could be lost. To prevent this, enable the sync_binlog system variable to synchronize the binary
+// log to disk after every N commit groups. See Section 5.1.7, “Server System Variables”.
+// The safest value for sync_binlog is 1 (the default), but this is also the slowest.
+
+// 关于错误消息 ‘The binary log file_name is shorter than its expected size’ 的原因：
+// 原文：
+// If the MySQL server discovers at crash recovery that the binary log is shorter than it should have been,
+// it lacks at least one successfully committed InnoDB transaction. This should not happen if sync_binlog=1
+// and the disk/file system do an actual sync when they are requested to (some do not),
+// so the server prints an error message The binary log file_name is shorter than its expected size.
+// In this case, this binary log is not correct and replication should be restarted from a fresh snapshot of the master's data.
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-https://dev.mysql.com/doc/refman/5.7/en/replication-solutions-unexpected-slave-halt.html
-
+// The session values of the following system variables are written to the binary log and honored by the replication slave when parsing the binary log:
+//    sql_mode (except that the NO_DIR_IN_CREATE mode is not replicated; see Section 16.4.1.37, “Replication and Variables”)
+//
+//    foreign_key_checks
+//
+//    unique_checks
+//
+//    character_set_client
+//
+//    collation_connection
+//
+//    collation_database
+//
+//    collation_server
+//
+//    sql_auto_is_null
 
