@@ -78,6 +78,12 @@ mysql> flush logs;       #手动执行flush logs时创建新的binary log 文件
     /mydata/bin-log/mysql_bin.000003
 
 
+[root@dbserver ~]# file /mydata/bin-log/mysql_bin.000001
+    /mydata/bin-log/mysql_bin.000001: MySQL replication log
+[root@dbserver ~]# file /mydata/bin-log/mysql_bin.index
+    /mydata/bin-log/mysql_bin.index: ASCII text
+
+
 
 
 
