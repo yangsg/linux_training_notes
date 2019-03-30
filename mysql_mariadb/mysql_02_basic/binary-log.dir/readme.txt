@@ -56,6 +56,7 @@ mysql> show global variables like '%log_bin%';
 
 // 下面演示创建新的binary log的时机(每次start server和手动执行flush logs命令时)
 // 另外，当 binary 大小操作 max_binlog_size (默认1G)时，也会自动创建新的binary log文件。
+// 注：如果一个大事务的语句超过 max_binlog_size, 实际的 binary log file大小也会超过max_binlog_size的限制
 // https://dev.mysql.com/doc/refman/5.7/en/replication-options-binary-log.html#sysvar_max_binlog_size
 
 [root@dbserver ~]# ls /mydata/bin-log/     #mysqld在每次start时都会创建新的binary log文件
