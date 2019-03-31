@@ -12,6 +12,7 @@ https://dev.mysql.com/doc/refman/5.7/en/mysqldump.html
 
 
 // 只备份数据库中的指定表---------------------------------
+// 注意：这种方式不会自动生成create database 语句
 [root@dbserver ~]# mysqldump -h localhost -u root -p -P 3306  db_web01 user production > mysqldump.db_web01.user.production.sql
 // 输出文件见  https://github.com/yangsg/linux_training_notes/blob/master/mysql_mariadb/mysql_02_basic/backup-and-recovery.dir/output.examples/mysqldump.db_web01.user.production.sql
 // -------------------------------------------------------
