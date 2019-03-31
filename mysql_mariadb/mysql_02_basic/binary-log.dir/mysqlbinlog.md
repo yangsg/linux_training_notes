@@ -42,11 +42,21 @@ mysql> show binlog events in 'mysql_bin.000003';   # 下面的output是修改后
 #// 输出结果见  https://github.com/yangsg/linux_training_notes/blob/master/mysql_mariadb/mysql_02_basic/binary-log.dir/output.examples/mysqlbinlog_mysql_bin.000003.output.txt
 ```
 
+> mysqlbinlog命令显示的二进制日志内容中一个event的范围为起始于 'at', 终止于 'end_log_pos',
+> 且'at'与'end_log_pos'描述的是一个半开半闭区间,即[at, end_log_pos)
+> 同理，mysqlbinlog命令的选项也有类似对应的选项
+> [--start-position, --stop-position)
+> [--start-datetime, --stop-datetime)
 ```bash
 [root@dbserver binary-log.dir]# mysqlbinlog --start-position=123  --stop-position=154  /mydata/bin-log/mysql_bin.000003
-
 [root@dbserver ~]# mysqlbinlog --start-position=123 /mydata/bin-log/mysql_bin.000003
+
+#// 输出结果见
+https://github.com/yangsg/linux_training_notes/blob/master/mysql_mariadb/mysql_02_basic/binary-log.dir/output.examples/mysqlbinlog--start-position--stop-position.mysql_bin.000003.output.md
 ```
+
+
+
 
 
 
