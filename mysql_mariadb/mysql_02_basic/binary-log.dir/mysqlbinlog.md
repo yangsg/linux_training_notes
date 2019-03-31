@@ -56,6 +56,16 @@ https://github.com/yangsg/linux_training_notes/blob/master/mysql_mariadb/mysql_0
 ```
 
 
+```bash
+[root@dbserver ~]# mysqlbinlog --start-datetime="2019-03-30 13:36:01" --stop-datetime="2019-03-30 14:33:09"  /mydata/bin-log/mysql_bin.000003
+[root@dbserver ~]# mysqlbinlog --start-datetime="2019-03-30 13:36:01"  /mydata/bin-log/mysql_bin.000003
+
+#// 输出结果见
+
+
+```
+
+
 
 
 
