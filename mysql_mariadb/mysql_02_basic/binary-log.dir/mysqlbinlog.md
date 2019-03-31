@@ -118,6 +118,26 @@ mysql> show master status;
 >> - binary log file 大小超过1G (意外特例：包含单个大事务的binary log file可能实际会超过这个限制)
 
 
+> - 如果多个binary log要执行，安全的方式是在单一的一个(single)到server的connection中执行所有的这些binary log中的语句。否则如果是在多个connection中分开执行，则后续的语句如果依赖前面语句的结果,很可能造成失败(如临时表，前面的connection生成的临时表在那次connection关闭后就释放了，所以后面新的connection中依赖该临时表的语句就没有临时表可用，所以导致失败)
+> If you have more than one binary log to execute on the MySQL server, the safe method is to process them all using a single connection to the server. Here is an example that
+> demonstrates what may be unsafe:
+> 
+>>    shell> mysqlbinlog binlog.000001 | mysql -u root -p # DANGER!!  危险！！
+>>    shell> mysqlbinlog binlog.000002 | mysql -u root -p # DANGER!!  危险！！
+> 
+> Processing binary logs this way using multiple connections to the server causes problems if the first log file contains a CREATE TEMPORARY TABLE statement and the second log
+> contains a statement that uses the temporary table. When the first mysql process terminates, the server drops the temporary table. When the second mysql process attempts to use
+> the table, the server reports “unknown table.”
+> 
+> To avoid problems like this, use a single mysql process to execute the contents of all binary logs that you want to process. Here is one way to do so:
+> 
+>>    shell> mysqlbinlog binlog.000001 binlog.000002 | mysql -u root -p
+> 
+> Another approach is to write all the logs to a single file and then process the file:
+> 
+>>    shell> mysqlbinlog binlog.000001 >  /tmp/statements.sql
+>>    shell> mysqlbinlog binlog.000002 >> /tmp/statements.sql
+>>    shell> mysql -u root -p -e "source /tmp/statements.sql"
 
 
 
