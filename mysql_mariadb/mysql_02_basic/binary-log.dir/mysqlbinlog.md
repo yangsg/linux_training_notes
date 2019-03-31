@@ -65,9 +65,57 @@ https://github.com/yangsg/linux_training_notes/blob/master/mysql_mariadb/mysql_0
 
 ```
 
+### 其他mysql内部支持的命令
+```text
+mysql> help show;
+```
 
+```text
+mysql> show binary logs;
++------------------+-----------+
+| Log_name         | File_size |
++------------------+-----------+
+| mysql_bin.000001 |       177 |
+| mysql_bin.000002 |       201 |
+| mysql_bin.000003 |      1867 |
+| mysql_bin.000004 |       177 |
+| mysql_bin.000005 |       154 |
++------------------+-----------+
 
+```
 
+```text
+mysql> show binlog events in 'mysql_bin.000003';
++------------------+------+----------------+-----------+-------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Log_name         | Pos  | Event_type     | Server_id | End_log_pos | Info                                                                                                                                                                            |
++------------------+------+----------------+-----------+-------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| mysql_bin.000003 |    4 | Format_desc    |       136 |         123 | Server ver: 5.7.25-log, Binlog ver: 4                                                                                                                                           |
+| mysql_bin.000003 |  123 | Previous_gtids |       136 |         154 |                                                                                                                                                                                 |
+| mysql_bin.000003 |  154 | Anonymous_Gtid |       136 |         219 | SET @@SESSION.GTID_NEXT= 'ANONYMOUS'                                                                                                                                            |
+| mysql_bin.000003 |  219 | Query          |       136 |         346 | create database db_web01 default charset utf8                                                                                                                                   |
+| mysql_bin.000003 |  346 | Anonymous_Gtid |       136 |         411 | SET @@SESSION.GTID_NEXT= 'ANONYMOUS'                                                                                                                                            |
+| mysql_bin.000003 |  411 | Query          |       136 |         652 | use `db_web01`; create table user(
+  id int primary key auto_increment,
+  name varchar(20) unique not null,
+  password varchar(20) not null
+)engine=innodb default charset utf8 |
+| mysql_bin.000003 |  652 | Anonymous_Gtid |       136 |         717 | SET @@SESSION.GTID_NEXT= 'ANONYMOUS'                                                                                  
+```
+
+```text
+mysql> show master status;
++------------------+----------+--------------+------------------+-------------------+
+| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
++------------------+----------+--------------+------------------+-------------------+
+| mysql_bin.000005 |      154 |              |                  |                   |
++------------------+----------+--------------+------------------+-------------------+
+
+```
+
+> - mysql binary log files 滚动3种情况：
+>> - server每次重启
+>> - 手动执行flush logs
+>> - binary log file 大小超过1G (意外特例：包含单个大事务的binary log file可能实际会超过这个限制)
 
 
 
