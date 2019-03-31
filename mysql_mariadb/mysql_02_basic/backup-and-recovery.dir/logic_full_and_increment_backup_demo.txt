@@ -1,0 +1,150 @@
+
+
+这时一个关于逻辑的备份和还原的示例，过程大致如下：
+  备份：1次完全 + 2次增量备份
+  还原：1次完全 + 2次增量还原 + 利用binary log日志还原
+
+// 启用二进制日志功能
+[root@dbserver ~]# vim /etc/my.cnf
+    server_id=136
+    log_bin=/mydata/bin-log/mysql_bin   # log_bin 是启动时参数，需要重启才能生效(生产环境中建议指定与data不同的目录及磁盘设备)
+
+[root@dbserver ~]# /etc/init.d/mysqld restart
+
+mysql> show binary logs;
++------------------+-----------+
+| Log_name         | File_size |
++------------------+-----------+
+| mysql_bin.000001 |       154 |
++------------------+-----------+
+1 row in set (0.00 sec)
+
+
+
+// 创建存放备份的独立目录(生产环境应该使用独立的磁盘设备)
+[root@dbserver ~]# mkdir /db_backup
+
+// 创建一个数据库，名字用于表示其包含在完全备份中
+mysql> create database db_full_backup default charset utf8;
+
+// 做一次逻辑的完全备份--------------------------------------
+[root@dbserver ~]# mysqldump -h localhost -u root -p -P 3306 --lock-all-tables --all-databases --flush-logs --master-data=2 > /db_backup/full-backup.$(date +'%F_%T').sql
+ 
+// 创建一个名字标志第 1 次逻辑增量备份的数据库
+mysql> create database db_increment01_backup_one default charset utf8;
+mysql> flush logs;
+mysql> create database db_increment01_backup_two default charset utf8;
+
+// 第1次做逻辑的 增量备份 --------------------------------------
+
+// 查找增量备份操作需要的起始坐标
+[root@dbserver ~]# grep -in 'CHANGE MASTER TO MASTER_LOG_FILE' /db_backup/full-backup.2019-03-31_20:06:08.sql  | head -n 1
+    22:-- CHANGE MASTER TO MASTER_LOG_FILE='mysql_bin.000002', MASTER_LOG_POS=154;
+
+// 查找目前现有的bin-log文件
+mysql> show binary logs;
++------------------+-----------+
+| Log_name         | File_size |
++------------------+-----------+
+| mysql_bin.000001 |       411 |
+| mysql_bin.000002 |       444 |    <------ 增量备份操作包含 mysql_bin.000002 和 mysql_bin.000003 文件
+| mysql_bin.000003 |       397 |    <------
++------------------+-----------+
+
+// 执行第1次逻辑增量操作的命令
+[root@dbserver ~]# mysqlbinlog --start-position=154  /mydata/bin-log/{mysql_bin.000002,mysql_bin.000003} > /db_backup/increment01-backup.$(date +'%F_%T').sql
+
+
+
+mysql> create database db_increment02_backup_one default charset utf8;
+mysql> flush logs;
+mysql> create database db_increment02_backup_two default charset utf8;
+
+
+// 查找本次增量备份需要的start-position坐标, 即上次增量备份时的 'end_log_pos'
+[root@dbserver ~]# grep -in 'end_log_pos' /db_backup/increment01-backup.2019-03-31_20:26:49.sql | tail -n 1
+    45:#190331 20:07:49 server id 136  end_log_pos 397 CRC32 0x721f92c9     Query   thread_id=2     exec_time=0     error_code=0
+
+// 查找本次增量备份的开始文件
+[root@dbserver ~]# grep -in 'mysql_bin' /db_backup/increment01-backup.2019-03-31_20:26:49.sql
+    28:#190331 20:07:23 server id 136  end_log_pos 444 CRC32 0x845adcf5     Rotate to mysql_bin.000003  pos: 4
+
+
+mysql> show binary logs;
++------------------+-----------+
+| Log_name         | File_size |
++------------------+-----------+
+| mysql_bin.000001 |       411 |
+| mysql_bin.000002 |       444 |
+| mysql_bin.000003 |       687 |  <---- 增量备份操作包含 mysql_bin.000003 和 mysql_bin.000004
+| mysql_bin.000004 |       397 |  <----
++------------------+-----------+
+
+// 执行第2次逻辑增量操作的命令
+[root@dbserver ~]# mysqlbinlog --start-position=397 /mydata/bin-log/{mysql_bin.000003,mysql_bin.000004} > /db_backup/increment02-backup.$(date +'%F_%T').sql
+
+[root@dbserver ~]# ls /db_backup/
+      full-backup.2019-03-31_20:06:08.sql  increment01-backup.2019-03-31_20:26:49.sql  increment02-backup.2019-03-31_20:49:54.sql
+
+
+mysql> create database db_new01 default charset utf8;
+mysql> flush logs;
+mysql> create database db_new02 default charset utf8;
+mysql> flush logs;
+mysql> create database db_new03 default charset utf8;
+
+[root@dbserver ~]# /etc/init.d/mysqld stop
+
+[root@dbserver ~]# ls /mydata/bin-log/
+      mysql_bin.000001  mysql_bin.000002  mysql_bin.000003  mysql_bin.000004  mysql_bin.000005  mysql_bin.000006  mysql_bin.index
+
+[root@dbserver ~]# cat /mydata/bin-log/mysql_bin.index
+      /mydata/bin-log/mysql_bin.000001
+      /mydata/bin-log/mysql_bin.000002
+      /mydata/bin-log/mysql_bin.000003
+      /mydata/bin-log/mysql_bin.000004
+      /mydata/bin-log/mysql_bin.000005
+      /mydata/bin-log/mysql_bin.000006
+
+
+
+cat /db_backup/full-backup.2019-03-31_20\:06\:08.sql | mysql -u root -p
+cat /db_backup/increment01-backup.2019-03-31_20\:26\:49.sql | mysql -u root -p
+cat /db_backup/increment02-backup.2019-03-31_20\:49\:54.sql | mysql -u root -p
+
+
+[root@dbserver ~]# grep -in 'end_log_pos'  /db_backup/increment02-backup.2019-03-31_20\:49\:54.sql  | tail -n 1
+    45:#190331 20:39:49 server id 136  end_log_pos 397 CRC32 0xe29d96d6     Query   thread_id=2     exec_time=0     error_code=0
+
+[root@dbserver ~]# grep -in 'mysql_bin'  /db_backup/increment02-backup.2019-03-31_20\:49\:54.sql  | tail -n 1
+    28:#190331 20:39:36 server id 136  end_log_pos 687 CRC32 0xb84e17f4     Rotate to mysql_bin.000004  pos: 4
+
+
+[root@dbserver ~]# mysqlbinlog --start-position=397  /mydata/bin-log/mysql_bin.{000004,000005,000006} | mysql -u root -p
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
