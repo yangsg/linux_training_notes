@@ -1,0 +1,167 @@
+```sql
+[root@dbserver binary-log.dir]# mysqlbinlog --start-position=123  --stop-position=154  /mydata/bin-log/mysql_bin.000003
+/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
+/*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
+DELIMITER /*!*/;
+# at 4
+#190330 13:36:01 server id 136  end_log_pos 123 CRC32 0x948a513c        Start: binlog v 4, server v 5.7.25-log created 190330 13:36:01
+BINLOG '
+QQCfXA+IAAAAdwAAAHsAAAAAAAQANS43LjI1LWxvZwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAEzgNAAgAEgAEBAQEEgAAXwAEGggAAAAICAgCAAAACgoKKioAEjQA
+ATxRipQ=
+'/*!*/;
+# at 123
+#190330 13:36:01 server id 136  end_log_pos 154 CRC32 0xa80e1642        Previous-GTIDs
+# [empty]
+SET @@SESSION.GTID_NEXT= 'AUTOMATIC' /* added by mysqlbinlog */ /*!*/;
+DELIMITER ;
+# End of log file
+/*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
+/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
+[root@dbserver binary-log.dir]#
+
+```
+
+
+```sql
+[root@dbserver ~]# mysqlbinlog --start-position=123 /mydata/bin-log/mysql_bin.000003
+/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
+/*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
+DELIMITER /*!*/;
+# at 4
+#190330 13:36:01 server id 136  end_log_pos 123 CRC32 0x948a513c 	Start: binlog v 4, server v 5.7.25-log created 190330 13:36:01
+BINLOG '
+QQCfXA+IAAAAdwAAAHsAAAAAAAQANS43LjI1LWxvZwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAEzgNAAgAEgAEBAQEEgAAXwAEGggAAAAICAgCAAAACgoKKioAEjQA
+ATxRipQ=
+'/*!*/;
+# at 123
+#190330 13:36:01 server id 136  end_log_pos 154 CRC32 0xa80e1642 	Previous-GTIDs
+# [empty]
+# at 154
+#190330 14:29:01 server id 136  end_log_pos 219 CRC32 0x4e412f92 	Anonymous_GTID	last_committed=0	sequence_number=1	rbr_only=no
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 219
+#190330 14:29:01 server id 136  end_log_pos 346 CRC32 0xcd4345cd 	Query	thread_id=3	exec_time=0	error_code=0
+SET TIMESTAMP=1553927341/*!*/;
+SET @@session.pseudo_thread_id=3/*!*/;
+SET @@session.foreign_key_checks=1, @@session.sql_auto_is_null=0, @@session.unique_checks=1, @@session.autocommit=1/*!*/;
+SET @@session.sql_mode=1075838976/*!*/;
+SET @@session.auto_increment_increment=1, @@session.auto_increment_offset=1/*!*/;
+/*!\C utf8 *//*!*/;
+SET @@session.character_set_client=33,@@session.collation_connection=33,@@session.collation_server=33/*!*/;
+SET @@session.lc_time_names=0/*!*/;
+SET @@session.collation_database=DEFAULT/*!*/;
+create database db_web01 default charset utf8
+/*!*/;
+# at 346
+#190330 14:33:09 server id 136  end_log_pos 411 CRC32 0xf9065a39 	Anonymous_GTID	last_committed=1	sequence_number=2	rbr_only=no
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 411
+#190330 14:33:09 server id 136  end_log_pos 652 CRC32 0xc819e11f 	Query	thread_id=3	exec_time=1	error_code=0
+use `db_web01`/*!*/;
+SET TIMESTAMP=1553927589/*!*/;
+create table user(
+  id int primary key auto_increment,
+  name varchar(20) unique not null,
+  password varchar(20) not null
+)engine=innodb default charset utf8
+/*!*/;
+# at 652
+#190330 14:36:30 server id 136  end_log_pos 717 CRC32 0xf1d79d48 	Anonymous_GTID	last_committed=2	sequence_number=3	rbr_only=yes
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 717
+#190330 14:36:30 server id 136  end_log_pos 793 CRC32 0x2bb48f37 	Query	thread_id=3	exec_time=0	error_code=0
+SET TIMESTAMP=1553927790/*!*/;
+BEGIN
+/*!*/;
+# at 793
+#190330 14:36:30 server id 136  end_log_pos 850 CRC32 0x2b813a1c 	Table_map: `db_web01`.`user` mapped to number 108
+# at 850
+#190330 14:36:30 server id 136  end_log_pos 908 CRC32 0x68897b98 	Write_rows: table id 108 flags: STMT_END_F
+
+BINLOG '
+bg6fXBOIAAAAOQAAAFIDAAAAAGwAAAAAAAEACGRiX3dlYjAxAAR1c2VyAAMDDw8EPAA8AAAcOoEr
+bg6fXB6IAAAAOgAAAIwDAAAAAGwAAAAAAAEAAgAD//gBAAAABnVzZXIwMQpwYXNzd29yZDAxmHuJ
+aA==
+'/*!*/;
+# at 908
+#190330 14:36:30 server id 136  end_log_pos 939 CRC32 0x48bd655b 	Xid = 18
+COMMIT/*!*/;
+# at 939
+#190330 14:39:38 server id 136  end_log_pos 1004 CRC32 0x950cfddc 	Anonymous_GTID	last_committed=3	sequence_number=4	rbr_only=yes
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 1004
+#190330 14:39:38 server id 136  end_log_pos 1080 CRC32 0x103fcf15 	Query	thread_id=3	exec_time=0	error_code=0
+SET TIMESTAMP=1553927978/*!*/;
+BEGIN
+/*!*/;
+# at 1080
+#190330 14:39:38 server id 136  end_log_pos 1137 CRC32 0x243cfaec 	Table_map: `db_web01`.`user` mapped to number 108
+# at 1137
+#190330 14:39:38 server id 136  end_log_pos 1195 CRC32 0x14685448 	Write_rows: table id 108 flags: STMT_END_F
+
+BINLOG '
+Kg+fXBOIAAAAOQAAAHEEAAAAAGwAAAAAAAEACGRiX3dlYjAxAAR1c2VyAAMDDw8EPAA8AADs+jwk
+Kg+fXB6IAAAAOgAAAKsEAAAAAGwAAAAAAAEAAgAD//gCAAAABnVzZXIwMgpwYXNzd29yZDAySFRo
+FA==
+'/*!*/;
+# at 1195
+#190330 14:39:38 server id 136  end_log_pos 1226 CRC32 0xc68c621c 	Xid = 20
+COMMIT/*!*/;
+# at 1226
+#190330 14:41:35 server id 136  end_log_pos 1291 CRC32 0x074a5bdb 	Anonymous_GTID	last_committed=4	sequence_number=5	rbr_only=yes
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 1291
+#190330 14:41:35 server id 136  end_log_pos 1367 CRC32 0x4325a084 	Query	thread_id=3	exec_time=0	error_code=0
+SET TIMESTAMP=1553928095/*!*/;
+BEGIN
+/*!*/;
+# at 1367
+#190330 14:41:35 server id 136  end_log_pos 1424 CRC32 0x84f9cc6e 	Table_map: `db_web01`.`user` mapped to number 108
+# at 1424
+#190330 14:41:35 server id 136  end_log_pos 1504 CRC32 0x8bf3c069 	Update_rows: table id 108 flags: STMT_END_F
+
+BINLOG '
+nw+fXBOIAAAAOQAAAJAFAAAAAGwAAAAAAAEACGRiX3dlYjAxAAR1c2VyAAMDDw8EPAA8AABuzPmE
+nw+fXB+IAAAAUAAAAOAFAAAAAGwAAAAAAAEAAgAD///4AgAAAAZ1c2VyMDIKcGFzc3dvcmQwMvgC
+AAAABnVzZXIwMghyZWRoYXQwMWnA84s=
+'/*!*/;
+# at 1504
+#190330 14:41:35 server id 136  end_log_pos 1535 CRC32 0x052c4bad 	Xid = 22
+COMMIT/*!*/;
+# at 1535
+#190330 14:42:11 server id 136  end_log_pos 1600 CRC32 0xec843aaa 	Anonymous_GTID	last_committed=5	sequence_number=6	rbr_only=yes
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+SET @@SESSION.GTID_NEXT= 'ANONYMOUS'/*!*/;
+# at 1600
+#190330 14:42:11 server id 136  end_log_pos 1676 CRC32 0xcb677a40 	Query	thread_id=3	exec_time=0	error_code=0
+SET TIMESTAMP=1553928131/*!*/;
+BEGIN
+/*!*/;
+# at 1676
+#190330 14:42:11 server id 136  end_log_pos 1733 CRC32 0x35ea2bc1 	Table_map: `db_web01`.`user` mapped to number 108
+# at 1733
+#190330 14:42:11 server id 136  end_log_pos 1789 CRC32 0x60d5bfef 	Delete_rows: table id 108 flags: STMT_END_F
+
+BINLOG '
+ww+fXBOIAAAAOQAAAMUGAAAAAGwAAAAAAAEACGRiX3dlYjAxAAR1c2VyAAMDDw8EPAA8AADBK+o1
+ww+fXCCIAAAAOAAAAP0GAAAAAGwAAAAAAAEAAgAD//gCAAAABnVzZXIwMghyZWRoYXQwMe+/1WA=
+'/*!*/;
+# at 1789
+#190330 14:42:11 server id 136  end_log_pos 1820 CRC32 0x908b14d5 	Xid = 25
+COMMIT/*!*/;
+# at 1820
+#190330 15:55:55 server id 136  end_log_pos 1867 CRC32 0x28644f16 	Rotate to mysql_bin.000004  pos: 4
+SET @@SESSION.GTID_NEXT= 'AUTOMATIC' /* added by mysqlbinlog */ /*!*/;
+DELIMITER ;
+# End of log file
+/*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
+/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
+
+```
+
+

@@ -77,11 +77,40 @@ mysql> flush logs;       #手动执行flush logs时创建新的binary log 文件
     /mydata/bin-log/mysql_bin.000002
     /mydata/bin-log/mysql_bin.000003
 
-
 [root@dbserver ~]# file /mydata/bin-log/mysql_bin.000001
     /mydata/bin-log/mysql_bin.000001: MySQL replication log
 [root@dbserver ~]# file /mydata/bin-log/mysql_bin.index
     /mydata/bin-log/mysql_bin.index: ASCII text
+
+
+
+mysql> show binary logs;
++------------------+-----------+
+| Log_name         | File_size |
++------------------+-----------+
+| mysql_bin.000001 |       177 |
+| mysql_bin.000002 |       201 |
+| mysql_bin.000003 |      1820 |
++------------------+-----------+
+
+mysql> show master status;
++------------------+----------+--------------+------------------+-------------------+
+| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
++------------------+----------+--------------+------------------+-------------------+
+| mysql_bin.000003 |     1820 |              |                  |                   |
++------------------+----------+--------------+------------------+-------------------+
+
+
+mysql> pager less -Fi
+mysql> show binlog events in 'mysql_bin.000003';   # 下面的output是修改后的版本
+    | Log_name         | Pos  | Event_type     | Server_id | End_log_pos | Info
+    ---------------------------------------------------------------------------------------------------------------
+    | mysql_bin.000003 |    4 | Format_desc    |       136 |         123 | Server ver: 5.7.25-log, Binlog ver: 4
+    | mysql_bin.000003 |  123 | Previous_gtids |       136 |         154 |
+    | mysql_bin.000003 |  154 | Anonymous_Gtid |       136 |         219 | SET @@SESSION.GTID_NEXT= 'ANONYMOUS'
+    | mysql_bin.000003 |  219 | Query          |       136 |         346 | create database db_web01 default charset utf8
+
+
 
 
 
