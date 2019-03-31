@@ -1,0 +1,26 @@
+
+https://dev.mysql.com/doc/refman/5.7/en/mysqldump.html
+
+
+[root@dbserver ~]# man mysqldump
+
+
+
+[root@dbserver ~]# mysqldump -h localhost -u root -p -P 3306  db_web01 user production > mysqldump.db_web01.user.production.sql
+
+[root@dbserver ~]# mysqldump --lock-all-tables --all-databases --flush-logs --master-data=2 >  all-databases.backup.$(date +'%F_%T').sql
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
