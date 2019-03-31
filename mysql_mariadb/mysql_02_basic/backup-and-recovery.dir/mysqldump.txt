@@ -5,11 +5,30 @@ https://dev.mysql.com/doc/refman/5.7/en/mysqldump.html
 [root@dbserver ~]# man mysqldump
 
 
+// mysqldump 语法格式 (注意添加额的锁表和日志坐标相关的选项, 必要时还可加日志滚动的选项)
+//           shell> mysqldump [options] db_name [tbl_name ...]  #注：使用这种方式备份database时，不会生成create database语句,所以还原时可能需要自己创建数据库
+//           shell> mysqldump [options] --databases db_name ... #注：使用这种方式备份数据库时，会自动生成create database语句
+//           shell> mysqldump [options] --all-databases         #注；注意加锁表(一致性)和日志坐标相关的选项,必要时可加日志滚动的选项
 
+
+// 只备份数据库中的指定表---------------------------------
 [root@dbserver ~]# mysqldump -h localhost -u root -p -P 3306  db_web01 user production > mysqldump.db_web01.user.production.sql
+// 输出文件见  https://github.com/yangsg/linux_training_notes/blob/master/mysql_mariadb/mysql_02_basic/backup-and-recovery.dir/output.examples/mysqldump.db_web01.user.production.sql
+// -------------------------------------------------------
 
-[root@dbserver ~]# mysqldump --lock-all-tables --all-databases --flush-logs --master-data=2 >  all-databases.backup.$(date +'%F_%T').sql
+// 备份单个数据库---------------------------------
+// 注意：这种方式不会自动生成create database 语句
+[root@dbserver ~]# mysqldump -h localhost -u root -p -P 3306  db_web01 > db_web01.backup.$(date +'%F_%T').sql
 
+// 备份单个或多个数据库(使用--databases选项)---------------------------------
+// 注：这种方式备份时会自动生成 create database 语句
+[root@dbserver ~]# mysqldump -h localhost -u root -p -P 3306 --lock-all-tables --flush-logs --master-data=2 --databases db_web01 >  db_web01.backup.$(date +'%F_%T').sql
+
+
+// 备份所有数据库---------------------------------
+[root@dbserver ~]# mysqldump -h localhost -u root -p -P 3306 --lock-all-tables --all-databases --flush-logs --master-data=2 >  all-databases.backup.$(date +'%F_%T').sql
+// 输出文件见 https://github.com/yangsg/linux_training_notes/blob/master/mysql_mariadb/mysql_02_basic/backup-and-recovery.dir/output.examples/mysqldump--lock-all-tables--all-databases--flush-logs--master-data.2.output.sql
+// -------------------------------------------------------
 
 
 
