@@ -3,6 +3,8 @@
 这时一个关于逻辑的备份和还原的示例，过程大致如下：
   备份：1次完全 + 2次增量备份
   还原：1次完全 + 2次增量还原 + 利用binary log日志还原
+注意：实际生产环境中应考虑在single的mysql connection中完成所有的还原操作，避免备份文件之间中因有临时表这种依赖关系而导致的恢复失败
+
 
 // 启用二进制日志功能
 [root@dbserver ~]# vim /etc/my.cnf
@@ -107,6 +109,8 @@ mysql> create database db_new03 default charset utf8;
       /mydata/bin-log/mysql_bin.000006
 
 
+//todo: 临时关闭二进制日志功能，避免恢复语句也被写入binlog中, 等恢复还原后应该立刻再启用该binlog
+
 
 cat /db_backup/full-backup.2019-03-31_20\:06\:08.sql | mysql -u root -p
 cat /db_backup/increment01-backup.2019-03-31_20\:26\:49.sql | mysql -u root -p
@@ -123,6 +127,12 @@ cat /db_backup/increment02-backup.2019-03-31_20\:49\:54.sql | mysql -u root -p
 [root@dbserver ~]# mysqlbinlog --start-position=397  /mydata/bin-log/mysql_bin.{000004,000005,000006} | mysql -u root -p
 
 
+
+
+
+其他参考：
+#// https://stackoverflow.com/questions/40118443/recover-database-from-many-mysql-bin-log-files
+#//     find . -name 'log-bin.[0-9]*' | sort | xargs mysqlbinlog | mysql -u root -p
 
 
 
