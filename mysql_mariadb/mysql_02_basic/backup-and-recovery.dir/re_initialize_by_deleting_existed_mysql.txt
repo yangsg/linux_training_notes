@@ -1,0 +1,25 @@
+
+!!!!生产环境千万别这么干!!!!
+该文档列出了删除mysql旧的数据目录和日志目录，然后重新进行初始化的一些命令,
+只用于学习环境
+
+[root@dbserver ~]# /etc/init.d/mysqld stop
+
+[root@dbserver ~]# rm -rf /mydata/data/*
+[root@dbserver ~]# rm -rf /mydata/bin-log/*
+
+[root@dbserver ~]# mysqld --initialize --user=mysql --basedir=/app/mysql/  --datadir=/mydata/data
+    2019-04-01T07:04:14.207723Z 1 [Note] A temporary password is generated for root@localhost: ZdR<C!mEX84/    #<<<<-- 记下密码
+
+[root@dbserver ~]# /etc/init.d/mysqld start
+    Starting MySQL.Logging to '/mydata/data/dbserver.err'.
+     SUCCESS!
+
+
+[root@dbserver ~]# mysql_secure_installation
+
+[root@dbserver ~]# mysql -h localhost -u root -p -P 3306
+[root@dbserver ~]# mysql -u root -p  -S /tmp/mysql.sock
+
+
+

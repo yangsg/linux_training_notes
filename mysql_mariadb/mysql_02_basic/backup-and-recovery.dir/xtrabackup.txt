@@ -1,0 +1,168 @@
+xtrabackup 是一个mysql的物理备份工具
+
+注： percona-xtrabackup-2.3.6-1.el7.x86_64不支持mysql 5.7.17 版本, 所以要安装较新版本(如percona-xtrabackup-24)
+     如果是mysql8.0, 需要使用 Percona XtraBackup 8.0 来备份，但 Percona XtraBackup 8.0
+     不支持mysql8.0之前的版本
+
+     Percona XtraBackup 不支持 MariaDB 10.1以上的某些情况，此时可以考虑使用Mariabackup工具
+
+// 查看mysql server服务器版本
+[root@dbserver ~]# mysqld --version
+    mysqld  Ver 5.7.25 for Linux on x86_64 (Source distribution)
+
+// 开启binary log 二进制日志功能
+[root@dbserver ~]# vim /etc/my.cnf
+      server_id=136
+      log_bin=/mydata/bin-log/mysql_bin
+
+[root@dbserver ~]# /etc/init.d/mysqld restart
+
+
+
+percona-xtrabackup-24的安装参考
+    https://mariadb.com/kb/en/library/percona-xtrabackup-overview/
+    https://www.percona.com/doc/percona-xtrabackup/2.4/installation.html
+    https://www.percona.com/doc/percona-xtrabackup/2.4/installation/yum_repo.html
+
+
+// 安装 percona-xtrabackup-24
+[root@dbserver ~]# yum -y install https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+[root@dbserver ~]# yum list | grep percona
+[root@dbserver ~]# yum -y install percona-xtrabackup-24
+[root@dbserver ~]# rpm -q percona-xtrabackup-24
+    percona-xtrabackup-24-2.4.13-1.el7.x86_64
+
+
+// 可以看到，innobackupex 是 xtrabackup 工具的符号链接, 但man page中描述的使用方式两者还是有区别
+[root@dbserver ~]# ls -l /usr/bin/innobackupex
+    lrwxrwxrwx 1 root root 10 Apr  1 11:54 /usr/bin/innobackupex -> xtrabackup
+
+
+[root@dbserver ~]# man innobackupex
+[root@dbserver ~]# innobackupex --help | less
+
+mysql> create database db_full_backup_demo default charset utf8;
+
+[root@dbserver ~]# mkdir -p /backup
+
+// 执行 innobackupex 命令 实现完全备份 'Creating a Backup with innobackupex'
+[root@dbserver ~]# innobackupex --user=root --password=WWW.1.com --socket=/tmp/mysql.sock /backup/
+
+          190401 16:20:57 Backup created in directory '/backup/2019-04-01_16-20-55/'   //检查结果信息
+          MySQL binlog position: filename 'mysql_bin.000002', position '935'
+          190401 16:20:57 [00] Writing /backup/2019-04-01_16-20-55/backup-my.cnf
+          190401 16:20:57 [00]        ...done
+          190401 16:20:57 [00] Writing /backup/2019-04-01_16-20-55/xtrabackup_info
+          190401 16:20:57 [00]        ...done
+          xtrabackup: Transaction log of lsn (2524176) to (2524185) was copied.
+          190401 16:20:57 completed OK!
+
+
+[root@dbserver ~]# ls /backup/
+    2019-04-01_16-20-55
+
+[root@dbserver ~]# ls /backup/2019-04-01_16-20-55
+    backup-my.cnf        mysql                   xtrabackup_checkpoints
+    db_full_backup_demo  performance_schema      xtrabackup_info
+    ib_buffer_pool       sys                     xtrabackup_logfile
+    ibdata1              xtrabackup_binlog_info
+
+
+[root@dbserver ~]# cat /backup/2019-04-01_16-20-55/xtrabackup_binlog_info
+    mysql_bin.000002        935
+
+
+mysql> show binary logs;
++------------------+-----------+
+| Log_name         | File_size |
++------------------+-----------+
+| mysql_bin.000001 |       177 |
+| mysql_bin.000002 |       935 |
++------------------+-----------+
+
+
+mysql> show master status;
++------------------+----------+--------------+------------------+-------------------+
+| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
++------------------+----------+--------------+------------------+-------------------+
+| mysql_bin.000002 |      935 |              |                  |                   |
++------------------+----------+--------------+------------------+-------------------+
+
+
+[root@dbserver ~]# cat /backup/2019-04-01_16-20-55/xtrabackup_info
+        uuid = 1357b5c4-5457-11e9-93e5-000c29d7f947
+        name =
+        tool_name = innobackupex
+        tool_command = --user=root --password=... --socket=/tmp/mysql.sock /backup/
+        tool_version = 2.4.13
+        ibbackup_version = 2.4.13
+        server_version = 5.7.25-log
+        start_time = 2019-04-01 16:20:55
+        end_time = 2019-04-01 16:20:57
+        lock_time = 0
+        binlog_pos = filename 'mysql_bin.000002', position '935'
+        innodb_from_lsn = 0
+        innodb_to_lsn = 2524176
+        partial = N
+        incremental = N
+        format = file
+        compact = N
+        compressed = N
+        encrypted = N
+
+
+// 删除数据库 database db_full_backup_demo , 待会会将其还原回来
+mysql> drop database db_full_backup_demo;
+
+
+// Preparing a Full Backup with innobackupex
+创建了完全备份之后，这些数据还无法准备好被拿来用于做还原操作. 因为可能存在要撤销的未提交事务或在日志中有要被重做的事务，
+执行这些待处理操作将使数据文件保持一致性，这就是准备阶段的目的。一旦准备阶段完成，备份数据就可被拿来用于做还原操作了
+
+// 模拟完全备份恢复
+[root@dbserver ~]# /etc/init.d/mysqld stop    #使用innobackupex --copy-back还原前必须将MySQL server关闭，(except when importing a partial backup)
+[root@dbserver ~]# rm -rf /mydata/data/*      #使用innobackupex --copy-back还原前必须将datadir目录清空，同时确保执行该命令的用户对datadir具有写权限
+
+// 利用 --apply-log 选项对 完全备份 做准备操作,准备操作成功完成后,数据就可被立即用于还原操作了
+[root@dbserver ~]# innobackupex --apply-log /backup/2019-04-01_16-20-55/    #注：小心，千万不要在增量备份(incremental backups)上做此操作，否则将无法 "add"  the  increments
+
+          InnoDB: Shutdown completed; log sequence number 2524712
+          190401 17:40:26 completed OK!
+
+
+   // Under the hood 背后操作
+        innobackupex 通过读取 backup directory 下 backup-my.cnf的配置 来启动一个准备进程(prepare process)
+        之后， innobackupex 重做 log files 中被提交过的事务(some transactions could have been done while the backup was being done)，并且
+        回滚那些被撤销了的事务，一旦这个操作完成，所有位于tablespace (the InnoDB files)中的信息，和 log files 会被重新创建(re-created)
+        This implies calling innobackupex --apply-log twice.
+        小心注意：这个准备操作不适用于增量备份(incremental backups), 否则如果你在增量备份的基础上执行它，你将无法 "add"  the  increments. 
+   // 其他：可以为 --use-memory 选项指定一个较大的值来加速准备处理过程, 其默认值为100MB, It depends on the free or available RAM on your system,
+   //         通常，the more memory available to the process, the better. The amount of memory used in the process can be specified by multiples of bytes:
+   //            $ innobackupex --apply-log --use-memory=4G /path/to/BACKUP-DIR
+
+
+
+// Restoring a Full Backup with innobackupex   使用 innobackupex 来 还原 完全备份
+// innobackupex 的 --copy-back 选项 将 a backup 还原到 the server's datadir.
+[root@dbserver ~]# innobackupex --copy-back  /backup/2019-04-01_16-20-55/   #在执行此操作前确保mysql server处于关闭状态，且datadir目录为空目录，且当前用户具有datadir目录的写权限
+
+          190401 18:24:56 [01]        ...done
+          190401 18:24:56 completed OK!
+
+      //  innobackupex --copy-back 将所有相关的数据文件copy回 the server's datadir, 其(即server's datadir)由 the server's my.cnf 配置文件确定
+      //  注意：The  datadir 目录必须为空(empty)，Percona XtraBackup innobackupex --copy-back option 不会复制(copy over)已存在的文件，除非
+      //        innobackupex --force-non-empty-directories 选项被指定。同时很重要的一点要注意就是在执行还原操作之前 MySQL server 必须被关闭(be shut down),
+      //        你无法还原到一个 mysqld实例处于running 状态的 datadir 目录 (except when importing a partial backup).
+      //  因为文件属性会被保留, 大多情况下，在启动 database server 前，你需要将文件的 ownership 改为 'mysql', 否则这些文件的 ownership 将是创建backup的那个用户.
+      //  $ chown -R mysql:mysql /var/lib/mysql
+      //  Also note that all of these operations will be done as the user calling innobackupex, you will need write permissions on the server's datadir.
+
+
+
+// 重新调整 /mydata/data/ 的属主属组 为 'mysql'
+[root@dbserver ~]# chown -R mysql:mysql /mydata/data/
+
+
+
+
+
