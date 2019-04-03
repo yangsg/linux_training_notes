@@ -11,6 +11,8 @@ xtrabackup 是一个mysql的物理备份工具
       man innobackupex 文档中的描述是否与自己学过的版本的 innobackupex 是否一致，如不一致，应该按照
       具体版本的 innobackupex 的 man page 进行操作。
 
+注：还原时最好不要让其它client客户端访问数据库，营造一个独立的还原环境。
+
 
 注： percona-xtrabackup-2.3.6-1.el7.x86_64不支持mysql 5.7.17 版本, 所以要安装较新版本(如percona-xtrabackup-24)
      如果是mysql8.0, 需要使用 Percona XtraBackup 8.0 来备份，但 Percona XtraBackup 8.0
@@ -183,7 +185,10 @@ mysql> drop database db_full_backup_demo;
 
 
 // 完全 + 增量 备份示例-----------------------------------------------------------------------------
+// 概况：
+// 1 次完全 + 2 次增量 备份/还原 + binary log时间点还原
 
+// 制造示例演示数据
 mysql> create database db_full_backup_demo charset utf8;
 mysql> use db_full_backup_demo;
 mysql> create table t_fullbackup(a int)engine=innodb charset utf8;
@@ -237,7 +242,7 @@ mysql> insert into t_fullbackup(a) values(1);
         recover_binlog_info = 0
 
 
-
+// 制造示例演示数据
 mysql> create database db_increment01_backup_demo default charset utf8;
 mysql> use db_increment01_backup_demo;
 mysql> create table t_increment01(a int)engine=innodb charset utf8;
@@ -284,6 +289,7 @@ mysql> insert into t_increment01(a) values(1);
       recover_binlog_info = 0
 
 
+// 制造示例演示数据
 mysql> create database db_increment02_backup_demo default charset utf8;
 mysql> use db_increment02_backup_demo;
 mysql> create table t_increment02(a int)engine=innodb charset utf8;
@@ -347,6 +353,7 @@ mysql> insert into t_increment02(a) values(1);
        //    e.g. MyISAM, will be copied entirely each time an incremental backup is performed.
 
 
+// 制造示例演示数据
 mysql> create database db_point_time_backup_demo default charset utf8;
 mysql> use db_point_time_backup_demo;
 mysql> create table t_point_time_flush_logs_before(a int)engine=innodb charset utf8;
@@ -376,6 +383,11 @@ mysql> insert into t_point_time_flush_logs_after02(a) values(1);
         InnoDB: Number of pools: 1
         190403 17:15:52 completed OK!
 
+
+// 注：如果想看一下后续 innobackupex --apply-log --redo-only 对base目录的修改效果，可以备份一份backup目录，然后用diff命令做比较来观察，
+//        [root@dbserver ~]# cp -a /backup  /backup.bak
+//        [root@dbserver ~]# diff -r /backup/2019-04-03_16-47-55/ /backup.bak/2019-04-03_16-47-55/ > diff.output
+//        [root@dbserver ~]# vim diff.output   #通过vim打开可以看到输出颜色, 可以直观的观察到每次merge increment操作都会更新base目录下的 xtrabackup_binlog_info 文件
 
 // 将第一个增量备份应用于 base backup
 [root@dbserver ~]# innobackupex --apply-log --redo-only /backup/2019-04-03_16-47-55/ --incremental-dir=/backup/2019-04-03_16-54-02/
