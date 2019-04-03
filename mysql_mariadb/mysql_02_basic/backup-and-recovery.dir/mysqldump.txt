@@ -11,15 +11,21 @@ https://dev.mysql.com/doc/refman/5.7/en/mysqldump.html
 //           shell> mysqldump [options] --all-databases         #注；注意加锁表(一致性)和日志坐标相关的选项,必要时可加日志滚动的选项
 
 
+// 注：下面所有的示例中都使用了 --lock-all-tables 选项，虽然比起 --lock-tables 或 --single-transaction 而言有点简单粗暴，
+//     但使用 --lock-all-tables 却是最安全或在任何情况下都能保证数据一致性的选项了,无需关心一些很多复杂或繁琐的细节
+//     (如使用 --single-transaction 时你要关心备份的数据库中是否有非事务表, 使用 --lock-tables 时如果是dump多个databases,
+//     你要知道 --lock-tables 是分别分开对每个database都做一次独立的lock操作, 这之间也可能出现整体上的数据不一致的情况),
+//     所以条件允许的情况下，在一台离线状态的专用于做备份的slave机器上加上 --lock-all-tables 选项来备份，是最没有后顾之忧的一种方案.
+
 // 只备份数据库中的指定表---------------------------------
 // 注意：这种方式不会自动生成create database 语句
-[root@dbserver ~]# mysqldump -h localhost -u root -p -P 3306  db_web01 user production > mysqldump.db_web01.user.production.sql
+[root@dbserver ~]# mysqldump -h localhost -u root -p -P 3306 --lock-all-tables db_web01 user production > mysqldump.db_web01.user.production.sql
 // 输出文件见  https://github.com/yangsg/linux_training_notes/blob/master/mysql_mariadb/mysql_02_basic/backup-and-recovery.dir/output.examples/mysqldump.db_web01.user.production.sql
 // -------------------------------------------------------
 
 // 备份单个数据库---------------------------------
 // 注意：这种方式不会自动生成create database 语句
-[root@dbserver ~]# mysqldump -h localhost -u root -p -P 3306  db_web01 > db_web01.backup.$(date +'%F_%T').sql
+[root@dbserver ~]# mysqldump -h localhost -u root -p -P 3306 --lock-all-tables db_web01 > db_web01.backup.$(date +'%F_%T').sql
 
 // 备份单个或多个数据库(使用--databases选项)---------------------------------
 // 注：这种方式备份时会自动生成 create database 语句

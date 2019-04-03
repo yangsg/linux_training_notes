@@ -1,5 +1,17 @@
 xtrabackup 是一个mysql的物理备份工具
 
+!!!!!生产环境中!!!!!
+    在还原恢复数据时，最好都不要直接拿原始backup文件来做还原操作(如在原始的各种backup上做--apply-log等操作),
+    而是制作一份与backup相同的副本(包括权限等属性)，利用这份与backup相同的副本来做数据还原恢复操作，这样的话，
+    如果恢复还原操作过程中发生类似操作失误而破坏了这份backup副本使之无法再用于还原时，还有原始的那份backup补救,
+    这种情况下，就重新再做一份原始的backup的副本, 拿这份新的backup副本再去做还原恢复操作.
+    (对于这种情况，公司如果不买操作用的额外硬盘，自己去买个上T级别的移动硬盘用于数据还原恢复使用也是值得的)
+
+小心：不同版本的 XtraBackup 中 innobackupex 的使用方式可能存在一些差异，为了避免错误，最好先确认一下
+      man innobackupex 文档中的描述是否与自己学过的版本的 innobackupex 是否一致，如不一致，应该按照
+      具体版本的 innobackupex 的 man page 进行操作。
+
+
 注： percona-xtrabackup-2.3.6-1.el7.x86_64不支持mysql 5.7.17 版本, 所以要安装较新版本(如percona-xtrabackup-24)
      如果是mysql8.0, 需要使用 Percona XtraBackup 8.0 来备份，但 Percona XtraBackup 8.0
      不支持mysql8.0之前的版本
@@ -41,12 +53,14 @@ percona-xtrabackup-24的安装参考
 [root@dbserver ~]# man innobackupex
 [root@dbserver ~]# innobackupex --help | less
 
+// 完全备份示例-----------------------------------------------------------------------------
+
 mysql> create database db_full_backup_demo default charset utf8;
 
 [root@dbserver ~]# mkdir -p /backup
 
 // 执行 innobackupex 命令 实现完全备份 'Creating a Backup with innobackupex'
-[root@dbserver ~]# innobackupex --user=root --password=WWW.1.com --socket=/tmp/mysql.sock /backup/
+[root@dbserver ~]# innobackupex --user=root --password=WWW.1.com --socket=/tmp/mysql.sock /backup/    #//还有其他选项，如--no-timestamp
 
           190401 16:20:57 Backup created in directory '/backup/2019-04-01_16-20-55/'   //检查结果信息
           MySQL binlog position: filename 'mysql_bin.000002', position '935'
@@ -160,7 +174,449 @@ mysql> drop database db_full_backup_demo;
 
 
 // 重新调整 /mydata/data/ 的属主属组 为 'mysql'
-[root@dbserver ~]# chown -R mysql:mysql /mydata/data/
+[root@dbserver ~]# chown -R mysql:mysql /mydata/data/    #大多情况下,在启动 database server 前，你需要将文件的 ownership 改为 'mysql', 否则这些文件的 ownership 将是创建backup的那个用户.
+[root@dbserver ~]# /etc/init.d/mysqld start
+[root@dbserver ~]# mysql -h localhost -u root -p -P 3306
+[root@dbserver ~]# mysql -u root -p -S /tmp/mysql.sock
+
+// -----------------------------------------------------------------------------
+
+
+// 完全 + 增量 备份示例-----------------------------------------------------------------------------
+
+mysql> create database db_full_backup_demo charset utf8;
+mysql> use db_full_backup_demo;
+mysql> create table t_fullbackup(a int)engine=innodb charset utf8;
+mysql> insert into t_fullbackup(a) values(1);
+
+
+// Incremental Backups with innobackupex
+      如果不是所有数据在每次备份之间都发生变化，则增量备份可以减少存储和做备份操作所持续的时间。
+      这是可行的，因为每个InnoDB页(InnoDB page)有1个 log sequence number, LSN, 其作为整个数据库的版本号(version number),
+      每次数据库被修改，这个号码就会被增加.
+
+      一旦这些页按各自对应的顺序放到一起，applying the logs 将重建影响database的process, 产生最近备份被创建时刻的数据.
+
+// 首先, 创建后续作为增量备份基础的完全备份
+[root@dbserver ~]# innobackupex --user=root --password=WWW.1.com --socket=/tmp/mysql.sock /backup/
+
+          190403 16:47:58 Executing UNLOCK TABLES
+          190403 16:47:58 All tables unlocked
+          190403 16:47:58 [00] Copying ib_buffer_pool to /backup/2019-04-03_16-47-55/ib_buffer_pool
+          190403 16:47:58 [00]        ...done
+          190403 16:47:58 Backup created in directory '/backup/2019-04-03_16-47-55/'
+          MySQL binlog position: filename 'mysql_bin.000002', position '1447'
+          190403 16:47:58 [00] Writing /backup/2019-04-03_16-47-55/backup-my.cnf
+          190403 16:47:58 [00]        ...done
+          190403 16:47:58 [00] Writing /backup/2019-04-03_16-47-55/xtrabackup_info
+          190403 16:47:58 [00]        ...done
+          xtrabackup: Transaction log of lsn (2529069) to (2529078) was copied.
+          190403 16:47:59 completed OK!
+
+
+[root@dbserver ~]# ls /backup
+      2019-04-03_16-47-55
+
+
+[root@dbserver ~]# ls /backup/2019-04-03_16-47-55/
+
+      backup-my.cnf        mysql                   xtrabackup_checkpoints
+      db_full_backup_demo  performance_schema      xtrabackup_info
+      ib_buffer_pool       sys                     xtrabackup_logfile
+      ibdata1              xtrabackup_binlog_info
+
+
+
+[root@dbserver ~]# cat /backup/2019-04-03_16-47-55/xtrabackup_checkpoints
+
+        backup_type = full-backuped
+        from_lsn = 0
+        to_lsn = 2529069
+        last_lsn = 2529078
+        compact = 0
+        recover_binlog_info = 0
+
+
+
+mysql> create database db_increment01_backup_demo default charset utf8;
+mysql> use db_increment01_backup_demo;
+mysql> create table t_increment01(a int)engine=innodb charset utf8;
+mysql> insert into t_increment01(a) values(1);
+
+
+// 使用 --incremental 选项 创建第1个增量备份
+[root@dbserver ~]# innobackupex --user=root --password=WWW.1.com --socket=/tmp/mysql.sock --incremental /backup/ --incremental-basedir=/backup/2019-04-03_16-47-55/
+
+        190403 16:54:05 Executing UNLOCK TABLES
+        190403 16:54:05 All tables unlocked
+        190403 16:54:05 [00] Copying ib_buffer_pool to /backup/2019-04-03_16-54-02/ib_buffer_pool
+        190403 16:54:05 [00]        ...done
+        190403 16:54:05 Backup created in directory '/backup/2019-04-03_16-54-02/'
+        MySQL binlog position: filename 'mysql_bin.000002', position '2243'
+        190403 16:54:05 [00] Writing /backup/2019-04-03_16-54-02/backup-my.cnf
+        190403 16:54:05 [00]        ...done
+        190403 16:54:05 [00] Writing /backup/2019-04-03_16-54-02/xtrabackup_info
+        190403 16:54:05 [00]        ...done
+        xtrabackup: Transaction log of lsn (2534034) to (2534043) was copied.
+        190403 16:54:05 completed OK!
+
+
+[root@dbserver ~]# ls /backup/
+      2019-04-03_16-47-55  2019-04-03_16-54-02
+
+
+[root@dbserver ~]# ls /backup/2019-04-03_16-54-02/
+
+      backup-my.cnf               ibdata1.meta            xtrabackup_checkpoints
+      db_full_backup_demo         mysql                   xtrabackup_info
+      db_increment01_backup_demo  performance_schema      xtrabackup_logfile
+      ib_buffer_pool              sys
+      ibdata1.delta               xtrabackup_binlog_info
+
+
+[root@dbserver ~]# cat /backup/2019-04-03_16-54-02/xtrabackup_checkpoints
+
+      backup_type = incremental
+      from_lsn = 2529069
+      to_lsn = 2534034
+      last_lsn = 2534043
+      compact = 0
+      recover_binlog_info = 0
+
+
+mysql> create database db_increment02_backup_demo default charset utf8;
+mysql> use db_increment02_backup_demo;
+mysql> create table t_increment02(a int)engine=innodb charset utf8;
+mysql> insert into t_increment02(a) values(1);
+
+
+// 创建第2个增量备份
+[root@dbserver ~]# innobackupex --user=root --password=WWW.1.com --socket=/tmp/mysql.sock --incremental /backup/ --incremental-basedir=/backup/2019-04-03_16-54-02/
+
+        190403 16:59:58 Executing UNLOCK TABLES
+        190403 16:59:58 All tables unlocked
+        190403 16:59:58 [00] Copying ib_buffer_pool to /backup/2019-04-03_16-59-55/ib_buffer_pool
+        190403 16:59:58 [00]        ...done
+        190403 16:59:58 Backup created in directory '/backup/2019-04-03_16-59-55/'
+        MySQL binlog position: filename 'mysql_bin.000002', position '3039'
+        190403 16:59:58 [00] Writing /backup/2019-04-03_16-59-55/backup-my.cnf
+        190403 16:59:58 [00]        ...done
+        190403 16:59:58 [00] Writing /backup/2019-04-03_16-59-55/xtrabackup_info
+        190403 16:59:58 [00]        ...done
+        xtrabackup: Transaction log of lsn (2538875) to (2538884) was copied.
+        190403 16:59:58 completed OK!
+
+
+[root@dbserver ~]# ls /backup/
+      2019-04-03_16-47-55  2019-04-03_16-54-02  2019-04-03_16-59-55
+
+
+
+[root@dbserver ~]# ls /backup/2019-04-03_16-59-55/
+
+        backup-my.cnf               ibdata1.delta       xtrabackup_binlog_info
+        db_full_backup_demo         ibdata1.meta        xtrabackup_checkpoints
+        db_increment01_backup_demo  mysql               xtrabackup_info
+        db_increment02_backup_demo  performance_schema  xtrabackup_logfile
+        ib_buffer_pool              sys
+
+
+
+[root@dbserver ~]# cat /backup/2019-04-03_16-59-55/xtrabackup_checkpoints
+
+        backup_type = incremental
+        from_lsn = 2534034
+        to_lsn = 2538875
+        last_lsn = 2538884
+        compact = 0
+        recover_binlog_info = 0
+
+
+
+       // 这段内容来自man innobackupex
+       // As it was said before, an incremental backup only copy pages with a LSN greater than a specific value.
+       // Providing the LSN would have  produced  directories  with  the  same  data
+       // inside:
+       //
+       //    innobackupex --incremental /data/backups --incremental-lsn=4124244
+       //    innobackupex --incremental /data/backups --incremental-lsn=6938371
+       //
+       //   This is a very useful way of doing an incremental backup, since not always the base or the last incremental will be available in the system.
+       // WARNING:
+       //    This  procedure only affects XtraDB or InnoDB-based tables. Other tables with a different storage engine,
+       //    e.g. MyISAM, will be copied entirely each time an incremental backup is performed.
+
+
+mysql> create database db_point_time_backup_demo default charset utf8;
+mysql> use db_point_time_backup_demo;
+mysql> create table t_point_time_flush_logs_before(a int)engine=innodb charset utf8;
+mysql> insert into t_point_time_flush_logs_before(a) values(1);
+mysql> flush logs;
+mysql> create table t_point_time_flush_logs_after01(a int)engine=innodb charset utf8;
+mysql> insert into t_point_time_flush_logs_after01(a) values(1);
+mysql> flush logs;
+mysql> create table t_point_time_flush_logs_after02(a int)engine=innodb charset utf8;
+mysql> insert into t_point_time_flush_logs_after02(a) values(1);
+
+
+// Preparing an Incremental Backup with innobackupex
+    准备增量备份比起 full backups 有一点不一样, 可能需要注意的stage：
+        首先, 只有被提交过的事务必须在每个backup上被重做(be replayed).这将merge 基础的全量备份和这些增量备份
+        然后, 撤销的事务必须被回滚使之 have a ready-to-use backup
+
+        如果你在base backup上重做提交过的事务和回滚撤销过的事务, 你将无法 add the incremental ones.
+        如果你在1个增量备份上做了此事，你将无法 add data from that moment and the remaining increments.
+
+        记住这一点， 使用 innobackupex --redo-only 选项非常简单，从 base backup 开始：
+
+// 对基础的完全备份应用 innobackupex --apply-log --redo-only 操作
+[root@dbserver ~]# innobackupex --apply-log --redo-only /backup/2019-04-03_16-47-55/
+
+        InnoDB: Shutdown completed; log sequence number 2529087
+        InnoDB: Number of pools: 1
+        190403 17:15:52 completed OK!
+
+
+// 将第一个增量备份应用于 base backup
+[root@dbserver ~]# innobackupex --apply-log --redo-only /backup/2019-04-03_16-47-55/ --incremental-dir=/backup/2019-04-03_16-54-02/
+
+        190403 17:24:20 [00] Copying /backup/2019-04-03_16-54-02//xtrabackup_binlog_info to ./xtrabackup_binlog_info
+        190403 17:24:20 [00]        ...done
+        190403 17:24:20 [00] Copying /backup/2019-04-03_16-54-02//xtrabackup_info to ./xtrabackup_info
+        190403 17:24:20 [00]        ...done
+        190403 17:24:20 completed OK!
+
+
+        // If no innobackupex --incremental-dir is set, innobackupex will use the most recent subdirectory created in the basedir.
+
+       此时，BASE-DIR(即/backup/2019-04-03_16-47-55/)目录包含了第1个增量备份那时刻的数据，
+       注意 the full data 将总是 在 base backup 的目录下，因为我们将增量追加到其中了。
+
+
+// 对第二个增量备份重复类型的过程
+// 注：此示例中第二个增量备份就是最后一个增量备份(the last increment backup), 所以就不要加 --redo-only 选项了:
+[root@dbserver ~]# innobackupex --apply-log /backup/2019-04-03_16-47-55/ --incremental-dir=/backup/2019-04-03_16-59-55/
+
+        InnoDB: Starting shutdown...
+        InnoDB: Shutdown completed; log sequence number 2539048
+        190403 17:34:42 completed OK!
+
+
+      // If the completed OK! message was shown, the final data will be in the base backup directory, BASE-DIR.
+      // 注意：
+      //     innobackupex --redo-only 应该在merging all incrementals(但the last one除外)时被使用，这也是上一条命令没有加 --redo-only
+      //     选项的原因，即使 innobackupex --redo-only 被用到了 最后一步(即the last one), backup仍然会保持一致(consistent), 只是那样
+      //     的话，server会执行rollback阶段.
+      //
+      //你可以使用这种过程添加 more increments 到 base, 只要你add increments的顺序是与制作increment backup的时间的先后顺序一致就可以。
+      //如果你按错误的顺序merge了 incrementals, backup 将变为无效. 如果你怀疑他们被应用的先后顺序，你可以检查每个备份目录下的
+      //文件 xtrabackup_checkpoints,
+
+//一旦你merge了所有增量备份(all the increments)到base中，你可以准备它以回滚为提交事务。
+// 语法：innobackupex --apply-log BASE-DIR
+[root@dbserver ~]# innobackupex --apply-log  /backup/2019-04-03_16-47-55/
+
+        InnoDB: Starting shutdown...
+        InnoDB: Shutdown completed; log sequence number 2539086
+        190403 17:40:20 completed OK!
+
+
+     // 现在，你的backup在被还原之后就可以准备立即使用了，这个 preparation 是可选的。然而，如果你还原恢复时没有做prepare, database server
+     // 将开始 rollback uncommitted transactions, 就和宕机发生时它会做的工作一样。结果是导致database server启动延迟，而如果你做了prepare操作，
+     // 你就可以避免该延迟
+
+     // 注意 iblog* files 将不会被 innobackupex 创建，如果你希望它们被创建，use xtrabackup --prepare on the directory.
+     // Otherwise, the files will be created by the server once started.
+
+
+// 前期的准备完成后，开始真正的还原恢复
+[root@dbserver ~]# /etc/init.d/mysqld stop    #使用innobackupex --copy-back还原前必须将MySQL server关闭，(except when importing a partial backup)
+[root@dbserver ~]# rm -rf /mydata/data/*      #使用innobackupex --copy-back还原前必须将datadir目录清空，同时确保执行该命令的用户对datadir具有写权限
+
+// Restoring Incremental Backups with innobackupex 使用innobackupex 还原增量备份
+      // After preparing the incremental backups, the base directory contains the same data as the full backup. For restoring it, you can use:
+      //    $ innobackupex --copy-back BASE-DIR
+      // You may have to change the ownership as detailed on restoring_a_backup_ibk.
+
+// innobackupex 的 --copy-back 选项 将 a backup 还原到 the server's datadir.
+[root@dbserver ~]# innobackupex --copy-back  /backup/2019-04-03_16-47-55/   #在执行此操作前确保mysql server处于关闭状态，且datadir目录为空目录，且当前用户具有datadir目录的写权限
+
+        190403 17:50:10 [01] Copying ./xtrabackup_info to /mydata/data/xtrabackup_info
+        190403 17:50:10 [01]        ...done
+        190403 17:50:10 [01] Copying ./ibtmp1 to /mydata/data/ibtmp1
+        190403 17:50:10 [01]        ...done
+        190403 17:50:10 completed OK!
+
+
+      //  innobackupex --copy-back 将所有相关的数据文件copy回 the server's datadir, 其(即server's datadir)由 the server's my.cnf 配置文件确定
+      //  注意：The  datadir 目录必须为空(empty)，Percona XtraBackup innobackupex --copy-back option 不会复制(copy over)已存在的文件，除非
+      //        innobackupex --force-non-empty-directories 选项被指定。同时很重要的一点要注意就是在执行还原操作之前 MySQL server 必须被关闭(be shut down),
+      //        你无法还原到一个 mysqld实例处于running 状态的 datadir 目录 (except when importing a partial backup).
+      //  因为文件属性会被保留, 大多情况下，在启动 database server 前，你需要将文件的 ownership 改为 'mysql', 否则这些文件的 ownership 将是创建backup的那个用户.
+      //  $ chown -R mysql:mysql /var/lib/mysql
+      //  Also note that all of these operations will be done as the user calling innobackupex, you will need write permissions on the server's datadir.
+
+
+// 重新调整 /mydata/data/ 的属主属组 为 'mysql'
+[root@dbserver ~]# chown -R mysql:mysql /mydata/data/    #大多情况下,在启动 database server 前，你需要将文件的 ownership 改为 'mysql', 否则这些文件的 ownership 将是创建backup的那个用户.
+[root@dbserver ~]# /etc/init.d/mysqld start
+      Starting MySQL.Logging to '/mydata/data/dbserver.err'.
+       SUCCESS!
+
+[root@dbserver ~]# mysql -h localhost -u root -p -P 3306
+[root@dbserver ~]# mysql -u root -p -S /tmp/mysql.sock
+
+// 最后, 利用binary log做后续时间点还原
+mysql> show binary logs;
++------------------+-----------+
+| Log_name         | File_size |
++------------------+-----------+
+| mysql_bin.000001 |       177 |
+| mysql_bin.000002 |      3909 |
+| mysql_bin.000003 |       783 |
+| mysql_bin.000004 |       759 |  <--- 是宕机之前的日志文件
+| mysql_bin.000005 |       154 |  <- 此为重新启动服务器时新生成的新的日志文件
++------------------+-----------+
+
+mysql> show databases;
++----------------------------+
+| Database                   |
++----------------------------+
+| information_schema         |
+| db_full_backup_demo        |
+| db_increment01_backup_demo |
+| db_increment02_backup_demo |
+| mysql                      |
+| performance_schema         |
+| sys                        |
++----------------------------+
+
+
+// 查到执行 `innobackupex --copy-back /path/to/backup` 命令时 xtrabackup_binlog_info 中记录的当前event坐标信息(即下一次执行修改操作的起始坐标)
+// 注：在对increments的backup 做 --apply-log --redo-only 或 --apply-log --redo-only 时 base 目录下的 xtrabackup_binlog_info是会随之更新的
+[root@dbserver ~]# cat /backup/2019-04-03_16-47-55/xtrabackup_binlog_info
+      mysql_bin.000002        3039
+
+[root@dbserver ~]# ls /mydata/bin-log/{mysql_bin.000002,mysql_bin.000003,mysql_bin.000004}
+      /mydata/bin-log/mysql_bin.000002  /mydata/bin-log/mysql_bin.000003  /mydata/bin-log/mysql_bin.000004
+
+[root@dbserver ~]# mysqlbinlog --start-position=3039 /mydata/bin-log/{mysql_bin.000002,mysql_bin.000003,mysql_bin.000004} > /tmp/mysqlbinlog.sql
+
+mysql> show  variables like 'sql_log_bin';
++---------------+-------+
+| Variable_name | Value |
++---------------+-------+
+| sql_log_bin   | ON    |
++---------------+-------+
+
+mysql> select @@global.sql_log_bin, @@session.sql_log_bin;
++----------------------+-----------------------+
+| @@global.sql_log_bin | @@session.sql_log_bin |
++----------------------+-----------------------+
+|                    1 |                     1 |
++----------------------+-----------------------+
+
+// 临时禁用会话级别的 sql_log_bin
+// 相关参考：mysql> help set
+//     https://dev.mysql.com/doc/refman/5.7/en/set-sql-log-bin.html
+//     https://dev.mysql.com/doc/refman/5.7/en/using-system-variables.html
+mysql> set sql_log_bin = OFF;
+
+mysql> select @@global.sql_log_bin, @@session.sql_log_bin;
++----------------------+-----------------------+
+| @@global.sql_log_bin | @@session.sql_log_bin |
++----------------------+-----------------------+
+|                    1 |                     0 |
++----------------------+-----------------------+
+
+mysql> show master status;
++------------------+----------+--------------+------------------+-------------------+
+| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
++------------------+----------+--------------+------------------+-------------------+
+| mysql_bin.000005 |      154 |              |                  |                   |
++------------------+----------+--------------+------------------+-------------------+
+
+// 利用binary log 二进制日志文件还原
+mysql> source /tmp/mysqlbinlog.sql;
+
+mysql> show master status;
++------------------+----------+--------------+------------------+-------------------+
+| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
++------------------+----------+--------------+------------------+-------------------+
+| mysql_bin.000005 |      154 |              |                  |                   |
++------------------+----------+--------------+------------------+-------------------+
+
+mysql> show databases;
++----------------------------+
+| Database                   |
++----------------------------+
+| information_schema         |
+| db_full_backup_demo        |
+| db_increment01_backup_demo |
+| db_increment02_backup_demo |
+| db_point_time_backup_demo  |
+| mysql                      |
+| performance_schema         |
+| sys                        |
++----------------------------+
+
+mysql> use db_point_time_backup_demo;
+mysql> show tables;
++-------------------------------------+
+| Tables_in_db_point_time_backup_demo |
++-------------------------------------+
+| t_point_time_flush_logs_after01     |
+| t_point_time_flush_logs_after02     |
+| t_point_time_flush_logs_before      |
++-------------------------------------+
+
+
+mysql> select * from t_point_time_flush_logs_before;
++------+
+| a    |
++------+
+|    1 |
++------+
+
+mysql> select * from t_point_time_flush_logs_after01;
++------+
+| a    |
++------+
+|    1 |
++------+
+
+mysql> select * from t_point_time_flush_logs_after02;
++------+
+| a    |
++------+
+|    1 |
++------+
+
+// 退出本次mysql connection, 也就自动销毁了本次会话级别的 sql_log_bin = OFF 的设置
+mysql> quit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
