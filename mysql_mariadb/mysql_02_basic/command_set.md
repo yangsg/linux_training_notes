@@ -34,6 +34,23 @@ URL: http://dev.mysql.com/doc/refman/5.7/en/set-variable.html
 ```
 
 ```
+[root@dbserver ~]# mysql -u root -pWWW.1.com -e 'select @@global.sql_log_bin, @@session.sql_log_bin; set sql_log_bin = OFF; select @@global.sql_log_bin, @@session.sql_log_bin;'
+mysql: [Warning] Using a password on the command line interface can be insecure.
++----------------------+-----------------------+
+| @@global.sql_log_bin | @@session.sql_log_bin |
++----------------------+-----------------------+
+|                    1 |                     1 |
++----------------------+-----------------------+
++----------------------+-----------------------+
+| @@global.sql_log_bin | @@session.sql_log_bin |
++----------------------+-----------------------+
+|                    1 |                     0 |
++----------------------+-----------------------+
+
+```
+
+
+```
 mysql> select @@global.sql_log_bin, @@session.sql_log_bin;
 +----------------------+-----------------------+
 | @@global.sql_log_bin | @@session.sql_log_bin |

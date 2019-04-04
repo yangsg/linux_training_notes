@@ -109,14 +109,6 @@ mysql> create database db_new03 default charset utf8;
       /mydata/bin-log/mysql_bin.000006
 
 
-//todo: 临时关闭二进制日志功能，避免恢复语句也被写入binlog中, 等恢复还原后应该立刻再启用该binlog
-
-
-cat /db_backup/full-backup.2019-03-31_20\:06\:08.sql | mysql -u root -p
-cat /db_backup/increment01-backup.2019-03-31_20\:26\:49.sql | mysql -u root -p
-cat /db_backup/increment02-backup.2019-03-31_20\:49\:54.sql | mysql -u root -p
-
-
 [root@dbserver ~]# grep -in 'end_log_pos'  /db_backup/increment02-backup.2019-03-31_20\:49\:54.sql  | tail -n 1
     45:#190331 20:39:49 server id 136  end_log_pos 397 CRC32 0xe29d96d6     Query   thread_id=2     exec_time=0     error_code=0
 
@@ -124,10 +116,17 @@ cat /db_backup/increment02-backup.2019-03-31_20\:49\:54.sql | mysql -u root -p
     28:#190331 20:39:36 server id 136  end_log_pos 687 CRC32 0xb84e17f4     Rotate to mysql_bin.000004  pos: 4
 
 
-[root@dbserver ~]# mysqlbinlog --start-position=397  /mydata/bin-log/mysql_bin.{000004,000005,000006} | mysql -u root -p
+cat /db_backup/full-backup.2019-03-31_20\:06\:08.sql         > /tmp/backup.sql
+cat /db_backup/increment01-backup.2019-03-31_20\:26\:49.sql >> /tmp/backup.sql
+cat /db_backup/increment02-backup.2019-03-31_20\:49\:54.sql >> /tmp/backup.sql
+[root@dbserver ~]# mysqlbinlog --start-position=397  /mydata/bin-log/mysql_bin.{000004,000005,000006} >> /tmp/backup.sql
 
+// 临时在会话级别禁止 二进制日志
+mysql> set sql_log_bin = OFF;
+mysql> source /tmp/backup.sql;
+mysql> quit
 
-
+// 或者 [root@dbserver ~]# mysql -h localhost -u root -p -P 3306 -e 'set sql_log_bin = OFF;source /tmp/backup.sql;'
 
 
 其他参考：
