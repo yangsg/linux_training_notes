@@ -70,9 +70,6 @@ ip信息：
 [root@master download]# ls /etc/yum.repos.d/ | grep mysql
     mysql-community.repo
     mysql-community-source.repo
-[root@master download]# ls /etc/yum.repos.d/ | grep mysql
-    mysql-community.repo
-    mysql-community-source.repo
 
 [root@master download]# yum repolist all | grep mysql
       mysql-cluster-7.5-community/x86_64 MySQL Cluster 7.5 Community   disabled
@@ -141,6 +138,83 @@ mysql> exit
     1 S mysql      2268      1  0  80   0 - 279981 poll_s 21:05 ?       00:00:00 /usr/sbin/mysqld --daemonize --pid-file=/var/run/mysqld/mysqld.pid
 
 
+
+
+// slave端安装mysql
+[root@slave ~]# mkdir download && cd download
+[root@slave download]# wget --no-check-certificate https://dev.mysql.com/get/mysql80-community-release-el7-2.noarch.rpm
+[root@slave download]# yum -y install mysql80-community-release-el7-2.noarch.rpm
+[root@slave download]# ls /etc/yum.repos.d/ | grep mysql
+    mysql-community.repo
+    mysql-community-source.repo
+
+[root@slave download]# yum repolist all | grep mysql
+
+      mysql-cluster-7.5-community/x86_64 MySQL Cluster 7.5 Community   disabled
+      mysql-cluster-7.5-community-source MySQL Cluster 7.5 Community - disabled
+      mysql-cluster-7.6-community/x86_64 MySQL Cluster 7.6 Community   disabled
+      mysql-cluster-7.6-community-source MySQL Cluster 7.6 Community - disabled
+      mysql-connectors-community/x86_64  MySQL Connectors Community    enabled:     95
+      mysql-connectors-community-source  MySQL Connectors Community -  disabled
+      mysql-tools-community/x86_64       MySQL Tools Community         enabled:     84
+      mysql-tools-community-source       MySQL Tools Community - Sourc disabled
+      mysql-tools-preview/x86_64         MySQL Tools Preview           disabled
+      mysql-tools-preview-source         MySQL Tools Preview - Source  disabled
+      mysql55-community/x86_64           MySQL 5.5 Community Server    disabled
+      mysql55-community-source           MySQL 5.5 Community Server -  disabled
+      mysql56-community/x86_64           MySQL 5.6 Community Server    disabled
+      mysql56-community-source           MySQL 5.6 Community Server -  disabled
+      mysql57-community/x86_64           MySQL 5.7 Community Server    disabled
+      mysql57-community-source           MySQL 5.7 Community Server -  disabled
+      mysql80-community/x86_64           MySQL 8.0 Community Server    enabled:     82
+      mysql80-community-source           MySQL 8.0 Community Server -  disabled
+
+
+[root@slave download]# vim /etc/yum.repos.d/mysql-community.repo
+
+      # Enable to use MySQL 5.7
+      [mysql57-community]
+      name=MySQL 5.7 Community Server
+      baseurl=http://repo.mysql.com/yum/mysql-5.7-community/el/7/$basearch/
+      #// enabled=1 表示启用仓库
+      enabled=1
+      gpgcheck=1
+      gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-mysql
+
+      [mysql80-community]
+      name=MySQL 8.0 Community Server
+      baseurl=http://repo.mysql.com/yum/mysql-8.0-community/el/7/$basearch/
+      #// enabled=0 表示禁用仓库
+      enabled=0
+      gpgcheck=1
+      gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-mysql
+
+
+[root@slave download]# yum repolist enabled | grep mysql
+      mysql-connectors-community/x86_64 MySQL Connectors Community                  95
+      mysql-tools-community/x86_64      MySQL Tools Community                       84
+      mysql57-community/x86_64          MySQL 5.7 Community Server                 327
+
+
+[root@slave download]# yum -y install mysql-community-server
+[root@slave download]# rpm -q mysql-community-server
+      mysql-community-server-5.7.25-1.el7.x86_64
+
+[root@slave ~]# systemctl start mysqld.service
+[root@slave ~]# systemctl enable mysqld.service
+[root@slave ~]# systemctl status mysqld.service
+
+[root@slave ~]# grep 'temporary password' /var/log/mysqld.log
+2019-04-04T13:57:52.760328Z 1 [Note] A temporary password is generated for root@localhost: v4kUOWnvig!1
+
+mysql> ALTER USER 'root'@'localhost' IDENTIFIED BY 'WWW.1.com';
+mysql> quit
+
+
+[root@slave ~]# netstat -anptu  | grep mysql
+    tcp6       0      0 :::3306                 :::*                    LISTEN      17766/mysqld
+[root@slave ~]# ps -elf | grep mysql
+    1 S mysql     17766      1  0  80   0 - 279981 poll_s 21:57 ?       00:00:00 /usr/sbin/mysqld --daemonize --pid-file=/var/run/mysqld/mysqld.pid
 
 
 
