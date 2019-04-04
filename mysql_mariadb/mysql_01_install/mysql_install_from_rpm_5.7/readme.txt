@@ -94,6 +94,7 @@ https://dev.mysql.com/doc/mysql-yum-repo-quick-guide/en/
 
 // 启动 mysql server
 [root@mysql5server ~]# systemctl start mysqld.service     #//centos6 可使用命令 `sudo service mysqld start`
+[root@mysql5server ~]# systemctl enable mysqld.service    # 设置开机自启
 [root@mysql5server ~]# systemctl status mysqld.service    # service mysqld status
 
 #// mysql的一些初始化行为如下: https://dev.mysql.com/doc/mysql-yum-repo-quick-guide/en/
