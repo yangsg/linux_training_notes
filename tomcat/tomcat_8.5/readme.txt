@@ -6,6 +6,7 @@ http://tomcat.apache.org/whichversion.html
 http://tomcat.apache.org/migration-85.html
 
 
+# apache-tomcat-8.5.39.tar.gz中已包含 tomcat-native.tar.gz, 所以不用单独下载了， 参考 http://tomcat.apache.org/tomcat-8.5-doc/apr.html
 
 
 
@@ -14,7 +15,8 @@ http://tomcat.apache.org/migration-85.html
 download/
 ├── apache-tomcat-8.5.39.tar.gz
 ├── jdk-8u202-linux-x64.tar.gz
-└── tomcat-native-1.2.21-src.tar.gz
+└── tomcat-native-1.2.21-src.tar.gz # apache-tomcat-8.5.39.tar.gz中已包含 tomcat-native.tar.gz, 所以不用单独下载了， 参考 http://tomcat.apache.org/tomcat-8.5-doc/apr.html
+
 
 // 安装 oracle 的 java jdk
 [root@tomcat85server ~]# cd download/
@@ -65,7 +67,7 @@ download/
 
 
 
-// 安装可选的组件 Apache Tomcat Native Library (如果不想安装此可选组件，可直接跳过)
+// 安装可选的组件 Apache Tomcat Native Library (如果不想安装此可选组件，可直接跳过, 不过生产环境建议安装)
 //     http://tomcat.apache.org/native-doc/
 //     http://tomcat.apache.org/download-native.cgi
 Apache Tomcat Native Library 是一个允许tomcat 使用特定本地资源用于优化和兼容的可选组件,
@@ -88,7 +90,6 @@ Features of the APR connector:
 [root@tomcat85server ~]# yum -y install gcc gcc-c++ autoconf automake
 
 [root@tomcat85server download]# wget http://mirrors.shu.edu.cn/apache/apr/apr-1.6.5.tar.gz
-[root@tomcat85server download]# wget http://mirrors.shu.edu.cn/apache/apr/apr-util-1.6.1.tar.gz
 
 [root@tomcat85server download]# tar -xvf apr-1.6.5.tar.gz
 [root@tomcat85server download]# cd apr-1.6.5/
@@ -180,7 +181,7 @@ Features of the APR connector:
 
 
 其他参考：
-https://tomcat.apache.org/tomcat-7.0-doc/apr.html
+http://tomcat.apache.org/tomcat-8.5-doc/apr.html
 https://stackoverflow.com/questions/4235171/installing-tomcat-7-on-linux-system-with-native-library
 http://www.edwardbeckett.com/tomcat-8-java-8-apache-centos/
 https://github.com/yangsg/linux_training_notes/tree/master/httpd/httpd02_install_from_source_code
