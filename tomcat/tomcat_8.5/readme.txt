@@ -178,6 +178,18 @@ Features of the APR connector:
 
 
 
+// 设置开机自启
+[root@tomcat85server ~]# vim /etc/rc.d/rc.local
+
+      export JAVA_HOME=/app/jdk1.8.0_202
+      export CATALINA_HOME=/app/apache-tomcat-8.5.39
+
+      $CATALINA_HOME/bin/catalina.sh start
+
+[root@tomcat85server ~]# chmod +x /etc/rc.d/rc.local
+
+
+
 
 
 其他参考：
