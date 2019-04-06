@@ -1,0 +1,74 @@
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Server version:        Apache Tomcat/8.5.39
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Server built:          Mar 14 2019 11:24:26 UTC
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Server number:         8.5.39.0
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: OS Name:               Linux
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: OS Version:            3.10.0-693.el7.x86_64
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Architecture:          amd64
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Java Home:             /app/jdk1.8.0_202/jre
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: JVM Version:           1.8.0_202-b08
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: JVM Vendor:            Oracle Corporation
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: CATALINA_BASE:         /app/tomcat_multi_instances/tomcat01
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: CATALINA_HOME:         /app/apache-tomcat-8.5.39
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dnop
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Djdk.tls.ephemeralDHKeySize=2048
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Djava.protocol.handler.pkgs=org.apache.catalina.webresources
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dorg.apache.catalina.security.SecurityListener.UMASK=0027
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dignore.endorsed.dirs=
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dcatalina.base=/app/tomcat_multi_instances/tomcat01
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Dcatalina.home=/app/apache-tomcat-8.5.39
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.VersionLoggerListener log
+INFO: Command line argument: -Djava.io.tmpdir=/app/tomcat_multi_instances/tomcat01/temp
+Apr 06, 2019 9:20:22 PM org.apache.catalina.core.AprLifecycleListener lifecycleEvent
+INFO: Loaded APR based Apache Tomcat Native library [1.2.21] using APR version [1.6.5].
+Apr 06, 2019 9:20:22 PM org.apache.catalina.core.AprLifecycleListener lifecycleEvent
+INFO: APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true].
+Apr 06, 2019 9:20:22 PM org.apache.catalina.core.AprLifecycleListener lifecycleEvent
+INFO: APR/OpenSSL configuration: useAprConnector [false], useOpenSSL [true]
+Apr 06, 2019 9:20:22 PM org.apache.catalina.core.AprLifecycleListener initializeSSL
+INFO: OpenSSL successfully initialized [OpenSSL 1.0.2k-fips  26 Jan 2017]
+Apr 06, 2019 9:20:22 PM org.apache.coyote.AbstractProtocol init
+INFO: Initializing ProtocolHandler ["http-nio-8180"]
+Apr 06, 2019 9:20:22 PM org.apache.tomcat.util.net.NioSelectorPool getSharedSelector
+INFO: Using a shared selector for servlet write/read
+Apr 06, 2019 9:20:22 PM org.apache.coyote.AbstractProtocol init
+INFO: Initializing ProtocolHandler ["ajp-nio-8109"]
+Apr 06, 2019 9:20:22 PM org.apache.tomcat.util.net.NioSelectorPool getSharedSelector
+INFO: Using a shared selector for servlet write/read
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.Catalina load
+INFO: Initialization processed in 948 ms
+Apr 06, 2019 9:20:22 PM org.apache.catalina.users.MemoryUserDatabase open
+SEVERE: The specified user database [conf/tomcat-users.xml] could not be found
+Apr 06, 2019 9:20:22 PM org.apache.catalina.core.StandardService startInternal
+INFO: Starting service [Catalina]
+Apr 06, 2019 9:20:22 PM org.apache.catalina.core.StandardEngine startInternal
+INFO: Starting Servlet Engine: Apache Tomcat/8.5.39
+Apr 06, 2019 9:20:22 PM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deploying web application directory [/app/tomcat_multi_instances/tomcat01/webapps/ROOT]
+Apr 06, 2019 9:20:23 PM org.apache.catalina.startup.HostConfig deployDirectory
+INFO: Deployment of web application directory [/app/tomcat_multi_instances/tomcat01/webapps/ROOT] has finished in [544] ms
+Apr 06, 2019 9:20:23 PM org.apache.coyote.AbstractProtocol start
+INFO: Starting ProtocolHandler ["http-nio-8180"]
+Apr 06, 2019 9:20:23 PM org.apache.coyote.AbstractProtocol start
+INFO: Starting ProtocolHandler ["ajp-nio-8109"]
+Apr 06, 2019 9:20:23 PM org.apache.catalina.startup.Catalina start
+INFO: Server startup in 623 ms
