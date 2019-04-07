@@ -19,6 +19,13 @@ https://tomcat.apache.org/tomcat-8.5-doc/architecture/overview.html
 
 [root@tomcat85server ~]# mkdir -pv /app/tomcat_multi_instances/{tomcat01,tomcat02}/{bin,conf,lib,logs,webapps,work,temp}
 
+// http://tomcat.apache.org/tomcat-8.5-doc/introduction.html
+// 实际生产环境中， 最好将 CATALINA_HOME/conf 下的所有内容copy到 CATALINA_BASE/conf/
+// 原文:
+//     We also recommend you copy all configuration files from the CATALINA_HOME/conf directory into the CATALINA_BASE/conf/
+//     directory. In case a configuration file is missing in CATALINA_BASE, there is no fallback to CATALINA_HOME. Consequently, this may cause failure.
+//
+// At minimum, CATALINA_BASE must contain: conf/server.xml  conf/web.xml
 
 [root@tomcat85server ~]# cp -a /app/apache-tomcat-8.5.39/conf/{server.xml,web.xml} /app/tomcat_multi_instances/tomcat01/conf/
 [root@tomcat85server ~]# cp -a /app/apache-tomcat-8.5.39/conf/{server.xml,web.xml} /app/tomcat_multi_instances/tomcat02/conf/
