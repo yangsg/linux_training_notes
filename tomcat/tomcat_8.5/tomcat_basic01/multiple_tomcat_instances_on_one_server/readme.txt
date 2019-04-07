@@ -206,6 +206,10 @@ https://tomcat.apache.org/tomcat-8.5-doc/architecture/overview.html
 [root@tomcat85server ~]# vim /app/tomcat_multi_instances/tomcat02/bin/setenv.sh
     source $CATALINA_HOME/bin/setenv.sh
 
+// https://github.com/yangsg/linux_training_notes/blob/master/tomcat/tomcat_8.5/tomcat_basic01/multiple_tomcat_instances_on_one_server/tomcat85server/app/tomcat_multi_instances/tomcat01/bin/setenv.sh
+
+
+
 
 
 
