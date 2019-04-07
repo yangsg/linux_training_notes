@@ -15,6 +15,7 @@ Java虚拟机（JVM）体系结构概述及各种性能参数优化总结
 https://tomcat.apache.org/tomcat-8.5-doc/
 https://tomcat.apache.org/tomcat-8.5-doc/architecture/overview.html
 
+//TODO: 修改为使用普通账号运行tomcat服务
 
 [root@tomcat85server ~]# mkdir -pv /app/tomcat_multi_instances/{tomcat01,tomcat02}/{bin,conf,lib,logs,webapps,work,temp}
 
@@ -48,6 +49,7 @@ https://tomcat.apache.org/tomcat-8.5-doc/architecture/overview.html
     <Connector port="8209" protocol="AJP/1.3" redirectPort="8243" />
 
 
+// TODO: 该脚本有待完善
 [root@tomcat85server ~]# vim /app/tomcat_multi_instances/tomcat01/tomcat.sh
       #!/bin/bash
 
