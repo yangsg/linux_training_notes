@@ -190,3 +190,26 @@ https://tomcat.apache.org/tomcat-8.5-doc/architecture/overview.html
 
 
 
+// 其他： 如果存在 $CATALINA_BASE/bin/setenv.sh,
+// 则tomcat对读取并执行 $CATALINA_BASE/bin/setenv.sh 而不会使用 $CATALINA_HOME/bin/setenv.sh
+// 如果要自定义 $CATALINA_BASE/bin/setenv.sh, 又想使用 $CATALINA_HOME/bin/setenv.sh 中默认的配置，
+// 可以按如下方式使用setenv.sh：
+// 假设 $CATALINA_HOME/bin/setenv.sh 已有内容如下：
+[root@tomcat85server ~]# cat /app/apache-tomcat-8.5.39/bin/setenv.sh
+      LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CATALINA_HOME/lib
+      export LD_LIBRARY_PATH
+
+// 创建 $CATALINA_BASE/bin/setenv.sh 文件
+[root@tomcat85server ~]# vim /app/tomcat_multi_instances/tomcat01/bin/setenv.sh
+    source $CATALINA_HOME/bin/setenv.sh
+
+[root@tomcat85server ~]# vim /app/tomcat_multi_instances/tomcat02/bin/setenv.sh
+    source $CATALINA_HOME/bin/setenv.sh
+
+
+
+
+
+
+
+
