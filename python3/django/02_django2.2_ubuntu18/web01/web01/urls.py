@@ -15,7 +15,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from . import hello
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('httpresponse_action/', hello.httpresponse_action),  #// http://192.168.175.231:8000/httpresponse_action/
+    path('redirect_action/', hello.redirect_action),          #// http://192.168.175.231:8000/redirect_action/
+    path('render_action/', hello.render_action),              #// http://192.168.175.231:8000/render_action/
+    path('', hello.index_action),                             #// http://192.168.175.231:8000
 ]

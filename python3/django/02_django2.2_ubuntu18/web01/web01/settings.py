@@ -37,6 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    #// 注册自定义的apps
+    'app01',
 ]
 
 MIDDLEWARE = [
@@ -54,7 +57,10 @@ ROOT_URLCONF = 'web01.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        #// https://docs.djangoproject.com/en/2.2/topics/templates/
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -117,4 +123,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = '/static/'   #// 指定访问静态文件的url地址
+STATICFILES_DIRS = [ #//https://docs.djangoproject.com/en/2.1/ref/settings/#std:setting-STATICFILES_DIRS
+    os.path.join(BASE_DIR, 'static'),  #// 静态文件的存放位置
+]
