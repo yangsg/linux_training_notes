@@ -15,6 +15,15 @@ Python 入门指南
 http://www.runoob.com/manual/pythontutorial3/docs/html/
 
 
+The Python Standard Library Python标准库
+https://docs.python.org/3.6/library/index.html
+
+
+内置函数与常量
+https://docs.python.org/3.6/library/functions.html
+https://docs.python.org/3.6/library/constants.html
+
+
 
 
 
