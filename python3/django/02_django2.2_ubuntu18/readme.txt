@@ -32,6 +32,21 @@ web01/
 					└── wsgi.py
 
 
+(django-env) yangsg@vm:~/linux_training_notes/python3/django/02_django2.2_ubuntu18/web01$ django-admin startapp app01
+(django-env) yangsg@vm:~/linux_training_notes/python3/django/02_django2.2_ubuntu18/web01$ tree app01/
+      app01/
+      ├── admin.py
+      ├── apps.py
+      ├── __init__.py
+      ├── migrations
+      │   └── __init__.py
+      ├── models.py
+      ├── tests.py
+      └── views.py
+
+
+
+
 
 
 
