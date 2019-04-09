@@ -21,6 +21,19 @@ web01/
 (django-env) yangsg@vm:~/workspace/web01$ python manage.py runserver 192.168.175.231:8000
 
 
+(django-env) yangsg@vm:~/linux_training_notes/python3/django/02_django2.2_ubuntu18$ django-admin startproject web01
+(django-env) yangsg@vm:~/linux_training_notes/python3/django/02_django2.2_ubuntu18$ tree web01/
+			web01/
+			├── manage.py
+			└── web01
+					├── __init__.py
+					├── settings.py
+					├── urls.py
+					└── wsgi.py
+
+
+
+
 
 
 
