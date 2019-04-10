@@ -14,13 +14,27 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, re_path
 from . import hello
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('httpresponse_action/', hello.httpresponse_action),  #// http://192.168.175.231:8000/httpresponse_action/
-    path('redirect_action/', hello.redirect_action),          #// http://192.168.175.231:8000/redirect_action/
-    path('render_action/', hello.render_action),              #// http://192.168.175.231:8000/render_action/
-    path('', hello.index_action),                             #// http://192.168.175.231:8000
+    path('', hello.index_action),
+    path('httpresponse_action/', hello.httpresponse_action),
+    path('redirect_action/', hello.redirect_action),
+    path('render_action/', hello.render_action),
+
+    path('get_request_form/', hello.get_request_form),
+    path('get_request_action/', hello.get_request_action),
+    path('post_request_action/', hello.post_request_action),
+
+
+    #// 包含正则表达式的url
+    re_path('urlparam_pattern/\d+', hello.urlparam_pattern),
+    re_path('urlparam_pattern_group/(\d+)/(\d+)', hello.urlparam_pattern_group),
+    re_path('urlparam_named_pattern_group/(?P<user_id>\d+)/(?P<book_id>\d+)', hello.urlparam_named_pattern_group),
+    re_path('urlparam_var_args/(\d+)/(\d+)', hello.urlparam_var_args),
+    re_path('urlparam_var_kwargs/(?P<userid>\d+)/(?P<bookid>\d+)', hello.urlparam_var_kwargs),
+
+
 ]

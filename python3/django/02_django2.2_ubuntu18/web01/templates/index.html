@@ -7,5 +7,47 @@
 <div>
 	<a href='/render_action/'> return render(request, 'index.html') </a>
 </div>
+<div>
+	<a href='/get_request_form/'> get_request_action </a>
+</div>
+<div>
+  <a href='/urlparam_pattern/1234567'>
+    <xmp>
+      re_path('urlparam_pattern/\d+', hello.urlparam_pattern)
+    </xmp>
+  </a>
+</div>
+<div>
+  <a href='/urlparam_pattern_group/10/333'>
+    <xmp>
+      re_path('urlparam_pattern_group/(\d+)/(\d+)', hello.urlparam_pattern_group)
+    </xmp>
+  </a>
+</div>
+<div>
+  <a href='urlparam_named_pattern_group/11/333'>
+    <!--
+      https://stackoverflow.com/questions/4707878/how-do-i-insert-code-examples-into-an-html-file
+    -->
+    <xmp>
+      re_path('urlparam_named_pattern_group/(?P<userid>\d+)/(?P<bookid>\d+)', hello.urlparam_named_pattern_group),
+    </xmp>
+  </a>
+</div>
+
+<div>
+  <a href='urlparam_var_args/11/333'>
+    <xmp>
+      re_path('urlparam_var_args/(\d+)/(\d+)', hello.urlparam_var_args)
+    </xmp>
+  </a>
+</div>
+<div>
+  <a href='urlparam_var_kwargs/11/333'>
+    <xmp>
+      re_path('urlparam_var_kwargs/(?P<userid>\d+)/(?P<bookid>\d+)', hello.urlparam_var_kwargs)
+    </xmp>
+  </a>
+</div>
 
 

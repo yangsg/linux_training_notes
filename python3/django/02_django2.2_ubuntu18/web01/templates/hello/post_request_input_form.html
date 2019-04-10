@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<!--
+  https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form
+-->
+<form id="get-request-form" action='/post_request_action/' method='post'>
+<div>
+用户名：<input type='text' name="username" value="" />
+</div>
+<div>
+密码：<input type='password' name="password" value="" />
+</div>
+<div>
+爱好：<input type='checkbox' name="hobbies" value="1" />足球
+      <input type='checkbox' name="hobbies" value="2" />篮球
+      <input type='checkbox' name="hobbies" value="3" />象棋
+</div>
+
+<input type='submit' value='post提交' />
+</form>
+
+</body>
+</html>
