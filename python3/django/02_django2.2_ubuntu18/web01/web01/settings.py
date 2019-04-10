@@ -79,11 +79,80 @@ WSGI_APPLICATION = 'web01.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
+#// DATABASES = {
+#//     'default': {
+#//         'ENGINE': 'django.db.backends.sqlite3',
+#//         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#//     }
+#// }
 DATABASES = {
+    #// 切换为使用mysql数据库
+    #// https://docs.djangoproject.com/en/2.2/ref/databases/
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'django_db01',
+        'USER': 'django_user01',
+        'PASSWORD': 'WWW.1.com',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
     }
+    #// 安装mysql相关驱动, 如 pymysql 和 mysqlclient
+    #// pip install pymysql
+
+    #// 安装 mysqlclient, 不过还要先安装mysqlclient的依赖
+    #// https://pypi.org/project/mysqlclient/
+    #// sudo apt install python3-dev default-libmysqlclient-dev  #针对ubuntu
+    #// sudo yum install python3-devel mysql-devel   #针对centos
+
+    #// https://www.crybit.com/how-to-install-gcc-gnu-c-c-compiler-unixlinux/
+    #// yum install gcc gcc-c++ autoconf automake   # for centos
+    #// sudo apt install build-essential            # for ubuntu
+
+    #// 参考: https://blog.csdn.net/weixin_43292558/article/details/86605797
+    #// python3 pip安装模块过程中提示error: invalid command 'bdist_wheel'错误的解决办法
+    #// python3 -m pip install --upgrade pip
+
+    #// pip install mysqlclient
+
+
+    #// install mariadb server on ubuntu
+    #// https://websiteforstudents.com/installing-mariadb-database-server-on-ubuntu-18-04-lts-beta-server/
+    #// https://linuxize.com/post/how-to-install-mariadb-on-ubuntu-18-04/
+    #// yangsg@vm:~$ sudo apt install mariadb-server
+    #// yangsg@vm:~$ sudo mysql_secure_installation
+    #// 配置文件位置：/etc/mysql/mariadb.conf.d/50-server.cnf
+
+    #// yangsg@vm:~$ sudo systemctl stop mariadb.service
+    #// yangsg@vm:~$ sudo systemctl start mariadb.service
+    #// yangsg@vm:~$ sudo systemctl enable mariadb.service
+
+    #// https://superuser.com/questions/957708/mysql-mariadb-error-1698-28000-access-denied-for-user-rootlocalhost
+    #// https://stackoverflow.com/questions/39281594/error-1698-28000-access-denied-for-user-rootlocalhost
+    #// 直接使用 mysql -u root -p 会报错, 如下：
+    #//   >      yangsg@vm:~$ mysql -u root -p
+    #//   >      Enter password:
+    #//   >      ERROR 1698 (28000): Access denied for user 'root'@'localhost'
+    #// yangsg@vm:~$ sudo mysql -u root -p
+    #//
+    #// MariaDB [mysql]> use mysql;
+    #// MariaDB [mysql]> UPDATE user SET plugin='mysql_native_password' WHERE User='root';
+    #// MariaDB [mysql]> flush privileges;
+    #// yangsg@vm:~$ sudo systemctl restart mariadb.service
+    #// 现在就可以直接使用 `mysql -u root -p` 登录数据库了
+
+    #// MariaDB [(none)]> GRANT ALL ON django_db01.* TO 'django_user01'@'127.0.0.1' IDENTIFIED BY 'WWW.1.com';
+    #// MariaDB [mysql]> SELECT User, Host, plugin FROM mysql.user;;
+    #// +---------------+-----------+-----------------------+
+    #// | User          | Host      | plugin                |
+    #// +---------------+-----------+-----------------------+
+    #// | root          | localhost | mysql_native_password |
+    #// | django_user01 | 127.0.0.1 |                       |
+    #// +---------------+-----------+-----------------------+
+    #// MariaDB [mysql]> flush privileges;
+
+    #// https://stackoverflow.com/questions/10299148/mysql-error-1045-28000-access-denied-for-user-billlocalhost-using-passw
+    #// yangsg@vm:~$ mysql -h 127.0.0.1 -u django_user01 -p
+
 }
 
 
