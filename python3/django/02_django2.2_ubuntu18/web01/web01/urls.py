@@ -38,7 +38,7 @@ urlpatterns = [
 
     #// https://docs.djangoproject.com/en/2.2/topics/http/urls/#naming-url-patterns
     #// https://docs.djangoproject.com/en/2.2/ref/urlresolvers/
-    re_path('url_tag_demo01/', hello.url_tag_demo01),
+    re_path(r'url_tag_demo01/', hello.url_tag_demo01),
     re_path(r'url_tag_demo02/(\d+)/(\d+)', hello.url_tag_demo02, name='url_reverse_name_ref'),
     re_path(r'url_reverse_fn01/(\d+)/(\d+)', hello.url_reverse_fn01, name='url_reverse_fn01'),
     re_path(r'url_reverse_fn02/(?P<user_id>\d+)/(?P<group_id>\d+)', hello.url_reverse_fn02, name='url_reverse_fn02'),

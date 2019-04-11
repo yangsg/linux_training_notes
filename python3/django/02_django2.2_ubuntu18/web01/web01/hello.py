@@ -91,7 +91,8 @@ def urlparam_var_kwargs(request, **kwargs):
     return HttpResponse(escape(str(kwargs)))
 
 def url_tag_demo01(request):
-    return render(request, 'hello/url_tag_demo01.html')
+    #// return render(request, 'hello/url_tag_demo01.html')
+    return HttpResponse('dummy')
 
 def url_tag_demo02(request, id01, id02):
     return render(request, 'hello/url_tag_demo01.html', { 'id01': id01, 'id02': id02 })
