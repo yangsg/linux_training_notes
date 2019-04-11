@@ -14,7 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, re_path
+from django.urls import path, re_path, include
 from . import hello
 
 urlpatterns = [
@@ -45,6 +45,11 @@ urlpatterns = [
 
     re_path(r'url_reverse_fn03/(\d+)/(\d+)', hello.url_reverse_fn03, name='url_reverse_fn03'),
     re_path(r'url_reverse_fn04/(?P<user_id>\d+)/(?P<group_id>\d+)', hello.url_reverse_fn04, name='url_reverse_fn04'),
+
+    #// url dispatcher  url分发
+    #// https://docs.djangoproject.com/en/2.2/topics/http/urls/#url-dispatcher
+    #// https://docs.djangoproject.com/en/2.2/topics/http/urls/#including-other-urlconfs
+     path('app01/', include('app01.urls')),
 
 
 
