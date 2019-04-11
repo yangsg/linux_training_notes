@@ -126,6 +126,14 @@ def url_reverse_fn04(request, **kwargs):
     return HttpResponse(new_url)
 
 
+def escape_html_demo(request):
+    #// https://docs.djangoproject.com/en/2.2/ref/utils/
+    #// https://stackoverflow.com/questions/1946281/in-django-how-do-i-get-escaped-html-in-httpresponse
+    from django.utils.html import escape
+    html_content = escape('<h1>hello world</h1>')
+    return render(request, 'hello/escape_html_demo_output.html', {'html_content': html_content})
+
+
 
 
 

@@ -52,6 +52,7 @@ urlpatterns = [
      path('app01/', include('app01.urls')),
 
 
+    re_path(r'escape_html_demo/', hello.escape_html_demo, name='escape_html_demo'),
 
 ]
 
