@@ -8,7 +8,20 @@
 <!--
   https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form
 -->
-<form id="get-request-form" action='/post_request_action/' method='post'>
+<form id="post-request-form" action='/post_request_action/' method='post'>
+<!--
+  浅谈CSRF攻击方式 (Cross Site Request Forgery)
+  http://www.cnblogs.com/hyddd/archive/2009/04/09/1432744.html
+  Django中CSRF原理及应用详解
+  https://blog.csdn.net/qq_41000891/article/details/82784489
+-->
+<!--
+  https://docs.djangoproject.com/en/2.2/ref/csrf/
+  使用 {% csrf_token %} 可以生成类似如下这种隐藏域来防止 csrf 攻击
+  <input type="hidden" name="csrfmiddlewaretoken" value="3fKzj7n1jvc5ESdSfI8bcyfOMHS1izNLo2TXVVYy7T56Ijhm6U01Wo10fzvM8W1F">
+-->
+{% csrf_token %}
+
 <div>
 用户名：<input type='text' name="username" value="" />
 </div>

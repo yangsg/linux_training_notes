@@ -1,0 +1,42 @@
+<h1>response of post request</h1>
+
+<!--
+https://docs.djangoproject.com/en/2.1/topics/templates/
+
+Django模板内部自带的tags标签
+https://docs.djangoproject.com/en/2.1/ref/templates/builtins/#ref-templates-builtins-tags
+
+如何自定义标签
+https://docs.djangoproject.com/en/2.1/howto/custom-template-tags/#howto-writing-custom-template-tags
+
+-->
+
+<!--
+
+官网更多if tag 是示例和用法
+https://docs.djangoproject.com/en/2.1/ref/templates/builtins/#if
+-->
+<!-- 一个简单的 if tag 用法示例, 更多用法见官网 -->
+{% if username %}
+username: {{ username }}
+{% elif password %}
+password: {{ password }}
+{% else %}
+no username and no password!!!
+{% endif %}
+
+<!--
+for tag
+https://docs.djangoproject.com/en/2.1/ref/templates/builtins/#for
+-->
+
+<ul>
+{% for hobby in hobbies %}
+    <li>{{ hobby }}</li>
+{% endfor %}
+</ul>
+
+
+
+
+

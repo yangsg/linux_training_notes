@@ -25,7 +25,7 @@ SECRET_KEY = '7k&7i)f9g8mf_0zvztt^e277-@#@ljzryfhda#wbb3!76mohe9'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.175.231', '127.0.0.1']
+ALLOWED_HOSTS = ['192.168.175.100', '127.0.0.1']
 
 
 # Application definition
@@ -46,6 +46,10 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    #// https://docs.djangoproject.com/en/2.2/ref/csrf/
+    #// django.middleware.csrf.CsrfViewMiddleware 中间件用于防止csrf(Cross Site Request Forgery)攻击
+    #// 其应位于任何view中间件之前，且向本网站提交的任何post等会修改网站数据的请求的<form>表单都应包含
+    #// {% csrf_token %}, 向本网之外外网提交的表单不应该包含该 csrf_token, 否则会造成 CSRF token 泄漏
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -88,6 +92,9 @@ WSGI_APPLICATION = 'web01.wsgi.application'
 DATABASES = {
     #// 切换为使用mysql数据库
     #// https://docs.djangoproject.com/en/2.2/ref/databases/
+    #// https://docs.djangoproject.com/en/2.1/ref/databases/#mysql-notes
+    #// https://riptutorial.com/django/example/17418/mysql---mariadb
+    #// https://www.digitalocean.com/community/tutorials/how-to-use-mysql-or-mariadb-with-your-django-application-on-ubuntu-14-04
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'django_db01',
@@ -95,6 +102,10 @@ DATABASES = {
         'PASSWORD': 'WWW.1.com',
         'HOST': '127.0.0.1',
         'PORT': '3306',
+        'OPTIONS': {
+            #//https://docs.djangoproject.com/en/2.2/ref/databases/#mysql-sql-mode
+            'sql_mode': 'STRICT_TRANS_TABLES',
+        },
     }
     #// 安装mysql相关驱动, 如 pymysql 和 mysqlclient
     #// pip install pymysql
@@ -113,6 +124,8 @@ DATABASES = {
     #// python3 -m pip install --upgrade pip
 
     #// pip install mysqlclient
+
+    #// MariaDB [(none)]> create database django_db01 charset utf8;
 }
 
 

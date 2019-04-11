@@ -23,19 +23,31 @@ def get_request_form(request):
 def get_request_action(request):
     #// https://docs.djangoproject.com/en/2.2/ref/request-response/
     #// https://docs.djangoproject.com/en/2.2/ref/request-response/#django.http.QueryDict
-    username = request.GET.get('username')
-    username = request.GET.get('us')
+    username = request.GET.get('username')  #//这里不用request.GET['username']是为了避免不用username参数时抛出异常
+    password = request.GET.get('password')
+    #username = request.GET.get('us')
     hobbies = request.GET.getlist('hobbies')
-    print(username)
-    print(type(username))
+    #hobbies = request.GET.getlist('xxx')
+    #result = fr'{type(hobbies)} <br /> {hobbies}'
+    #return HttpResponse(escape(result))
+
 
     #// http://python.astrotech.io/data-types/none.html
     #// https://stackoverflow.com/questions/23086383/how-to-test-nonetype-in-python
     #// 判断None时应该使用is 或 is not, 而不应该使用 == 或 !=
     #// None 是一个NoneType的唯一的单例对象
-    if username is None or password is None:
+    if username is None or password is None:  # username没填写时为空字符串'', 如果没有提供username的参数，则为None
+        return HttpResponse('username or password is not provided!')
+
+    if username is None or password is None:  # username没填写时为空字符串'', 如果没有提供username的参数，则为None
+        return HttpResponse('username or password is not provided!')
+
+    if username == '' or password == '':  # username没填写时为空字符串'', 如果没有提供username的参数，则为None
         return HttpResponse('username or password is empty!')
 
+    #// https://www.geeksforgeeks.org/python-program-to-check-if-string-is-empty-or-not/
+    if username.isspace() or password.isspace():  # username没填写时为空字符串'', 如果没有提供username的参数，则为None
+        return HttpResponse('username or password is blank!')
 
     result = f'username: {username}, password: {password}'
     return HttpResponse(result)
@@ -45,7 +57,16 @@ def post_request_action(request):
     if request.method == 'GET':
         return render(request, 'hello/post_request_input_form.html')
     elif request.method == 'POST':
-        return render(request, 'hello/post_request_input_form.html')
+
+        username = request.POST.get('username')  #//这里不用request.POST['username']是为了避免不用username参数时抛出异常
+        password = request.POST.get('password')
+        hobbies = request.POST.getlist('hobbies')
+
+        return render(request, 'hello/post_request_output.html', {
+            'username': username,
+            'password': password,
+            'hobbies': hobbies,
+        })
 
 def urlparam_pattern(request):
     return HttpResponse(r"path('urlparam/\d+', hello.urlparam_id)")
