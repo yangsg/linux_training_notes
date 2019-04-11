@@ -1,0 +1,40 @@
+
+<h1>url tag demo</h1>
+<p>
+{{ request.path_info }}
+</p>
+<p>
+<!-- https://docs.djangoproject.com/en/dev/ref/request-response/#django.http.HttpRequest.get_host  -->
+{{ request.get_host }} <!-- 192.168.175.100:8000 -->
+</p>
+<p>
+<!--
+https://docs.djangoproject.com/en/2.2/ref/templates/builtins/#url
+-->
+{% comment %}
+    {% url 'url_reverse_name_ref'  %}
+{% endcomment %}
+
+<!-- 引用带有正则表达式的url地址 -->
+{% url 'url_reverse_name_ref' '45' '46' %}
+<br />
+
+<!-- 引用带有正则表达式的url地址 【为url地址传参数】 -->
+{% url 'url_reverse_name_ref' id01 id02 %}
+
+
+<!-- 此处 url ... as var 的方式中 var 变量的 scope 为 url 所在的 block -->
+{% url 'url_reverse_name_ref' id01 id02  as url_var %}
+<ul>
+  <li>{{ url_var }}</li>
+  <li>{{ url_var }}</li>
+</ul>
+
+
+</p>
+
+
+
+
+
+

@@ -1,5 +1,6 @@
 from django.shortcuts import HttpResponse, redirect, render
 from django.utils.html import escape
+from django.urls import reverse
 
 
 def httpresponse_action(request):
@@ -88,5 +89,63 @@ def urlparam_var_args(request, *args):
 
 def urlparam_var_kwargs(request, **kwargs):
     return HttpResponse(escape(str(kwargs)))
+
+def url_tag_demo01(request):
+    return render(request, 'hello/url_tag_demo01.html')
+
+def url_tag_demo02(request, id01, id02):
+    return render(request, 'hello/url_tag_demo01.html', { 'id01': id01, 'id02': id02 })
+
+
+#// https://docs.djangoproject.com/en/2.2/ref/urlresolvers/#reverse
+def url_reverse_fn01(request, id01, id02):
+    new_url = reverse("url_reverse_fn01", args=[id01, id02])
+    return HttpResponse(new_url)
+
+
+def url_reverse_fn02(request, user_id, group_id):
+    new_url = reverse("url_reverse_fn02", kwargs={'user_id': user_id, 'group_id': group_id})
+    return HttpResponse(new_url)
+
+def url_reverse_fn03(request, *args):
+    new_url = reverse("url_reverse_fn02", args=args)
+
+    #// 简单的 Template 与 RequestContext 使用例子
+    #// https://docs.djangoproject.com/en/2.2/ref/templates/api/#django.template.RequestContext
+    from django.template import RequestContext, Template
+    template = Template('new_url: {{new_url}}')
+    context = RequestContext(request, {
+        'new_url': new_url,
+    })
+    return HttpResponse(template.render(context))
+
+
+def url_reverse_fn04(request, **kwargs):
+    new_url = reverse("url_reverse_fn04", kwargs=kwargs)
+    return HttpResponse(new_url)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
