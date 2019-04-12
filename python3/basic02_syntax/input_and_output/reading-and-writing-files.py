@@ -83,7 +83,7 @@ def read_text_file_line_by_line_03():
 
 #// read_text_file_line_by_line_03()
 
-#// 真正的copy操作应该使用shutil.copy, 因为 shutil.copy 函数对可能地各种情况都做了考虑
+#// 真正的copy操作应该使用shutil.copy或shutil.copy2, 因为 shutil.copy 函数对可能地各种情况都做了考虑
 #// 本例只是简单拷贝了shutil.copy的部分源码, 用于演示 shutil.copy 在拷贝 binary file时实际是怎么读取写入的
 #// 可以利用pycharm 工具查看 shutil.copy 的源码来学习更多内容
 def copy_binary_file(src, dst):

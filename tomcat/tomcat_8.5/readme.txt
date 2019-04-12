@@ -204,3 +204,10 @@ https://stackoverflow.com/questions/19216979/ssl-configuration-in-tomcat-and-apr
 https://advisor.dbu.edu/docs/apr.html
 https://www.cnblogs.com/bigdevilking/p/9497991.html
 
+
+其他与java等计算机相关的学习资料：
+https://legacy.gitbook.com/@alleniverson
+https://blog.csdn.net/axi295309066
+
+
+
