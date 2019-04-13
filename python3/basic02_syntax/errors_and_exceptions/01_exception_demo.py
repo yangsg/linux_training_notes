@@ -1,4 +1,7 @@
 
+#// https://docs.python.org/3.6/tutorial/errors.html#errors-and-exceptions
+
+#// https://docs.python.org/3.6/tutorial/errors.html#handling-exceptions
 def demo01():  #// 如果输出非整数字符，该例子需要按 Control-C 来抛出 KeyboardInterrupt 异常中止
     while True:
         try:  #// python3 的 try ... except 的处理流程和 java 的 异常流程是类似的
@@ -110,7 +113,7 @@ def except_handler_also_handle_innermost_exception(): #// 意思就是 异常 �
 
 #// except_handler_also_handle_innermost_exception()
 
-
+#// https://docs.python.org/3.6/tutorial/errors.html#raising-exceptions
 def raise_exception():  #// 手动抛出异常
     try:
         raise NameError('HiThere')  #// 类似java 中 'throw new Exception()' 语句
@@ -125,7 +128,7 @@ def raise_exception():  #// 手动抛出异常
 
 #// raise_exception()
 
-
+#// https://docs.python.org/3.6/tutorial/errors.html#raising-exceptions
 def re_raise_exception():
     try:
         try:
@@ -139,6 +142,7 @@ def re_raise_exception():
 #// re_raise_exception()
 
 
+#// https://docs.python.org/3.6/tutorial/errors.html#user-defined-exceptions
 #// python 语言中异常类的类名 喜欢以 Error 作为后缀名
 def user_defined_exception():  #// 用户自定义异常, 异常应该直接或间接派生自  Exception 类
     #// 设计模块时， 对于根据不同条件抛出不同类型的错误时，一个通常的实践是针对于该模块创建一个异常基类(即base Error),
@@ -174,7 +178,7 @@ def user_defined_exception():  #// 用户自定义异常, 异常应该直接或�
             self.next = next
             self.message = message
 
-
+#// https://docs.python.org/3.6/tutorial/errors.html#defining-clean-up-actions
 def defining_clean_up_actions():  #// finally 子句的例子, 和java中的finally 子句类似
     def divide(x, y):
         try:
@@ -196,6 +200,7 @@ def defining_clean_up_actions():  #// finally 子句的例子, 和java中的fina
 
 #// defining_clean_up_actions()
 
+#// https://docs.python.org/3.6/tutorial/errors.html#predefined-clean-up-actions
 def predefined_clean_up_actions():
     with open("/etc/shells") as f:  #// 此处 with 会保证自动清理 f 表示的文件资源(不论是否发生异常), 这样简化的代码的编写
     #//with open("myfile.txt") as f:
