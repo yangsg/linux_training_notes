@@ -32,5 +32,6 @@ from math import pi
 [str(round(pi, i)) for i in range(1, 6)]
 
 
+list(x for x in range(10))  #//<-- 注：此处使用的是生成器表达式 generator expression, 而不是 list comprehension, generator expression语法上很像list comprehension, 但它使用的是小圆括号.
 
 
