@@ -40,8 +40,16 @@ attributes and the global names defined in the module: they share the same names
 module的attributes 与 定义与其中的global names 具有直接的映射关系：它们共享同一名字空间
 
 为模块属性赋值：
-modname.the_answer = 42
+modname.the_answer = 42  #// 赋值不是copy data, they just bind names to objects, The same is true for deletions
 
+删除属性：
+del modname.the_answer
+
+
+更多scope 和 namespace 的细节，见  https://github.com/yangsg/linux_training_notes/blob/master/python3/basic02_syntax/classes/01_scopes-and-namespaces.py
+
+
+注意 global 语句 和 nonlocal 语句的作用
 
 
 

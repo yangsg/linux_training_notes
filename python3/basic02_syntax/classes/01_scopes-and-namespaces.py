@@ -1,8 +1,8 @@
 #// https://docs.python.org/3.6/tutorial/classes.html#python-scopes-and-namespaces
 
 #// Attributes may be read-only or writable.
-#// 为模块属性赋值
-#// 语法； modname.attribute_name =  value
+#// 为模块属性赋值, 注： 赋值没有copy data, 而只是建立了name->object的绑定, 同样的道理适用于 del 语句的 delete操作
+#// 语法； modname.attribute_name =  value  #//  Assignments do not copy data — they just bind names to objects. The same is true for deletions
 
 #// https://stackoverflow.com/questions/990422/how-to-get-a-reference-to-current-modules-attributes-in-python
 import sys
@@ -32,7 +32,7 @@ print_global_variable()
 
 #//  可写的attributes 可以使用 del 语句来删除
 #//  Writable attributes may also be deleted with the del statement.
-del current_module.greeting
+del current_module.greeting   #// 该del语句删除了名字 greeting 在 current_module 的namespace 中(name->object)绑定
 
 #// print(current_module.greeting)  #// error
 #// print(globals()['greeting'])    #// error
@@ -71,7 +71,7 @@ print(globals().get('greeting'))    #// 输出 None
 #//   •the next-to-last scope contains the current module’s global names
 #//   •the outermost scope (searched last) is the namespace containing built-in names
 #//
-#// 上面几句话的大概意思参考下图, 而变量直接引用时的顺序就是从当前scope开始向外层scope一层一层查找，知道知道为止：
+#// 上面几句话的大概意思参考下图, 而变量直接引用时的顺序就是从当前scope开始向外层scope一层一层查找，直到找到为止：
 #// |----------------------------------------|
 #// |  built-in scope                        |
 #// |  ------------------------------------  |
@@ -150,25 +150,8 @@ outer_function_as_nonlocal_scope()
 print('----------------------------------------------------------------------')
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#//  In fact, all operations that introduce new names use the local scope: in particular,
+#//  import statements and function definitions bind the module or function name in the local scope.
 
 
 
