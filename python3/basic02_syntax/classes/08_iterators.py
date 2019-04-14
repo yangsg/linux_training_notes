@@ -83,4 +83,37 @@ for char in rev:
     print(char)
 
 
+#// 判断一个对象是否是 iterable 类型
+#// https://stackoverflow.com/questions/1952464/in-python-how-do-i-determine-if-an-object-is-iterable
+import collections
+isinstance((x for x in range(10)), collections.Iterable) # 判断一个对象是否是 Iterable
+isinstance((x for x in range(10)), collections.Iterator) # 判断一个对象是否是 Iterator
+isinstance((x for x in range(10)), collections.Generator) # 判断一个对象是否是 Generator
+isinstance([1,2,3], collections.Sequence)                #  判断一个对象是否是 Sequence
+
+issubclass(collections.Iterator, collections.Iterable)
+issubclass(collections.Generator, collections.Iterator)
+
+
+import collections.abc
+isinstance((x for x in range(10)), collections.abc.Iterable) # 判断一个对象是否是 Iterable, 从python3.3开始，collections.Iterable 移到了collections.abc.Iterable, 不过因为兼容性，旧的仍然可用
+
+
+#// https://docs.python.org/3/library/collections.abc.html#collections-abstract-base-classes
+#// Collections Abstract Base Classes
+#// --------------------------------------------------------------------------------
+#// |ABC        | Inherits from  |  Abstract Methods  |  Mixin Methods             |
+#// |-----------|----------------|--------------------|----------------------------|
+#// |Iterable   |                |  __iter__          |                            |
+#// |-----------|----------------|--------------------|----------------------------|
+#// |Iterator   | Iterable       |  __next__          |  __iter__                  |
+#// |-----------|----------------|--------------------|----------------------------|
+#// |Generator  | Iterator       |  send, throw       |  close, __iter__, __next__ |
+#// --------------------------------------------------------------------------------
+
+
+
+
+
+
 
