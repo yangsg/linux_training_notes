@@ -8,6 +8,16 @@ https://docs.python.org/3.6/tutorial/index.html
 Python 3.6.8 documentation
 https://docs.python.org/3.6/index.html
 
+
+The Python Standard Library Python标准库
+https://docs.python.org/3.6/library/index.html
+
+The Python Language Reference
+https://docs.python.org/3.6/reference/index.html
+
+
+
+
 What’s New In Python 3.6¶
 https://docs.python.org/3.6/whatsnew/3.6.html
 
@@ -19,8 +29,6 @@ Python教程 - 廖雪峰的官方网站
 https://www.liaoxuefeng.com/wiki/0014316089557264a6b348958f449949df42a6d3a2e542c000
 
 
-The Python Standard Library Python标准库
-https://docs.python.org/3.6/library/index.html
 
 
 内置函数与常量
