@@ -4,12 +4,6 @@ https://docs.python.org/3.6/reference/expressions.html#operator-precedence
 
 操作符优先级  Operator precedence
 
-
-Operator
-
-Description
-
-
 lambda             Lambda expression
 if – else          Conditional expression
 or                 Boolean OR
