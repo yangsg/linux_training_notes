@@ -429,39 +429,227 @@ C:\usr\bin\env
 另请参见：split。
 '''
 
-# split
+# split  split是一个非常重要的字符串方法，其作用与join相反，用于将字符串拆分为序列。
 # string.split([sep[, maxsplit]]) 返回一个列表，其中包含以sep为分隔符对字符串进行划分得到的结果（如果没有指定参数sep，将以所有空白字符为分隔符进行划分）；还可将最大划分次数限制为maxsplit
 
+'''
+>>> '1 2 3'.split()   # 如果没有指定sep或sep 为 None(其实None为默认sep), 连续的空白字符将被视为sep, 如果被split的字符串包含前导或尾随的空格，结果中也不会包含空字符串('')
+['1', '2', '3']
+>>> ' abc  '.split()  # 如果没有指定sep或sep 为 None(其实None为默认sep), 连续的空白字符将被视为sep, 如果被split的字符串包含前导或尾随的空格，结果中也不会包含空字符串('')
+['abc']
+>>> ' abc '.split(maxsplit=1)
+['abc']
+>>> ''.split()  # 对空字符串('')或纯空白字符串(如'     ')以None作为separator做split操作, 将返回空列表[]
+[]
+>>> ' \t\n\f '.split() # 对空字符串('')或纯空白字符串(如'     ')以None作为separator做split操作, 将返回空列表[]
+[]
+>>> ' \t\n\f '.split(maxsplit=1)
+[]
+
+
+'''
 '1,2,3'.split(',')             # ['1', '2', '3']
 '1,2,3'.split(',', maxsplit=1) # ['1', '2,3']
 '1,2,,3,'.split(',')           # ['1', '2', '', '3', '']
+'1+2+3+4+5'.split('+')         # ['1', '2', '3', '4', '5']
+'/usr/bin/env'.split('/')      # ['', 'usr', 'bin', 'env']
+'Using the default'.split()    # ['Using', 'the', 'default']  # 注意，如果没有指定分隔符，将默认在单个或多个连续的空白字符（空格、制表符、换行符等）处进行拆分
 
+
+
+# str.rsplit(sep=None, maxsplit=-1)  除了从右边right开始split, rsplit 与 split 其实是类似的
+'''
+>>> ' abc '.rsplit()  #除了从右边right开始split, rsplit 与 split 其实是类似的
+['abc']
+>>> ' \t\n\f '.rsplit()
+[]
+>>> '1,2,3'.rsplit(',')
+['1', '2', '3']
+>>> '1,2,3'.rsplit(',', maxsplit=1)
+['1,2', '3']
+>>> '1,2,,3'.rsplit(',')
+['1', '2', '', '3']
 
 '''
 
 
+# str.partition(sep) 在第一个分隔符 sep 出现的地方将字符串进行分割且返回一个三元组，第一个元素为sep左边的内容，第二个元素为sep本身，第三个为sep右边的内容，如果字符串中没有sep, 则返回的三元组中第一个元素为整个字符串本身，第二个和第三个元素都为空字符串
+'www.google.com'.partition('.') # ('www', '.', 'google.com')
+'abc'.partition('.')  # ('abc', '', '')
+
+# str.rpartition(sep) # 在最后一个分隔符 sep 出现的地方将字符串进行分割且返回一个三元组，第一个元素为sep左边的内容，第二个元素为sep本身，第三个为sep右边的内容，如果字符串中没有sep, 则返回的三元组中第一个和第二个元素都为空字符串, 第三个元素为整个字符串本身，
+'www.google.com'.rpartition('.')  # ('www.google', '.', 'com')
+'abc'.rpartition('.')    # ('', '', 'abc')
+
+# string.splitlines([keepends])  # 返回一个列表，其中包含字符串中的所有行；如果参数keepends为True，将包含换行符  # Return a list of the lines in the string, breaking at line boundaries. Line breaks are not included in the resulting list unless keepends is given and true.
+'ab c\n\nde fg\rkl\r\n'.splitlines() # ['ab c', '', 'de fg', 'kl'] # 在line boundaries对字符串进行切分，并返回以每行字符串(当未指定keepends=True参数时)为元素的列表
+'ab c\n\nde fg\rkl\r\n'.splitlines(keepends=True) # ['ab c\n', '\n', 'de fg\r', 'kl\r\n'] # 在line boundaries对字符串进行切分，并返回以每行字符串(包含了line boundaries，因指定了keepends=True参数)为元素的列表
+"""
+>>> '''
+... line02
+... line03
+... line04
+... '''.splitlines()
+['', 'line02', 'line03', 'line04']
+
+>>> '''\
+... line01
+... line02
+... line03
+... '''.splitlines()
+['line01', 'line02', 'line03']
+
+>>> '''\
+... line01
+... line02
+... line03
+... '''.splitlines(keepends=True)
+['line01\n', 'line02\n', 'line03\n']
+"""
 
 
 
 
+# lower
+'''
+>>> 'Trondheim Hammer Dance'.lower()  # 方法lower返回字符串的小写版本
+'trondheim hammer dance'
+
+>>> 'Gumby'.lower() in ['gumby', 'smith', 'jones']  # 不分区大小写的成员判断: 一种解决方案是在存储和搜索时，将所有的用户名都转换为小写
+True
+
+另请参见：islower、istitle、isupper、translate。
+附录B：capitalize、casefold、swapcase、title、upper。
+'''
+
+# upper()
+'''
+>>> 'Trondheim Hammer Dance'.upper()  # 方法upper返回字符串的大写版本
+'TRONDHEIM HAMMER DANCE'
+'''
+
+# islower   检查字符串中的所有字母都是小写的 且 至少有一个是 cased character
+'abc'.islower()   # True
+'aBc'.islower()   # False
+'a中文'.islower() # True
+'中文'.islower()  # False # 因为字符串中不包含任何 cased character
 
 
 
 
+# isupper   检查字符串中的字母是否都是大写的 且l 至少有一个是 cased character
+'ABC'.isupper() # True
+'aBb'.isupper() # False
+'A中文'.isupper() # True
+'中文'.isupper()  # False # 因为字符串中不包含任何 cased character
 
 
+# string.istitle() 检查字符串中位于非字母后面的字母都是大写的，且其他所有字母都是小写的
+'''
+Return true if the string is a titlecased string and there is at least one character,
+for example uppercase characters may only follow uncased characters and lowercase characters only cased ones. Return false otherwise.
+'''
+'Nice To Meet You'.istitle() # True
+'Nice to meet you'.istitle() # False
+'中文Nice To Meet You'.istitle() # True
+'中文 Nice To Meet You'.istitle() # True
+'中文 nice To Meet You'.istitle() # False
 
 
+# capitalize
+'abc def'.capitalize()  # 'Abc def' # capitalize 将string的首字母大写且其他字母小写
+'aBC DEF'.capitalize() # 'Abc def'  # capitalize 将string的首字母大写且其他字母小写
+
+# swapcase
+'abc DEF'.swapcase() # 'ABC def'  # 将字符串中的大写转小写，小写的转大写, 右边的公式不一定成立： s.swapcase().swapcase() == s
+'abc中文字符DEF'.swapcase()  # 'ABC中文字符def'
+
+'''
+词首大写
+一个与lower相关的方法是title（参见附录B）。它将字符串转换为词首大写，即所有单
+词的首字母都大写，其他字母都小写。然而，它确定单词边界的方式可能导致结果不合理。
+>>> "that's all folks".title()
+"That'S All, Folks"
+
+另一种方法是使用模块string中的函数capwords。
+>>> import string
+>>> string.capwords("that's all, folks")
+That's All, Folks"
+
+当然，要实现真正的词首大写（根据你采用的写作风格，冠词、并列连词以及不超过5个
+字母的介词等可能全部小写），你得自己编写代码。
+
+'''
+
+# replace  语法：str.replace(old, new[, count])
+'This is a test'.replace('is', 'eez')  # 方法replace将指定子串都替换为另一个字符串，并返回替换后的结果
+'abc def abc def abc'.replace('abc', 'xxx') # 'xxx def xxx def xxx'
+'abc def abc def abc'.replace('abc', 'xxx', 2) # 'xxx def xxx def abc'  # 如果指定了count参数，则只有最先匹配的count个字符串会被替换
+'abc def abc def abc'.replace('abc', 'xxx', 9) # 'xxx def xxx def xxx'
 
 
+# str.expandtabs(tabsize=8)
+'''
+>>> '01\t012\t0123\t01234'.expandtabs() # 返回将字符串中的制表符展开为空格后的结果，可指定可选参数tabsize（默认为8） #注意这里指的是expand展开，而不是简单的将'\t'替换为指定个数的空格
+'01      012     0123    01234'
+>>> '01\t012\t0123\t01234'.expandtabs(4)
+'01  012 0123    01234'
+'''
 
 
+# strip  语法：str.lstrip([chars]) 附录B：lstrip、rstrip
+' internal whitespace is kept '.strip() # 'internal whitespace is kept' # 方法strip将字符串开头和末尾的空白（但不包括中间的空白）删除，并返回删除后的结果
+'*** SPAM * for * everyone!!! ***'.strip(' *!') # 'SPAM * for * everyone' # 你还可在一个字符串参数中指定要删除哪些字符。#这个方法只删除开头或末尾的指定字符，因此中间的星号未被删除。
+
+# lstrip 将字符串开头所有的chars（默认为所有的空白字符，如空格、制表符和换行符）都删除，并返回结果
+' internal whitespace is kept '.lstrip() # 'internal whitespace is kept '
+'*** SPAM * for * everyone!!! ***'.lstrip(' *!') # 'SPAM * for * everyone!!! ***'
+
+# rstrip  将字符串末尾所有的chars字符（默认为所有的空白字符，如空格、制表符和换行符）都删除，并返回结果
+' internal whitespace is kept '.rstrip() # ' internal whitespace is kept'
+'*** SPAM * for * everyone!!! ***'.rstrip(' *!') # '*** SPAM * for * everyone'
 
 
+# translate
+'''
+    方法translate与replace一样替换字符串的特定部分，但不同的是它只能进行单字符替换。
+这个方法的优势在于能够同时替换多个字符，因此效率比replace高。
+    这个方法的用途很多（如替换换行符或其他随平台而异的特殊字符），但这里只介绍一个比
+较简单（也有点傻）的示例。假设你要将一段英语文本转换为带有德国口音的版本，为此必须将
+字符c和s分别替换为k和z。
+    然而，使用translate前必须创建一个转换表。这个转换表指出了不同Unicode码点之间的转
+换关系。要创建转换表，可对字符串类型str调用方法maketrans，这个方法接受两个参数：两个
+长度相同的字符串，它们指定要将第一个字符串中的每个字符都替换为第二个字符串中的相应字
+符①。就这个简单的示例而言，代码类似于下面这样：
+>>> table = str.maketrans('cs', 'kz')
+
+如果愿意，可查看转换表的内容，但你看到的只是Unicode码点之间的映射。
+>>> table
+{115: 122, 99: 107}
+
+创建转换表后，就可将其用作方法translate的参数。
+>>> 'this is an incredible test'.translate(table)
+'thiz iz an inkredible tezt'
+
+调用方法maketrans时，还可提供可选的第三个参数，指定要将哪些字母删除。例如，要模
+仿语速极快的德国口音，可将所有的空格都删除。
+>>> table = str.maketrans('cs', 'kz', ' ')
+>>> 'this is an incredible test'.translate(table)
+'thizizaninkredibletezt'
+'''
+'abc中文deft'.translate(str.maketrans('ab', 'AB')) # 'ABc中文deft'
+'abc中文deft'.translate(str.maketrans('ab', 'AB', 'deft')) # 'ABc中文' # 其中str.maketrans方法的第三个可选的参数表示要删除的那些字符
 
 
+# 判断字符串是否满足特定的条件
+'''
+很多字符串方法都以is打头，如isspace、isdigit和isupper，它们判断字符串是否具有特定
+的性质（如包含的字符全为空白、数字或大写）。如果字符串具备特定的性质，这些方法就返回
+True，否则返回False。
 
-
+附录B：isalnum、isalpha、isdecimal、isdigit、isidentifier、islower、isnumeric、
+isprintable、isspace、istitle、isupper。
+'''
 
 
 
