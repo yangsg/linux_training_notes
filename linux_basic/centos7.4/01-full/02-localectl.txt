@@ -1,0 +1,42 @@
+# keyword localectl
+man localectl
+localectl --help
+
+作用： localectl - Control the system locale and keyboard layout settings
+
+语法： localectl [OPTIONS...] {COMMAND}
+
+
+[root@basic ~]# localectl
+   System Locale: LANG=en_US.UTF-8
+       VC Keymap: us
+      X11 Layout: us
+
+[root@basic ~]# localectl status
+   System Locale: LANG=en_US.UTF-8
+       VC Keymap: us
+      X11 Layout: us
+
+
+[root@basic ~]# localectl list-locales | less
+
+[root@basic ~]# localectl set-locale "LANG=zh_CN.utf8"  #注：这时一种持久化的修改，类似于 hostnamectl 命令
+[root@basic ~]# localectl
+   System Locale: LANG=zh_CN.utf8
+       VC Keymap: us
+      X11 Layout: us
+[root@basic ~]# localectl set-locale "LANG=en_US.UTF-8"  #注：这时一种持久化的修改，类似于 hostnamectl 命令
+[root@basic ~]# localectl
+   System Locale: LANG=en_US.UTF-8
+       VC Keymap: us
+      X11 Layout: us
+
+[root@basic ~]# localectl list-keymaps | less
+
+
+其他参考：
+https://www.tecmint.com/set-system-locales-in-linux/
+https://www.rosehosting.com/blog/how-to-set-up-system-locale-on-centos-7/
+https://linuxconfig.org/how-to-change-system-keyboard-keymap-layout-on-centos-7-linux
+
+
