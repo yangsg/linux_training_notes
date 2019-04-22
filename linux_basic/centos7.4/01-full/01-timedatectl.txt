@@ -1,0 +1,69 @@
+# keyword timedatectl
+
+man timedatectl
+timedatectl --help
+
+作用： timedatectl - Control the system time and date
+
+语法： timedatectl [OPTIONS...] {COMMAND}
+
+[root@basic ~]# timedatectl
+      Local time: Mon 2019-04-22 11:08:32 UTC
+  Universal time: Mon 2019-04-22 11:08:32 UTC
+        RTC time: Mon 2019-04-22 11:08:32
+       Time zone: UTC (UTC, +0000)
+     NTP enabled: n/a
+NTP synchronized: no
+ RTC in local TZ: no
+      DST active: n/a
+
+
+[root@basic ~]# timedatectl status
+      Local time: Mon 2019-04-22 19:05:50 CST
+  Universal time: Mon 2019-04-22 11:05:50 UTC
+        RTC time: Mon 2019-04-22 11:05:50
+       Time zone: Asia/Shanghai (CST, +0800)
+     NTP enabled: n/a
+NTP synchronized: no
+ RTC in local TZ: no
+      DST active: n/a
+
+
+
+[root@basic ~]# timedatectl list-timezones  | less
+
+[root@basic ~]# timedatectl set-timezone America/New_York
+
+[root@basic ~]# timedatectl set-timezone Asia/Shanghai
+
+[root@basic ~]# timedatectl set-timezone UTC
+
+[root@basic ~]# timedatectl set-time 15:58:30
+
+[root@basic ~]# timedatectl set-time 2015-11-20
+
+[root@basic ~]# timedatectl set-time '2015-11-20 16:14:50'
+
+
+[root@basic ~]# yum -y install chrony
+
+[root@basic ~]# timedatectl  | grep 'NTP enabled'
+     NTP enabled: yes
+[root@basic ~]# timedatectl set-ntp false
+[root@basic ~]# timedatectl  | grep 'NTP enabled'
+     NTP enabled: no
+[root@basic ~]# timedatectl set-ntp true
+[root@basic ~]# timedatectl  | grep 'NTP enabled'
+     NTP enabled: yes
+
+
+
+
+
+
+其他参考资料：
+https://www.tecmint.com/set-time-timezone-and-synchronize-time-using-timedatectl-command/
+https://www.maketecheasier.com/timedatectl-control-system-time-date-linux/
+https://www.linuxprobe.com/centos7-chrony-time.html
+
+
