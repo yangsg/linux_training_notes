@@ -21,6 +21,14 @@ http://calc.50x.eu/
 http://www.youkud.com/tool/jinzhi.php
 
 
+centos7 上的一些快捷键:
+
+[Ctrl] + [Alt] + [F2] ~ [F6] ：文字接口登入 tty2 ~ tty6 终端机；
+[Ctrl] + [Alt] + [F1] ：图形接口桌面
+[Alt] + [Ctrl] + [Backspace]
+[Tab] [ctrl]-c [ctrl]-d
+[shift]+{[PageUP]|[Page Down]}按键
+
 
 
 
