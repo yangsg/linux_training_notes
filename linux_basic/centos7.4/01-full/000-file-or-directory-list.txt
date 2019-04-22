@@ -1,0 +1,10 @@
+
+
+
+/usr/share/doc/
+/usr/share/doc/grub2-common-2.02/
+
+
+
+
+
