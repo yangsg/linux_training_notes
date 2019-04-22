@@ -1,0 +1,25 @@
+# keyword date
+man date
+info date  #date +"%Y-%m-%d %T %z" #/example  # is more detail than `man date`
+
+[root@basic ~]# date
+Mon Apr 22 18:45:18 CST 2019
+
+[root@basic ~]# date '+%F %T'
+2019-04-22 18:52:41
+
+[root@basic ~]# date '+%F %T %z'
+2019-04-22 19:00:21 +0800
+
+[root@basic ~]# date "+%Y-%m-%d %H:%M:%S %z"
+2019-04-22 18:53:37 +0800
+
+[root@basic ~]# date -u +"%Y-%m-%d %T %z"
+2019-04-22 10:54:27 +0000
+
+[root@basic ~]# date '+%F %T %z'; date -u '+%F %T %z'
+2019-04-22 18:55:44 +0800
+2019-04-22 10:55:44 +0000
+
+
+
