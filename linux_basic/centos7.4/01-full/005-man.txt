@@ -70,3 +70,10 @@ null (4)             - data sink
 null (4)             - data sink
 
 
+
+注意的是，这两个特殊指令要能使用，必须要有建立 whatis 数据库才行！这个数据库的建立需要以 root 的身份下达如下的指令：
+[root@basic ~]# mandb
+# 旧版的 Linux 这个指令是使用 makewhatis 喔！这一版开使用 mandb 了！
+
+
+
