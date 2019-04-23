@@ -1,0 +1,17 @@
+
+# keyword rmdir
+
+man rmdir
+
+
+作用: rmdir - remove empty directories
+
+语法：rmdir [OPTION]... DIRECTORY...
+
+[root@basic ~]# mkdir dir01
+[root@basic ~]# rmdir dir01
+
+[root@basic ~]# mkdir -p dir01/dir02/dir03/dir04
+[root@basic ~]# rmdir -p dir01/dir02/dir03/dir04   # -p, --parents: remove DIRECTORY and its ancestors; e.g., 'rmdir -p a/b/c' is similar to 'rmdir a/b/c a/b a'
+
+

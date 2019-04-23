@@ -1,0 +1,19 @@
+
+# keyword mkdir
+
+man mkdir
+
+作用: mkdir - make directories
+
+语法: mkdir [OPTION]... DIRECTORY...
+
+[root@basic ~]# mkdir dir01
+
+[root@basic ~]# mkdir -m 711 dir  # ls -ld dir  # -m, --mode=MODE: set file mode (as in chmod), not a=rwx - umask
+[root@basic ~]# mkdir -m u=rwx,g=rwx dir_a
+
+[root@basic ~]# mkdir -p dir01/dir02/dir03/dir04    # -p, --parents: no error if existing, make parent directories as needed
+
+[root@basic ~]# mkdir -pv dir01/dir02/dir03/dir04   # -v, --verbose: print a message for each created directory
+
+
