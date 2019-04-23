@@ -1,0 +1,27 @@
+
+# keyword cp
+
+man cp
+
+作用: cp - copy files and directories
+
+语法: cp [OPTION]... [-T] SOURCE DEST
+语法: cp [OPTION]... SOURCE... DIRECTORY
+语法: cp [OPTION]... -t DIRECTORY SOURCE...
+
+[root@basic ~]# cp a.txt b.txt  #这种行为会复制(cp)执行者的属性与权限
+cp: overwrite ‘b.txt’? y
+
+[root@basic ~]# cp a.txt b.txt dir01
+
+[root@basic ~]# cp -t dir01 a.txt b.txt #-t, --target-directory=DIRECTORY copy all SOURCE arguments into DIRECTORY
+cp: overwrite ‘dir01/a.txt’? y
+cp: overwrite ‘dir01/b.txt’? y
+
+[root@basic ~]# cp -a dir01/ dir02    # -a, --archive: same as -dR --preserve=all
+[root@basic ~]# cp -av dir01/ dir02   # -v, --verbose: explain what is being done
+
+其他参考:
+https://www.linuxtechi.com/cp-command-examples-linux-beginners/
+
+

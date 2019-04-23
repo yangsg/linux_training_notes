@@ -1,0 +1,14 @@
+# keyword chgrp
+
+作用: chgrp - change group ownership
+
+语法: chgrp [OPTION]... GROUP FILE...
+语法: chgrp [OPTION]... --reference=RFILE FILE...
+
+
+[root@basic ~]# chgrp Bob workspace
+[root@basic ~]# chgrp -R Bob workspace  #-R, --recursive
+[root@basic ~]# chgrp -R Bob a.txt b.txt
+[root@basic ~]# chgrp --reference a.txt  b.txt    #change group of b.txt to the same as a.txt
+
+
