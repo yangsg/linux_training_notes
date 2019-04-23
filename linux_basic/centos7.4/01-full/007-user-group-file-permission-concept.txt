@@ -7,6 +7,17 @@
 
 文件名以 点'.' 为前缀的文件为 隐藏文件(hidden file)
 
+绝对路径(absolute path): /root/workspace
+相对路径(relative path): ./workspace  ../workspace
+
+bash 中的特殊目录符号：
+    .
+    ..
+    -
+    ~
+    ~user01
+
+
 
 关于文件类型的一些帮助信息 (man page的快捷键类似于vim或less, 而 info page的快捷键类似于emacs)
 [root@basic ~]# man find  #/-type

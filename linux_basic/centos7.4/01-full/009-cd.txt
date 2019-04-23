@@ -1,0 +1,32 @@
+
+# keyword cd
+
+help cd
+man bash  #/       cd \[
+
+
+[root@basic ~]# cd /lib/modules/`uname -r`/kernel
+[root@basic kernel]# cd
+[root@basic ~]# cd /lib/modules/$(uname -r)/kernel   # #推荐这种写法，因为括号容易分辨，不像反单引号那样容易与引号混淆
+[root@basic kernel]# cd ..
+[root@basic 3.10.0-693.el7.x86_64]# cd ~
+[root@basic ~]# cd ~Bob
+
+[root@basic ~]# work=~/workspace
+[root@basic ~]# cd $work
+
+
+[root@basic ~]# ln -s /usr/local/share   localshare_link
+[root@basic ~]# cd  localshare_link/    # 同 cd -L localshare_link/  # -L      force symbolic links to be followed (-L是默认行为)
+[root@basic localshare_link]#
+[root@basic localshare_link]# pwd
+/root/localshare_link
+[root@basic localshare_link]# pwd -P
+/usr/local/share
+
+
+[root@basic ~]# cd -P localshare_link/  #-P      use the physical directory structure without following symbolic links
+[root@basic share]# pwd
+/usr/local/share
+
+

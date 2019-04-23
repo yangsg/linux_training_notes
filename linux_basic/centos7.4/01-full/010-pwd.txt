@@ -1,0 +1,25 @@
+
+#keyword pwd
+
+help pwd
+
+作用: Print the name of the current working directory.
+
+语法: pwd [-LP]
+
+[root@basic ~]# ln -s /usr/local/share/ localshare_link
+[root@basic localshare_link]# pwd      # 等价于 pwd -L  # -L 为默认行为
+/root/localshare_link
+[root@basic localshare_link]# pwd -P   # -P        print the physical directory, without any symbolic links
+/usr/local/share
+
+
+
+
+
+
+
+
+
+
+
