@@ -1,0 +1,282 @@
+
+# keyword ls
+
+man ls
+
+
+作用: ls - list directory contents
+
+语法: ls [OPTION]... [FILE]...
+
+[root@basic ~]# ls -a ~Bob/   # -a, --all: do not ignore entries starting with .
+.  ..  a.txt  .bash_logout  .bash_profile  .bashrc  .emacs  .screenrc  .vimrc
+
+[root@basic ~]# ls -A ~Bob    # -A, --almost-all: do not list implied . and ..
+a.txt  .bash_logout  .bash_profile  .bashrc  .emacs  .screenrc  .vimrc
+
+[root@basic ~]# touch 'a b'
+[root@basic ~]# ls -b 'a b'   # -b, --escape: print C-style escapes for nongraphic characters
+a\ b
+
+
+[root@basic ~]# ls -R dir01   # -R, --recursive: list subdirectories recursively
+
+
+
+[root@basic ~]# ls /bin/bash
+/bin/bash
+
+[root@basic ~]# ls -l /bin/bash   # -l     use a long listing format
+-rwxr-xr-x. 1 root root 960472 Aug  3  2017 /bin/bash
+
+[root@basic ~]# ls -lh /bin/bash    # -h, --human-readable: with -l, print sizes in human readable format (e.g., 1K 234M 2G)
+-rwxr-xr-x. 1 root root 938K Aug  3  2017 /bin/bash
+
+
+[root@basic ~]# mkdir dir01
+[root@basic ~]# touch dir01/hello.c
+[root@basic ~]# ls dir01
+hello.c
+[root@basic ~]# ls -d dir01     # -d, --directory: list directories themselves, not their contents
+dir01
+
+[root@basic ~]# ls -ld dir01
+drwxr-xr-x 2 root root 21 Apr 23 19:03 dir01
+
+
+[root@basic ~]# ls -li    # -i, --inode: print the index number of each file
+
+
+
+[root@basic ~]# ls -l a.txt
+-rw-r--r-- 1 root root 0 Apr 23 19:00 a.txt
+
+[root@basic ~]# ls -l --full-time a.txt; ls -l --time=atime --full-time a.txt; ls -l --time=ctime --full-time a.txt;  # --full-time: like -l --time-style=full-iso
+-rw-r--r-- 1 root root 0 2019-04-23 19:00:49.027024103 +0800 a.txt
+-rw-r--r-- 1 root root 0 2019-04-23 19:00:49.027024103 +0800 a.txt
+-rw-r--r-- 1 root root 0 2019-04-23 19:00:49.027024103 +0800 a.txt
+
+
+[root@basic ~]# ls -Q /   # -Q, --quote-name: enclose entry names in double quotes
+"bin"  "boot"  "dev"  "etc"  "home"  "lib"  "lib64"  "media"  "mnt"  "opt"  "proc"  "root"  "run"  "sbin"  "srv"  "sys"  "tmp"  "usr"  "var"
+
+[root@basic ~]# ls -m     # -m     fill width with a comma separated list of entries  # 以逗号分隔每项
+anaconda-ks.cfg, a.txt, bash.mantxt, b.txt, c.txt, dir, dir01, dir02, dir_a, linux_training_notes, localshare_link, workspace
+
+[root@basic ~]# ls -F     # -F, --classify: append indicator (one of */=>@|) to entries
+anaconda-ks.cfg  a.txt  bash.mantxt  b.txt  c.txt  dir/  dir01/  dir02/  dir_a/  linux_training_notes/  localshare_link@  workspace/
+
+[root@basic ~]# ls --file-type  # --file-type: likewise, except do not append '*'
+anaconda-ks.cfg  a.txt  bash.mantxt  b.txt  c.txt  dir/  dir01/  dir02/  dir_a/  linux_training_notes/  localshare_link@  workspace/
+
+
+注释： SIZE is an integer and optional unit (example: 10M is 10*1024*1024).  Units are K, M, G, T, P, E, Z, Y (powers of 1024) or KB, MB, ... (powers of 1000).
+[root@basic ~]# ls -l --block-size=M    # --block-size=SIZE: scale sizes by SIZE before printing them; e.g., '--block-size=M' prints sizes in units of 1,048,576 bytes; see SIZE format below
+      total 1M
+      -rw-------.  1 root root 1M Dec 23 07:47 anaconda-ks.cfg
+      -rw-r--r--   1 root root 0M Apr 23 19:00 a.txt
+      -rw-r--r--   1 root root 1M Apr 22 20:06 bash.mantxt
+      -rw-r--r--   1 Bob  Bob  1M Apr 23 15:05 b.txt
+      -rw-r--r--   1 Bob  root 0M Apr 23 14:48 c.txt
+      drwx--x--x   2 root root 1M Apr 23 18:44 dir
+      drwxr-xr-x   3 root root 1M Apr 23 19:39 dir01
+      drwxr-xr-x   2 root root 1M Apr 23 15:06 dir02
+      drwxrwxrwx   2 root root 1M Apr 23 18:45 dir_a
+      drwxr-xr-x  18 root root 1M Apr 22 18:39 linux_training_notes
+      lrwxrwxrwx   1 root root 1M Apr 23 17:49 localshare_link -> /usr/local/share
+      drwxr-xr-x   2 Bob  Bob  1M Apr 23 14:46 workspace
+
+
+[root@basic ~]# ls -lSh /    # -S     sort by file size   # 按文件大小排序，默认最大的排在第一个
+      total 28K
+      drwxr-xr-x.  81 root root 8.0K Apr 23 14:45 etc
+      dr-xr-xr-x.   5 root root 4.0K Dec 23 07:47 boot
+      dr-xr-x---.  10 root root 4.0K Apr 23 19:03 root
+      drwxrwxrwt.  12 root root 4.0K Apr 23 19:17 tmp
+      drwxr-xr-x.  21 root root 4.0K Dec 23 08:06 var
+      drwxr-xr-x   20 root root 3.2K Apr 23 08:15 dev
+      drwxr-xr-x   26 root root  740 Apr 23 08:36 run
+      drwxr-xr-x.  13 root root  155 Dec 23 07:43 usr
+      drwxr-xr-x.   4 root root   30 Apr 23 14:45 home
+      lrwxrwxrwx.   1 root root    9 Dec 23 07:43 lib64 -> usr/lib64
+      lrwxrwxrwx.   1 root root    8 Dec 23 07:43 sbin -> usr/sbin
+      lrwxrwxrwx.   1 root root    7 Dec 23 07:43 bin -> usr/bin
+      lrwxrwxrwx.   1 root root    7 Dec 23 07:43 lib -> usr/lib
+      drwxr-xr-x.   2 root root    6 Nov  5  2016 media
+      drwxr-xr-x.   2 root root    6 Nov  5  2016 mnt
+      drwxr-xr-x.   2 root root    6 Dec 23 09:42 opt
+      drwxr-xr-x.   2 root root    6 Nov  5  2016 srv
+      dr-xr-xr-x  120 root root    0 Apr 23 08:15 proc
+      dr-xr-xr-x   13 root root    0 Apr 23 08:15 sys
+
+
+[root@basic ~]# ls -lShr /    # -r, --reverse: reverse order while sorting
+      total 28K
+      dr-xr-xr-x   13 root root    0 Apr 23 08:15 sys
+      dr-xr-xr-x  119 root root    0 Apr 23 08:15 proc
+      drwxr-xr-x.   2 root root    6 Nov  5  2016 srv
+      drwxr-xr-x.   2 root root    6 Dec 23 09:42 opt
+      drwxr-xr-x.   2 root root    6 Nov  5  2016 mnt
+      drwxr-xr-x.   2 root root    6 Nov  5  2016 media
+      lrwxrwxrwx.   1 root root    7 Dec 23 07:43 lib -> usr/lib
+      lrwxrwxrwx.   1 root root    7 Dec 23 07:43 bin -> usr/bin
+      lrwxrwxrwx.   1 root root    8 Dec 23 07:43 sbin -> usr/sbin
+      lrwxrwxrwx.   1 root root    9 Dec 23 07:43 lib64 -> usr/lib64
+      drwxr-xr-x.   4 root root   30 Apr 23 14:45 home
+      drwxr-xr-x.  13 root root  155 Dec 23 07:43 usr
+      drwxr-xr-x   26 root root  740 Apr 23 08:36 run
+      drwxr-xr-x   20 root root 3.2K Apr 23 08:15 dev
+      drwxr-xr-x.  21 root root 4.0K Dec 23 08:06 var
+      drwxrwxrwt.  12 root root 4.0K Apr 23 19:17 tmp
+      dr-xr-x---.  10 root root 4.0K Apr 23 19:03 root
+      dr-xr-xr-x.   5 root root 4.0K Dec 23 07:47 boot
+      drwxr-xr-x.  81 root root 8.0K Apr 23 14:45 etc
+
+
+
+[root@basic ~]# ls -lt --full-time /     # -t     sort by modification time, newest first  按modification time排序，默认最新的为排在第一个
+      total 28
+      drwxrwxrwt.  12 root root 4096 2019-04-23 19:17:38.433143031 +0800 tmp
+      dr-xr-x---.  10 root root 4096 2019-04-23 19:03:19.048743435 +0800 root
+      drwxr-xr-x.   4 root root   30 2019-04-23 14:45:56.082556062 +0800 home
+      drwxr-xr-x.  81 root root 8192 2019-04-23 14:45:56.081556063 +0800 etc
+      drwxr-xr-x   26 root root  740 2019-04-23 08:36:47.595943074 +0800 run
+      drwxr-xr-x   20 root root 3240 2019-04-23 08:15:15.650220272 +0800 dev
+      dr-xr-xr-x   13 root root    0 2019-04-23 08:15:11.500000000 +0800 sys
+      dr-xr-xr-x  120 root root    0 2019-04-23 08:15:10.017000000 +0800 proc
+      drwxr-xr-x.   2 root root    6 2018-12-23 09:42:55.721217688 +0800 opt
+      drwxr-xr-x.  21 root root 4096 2018-12-23 08:06:33.671034931 +0800 var
+      dr-xr-xr-x.   5 root root 4096 2018-12-23 07:47:48.154853849 +0800 boot
+      drwxr-xr-x.  13 root root  155 2018-12-23 07:43:55.835846506 +0800 usr
+      lrwxrwxrwx.   1 root root    7 2018-12-23 07:43:55.746846504 +0800 lib -> usr/lib
+      lrwxrwxrwx.   1 root root    9 2018-12-23 07:43:55.746846504 +0800 lib64 -> usr/lib64
+      lrwxrwxrwx.   1 root root    8 2018-12-23 07:43:55.746846504 +0800 sbin -> usr/sbin
+      lrwxrwxrwx.   1 root root    7 2018-12-23 07:43:55.745846503 +0800 bin -> usr/bin
+      drwxr-xr-x.   2 root root    6 2016-11-05 23:38:36.000000000 +0800 media
+      drwxr-xr-x.   2 root root    6 2016-11-05 23:38:36.000000000 +0800 mnt
+      drwxr-xr-x.   2 root root    6 2016-11-05 23:38:36.000000000 +0800 srv
+
+
+[root@basic ~]# ls -ltr --full-time /    # -r, --reverse: reverse order while sorting
+      total 28
+      drwxr-xr-x.   2 root root    6 2016-11-05 23:38:36.000000000 +0800 srv
+      drwxr-xr-x.   2 root root    6 2016-11-05 23:38:36.000000000 +0800 mnt
+      drwxr-xr-x.   2 root root    6 2016-11-05 23:38:36.000000000 +0800 media
+      lrwxrwxrwx.   1 root root    7 2018-12-23 07:43:55.745846503 +0800 bin -> usr/bin
+      lrwxrwxrwx.   1 root root    8 2018-12-23 07:43:55.746846504 +0800 sbin -> usr/sbin
+      lrwxrwxrwx.   1 root root    9 2018-12-23 07:43:55.746846504 +0800 lib64 -> usr/lib64
+      lrwxrwxrwx.   1 root root    7 2018-12-23 07:43:55.746846504 +0800 lib -> usr/lib
+      drwxr-xr-x.  13 root root  155 2018-12-23 07:43:55.835846506 +0800 usr
+      dr-xr-xr-x.   5 root root 4096 2018-12-23 07:47:48.154853849 +0800 boot
+      drwxr-xr-x.  21 root root 4096 2018-12-23 08:06:33.671034931 +0800 var
+      drwxr-xr-x.   2 root root    6 2018-12-23 09:42:55.721217688 +0800 opt
+      dr-xr-xr-x  119 root root    0 2019-04-23 08:15:10.017000000 +0800 proc
+      dr-xr-xr-x   13 root root    0 2019-04-23 08:15:11.500000000 +0800 sys
+      drwxr-xr-x   20 root root 3240 2019-04-23 08:15:15.650220272 +0800 dev
+      drwxr-xr-x   26 root root  740 2019-04-23 08:36:47.595943074 +0800 run
+      drwxr-xr-x.  81 root root 8192 2019-04-23 14:45:56.081556063 +0800 etc
+      drwxr-xr-x.   4 root root   30 2019-04-23 14:45:56.082556062 +0800 home
+      dr-xr-x---.  10 root root 4096 2019-04-23 19:03:19.048743435 +0800 root
+      drwxrwxrwt.  12 root root 4096 2019-04-23 19:17:38.433143031 +0800 tmp
+
+
+[root@basic ~]# ls -1 /    # -1     list one file per line
+      bin
+      boot
+      dev
+      etc
+      home
+      lib
+      lib64
+      media
+      mnt
+      opt
+      proc
+      root
+      run
+      sbin
+      srv
+      sys
+      tmp
+      usr
+      var
+
+
+[root@basic ~]# ls -ln    # -n, --numeric-uid-gid: like -l, but list numeric user and group IDs
+      total 276
+      -rw-------.  1    0    0   1656 Dec 23 07:47 anaconda-ks.cfg
+      -rw-r--r--   1    0    0      0 Apr 23 19:00 a.txt
+      -rw-r--r--   1    0    0 272976 Apr 22 20:06 bash.mantxt
+      -rw-r--r--   1 1001 1001      6 Apr 23 15:05 b.txt
+      -rw-r--r--   1 1001    0      0 Apr 23 14:48 c.txt
+      drwx--x--x   2    0    0      6 Apr 23 18:44 dir
+      drwxr-xr-x   3    0    0     34 Apr 23 19:39 dir01
+      drwxr-xr-x   2    0    0     32 Apr 23 15:06 dir02
+      drwxrwxrwx   2    0    0      6 Apr 23 18:45 dir_a
+      drwxr-xr-x  18    0    0    332 Apr 22 18:39 linux_training_notes
+      lrwxrwxrwx   1    0    0     16 Apr 23 17:49 localshare_link -> /usr/local/share
+      drwxr-xr-x   2 1001 1001      6 Apr 23 14:46 workspace
+
+
+[root@basic ~]# ls -lZ /   # -Z, --context: Display security context so it fits on most displays.  Displays only mode, user, group, security context and file name.
+      lrwxrwxrwx. root root system_u:object_r:bin_t:s0       bin -> usr/bin
+      dr-xr-xr-x. root root system_u:object_r:boot_t:s0      boot
+      drwxr-xr-x  root root ?                                dev
+      drwxr-xr-x. root root system_u:object_r:etc_t:s0       etc
+      drwxr-xr-x. root root system_u:object_r:home_root_t:s0 home
+      lrwxrwxrwx. root root system_u:object_r:lib_t:s0       lib -> usr/lib
+      lrwxrwxrwx. root root system_u:object_r:lib_t:s0       lib64 -> usr/lib64
+      drwxr-xr-x. root root system_u:object_r:mnt_t:s0       media
+      drwxr-xr-x. root root system_u:object_r:mnt_t:s0       mnt
+      drwxr-xr-x. root root system_u:object_r:usr_t:s0       opt
+      dr-xr-xr-x  root root ?                                proc
+      dr-xr-x---. root root system_u:object_r:admin_home_t:s0 root
+      drwxr-xr-x  root root ?                                run
+      lrwxrwxrwx. root root system_u:object_r:bin_t:s0       sbin -> usr/sbin
+      drwxr-xr-x. root root system_u:object_r:var_t:s0       srv
+      dr-xr-xr-x  root root ?                                sys
+      drwxrwxrwt. root root system_u:object_r:tmp_t:s0       tmp
+      drwxr-xr-x. root root system_u:object_r:usr_t:s0       usr
+      drwxr-xr-x. root root system_u:object_r:var_t:s0       var
+
+
+[root@basic ~]# ls -lh
+      total 276K
+      -rw-------.  1 root root 1.7K Dec 23 07:47 anaconda-ks.cfg
+      -rw-r--r--   1 root root    0 Apr 23 19:00 a.txt
+      lrwxrwxrwx   1 root root    9 Apr 23 20:03 bash_link -> /bin/bash
+      -rw-r--r--   1 root root 267K Apr 22 20:06 bash.mantxt
+      -rw-r--r--   1 Bob  Bob     6 Apr 23 15:05 b.txt
+      -rw-r--r--   1 Bob  root    0 Apr 23 14:48 c.txt
+      drwx--x--x   2 root root    6 Apr 23 18:44 dir
+      drwxr-xr-x   3 root root   34 Apr 23 19:39 dir01
+      drwxr-xr-x   2 root root   32 Apr 23 15:06 dir02
+      drwxrwxrwx   2 root root    6 Apr 23 18:45 dir_a
+      drwxr-xr-x  18 root root  332 Apr 22 18:39 linux_training_notes
+      lrwxrwxrwx   1 root root   16 Apr 23 17:49 localshare_link -> /usr/local/share
+      drwxr-xr-x   2 Bob  Bob     6 Apr 23 14:46 workspace
+
+[root@basic ~]# ls -lLh   # -L, --dereference:  when showing file information for a symbolic link, show information for the file the link references rather than for the link itself
+      total 1.2M
+      -rw-------.  1 root root 1.7K Dec 23 07:47 anaconda-ks.cfg
+      -rw-r--r--   1 root root    0 Apr 23 19:00 a.txt
+      -rwxr-xr-x.  1 root root 938K Aug  3  2017 bash_link    #<---- 注：加了-L 后，此处显示的是连接目标的属性了
+      -rw-r--r--   1 root root 267K Apr 22 20:06 bash.mantxt
+      -rw-r--r--   1 Bob  Bob     6 Apr 23 15:05 b.txt
+      -rw-r--r--   1 Bob  root    0 Apr 23 14:48 c.txt
+      drwx--x--x   2 root root    6 Apr 23 18:44 dir
+      drwxr-xr-x   3 root root   34 Apr 23 19:39 dir01
+      drwxr-xr-x   2 root root   32 Apr 23 15:06 dir02
+      drwxrwxrwx   2 root root    6 Apr 23 18:45 dir_a
+      drwxr-xr-x  18 root root  332 Apr 22 18:39 linux_training_notes
+      drwxr-xr-x.  2 root root   19 Apr 23 17:59 localshare_link
+      drwxr-xr-x   2 Bob  Bob     6 Apr 23 14:46 workspace
+
+
+[root@basic ~]# ls -lh bash_link
+lrwxrwxrwx 1 root root 9 Apr 23 20:03 bash_link -> /bin/bash
+
+[root@basic ~]# ls -lh -H bash_link    # -H, --dereference-command-line: follow symbolic links listed on the command line
+-rwxr-xr-x. 1 root root 938K Aug  3  2017 bash_link   #<---- 注：加了-L 后，此处显示的是连接目标的属性了
+
+
