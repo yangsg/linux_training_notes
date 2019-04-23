@@ -1,0 +1,72 @@
+
+
+/etc/passwd  # man 5 passwd  #  /etc/shadow 使用 /etc/passwd 的 name 作为外键的原因：用户名能保证唯一，而 uid 无法保证(如系统可以同时存在多个具有root权限的用户),这一点与数据库表的id主键是不同
+/etc/shadow  # man 5 shadow
+/etc/group   # man 5 group
+/etc/gshadow # man 5 gshadow
+
+文件名以 点'.' 为前缀的文件为 隐藏文件(hidden file)
+
+
+关于文件类型的一些帮助信息 (man page的快捷键类似于vim或less, 而 info page的快捷键类似于emacs)
+[root@basic ~]# man find  #/-type
+       -type c
+              File is of type c:
+
+              b      block (buffered) special
+              c      character (unbuffered) special
+              d      directory
+              p      named pipe (FIFO)
+              f      regular file
+              l      symbolic link; this is never true if the -L option or the -follow option is in effect, unless the symbolic link is broken.  If you  want  to  search  for  symbolic
+                     links when -L is in effect, use -xtype.
+              s      socket
+              D      door (Solaris)
+
+[root@basic ~]# info ls   #// * What information is listed::
+     The file type is one of the following characters:
+
+     '-'
+          regular file
+     'b'
+          block special file
+     'c'
+          character special file
+     'C'
+          high performance ("contiguous data") file
+     'd'
+          directory
+     'D'
+          door (Solaris 2.5 and up)
+     'l'
+          symbolic link
+     'M'
+          off-line ("migrated") file (Cray DMF)
+     'n'
+          network special file (HP-UX)
+     'p'
+          FIFO (named pipe)
+     'P'
+          port (Solaris 10 and up)
+     's'
+          socket
+     '?'
+          some other file type
+
+
+其他参考：
+https://refspecs.linuxfoundation.org/FHS_3.0/fhs-3.0.pdf
+http://refspecs.linuxfoundation.org/FHS_3.0/fhs/index.html
+
+
+关于linux文件名的文章或讨论 ：
+https://dwheeler.com/essays/fixing-unix-linux-filenames.html
+https://stackoverflow.com/questions/4814040/allowed-characters-in-filename
+https://serverfault.com/questions/150740/linux-windows-unix-file-names-which-characters-are-allowed-which-are-unesc
+
+关于bash中的关键字等特殊字符可以通过查看 `man bash` #/metacharacter  /control operator 等来找到
+
+
+
+
+

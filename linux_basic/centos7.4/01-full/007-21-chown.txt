@@ -1,0 +1,15 @@
+# keyword chown
+
+man chown
+
+作用: chown - change file owner and group
+
+语法: chown [OPTION]... [OWNER][:[GROUP]] FILE...
+语法: chown [OPTION]... --reference=RFILE FILE...
+
+
+[root@basic ~]# chown Bob a.txt  b.txt
+[root@basic ~]# chown -R Bob workspace
+[root@basic ~]# chown -R Bob:Bob workspace
+[root@basic ~]# chown --reference a.txt  c.txt  #change user and group of c.txt to the same as a.txt
+

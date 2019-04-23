@@ -4,6 +4,20 @@
 /usr/share/doc/
 /usr/share/doc/grub2-common-2.02/
 
+/etc/passwd  # man 5 passwd  #  /etc/shadow 使用 /etc/passwd 的 name 作为外键的原因：用户名能保证唯一，而 uid 无法保证(如系统可以同时存在多个具有root权限的用户),这一点与数据库表的id主键是不同
+/etc/shadow  # man 5 shadow
+/etc/group   # man 5 group
+/etc/gshadow # man 5 gshadow
+
+
+
+
+
+/etc/issue  # man 5 issue # man agetty
+
+
+
+
 
 
 

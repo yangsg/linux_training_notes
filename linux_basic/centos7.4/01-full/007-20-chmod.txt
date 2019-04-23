@@ -1,0 +1,24 @@
+
+# keyword chmod
+
+man chmod
+
+作用： chmod - change file mode bits
+
+语法： chmod [OPTION]... MODE[,MODE]... FILE...
+语法： chmod [OPTION]... OCTAL-MODE FILE...
+语法： chmod [OPTION]... --reference=RFILE FILE...
+chmod的其他说明：Each MODE is of the form '[ugoa]*([-+=]([rwxXst]*|[ugo]))+|[-+=][0-7]+'.
+
+
+
+
+[root@basic ~]# chmod 644 .bashrc
+[root@basic ~]# chmod u=rwx,go=rx .bashrc   #[ugoa]
+[root@basic ~]# chmod a+w .bashrc
+[root@basic ~]# chmod a-x .bashrc
+[root@basic ~]# chmod -R a-x dir01 #-R, --recursive
+[root@basic ~]# chmod --reference a.txt b.txt   #--reference=RFILE  #use RFILE's mode instead of MODE values
+[root@basic ~]# chmod +x /etc/rc.d/rc.local     # 等价于 chmod a+x /etc/rc.d/rc.local
+
+

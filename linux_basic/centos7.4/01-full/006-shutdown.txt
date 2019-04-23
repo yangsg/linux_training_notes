@@ -1,0 +1,34 @@
+# keyword shutdown
+
+man shutdown
+
+关机前可能会用到的命令：
+
+who
+netstat -a
+ps -aux  或  ps -elf
+sync
+
+
+[root@basic ~]# shutdown -h now  #equivalent to `shutdown -h +0` #立刻关机
+[root@basic ~]# shutdown -h 20:25  #系统在今天的 20:25 分会关机，若在21:25才下达此指令，则隔天才关机
+[root@basic ~]# shutdown -h +10    #系统再过十分钟后自动关机
+[root@basic ~]# shutdown -r now    #系统立刻重新启动
+[root@basic ~]# shutdown -r +30 'The system will reboot'   #再过三十分钟系统会重新启动，并显示后面的讯息给所有在在线的使用者
+[root@basic ~]# shutdown -k now 'This system will reboot'  #仅发出警告信件的参数！系统并不会关机啦！吓唬人！
+[root@basic ~]# shutdown -c      #  Cancel a pending shutdown. This may be used cancel the effect of an invocation of shutdown with a time argument that is not "+0" or "now"
+
+
+其他与关机或重启等相关的命令还有：
+reboot, halt, poweroff
+init 0
+
+systemctl halt     # 进入系统停止的模式，屏幕可能会保留一些讯息，这与你的电源管理模式有关
+systemctl reboot   # 直接重新启动
+systemctl poweroff # 进入系统关机模式，直接关机没有提供电力喔！
+systemctl suspend  # 进入休眠模式
+
+
+
+
+

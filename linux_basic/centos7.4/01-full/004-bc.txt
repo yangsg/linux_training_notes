@@ -35,4 +35,19 @@
 [root@basic ~]# echo '2<3' | bc
 1
 
+[root@basic ~]# bc <<< "(1 + 2) * 2 ^ 2"
+12
+
+[root@basic ~]# bc <<< "scale=10; 5 / 3"
+1.6666666666
+
+[root@basic ~]# bc -l <<< "s(1) + c(1)"
+1.38177329067603622405
+
+
+
+其他参考
+https://github.com/tldr-pages/tldr
+https://tldr.ostera.io/
+
 
