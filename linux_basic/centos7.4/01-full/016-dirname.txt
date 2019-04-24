@@ -1,0 +1,20 @@
+
+# keyword dirname
+
+man dirname
+
+作用: dirname - strip last component from file name
+
+语法: dirname [OPTION] NAME...
+
+
+[root@basic ~]# dirname /usr/bin/
+/usr
+[root@basic ~]# dirname dir1/str dir2/str
+dir1
+dir2
+[root@basic ~]# dirname stdio.h
+.
+[root@basic ~]# dirname --zero  dir1/str dir2/str   # -z, --zero: separate output with NUL rather than newline
+dir1dir2[root@basic ~]#
+

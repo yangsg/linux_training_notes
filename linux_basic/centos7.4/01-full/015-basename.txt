@@ -1,0 +1,28 @@
+
+# keyword basename
+
+man basename
+
+作用: basename - strip directory and suffix from filenames
+
+语法: basename NAME [SUFFIX]
+语法: basename OPTION... NAME...
+
+
+[root@basic ~]# basename /usr/bin/sort
+sort
+
+[root@basic ~]# basename include/stdio.h .h
+stdio
+
+[root@basic ~]# basename -s .h include/stdio.h   # -s, --suffix=SUFFIX: remove a trailing SUFFIX
+stdio
+
+[root@basic ~]# basename -a any/str1 any/str2    # -a, --multiple: support multiple arguments and treat each as a NAME
+str1
+str2
+
+[root@basic ~]# basename --zero -a any/str1 any/str2   # -z, --zero: separate output with NUL rather than newline
+str1str2[root@basic ~]#
+
+
