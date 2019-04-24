@@ -1,0 +1,31 @@
+
+# keyword rename
+
+man rename
+
+作用: rename - rename files
+
+语法: rename [options] expression replacement file...
+
+
+# 如下三条命令中，第一条构造示例文件，第二条命令填充十位数的数字0, 第三条命令填充百位数的数字0
+[root@basic dir01]# touch foo{1..278}
+[root@basic dir01]# rename foo foo0 foo?
+[root@basic dir01]# rename foo foo0 foo??
+
+
+
+[root@basic dir01]# ls
+a.htm  b.htm  c.htm  d.htm  e.htm
+[root@basic dir01]# rename .htm .html *.htm    # fix the extension of your html files
+[root@basic dir01]# ls
+a.html  b.html  c.html  d.html  e.html
+
+[root@basic dir01]# rename -v .htm .html *.htm
+`a.htm' -> `a.html'
+`b.htm' -> `b.html'
+`c.htm' -> `c.html'
+`d.htm' -> `d.html'
+`e.htm' -> `e.html'
+
+
