@@ -1,0 +1,33 @@
+
+# keyword rm
+
+作用: rm - remove files or directories
+
+语法: rm [OPTION]... FILE...
+
+rm 是一个危险命令，执行前谨慎考虑
+
+
+[root@basic ~]# alias rm   # centos 上 root 用户默认 cp 的 alias 就是 'rm -i'
+alias rm='rm -i'
+
+[root@basic ~]# rm -i a.txt   # -i     prompt before every removal
+rm: remove regular file ‘a.txt’? y
+
+[root@basic ~]# \rm a.txt    #在命令前加反斜杠，可以忽略掉alias的指定参数
+[rcot@basic ~]# command rm a.txt
+
+[root@basic ~]# rm -f nonexistent_file   # -f, --force: ignore nonexistent files and arguments, never prompt   # 忽略被删除文件不存在情况下,不会给出提示信息
+
+[root@basic ~]# rm -r dir01/     # -r, -R, --recursive: remove directories and their contents recursively
+[root@basic ~]# rm -rf dir01/
+
+[root@basic ~]# mkdir dir01
+[root@basic ~]# ln -s dir01 dir01_link
+[root@basic ~]# rm dir01_link          # 删除目录的 link 文件本身时, 不要在 link 名加尾随的目录斜杠'/'(如不要使用命令`rm -rf dir01_link/`), 否则 dir01_link 无法被删除
+
+
+To remove a file whose name starts with a '-', for example '-foo', use one of these commands:
+              rm -- -foo
+              rm ./-foo
+
