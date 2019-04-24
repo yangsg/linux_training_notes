@@ -1,0 +1,43 @@
+
+# keyword readlink
+
+man readlink
+
+作用: readlink - print resolved symbolic links or canonical file names
+
+语法: readlink [OPTION]... FILE...
+
+说明: Print value of a symbolic link or canonical file name
+
+
+[root@basic ~]# readlink a.txt_link  # 此处 readlink 没加任何选项，表示打印符号链接的值(即文件的路径名, 原文: Print value of a symbolic link)
+a.txt
+
+[root@basic ~]# readlink -m a///b//////////////bbbbb/////////   # -m, --canonicalize-missing:沿着name的每个组成部分中每个符号链接的来规范化文件名(且不要求name中组成部分必须实际存在)
+/root/a/b/bbbbb
+
+[root@basic ~]# readlink -m a/b/c/../../././///
+/root/a
+
+
+[root@basic ~]# touch a.txt
+[root@basic ~]# ln -s a.txt a.txt_link
+[root@basic ~]# readlink -e a.txt_link   # -e, --canonicalize-existing: 规范化文件名，所有的组件都必须存在
+/root/a.txt
+[root@basic ~]# echo $?
+0
+
+[root@basic ~]# readlink -e /a/b/c/d     # 因为/a/b/c/d实际并不存在，不满足-e选项要求(-e, --canonicalize-existing: 规范化文件名，所有的路径组件都必须存在), 所以执行结果非0,即失败
+[root@basic ~]# echo $?
+1
+
+[root@basic ~]# readlink -f a.txt_link   # -f, --canonicalize: 规范化文件名，the last component must exist
+
+
+
+
+
+# 关于 realpath 与 readlink 区别的参考资料
+https://www.howtoforge.com/linux-readlink-realpath-command/
+https://unix.stackexchange.com/questions/136494/whats-the-difference-between-realpath-and-readlink-f
+

@@ -1,0 +1,35 @@
+
+# keyword realpath
+
+realpath
+
+
+作用: realpath - print the resolved path
+
+语法: realpath [OPTION]... FILE...
+
+说明: Print the resolved absolute file name; all but the last component must exist
+
+
+[root@basic ~]# touch a.txt
+[root@basic ~]# ln -s a.txt  a.txt_link
+
+[root@basic ~]# realpath a.txt_link   # 等价于 realpath -P a.txt_link  # -P, --physical: resolve symlinks as encountered (default)
+/root/a.txt
+
+[root@basic ~]# realpath -e  a.txt_link     # -e, --canonicalize-existing: all components of the path must exist (路径的所有组成部分都必须存在)
+/root/a.txt
+
+[root@basic ~]# realpath -m  ../././a/b/c/d/e//..////../   # -m, --canonicalize-missing:  no components of the path need exist
+/a/b/c
+
+
+
+
+
+
+
+# 关于 realpath 与 readlink 区别的参考资料
+https://www.howtoforge.com/linux-readlink-realpath-command/
+https://unix.stackexchange.com/questions/136494/whats-the-difference-between-realpath-and-readlink-f
+
