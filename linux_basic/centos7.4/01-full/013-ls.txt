@@ -110,7 +110,7 @@ anaconda-ks.cfg  a.txt  bash.mantxt  b.txt  c.txt  dir/  dir01/  dir02/  dir_a/ 
       dr-xr-xr-x   13 root root    0 Apr 23 08:15 sys
 
 
-[root@basic ~]# ls -lShr /    # -r, --reverse: reverse order while sorting
+[root@basic ~]# ls -lShr /    # -r, --reverse: reverse order while sorting  # 反序排序
       total 28K
       dr-xr-xr-x   13 root root    0 Apr 23 08:15 sys
       dr-xr-xr-x  119 root root    0 Apr 23 08:15 proc
@@ -157,7 +157,7 @@ anaconda-ks.cfg  a.txt  bash.mantxt  b.txt  c.txt  dir/  dir01/  dir02/  dir_a/ 
       drwxr-xr-x.   2 root root    6 2016-11-05 23:38:36.000000000 +0800 srv
 
 
-[root@basic ~]# ls -ltr --full-time /    # -r, --reverse: reverse order while sorting
+[root@basic ~]# ls -ltr --full-time /    # -r, --reverse: reverse order while sorting #反序排序
       total 28
       drwxr-xr-x.   2 root root    6 2016-11-05 23:38:36.000000000 +0800 srv
       drwxr-xr-x.   2 root root    6 2016-11-05 23:38:36.000000000 +0800 mnt
@@ -278,5 +278,29 @@ lrwxrwxrwx 1 root root 9 Apr 23 20:03 bash_link -> /bin/bash
 
 [root@basic ~]# ls -lh -H bash_link    # -H, --dereference-command-line: follow symbolic links listed on the command line
 -rwxr-xr-x. 1 root root 938K Aug  3  2017 bash_link   #<---- 注：加了-L 后，此处显示的是连接目标的属性了
+
+[root@basic ~]# ls -fl  # -f     do not sort, enable -aU, disable -ls --color (-f选项表示不对结果排序，因为ls 默认会以文件名进行排序,注意-f选项要放到-l选项前面才能显示出long format信息)
+total 92
+dr-xr-x---.  6 root root  4096 Apr 24 07:51 .
+dr-xr-xr-x. 17 root root   244 Apr 22 18:35 ..
+-rw-r--r--.  1 root root    18 Dec 29  2013 .bash_logout
+-rw-r--r--.  1 root root   176 Dec 29  2013 .bash_profile
+-rw-r--r--.  1 root root   176 Dec 29  2013 .bashrc
+-rw-r--r--.  1 root root   100 Dec 29  2013 .cshrc
+-rw-r--r--.  1 root root   129 Dec 29  2013 .tcshrc
+-rw-------.  1 root root  1656 Dec 23 07:47 anaconda-ks.cfg
+-rw-------.  1 root root 14479 Apr 23 20:44 .bash_history
+-rw-------.  1 root root  1024 Dec 23 08:06 .rnd
+drwxr-----.  3 root root    19 Dec 23 08:08 .pki
+-rw-r--r--.  1 root root   308 Dec 23 09:01 .screenrc
+-rw-------.  1 root root   293 Apr 24 07:54 .lesshst
+-rw-r--r--   1 root root    69 Apr 22 19:02 .gitconfig
+drwxr-xr-x   2 root root    45 Apr 23 20:29 dir01
+-rw-------   1 root root 20086 Apr 24 07:51 .viminfo
+drwxr-xr-x.  3 root root    20 Dec 23 09:40 .vim
+-rw-r--r--.  1 root root  8764 Dec 23 10:38 .vimrc
+drwxr-xr-x  18 root root   332 Apr 22 18:39 linux_training_notes
+
+
 
 

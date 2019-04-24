@@ -1,0 +1,98 @@
+
+# keyword stat
+
+man stat
+info stat
+
+作用: stat - display file or file system status
+
+语法: stat [OPTION]... FILE...
+
+[root@basic ~]# stat /etc/fstab
+  File: ‘/etc/fstab’
+  Size: 465             Blocks: 8          IO Block: 4096   regular file
+Device: fd00h/64768d    Inode: 16777282    Links: 1
+Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2018-12-23 08:06:27.104034724 +0800
+Modify: 2018-12-23 07:43:48.628846279 +0800
+Change: 2018-12-23 07:47:48.755853868 +0800
+ Birth: -
+
+[root@basic ~]# stat -t /etc/fstab   # -t, --terse: print the information in terse form
+/etc/fstab 465 8 81a4 0 0 fd00 16777282 1 0 0 1545523587 1545522228 1545522468 0 4096
+
+[root@basic ~]# stat dir01/
+  File: ‘dir01/’
+  Size: 45              Blocks: 0          IO Block: 4096   directory
+Device: fd00h/64768d    Inode: 16784474    Links: 2
+Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2019-04-23 20:29:41.285017885 +0800
+Modify: 2019-04-23 20:29:37.369025414 +0800
+Change: 2019-04-23 20:29:37.369025414 +0800
+ Birth: -
+
+
+[root@basic ~]# stat -f /etc/fstab   # -f, --file-system: display file system status instead of file status (不显示文件本省，显示文件所在文件系统的信息)
+  File: "/etc/fstab"
+    ID: fd0000000000 Namelen: 255     Type: xfs
+Block size: 4096       Fundamental block size: 4096
+Blocks: Total: 4663808    Free: 4185762    Available: 4185762
+Inodes: Total: 9332736    Free: 9279602
+
+[root@basic ~]# stat --format=%d:%i / /usr   # -c  --format=FORMAT: use the specified FORMAT instead of the default; output a newline after each use of FORMAT
+64768:64
+64768:33603712
+
+[root@basic ~]# stat --printf='%d:%i\n' / /usr  # --printf=FORMAT: like --format, but interpret backslash escapes, and do not output a mandatory trailing newline; if you want a newline, include \n in FORMAT
+64768:64
+64768:33603712
+
+
+   The valid FORMAT directives for files with '--format' and '--printf' are:
+
+   * %a - Access rights in octal
+   * %A - Access rights in human readable form
+   * %b - Number of blocks allocated (see '%B')
+   * %B - The size in bytes of each block reported by '%b'
+   * %C - The SELinux security context of a file, if available
+   * %d - Device number in decimal
+   * %D - Device number in hex
+   * %f - Raw mode in hex
+   * %F - File type
+   * %g - Group ID of owner
+   * %G - Group name of owner
+   * %h - Number of hard links
+   * %i - Inode number
+   * %m - Mount point (See note below)
+   * %n - File name
+   * %N - Quoted file name with dereference if symbolic link
+   * %o - Optimal I/O transfer size hint
+   * %s - Total size, in bytes
+   * %t - Major device type in hex (see below)
+   * %T - Minor device type in hex (see below)
+   * %u - User ID of owner
+   * %U - User name of owner
+   * %w - Time of file birth, or '-' if unknown
+   * %W - Time of file birth as seconds since Epoch, or '0'
+   * %x - Time of last access
+   * %X - Time of last access as seconds since Epoch
+   * %y - Time of last modification
+   * %Y - Time of last modification as seconds since Epoch
+   * %z - Time of last change
+   * %Z - Time of last change as seconds since Epoch
+
+   When listing file system information ('--file-system' ('-f')), you must use a different set of FORMAT directives:
+
+   * %a - Free blocks available to non-super-user
+   * %b - Total data blocks in file system
+   * %c - Total file nodes in file system
+   * %d - Free file nodes in file system
+   * %f - Free blocks in file system
+   * %i - File System ID in hex
+   * %l - Maximum length of file names
+   * %n - File name
+   * %s - Block size (for faster transfers)
+   * %S - Fundamental block size (for block counts)
+   * %t - Type in hex
+   * %T - Type in human readable form
+
