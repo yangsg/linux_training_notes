@@ -9,6 +9,9 @@ man cp
 语法: cp [OPTION]... SOURCE... DIRECTORY
 语法: cp [OPTION]... -t DIRECTORY SOURCE...
 
+
+[root@basic ~]# cp -r dir01/  /tmp/    # -R, -r, --recursive: copy directories recursively   递归复制，复制目录时很有用
+
 [root@basic ~]# cp a.txt b.txt  #这种行为会复制(cp)执行者的属性与权限
 cp: overwrite ‘b.txt’? y
 
@@ -21,7 +24,34 @@ cp: overwrite ‘dir01/b.txt’? y
 [root@basic ~]# cp -a dir01/ dir02    # -a, --archive: same as -dR --preserve=all
 [root@basic ~]# cp -av dir01/ dir02   # -v, --verbose: explain what is being done
 
-其他参考:
-https://www.linuxtechi.com/cp-command-examples-linux-beginners/
+[root@basic ~]# cp -u a.txt /tmp/a.txt  # -u, --update: copy only when the SOURCE file is newer than the destination file or when the destination file is missing
 
+[root@basic ~]# cp -s a.txt a.txt_link  # -s, --symbolic-link: make symbolic links instead of copying
+
+
+[root@basic ~]# touch a.txt
+[root@basic ~]# mkdir dir01
+[root@basic ~]# touch dir01/a.txt
+[root@basic ~]# cp --backup a.txt dir01/a.txt   # --backup[=CONTROL]: make a backup of each existing destination file
+cp: overwrite ‘dir01/a.txt’? y
+[root@basic ~]# ls dir01/
+a.txt  a.txt~
+
+[root@basic ~]# cp --backup --suffix=.$(date '+%F_%T').bak a.txt  dir01/a.txt  # -S, --suffix=SUFFIX: override the usual backup suffix
+[root@basic ~]# ls dir01/
+a.txt  a.txt.2019-04-24_08:50:15.bak
+
+[root@basic ~]# cp -i a.txt dir01/a.txt  # -i, --interactive: prompt before overwrite (overrides a previous -n option) # 注：通常centos的root 默认alias就是 'cp -i'
+cp: overwrite ‘dir01/a.txt’? y
+
+[root@basic ~]# alias cp
+alias cp='cp -i'
+
+[root@basic ~]# \cp a.txt dir01/a.txt
+[root@basic ~]# command cp a.txt dir01/a.txt
+
+[root@basic ~]# cp -n a.txt dir01/a.txt   # -n, --no-clobber: do not overwrite an existing file (overrides a previous -i option)  不会覆盖已经存在的文件
+
+[root@basic ~]# cp -v a.txt dir01/b.txt   # -v, --verbose: explain what is being done
+‘a.txt’ -> ‘dir01/b.txt’
 
