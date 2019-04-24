@@ -1,0 +1,46 @@
+
+# keyword mv
+
+man mv
+
+作用: mv - move (rename) files
+
+语法: mv [OPTION]... [-T] SOURCE DEST
+语法: mv [OPTION]... SOURCE... DIRECTORY
+语法: mv [OPTION]... -t DIRECTORY SOURCE...
+
+
+[root@basic ~]# mkdir dir01 dir02
+[root@basic ~]# touch a.txt b.txt
+[root@basic ~]# mv a.txt dir01/
+[root@basic ~]# mv -t dir02/  b.txt    # -t, --target-directory=DIRECTORY: move all SOURCE arguments into DIRECTORY
+
+[root@basic ~]# echo hello > a.txt
+[root@basic ~]# ls dir01/
+a.txt
+[root@basic ~]# mv --backup a.txt  dir01/ # --backup[=CONTROL]: make a backup of each existing destination file
+mv: overwrite ‘dir01/a.txt’? y
+[root@basic ~]# ls dir01
+a.txt  a.txt~
+
+[root@basic ~]# echo world > b.txt
+[root@basic ~]# mv --backup --suffix=.$(date '+%F_%T').bak b.txt  dir02/   # -S, --suffix=SUFFIX: override the usual backup suffix 
+mv: overwrite ‘dir02/b.txt’? y
+[root@basic ~]# ls dir02/
+b.txt  b.txt.2019-04-24_13:03:40.bak
+
+[root@basic ~]# mv -u a.txt dir01/a.txt   # -u, --update: move only when the SOURCE file is newer than the destination file or when the destination file is missing
+mv: overwrite ‘dir01/a.txt’? y
+
+[root@basic ~]# mv -n a.txt  dir01/a.txt  # -n, --no-clobber: do not overwrite an existing file  如果目标已经存在，则其不会被覆盖
+
+[root@basic ~]# mv -v a.txt dir02/  # -v, --verbose: explain what is being done
+‘a.txt’ -> ‘dir02/a.txt’
+
+[root@basic ~]# mv -i a.txt dir02/    # -i, --interactive: prompt before overwrite
+mv: overwrite ‘dir02/a.txt’? y
+
+[root@basic ~]# mv -f a.txt  dir02/   # -f, --force: do not prompt before overwriting
+
+[root@basic ~]# mv old.txt new.txt    # rename file from old.txt to new.txt
+
