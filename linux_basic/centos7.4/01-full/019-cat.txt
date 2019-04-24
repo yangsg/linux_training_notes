@@ -1,0 +1,83 @@
+
+# keyword cat
+
+man cat
+
+作用: cat - concatenate files and print on the standard output
+
+语法: cat [OPTION]... [FILE]...
+
+说明: Concatenate FILE(s), or standard input, to standard output.
+
+
+[root@basic ~]# cat /etc/issue
+\S
+Kernel \r on an \m
+
+[root@basic ~]# cat -n /etc/issue   # -n, --number: number all output lines
+     1  \S
+     2  Kernel \r on an \m
+     3
+[root@basic ~]# cat -b c.txt        # -b, --number-nonblank: number nonempty output lines, overrides -n
+     1  xxx
+
+     2  yyyy
+
+     3  zzzz
+[root@basic ~]# cat a.txt b.txt
+aaaa
+bbbb
+cccc
+dddd
+one
+two
+three
+four
+
+[root@basic ~]# echo '=================' | cat a.txt - b.txt   #  按序依次输出 a.txt, 标准输入stdin，b.txt 的内容, 等价于命令 `echo '=================' | cat a.txt /dev/stdin b.txt`
+aaaa
+bbbb
+cccc
+dddd
+=================
+one
+two
+three
+four
+
+
+[root@basic ~]# echo -e 'a b\tc\nd\r\ne' | cat -A
+a b^Ic$
+d^M$
+e$
+
+[root@basic ~]# cat -A space_tab_newline.txt   # -A, --show-all: equivalent to -vET  # ^I -> [Tab], $ -> ‘\n’(linux), ^M$ -> ‘\r\n’(windows)
+a ^Ib$
+$
+
+[root@basic ~]# cat      # 等价于  cat -   # 从标准输入流中读取数据, 并输出到标准输出(即 Copy standard input to standard output)
+read from stdin, end with Ctrl-d
+read from stdin, end with Ctrl-d
+
+[root@basic ~]# echo -e 'a\tb' | cat -T    # -T, --show-tabs: display TAB characters as ^I
+a^Ib
+
+[root@basic ~]# echo -e 'a' | cat -E       # -E, --show-ends: display $ at end of each line
+a$
+
+
+[root@basic ~]# cat -n repeated_empty_output_lines_file.txt
+     1  one
+     2
+     3  two
+     4
+     5
+     6
+     7  three
+[root@basic ~]# cat -n -s repeated_empty_output_lines_file.txt    # -s, --squeeze-blank: suppress repeated empty output lines
+     1  one
+     2
+     3  two
+     4
+     5  three
+
