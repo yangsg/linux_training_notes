@@ -27,6 +27,16 @@ realpath
 
 
 
+[root@basic ~]# realpath /var/local/Downloadslink
+/var/local/Downloadslink
+[root@basic ~]# realpath /var/local/Downloadslink --relative-to=/home/himanshu   # --relative-to=FILE: print the resolved path relative to FILE
+../../var/local/Downloadslink
+
+[root@basic ~]# realpath -s ../../var/local/Downloadslink   # -s, --strip, --no-symlinks: don't expand symlinks
+/var/local/Downloadslink
+
+realpath 还有更多选项，见man realpath
+
 
 
 # 关于 realpath 与 readlink 区别的参考资料
