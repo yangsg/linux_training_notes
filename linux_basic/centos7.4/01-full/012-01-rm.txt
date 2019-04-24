@@ -31,3 +31,9 @@ To remove a file whose name starts with a '-', for example '-foo', use one of th
               rm -- -foo
               rm ./-foo
 
+[root@basic ~]# touch ./-foo   # 正常情况下禁止创建以文件名以'-'开头的文件(因为'-'默认作为bash的命令的选项前缀使用), 此例子只是举一个反例才这么做的
+[root@basic ~]# rm -- -foo     # 以特殊的方法删除文件名为 ‘-foo’ 的文件, 如果有更怪异的文件名的文件，可以考虑结合使用find -inum 和 rm 命令来删除
+[root@basic ~]# rm ./-foo      # 以特殊的方法删除文件名为 ‘-foo’ 的文件, 如果有更怪异的文件名的文件，可以考虑结合使用find -inum 和 rm 命令来删除
+
+
+
