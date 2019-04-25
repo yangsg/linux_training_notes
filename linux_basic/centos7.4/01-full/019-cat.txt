@@ -81,3 +81,7 @@ a$
      4
      5  three
 
+
+其他:
+cat 等程序 配合 bash 的一些特性(如redirection, pipeline, here document, here string, Process Substitution等, 见`man bash`), 能更好的适应某些应用场景
+

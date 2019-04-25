@@ -1,0 +1,96 @@
+
+# keyword nl
+
+man nl
+
+
+作用: nl - number lines of files
+
+语法: nl [OPTION]... [FILE]...
+
+说明: Write each FILE to standard output, with line numbers added.  With no FILE, or when FILE is -, read standard input.
+
+
+[root@basic ~]# nl /etc/issue
+     1  \S
+     2  Kernel \r on an \m
+
+
+//  By  default, selects -v1 -i1 -l1 -sTAB -w6 -nrn -hn -bt -fn.  CC are two delimiter characters for separating logical pages, a missing second character implies :.  Type \\ for \.
+//  STYLE is one of:
+//      a      number all lines
+//      t      number only nonempty lines
+//      n      number no lines
+//      pBRE   number only lines that contain a match for the basic regular expression, BRE
+
+[root@basic ~]# nl -b a /etc/issue    # -b, --body-numbering=STYLE:  use STYLE for numbering body lines  # a      number all lines
+     1  \S
+     2  Kernel \r on an \m
+     3
+[root@basic ~]# nl -b t /etc/issue    # t      number only nonempty lines
+     1  \S
+     2  Kernel \r on an \m
+
+[root@basic ~]# nl -b n /etc/issue    # n      number no lines
+       \S
+       Kernel \r on an \m
+
+[root@basic ~]# nl -b p'S' /etc/issue  # pBRE   number only lines that contain a match for the basic regular expression, BRE
+     1  \S
+       Kernel \r on an \m
+
+
+//   FORMAT is one of:
+//      ln     left justified, no leading zeros
+//      rn     right justified, no leading zeros
+//      rz     right justified, leading zeros
+
+[root@basic ~]# nl -n rz  /etc/issue   # -n, --number-format=FORMAT: insert line numbers according to FORMAT   # rz     right justified, leading zeros
+000001  \S
+000002  Kernel \r on an \m
+
+[root@basic ~]# nl -n rn  /etc/issue   # rn     right justified, no leading zeros
+     1  \S
+     2  Kernel \r on an \m
+
+[root@basic ~]# nl -n ln  /etc/issue   # ln     left justified, no leading zeros
+1       \S
+2       Kernel \r on an \m
+
+[root@basic ~]# nl -b a -n rz -w 10  /etc/issue  # -w, --number-width=NUMBER: use NUMBER columns for line numbers
+0000000001      \S
+0000000002      Kernel \r on an \m
+0000000003
+
+[root@basic ~]# nl -b a -n rz -w 10 -s ':::'  /etc/issue  # -s, --number-separator=STRING: add STRING after (possible) line number
+0000000001:::\S
+0000000002:::Kernel \r on an \m
+0000000003:::
+
+[root@basic ~]# nl -b a -n rz -w 10 -s ':::' -v 9  /etc/issue  # -v, --starting-line-number=NUMBER: first line number on each logical page
+0000000009:::\S
+0000000010:::Kernel \r on an \m
+0000000011:::
+
+[root@basic ~]# nl -b a -n rz -w 10 -s ':::' -v 9 -i 2  /etc/issue  # -i, --line-increment=NUMBER: line number increment at each line
+0000000009:::\S
+0000000011:::Kernel \r on an \m
+0000000013:::
+
+
+
+
+
+[root@basic ~]# cat -n a.txt
+     1  a01
+     2  a02
+[root@basic ~]# cat -n b.txt
+     1  b01
+     2  b02
+[root@basic ~]# nl a.txt b.txt
+     1  a01
+     2  a02
+     3  b01
+     4  b02
+
+

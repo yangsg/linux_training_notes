@@ -1,0 +1,22 @@
+
+# keyword tac
+
+man tac
+
+作用: tac - concatenate and print files in reverse
+
+语法: tac [OPTION]... [FILE]...
+
+说明: Write each FILE to standard output, last line first.  With no FILE, or when FILE is -, read standard input.
+
+
+[root@basic ~]# tac /etc/issue
+
+Kernel \r on an \m
+\S
+
+[root@basic ~]# tac /etc/issue | cat -A  # tac没有cat那么多选项，不过可以通过|管道+cat来解决
+$
+Kernel \r on an \m$
+\S$
+

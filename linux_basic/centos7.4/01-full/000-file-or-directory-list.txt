@@ -15,6 +15,11 @@
 
 /etc/issue  # man 5 issue # man agetty
 
+/etc/os-release
+/etc/redhat-release
+/etc/centos-release
+
+
 
 
 
