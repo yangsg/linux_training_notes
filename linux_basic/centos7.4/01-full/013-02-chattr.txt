@@ -1,0 +1,43 @@
+
+# keyword chattr
+
+
+man chattr
+
+
+
+作用: chattr - change file attributes on a Linux file system
+
+语法: chattr [ -RVf ] [ -v version ] [ mode ] files...
+
+说明:
+       chattr changes the file attributes on a Linux file system.
+
+       The format of a symbolic mode is +-=[aAcCdDeijsStTu].
+
+       The operator '+' causes the selected attributes to be added to the existing attributes of the files; '-' causes them to be removed; and '=' causes them to be the only attributes
+       that the files have.
+
+       The letters 'aAcCdDeijsStTu' select the new attributes for the files: append only (a), no atime updates (A), compressed (c), no copy on  write  (C),  no  dump  (d),  synchronous
+       directory updates (D), extent format (e), immutable (i), data journalling (j), secure deletion (s), synchronous updates (S), no tail-merging (t), top of directory hierarchy (T),
+       and undeletable (u).
+
+       The following attributes are read-only, and may be listed by lsattr(1) but not modified by chattr: compression error (E), huge file (h), indexed directory (I), inline data  (N),
+       compression raw access (X), and compressed dirty file (Z).
+
+       Not all flags are supported or utilized by all filesystems; refer to filesystem-specific man pages such as btrfs(5), ext4(5), and xfs(5) for more filesystem-specific details.
+
+
+
+[root@basic ~]# chattr +i a.out  # 添加 immutable 特性
+[root@basic ~]# chattr -i a.out  # 去除 immutable 特性
+
+[root@basic ~]# chattr +a a.log  # 添加 append only 特性
+[root@basic ~]# chattr -a a.log  # 去除 append only 特性
+
+[root@basic ~]# chattr +Aa a.log  # 同时添加 no atime updates (A) 和 append only (a) 特性
+
+[root@basic ~]# chattr = a.log    # 清空所有的特性
+[root@basic ~]# chattr =Aa a.log  # 设置仅存在 no atime updates (A) 和 append only (a) 特性
+
+
