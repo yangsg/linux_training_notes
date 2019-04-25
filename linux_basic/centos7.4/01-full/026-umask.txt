@@ -1,0 +1,34 @@
+
+
+# keyword umask
+
+help umask
+
+
+注: 并非所有程序(或进程)创建文件时都会受 umask 设置值的影响，因为在系统编程时可以通过相应的系统调用来主动修改程序对应进程内部的 umask 值。
+
+[root@basic ~]# umask       #output: 0002 (Displaying the current mask)
+0022
+
+[root@basic ~]# umask -S    #output: u=rwx,g=rwx,o=rx   # -S        makes the output symbolic; otherwise an octal number is output
+u=rwx,g=rx,o=rx
+
+
+[root@basic ~]# umask 002   #一般账号umask通常为002，见/etc/bashrc
+[root@basic ~]# umask 022   #root及系统账号umask通常为022
+
+##default regular file permision:      -rw-rw-rw-
+##default regular directory permision: drwxrwxrwx
+## 创建文件时：(-rw-rw-rw-) - (-----w--w-) ==> -rw-r--r--
+## 创建目录时：(drwxrwxrwx) - (d----w--w-) ==> drwxr-xr-x
+
+
+[root@basic ~]# (umask 033 && touch a.txt)  # 一个小技巧, 通过括号来在 subshell 中执行命令来临时修改 umask 值而不用影响 父 shell 的原有 umask 设置
+
+
+
+其他参考:
+https://en.wikipedia.org/wiki/Umask
+    Each program (technically called a process) has its own mask, and is able to change its settings using a function call. When the process is a shell, the mask is set with the umask command.
+https://en.wikipedia.org/wiki/File_system_permissions
+
