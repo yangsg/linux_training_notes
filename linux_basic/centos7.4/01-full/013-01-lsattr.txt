@@ -1,0 +1,30 @@
+
+# keyword lsattr
+
+man lsattr
+
+作用: lsattr - list file attributes on a Linux second extended file system
+
+语法: lsattr [ -RVadv ] [ files...  ]
+
+
+
+[root@basic ~]# chattr +i  a.log
+[root@basic ~]# lsattr a.log
+----i----------- a.log
+
+[root@basic ~]# lsattr -v a.log    # -v     List the file's version/generation number.
+18446744073642484275 ----i----------- a.log
+
+[root@basic ~]# lsattr -d dir02/   # -d     List directories like other files, rather than listing their contents.
+---------------- dir02/
+
+[root@basic ~]# lsattr -R dir02/   # -R     Recursively list attributes of directories and their contents.
+---------------- dir02/a.txt
+
+[root@basic ~]# lsattr -a dir02/   # -a     List all files in directories, including files that start with `.'.
+---------------- dir02/.
+---------------- dir02/..
+---------------- dir02/a.txt
+
+
