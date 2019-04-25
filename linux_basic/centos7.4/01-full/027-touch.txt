@@ -1,0 +1,82 @@
+
+# keyword touch
+
+man touch
+info touch
+
+
+作用: touch - change file timestamps
+
+语法: touch [OPTION]... FILE...
+
+说明:
+//       Update the access and modification times of each FILE to the current time.
+//       A FILE argument that does not exist is created empty, unless -c or -h is supplied.
+//       A FILE argument string of - is handled specially and causes touch to change the times of the file associated with standard output.
+
+
+[root@basic ~]# touch -d "2 days ago" a.txt  #touch可以改变mtime、atime,但无法将ctime改变为指定值
+
+[root@basic ~]# ls -l --full-time a.txt; ls -l --time=atime --full-time a.txt; ls -l --time=ctime --full-time a.txt;
+-rw-r--r-- 1 root root 20094976 2019-04-23 19:08:57.718421370 +0800 a.txt
+-rw-r--r-- 1 root root 20094976 2019-04-23 19:08:57.718421370 +0800 a.txt
+-rw-r--r-- 1 root root 20094976 2019-04-25 19:08:57.748508956 +0800 a.txt
+
+[root@basic ~]# stat a.txt
+  File: ‘a.txt’
+  Size: 20094976        Blocks: 39248      IO Block: 4096   regular file
+Device: fd00h/64768d    Inode: 33575131    Links: 1
+Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2019-04-23 19:08:57.718421370 +0800
+Modify: 2019-04-23 19:08:57.718421370 +0800
+Change: 2019-04-25 19:08:57.748508956 +0800
+ Birth: -
+
+
+[root@basic ~]# touch a.txt
+[root@basic ~]# ls -l --full-time a.txt; ls -l --time=atime --full-time a.txt; ls -l --time=ctime --full-time a.txt;
+-rw-r--r-- 1 root root 20094976 2019-04-25 19:10:29.579152950 +0800 a.txt
+-rw-r--r-- 1 root root 20094976 2019-04-25 19:10:29.579152950 +0800 a.txt
+-rw-r--r-- 1 root root 20094976 2019-04-25 19:10:29.579152950 +0800 a.txt
+
+[root@basic ~]# touch -c z.txt  # -c, --no-create: do not create any files
+[root@basic ~]# touch -a a.txt  # -a     change only the access time
+[root@basic ~]# touch -m a.txt  # -m     change only the modification time
+
+
+[root@basic ~]# touch --date="2004-02-27 14:19:13.489392193 +0530"   a.txt   # -d, --date=STRING: parse STRING and use it instead of current time
+[root@basic ~]# stat a.txt
+  File: ‘a.txt’
+  Size: 20094976        Blocks: 39248      IO Block: 4096   regular file
+Device: fd00h/64768d    Inode: 33575131    Links: 1
+Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2004-02-27 16:49:13.489392193 +0800
+Modify: 2004-02-27 16:49:13.489392193 +0800
+Change: 2019-04-25 19:16:59.393641730 +0800
+ Birth: -
+
+[root@basic ~]# touch --reference=b.txt a.txt   # -r, --reference=FILE: use this file's times instead of current time
+
+
+[root@basic ~]# ln -s a.txt a.txt_link
+[root@basic ~]# stat a.txt_link
+  File: ‘a.txt_link’ -> ‘a.txt’
+  Size: 5               Blocks: 0          IO Block: 4096   symbolic link
+Device: fd00h/64768d    Inode: 34847952    Links: 1
+Access: (0777/lrwxrwxrwx)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2019-04-25 19:22:27.735369261 +0800
+Modify: 2019-04-25 19:22:23.434385645 +0800
+Change: 2019-04-25 19:22:23.434385645 +0800
+ Birth: -
+[root@basic ~]# touch --no-dereference a.txt_link   # 修改链接文件的对应时间属性 -h, --no-dereference: affect each symbolic link instead of any referenced file (useful only on systems that can change the timestamps of a symlink)
+[root@basic ~]# stat a.txt_link
+  File: ‘a.txt_link’ -> ‘a.txt’
+  Size: 5               Blocks: 0          IO Block: 4096   symbolic link
+Device: fd00h/64768d    Inode: 34847952    Links: 1
+Access: (0777/lrwxrwxrwx)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2019-04-25 19:22:59.369248780 +0800
+Modify: 2019-04-25 19:22:56.661259096 +0800
+Change: 2019-04-25 19:22:56.661259096 +0800
+ Birth: -
+
+
