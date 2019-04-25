@@ -17,3 +17,5 @@ man head
 [root@basic ~]# head -c 20 /etc/man_db.conf  # 显示前20字节 # -c, --bytes=[-]K: print the first K bytes of each file; with the leading '-', print all but the last K bytes of each file
 [root@basic ~]# head -c -20 /etc/man_db.conf  # 显示所有字节(但最后20字节除外)
 
+[root@basic ~]# head -n 20 /etc/man_db.conf | tail -n 10  #显示 man_db.conf 的第11到20行
+

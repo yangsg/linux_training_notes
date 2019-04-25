@@ -21,4 +21,5 @@ man tail
 
 [root@basic ~]# tail -f /var/log/messages     #按[ctrl]+c结束  # -f, --follow[={name|descriptor}]: output appended data as the file grows;
 
+[root@basic ~]# head -n 20 /etc/man_db.conf | tail -n 10  #显示 man_db.conf 的第11到20行
 
