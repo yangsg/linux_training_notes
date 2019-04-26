@@ -1,0 +1,49 @@
+
+# keyword ln
+
+man ln
+
+作用: ln - make links between files
+
+语法: ln [OPTION]... [-T] TARGET LINK_NAME   (1st form)
+语法: ln [OPTION]... TARGET                  (2nd form)
+语法: ln [OPTION]... TARGET... DIRECTORY     (3rd form)
+语法: ln [OPTION]... -t DIRECTORY TARGET...  (4th form)
+
+
+[root@basic ~]# ln -s a.txt  a.txt_link
+
+[root@basic ~]# ln -s  /etc/fstab    # 在当前目录创建 符号链接
+[root@basic ~]# ls ./fstab
+./fstab
+
+[root@basic ~]# ln -s /etc/issue /etc/os-release dir01/  # 在 dir01/ 目录下创建 issue 和 os-release 的两个符号链接文件
+[root@basic ~]# ls -l dir01/*
+lrwxrwxrwx 1 root root 10 Apr 26 14:08 dir01/issue -> /etc/issue
+lrwxrwxrwx 1 root root 15 Apr 26 14:08 dir01/os-release -> /etc/os-release
+
+[root@basic ~]# ln -s  -t dir01/  /etc/os-release  /etc/redhat-release   # 在 dir01/ 目录下创建 os-release 和 redhat-release 的两个符号链接文件
+[root@basic ~]# ls -l dir01
+total 0
+lrwxrwxrwx 1 root root 15 Apr 26 14:06 os-release -> /etc/os-release
+lrwxrwxrwx 1 root root 19 Apr 26 14:06 redhat-release -> /etc/redhat-release
+
+
+[root@basic ~]# ln -s dir01 dir01_link        # 为目录 dir01 创建符号链接文件
+[root@basic ~]# ls -l | grep dir01_link
+lrwxrwxrwx   1 root root       5 Apr 26 14:12 dir01_link -> dir01
+
+[root@basic ~]# rm dir01_link                 # 注意：删除目录的链接文件时,链接文件的名称不要尾随斜线'/'(即不要使用命令`rm dir01_link/`),否则会失败
+rm: remove symbolic link ‘dir01_link’? y
+
+
+[root@basic ~]# ln -s /etc/os-release dir01/
+[root@basic ~]# ln -s --backup --suffix='.bak' /etc/os-release dir01/
+[root@basic ~]# ls dir01/
+os-release  os-release.bak
+
+[root@basic ~]# readlink dir01/os-release
+/etc/os-release
+[root@basic ~]# realpath dir01/os-release
+/etc/os-release
+
