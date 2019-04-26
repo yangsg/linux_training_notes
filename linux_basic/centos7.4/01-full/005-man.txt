@@ -76,4 +76,12 @@ null (4)             - data sink
 # 旧版的 Linux 这个指令是使用 makewhatis 喔！这一版开使用 mandb 了！
 
 
+其他参考:
+    有时系统自带的man page 也不一定就包含了完整详细的信息(如centos7.4 中 man find #/-size n 就缺少某些信息)，
+    所以有时还可以去在线的man page去查找资料, 在线资料如下:
+    http://www.man7.org/
+    http://www.man7.org/linux/man-pages/index.html
+    http://man7.org/linux/man-pages/dir_section_1.html
+    http://man7.org/linux/man-pages/man1/find.1.html
+
 
