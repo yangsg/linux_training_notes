@@ -32,6 +32,5 @@ cd:[root@basic ~]#
 EXAMPLE
        To find all files in /usr/bin which are not documented in /usr/man/man1 or have no source in /usr/src:
 
-              $ cd /usr/bin
-              $ whereis -u -ms -M /usr/man/man1 -S /usr/src -f *
+              $ cd /usr/bin && whereis -u -ms -M /usr/man/man1 -S /usr/src -f *
 
