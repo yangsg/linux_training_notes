@@ -2,6 +2,7 @@
 # keyword chmod
 
 man chmod
+info chmod
 
 作用： chmod - change file mode bits
 
@@ -20,5 +21,68 @@ chmod的其他说明：Each MODE is of the form '[ugoa]*([-+=]([rwxXst]*|[ugo]))
 [root@basic ~]# chmod -R a-x dir01 #-R, --recursive
 [root@basic ~]# chmod --reference a.txt b.txt   #--reference=RFILE  #use RFILE's mode instead of MODE values
 [root@basic ~]# chmod +x /etc/rc.d/rc.local     # 等价于 chmod a+x /etc/rc.d/rc.local
+
+
+[root@basic ~]# chmod u+s a.out   # 为二进制程序添加 setuid flag (具有一定安全风险)
+[root@basic ~]# ls -l a.out
+-rwsr-xr-x 1 root root 8512 Apr 26 07:57 a.out
+
+[root@basic ~]# chmod u-s a.out   # 为二进制程序去除 setuid flag
+[root@basic ~]# ls -l a.out
+-rwxr-xr-x 1 root root 8512 Apr 26 07:57 a.out
+
+[root@basic ~]# chmod a-x a.out
+[root@basic ~]# chmod u+s a.out   # 为二进制程序添加 setuid flag (具有一定安全风险)
+[root@basic ~]# ls -l a.out       # 注意观察针对不具有 x 权限设置 setuid 后的效果
+-rwSr--r-- 1 root root 8512 Apr 26 07:57 a.out
+
+[root@basic ~]# chmod g+s a.out   # 为二进制程序添加 setgid flag (具有一定安全风险)
+[root@basic ~]# ls -l a.out
+-rwxr-sr-x 1 root root 8512 Apr 26 07:57 a.out
+
+[root@basic ~]# chmod g-s a.out   # 为二进制程序去除 setgid flag
+[root@basic ~]# ls -l a.out
+-rwxr-xr-x 1 root root 8512 Apr 26 07:57 a.out
+
+[root@basic ~]# chmod a-x a.out
+[root@basic ~]# chmod g+s a.out   # 为二进制程序添加 setgid flag (具有一定安全风险)
+[root@basic ~]# ls -l a.out       # 注意观察针对不具有 x 权限设置 setgid 后的效果
+-rw-r-Sr-- 1 root root 8512 Apr 26 07:57 a.out
+
+[root@basic ~]# mkdir dir01
+[root@basic ~]# chmod g+s dir01   # 为目录添加 setgid flag
+[root@basic ~]# ls -ld dir01
+drwxr-sr-x 2 root root 6 Apr 26 08:32 dir01
+
+[root@basic ~]# chmod g-s dir01   # 为目录去除 setgid flag
+[root@basic ~]# ls -ld dir01/
+drwxr-xr-x 2 root root 6 Apr 26 08:32 dir01/
+
+[root@basic ~]# chmod g-x dir01
+[root@basic ~]# chmod g+s dir01   # 为目录添加 setgid flag
+[root@basic ~]# ls -ld dir01      # 注意观察针对不具有 x 权限设置 setgid 后的效果
+drwxr-Sr-x 2 root root 6 Apr 26 08:32 dir01
+
+[root@basic ~]# chmod o+t dir01   # 为目录添加 sticky bit flag
+[root@basic ~]# ls -ld dir01
+drwxr-xr-t 2 root root 6 Apr 26 08:38 dir01
+
+[root@basic ~]# chmod o-t dir01   # 为目录去除 sticky bit flag
+[root@basic ~]# ls -ld dir01
+drwxr-xr-x 2 root root 6 Apr 26 08:38 dir01
+
+[root@basic ~]# chmod o-x dir01
+[root@basic ~]# chmod o+t dir01   # 为目录添加 sticky bit flag
+[root@basic ~]# ls -ld dir01      # 意观察针对不具有 x 权限设置 sticky bit 后的效果
+drwxr-xr-T 2 root root 6 Apr 26 08:38 dir01
+
+
+
+
+其他参考：
+https://blog.csdn.net/wxbmelisky/article/details/51649343
+
+与setuid setgid 和 sticky bits 的更多详细信息可参考 book <Linux/UNIX系统编程手册>
+
 
 
