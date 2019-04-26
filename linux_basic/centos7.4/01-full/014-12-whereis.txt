@@ -1,0 +1,37 @@
+
+# keyword whereis
+
+man whereis
+
+
+作用: whereis - locate the binary, source, and manual page files for a command
+
+语法:
+       whereis [options] [-BMS directory... -f] name...
+
+说明:
+       whereis  locates  the  binary,  source  and  manual files for the specified command names.  The supplied names are first stripped of leading pathname components and any (single)
+       trailing extension of the form .ext (for example: .c) Prefixes of s.  resulting from use of source code control are also dealt with.  whereis then attempts to locate the desired
+       program in the standard Linux places, and in the places specified by $PATH and $MANPATH.
+
+[root@basic ~]# whereis cd
+cd: /usr/bin/cd /usr/share/man/man1/cd.1.gz /usr/share/man/man1p/cd.1p.gz /usr/share/man/mann/cd.n.gz
+
+[root@basic ~]# whereis -b cd     # -b     Search only for binaries.
+cd: /usr/bin/cd
+
+cd:[root@basic ~]# whereis -m cd  # -m     Search only for manuals.
+cd: /usr/share/man/man1/cd.1.gz /usr/share/man/man1p/cd.1p.gz /usr/share/man/mann/cd.n.gz
+
+[root@basic ~]# whereis -s cd     # -s     Search only for sources.
+cd:[root@basic ~]#
+
+
+
+
+EXAMPLE
+       To find all files in /usr/bin which are not documented in /usr/man/man1 or have no source in /usr/src:
+
+              $ cd /usr/bin
+              $ whereis -u -ms -M /usr/man/man1 -S /usr/src -f *
+
