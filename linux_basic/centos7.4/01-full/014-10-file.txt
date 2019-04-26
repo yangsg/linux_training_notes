@@ -1,0 +1,36 @@
+
+# keyword file
+
+man file
+
+作用: file — determine file type
+
+语法: file [-bchiklLNnprsvz0] [--apple] [--mime-encoding] [--mime-type] [-e testname] [-F separator] [-f namefile] [-m magicfiles] file ...
+语法: file -C [-m magicfiles]
+
+
+说明:
+     file tests each argument in an attempt to classify it.  There are three sets of tests, performed in this order:
+     filesystem tests, magic tests, and language tests.  The first test that succeeds causes the file type to be printed.
+
+     Any file that cannot be identified as having been written in any of the character sets listed above is simply said to be “data”.
+
+
+
+[root@basic ~]# file /bin/bash
+/bin/bash: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.32, BuildID[sha1]=e1df4babc39e931279d37a050884e2b7b095ff39, stripped
+
+[root@basic ~]# file -i /bin/bash   #  -i, --mime
+/bin/bash: application/x-executable; charset=binary
+
+
+[root@basic ~]# file -i -b a.txt   # -b, --brief: Do not prepend filenames to output lines (brief mode).
+text/plain; charset=us-ascii
+
+[root@basic ~]# file --mime-type a.txt  # --mime-type, --mime-encoding: Like -i, but print only the specified element(s).
+a.txt: text/plain
+
+[root@basic ~]# file --mime-type -b a.txt
+text/plain
+
+
