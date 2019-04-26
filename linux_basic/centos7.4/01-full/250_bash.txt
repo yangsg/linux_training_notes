@@ -1,0 +1,29 @@
+
+# keyword bash
+
+man bash
+
+作用: bash - GNU Bourne-Again SHell
+
+语法: bash [options] [file]
+
+说明: bash 是一个兼容于 sh 的 命令语言 解释器，用于执行从标准输入或文件中读取的命令, bash 同时还合并了一些 ksh 和 csh 中的有用的特性。
+
+
+
+  All  of  the  single-character shell options documented in the description of the set builtin command can be used as options when the shell is invoked.
+  根据上面这句话，可以知道，所有在 bash 内置的 set 命令的文档(见 `help set | less`)中 描述的 single-character shell options 都可以用作调用 shell 时的 options.
+      bash -n hello.sh   # 选项-n 可用于检查shell script语法错误 # -n  Read commands but do not execute them.
+      bash -x hello.sh   # -x  Print commands and their arguments as they are executed.
+
+// --        A -- signals the end of options and disables further option processing.  Any arguments after the -- are treated as filenames and arguments.
+//           An argument of - is equivalent to --.
+
+
+[root@basic ~]# bash -c 'echo hello'
+hello
+
+[root@basic ~]# echo 'date' | bash
+Fri Apr 26 18:13:06 CST 2019
+
+
