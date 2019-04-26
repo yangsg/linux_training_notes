@@ -47,3 +47,9 @@ os-release  os-release.bak
 [root@basic ~]# realpath dir01/os-release
 /etc/os-release
 
+[root@basic ~]# cd dir01_link/
+[root@basic dir01_link]# pwd
+/root/dir01_link
+[root@basic dir01_link]# pwd -P
+/root/dir01
+
