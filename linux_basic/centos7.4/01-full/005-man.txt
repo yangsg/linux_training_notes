@@ -70,7 +70,7 @@ null (4)             - data sink
 null (4)             - data sink
 
 
-[root@basic ~]# yum -y install man-pages-zh-CN    # 安装中文版的 man page (中文版翻译有信息缺失，有些比较晦涩)
+[root@basic ~]# yum -y install man-pages-zh-CN    # 安装中文版的 man page (中文版翻译有信息缺失，有些读起来太过晦涩难懂, 可能还不准确)
 [root@basic ~]# man -L zh_CN.utf8 bash            # 查看bash 中文版本的 man page
 [root@basic ~]# LANG=zh_CN.utf8 man bash          # 查看bash 中文版本的 man page
 

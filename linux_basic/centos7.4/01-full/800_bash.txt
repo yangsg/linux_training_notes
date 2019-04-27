@@ -36,10 +36,9 @@ ARGUMENTS   // 注：通常 argument 被认为是实参(actual parameter), param
 
 
 INVOCATION
+      A login shell is one whose first character of argument zero is a -, or one started with the --login option.
       login shell 形如 `bash -` 或 `bash --login`
 
-INVOCATION
-       A login shell is one whose first character of argument zero is a -, or one started with the --login option.
       如下命令打开的是 登录(login) shell
       [root@basic ~]# bash -            # login shell
       [root@basic ~]# bash --login      # login shell
@@ -88,7 +87,76 @@ INVOCATION
           bash-4.2#
 
       ########
+          当login shell 退出(exit) 时, bash 会读取并执行 ~/.bash_logout 和 /etc/bash.bash_logout (如果这些文件存在的话)中的命令.
+
+        # 试验
+            [root@basic ~]# echo 'echo ~/.bash_logout' >> ~/.bash_logout
+            [root@basic ~]# echo 'echo /etc/bash.bash_logout' >> /etc/bash.bash_logout
+            [root@basic ~]# bash --login
+            [root@basic ~]# exit    # 观察结果，可发现确实读取执行了 ~/.bash_logout 和 /etc/bash.bash_logout 这两个文件
+            logout
+            /root/.bash_logout
+            /etc/bash.bash_logout
 
 
+      ########
+        当一个交互式(interactive) 但非登录shell(not a login shell) 被启动时, bash 会读取并执行 ~/.bashrc (如果文件 ~/.bashrc 存在的话)中的命令.
+        该行为可以使用 --norc 选项来禁止.  而选项 --rcfile 可用来强制 bash 读取执行指定的文件而非 ~/.bashrc
+
+        # 试验
+        [root@basic ~]# echo 'echo ~/.bashrc' >> ~/.bashrc
+        [root@basic ~]# bash     # 观察结果, 可发现读取执行了 ~/.bashrc
+        /root/.bashrc
+        [root@basic ~]# bash --norc  # 观察结果, 可发现 --norc 选项确实禁止了默认读取执行  ~/.bashrc 文件的行为
+        bash-4.2#
+
+        [root@basic ~]# echo 'echo ~/customize.sh' >> ~/customize.sh
+        [root@basic ~]# bash --rcfile  ~/customize.sh   # 观察结果，可发现 --rcfile 确实可用于强制 bash 读取执行了指定的文件而非默认的 ~/.bashrc 文件.
+        /root/customize.sh
+        bash-4.2#
+
+      ########
+
+         注：关于变量 BASH_ENV , sh, --posix 的信息就此略过(因为实际可能很少使用它们), 具体见 man bash #/^INVOCATION
+             bash 和 sh 区别见 #/^INVOCATION：
+                其中bash 和 sh 的一个区别是: 如果通过  remote shell  daemon,  usually  rshd,  or  the secure  shell  daemon sshd 启动 shell 是,
+                如果启动的是 bash shell, 则 bash 默认会 读取执行 ~/.bashrc 文件, 如果启动的是 sh shell, 则 sh 默认 不会 读取执行 ~/.bashrc
+
+            # 试验
+            [root@basic ~]# echo 'echo ~/.bashrc' >> ~/.bashrc
+            [root@basic ~]# bash   # 观察结果，可以发现 bash 读取执行了 ~/.bashrc 文件
+            /root/.bashrc
+            [root@basic ~]# sh     # 观察结果，可以发现 sh 没有读取执行 ~/.bashrc 文件
+            sh-4.2# source ~/.bashrc
+            /root/.bashrc
+            [root@basic ~]#
+
+      ########
+
+        如果启动时 effective user (group) id 与  real user (group) id 不相等, 同时 -p 选项没有被指定，则 不会有 startup files 被读取
+        原文如下：
+     If  the  shell is started with the effective user (group) id not equal to the real user (group) id, and the -p option is not supplied, no startup files are read, shell functions
+     are not inherited from the environment, the SHELLOPTS, BASHOPTS, CDPATH, and GLOBIGNORE variables, if they appear in the environment, are ignored, and the effective user  id  is
+     set to the real user id.  If the -p option is supplied at invocation, the startup behavior is the same, but the effective user id is not reset.
+
+
+DEFINITIONS 定义
+       The following definitions are used throughout the rest of this document.
+       blank  A space or tab.
+       word   A sequence of characters considered as a single unit by the shell.  Also known as a token.
+       name   A word consisting only of alphanumeric characters and underscores, and beginning with an alphabetic character or an underscore.  Also referred to as an identifier.
+       metacharacter  元字符
+              A character that, when unquoted, separates words.  One of the following:
+              |  & ; ( ) < > space tab
+       control operator 控制操作符
+              A token that performs a control function.  It is one of the following symbols:
+              || & && ; ;; ( ) | |& <newline>
+
+
+RESERVED WORDS  保留字
+       Reserved  words  are  words that have a special meaning to the shell.  The following words are recognized as reserved when unquoted and either the first word of a simple command
+       (see SHELL GRAMMAR below) or the third word of a case or for command:
+
+       ! case  do done elif else esac fi for function if in select then until while { } time [[ ]]
 
 
