@@ -10,7 +10,7 @@ man bash
 说明: bash 是一个兼容于 sh 的 命令语言 解释器，用于执行从标准输入或文件中读取的命令, bash 同时还合并了一些 ksh 和 csh 中的有用的特性。
 
 
-
+OPTIONS
   All  of  the  single-character shell options documented in the description of the set builtin command can be used as options when the shell is invoked.
   根据上面这句话，可以知道，所有在 bash 内置的 set 命令的文档(见 `help set | less`)中 描述的 single-character shell options 都可以用作调用 shell 时的 options.
       bash -n hello.sh   # 选项-n 可用于检查shell script语法错误 # -n  Read commands but do not execute them.
@@ -25,5 +25,70 @@ hello
 
 [root@basic ~]# echo 'date' | bash
 Fri Apr 26 18:13:06 CST 2019
+
+
+
+ARGUMENTS   // 注：通常 argument 被认为是实参(actual parameter), parameter 表示形参(formal parameter)
+    如果option处理后面仍存在argumentsa , 且既没有提供-c选项，也没有提供-s 选项，则第一个参数被认定为是包含 shell commands 的文件的文件名(即shell 脚本名).
+    如果 bash 按各种风格被调用， 则 $0 被设定为 文件名, 同时其他位置形参 被设为 剩余的实参，bash 从文件中读取命令并执行，然后退出. bash 的 exit status 即为
+    脚本中最后执行命令的exit status. 如果没有命令被执行，则 exit status 为 0. bash 会尝试首先在当前目录下打开这个文件，如果该文件没有被找到，那么shell则在
+    PATH 变量指定的目录下寻找该脚本
+
+
+INVOCATION
+      login shell 形如 `bash -` 或 `bash --login`
+
+INVOCATION
+       A login shell is one whose first character of argument zero is a -, or one started with the --login option.
+      如下命令打开的是 登录(login) shell
+      [root@basic ~]# bash -            # login shell
+      [root@basic ~]# bash --login      # login shell
+
+
+      如下命令打开的都是交互式(interactive) shell
+      [root@basic ~]# bash -i           # interactive shell
+      [root@basic ~]# bash              # interactive shell
+
+
+       交互式的 bash 中, PS1 会被设置， 且 $- 会包含 i, 这就可以让 shell script 或 startup file 来测试其状态(是否为交互式模式)
+      [root@basic ~]# echo $PS1
+      [\u@\h \W]\$
+      [root@basic ~]# echo $-
+      himBH
+      [root@basic ~]#
+
+      ########
+    #试验:简单的测试是否为交互式shell的语句(注：该文档为txt文档，如果在vim编辑器中想看shell的语法高亮，可以在vim中执行设置命令: set syn=sh , 则vim的syntax highlight即为 shell语言风格)：
+          if echo $- | grep  i > /dev/null; then
+            echo '交互式shell'
+          else
+            echo '非交互式shell'
+          fi
+      ########
+
+
+      下面描述了 bash 执行 startup files 的概要。如果这些 files 其中任何一个存在但是不可读，则 bash 将报告 error.
+
+          当 bash 被作为 交互式的登录shell(interactive login shell) 被调用，或 带有 --login 选项的 非交互式的shell(non-interactive shell) 被调用时，
+          bash 会
+               首先 如果 /etc/profile 读取并执行 /etc/profile 中的命令,
+               然后依次搜索文件 ~/.bash_profile, ~/.bash_login, and ~/.profile, 并读取执行这3个文件中第一个存在且可读的文件
+          如果想要禁止该行为, 可以在启动 shell 时指定 --noprofile 选项.
+
+      ########
+        # 试验: 简单测试观察一下上面语句描述的规则
+          [root@basic ~]# echo 'echo /etc/profile' >> /etc/profile
+          [root@basic ~]# echo 'echo ~/.bash_profile' >> ~/.bash_profile
+          [root@basic ~]# echo 'echo ~/.bash_login' >> ~/.bash_login
+          [root@basic ~]# echo 'echo ~/.profile' >> ~/.profile
+          [root@basic ~]# bash --login   # 观察结果, 可发现按指定的规则读取和执行了相应的startup files文件
+          /etc/profile
+          /root/.bash_profile
+          [root@basic ~]# bash --login --noprofile  # 观察结果，可发现没有读取 startup files 文件
+          bash-4.2#
+
+      ########
+
+
 
 
