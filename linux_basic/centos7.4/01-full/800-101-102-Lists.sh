@@ -24,7 +24,7 @@
 #//
 #//          command1 || command2
 #//
-#//  其中 command2 当且仅当 在 command1 返回的 exit status 为 非0 (non-zero)是才被执行.
+#//  其中 command2 当且仅当 在 command1 返回的 exit status 为 非0 (non-zero)时才被执行.
 #//  整个 AND and OR lists 的 return status 为 list 中 最后被执行命令的  exit status.
 
 
