@@ -18,3 +18,64 @@
 #//     list 中最后被执行的命令的 exit status.
 
 
+
+index=$(($RANDOM%3))
+num_words=('one' 'two' 'other')
+
+num_word="${num_words[$index]}"
+
+
+case "$num_word" in
+  'one')
+    echo '1111'
+    ;;
+  'two')
+    echo '2222'
+    ;;
+  *)
+    echo 'default'
+    ;;
+esac
+
+
+echo '-------------------------------'
+case "$num_word" in
+  'one')
+    echo 'first'
+    ;&     # 使用 ;& 替代 ;; 会使 shell 继续直接执行下一个pattern关联的 list.
+  'two')
+    echo '2222'
+    ;;
+  *)
+    echo 'default'
+    ;;
+esac
+
+echo '-------------------------------'
+case "$num_word" in
+  on?)
+    echo 'first'
+    ;;&   # 使用 ;;& 替代 ;; 会使 shell 继续 执行 下一个 pattern 序列 的匹配
+  one)
+    echo '1111'
+    ;;
+  'two')
+    echo '2222'
+    ;;
+  *)
+    echo 'default'
+    ;;
+esac
+
+echo '-------------------------------'
+
+case "$num_word" in
+  'one'|'two')
+    echo '1111 or 2222'
+    ;;
+  *)
+    echo 'default'
+    ;;
+esac
+
+
