@@ -1,0 +1,65 @@
+
+# keyword declare
+
+help declare
+man declare   #/       declare \[
+
+作用: Set variable values and attributes.  Declare variables and give them attributes.  If no NAMEs are given, display the attributes and values of all variables.
+
+语法: declare [-aAfFgilrtux] [-p] [name[=value] ...]
+
+
+注：typeset命令已经被废弃，请使declare用
+
+
+
+
+[root@basic ~]# declare | less    # 显示所有变量的 attributes 和 values
+
+[root@basic ~]# declare -i num=1+2  #-i: The variable is treated as an integer;arithmetic evaluation (see ARITHMETIC EVALUATION above)is performed when the variable is assigned a value.
+[root@basic ~]# echo $num
+3
+[root@basic ~]# printenv | grep num
+[root@basic ~]# declare -x num      # 导出为环境变量 # -x     Mark names for export to subsequent commands via the environment.
+[root@basic ~]# printenv | grep num
+num=3
+
+
+选项-r        to make NAMEs readonly(该变量不可被更改内容，也不能重设(unset)，如果你不小心将变量设置为”只读”，通常得要注销再登录才能复原该变量的类型了)
+[root@basic ~]# declare -r name=Bob #-r     Make names readonly.  These names cannot then be assigned values by subsequent assignment statements or unset.
+
+[root@basic ~]# declare -p num   # 显示变量 num 的 attributes 和 values
+declare -i num="3"
+
+[root@basic ~]# declare -p SHELL HOME  # 分别显示变量 SHELL 和 变量 HOME 的 attributes 和 values
+declare -x SHELL="/bin/bash"
+declare -x HOME="/root"
+
+[root@basic ~]# declare -p       # 显示shell 所有变量的 attributes 和 values
+[root@basic ~]# declare -p -f    # 同时使用 -p -f 可限制只显示 shell 的 functions
+[root@basic ~]# declare -p -F    # 同时使用 -p -F 可限制只显示 shell 的 functions 时, 只显示 function name 和 attributes, 而不显示 function definitions
+[root@basic ~]# declare -p -a    # 只显示类型为索引数组的变量
+[root@basic ~]# declare -p -A    # 只显示类型为关联数组的变量
+[root@basic ~]# declare -p -i    # 只显示类型为 integer 的变量
+
+
+# 添加了 -l 选项的变量，在赋值时会自动将大写(upper-case) 转换为小写(lower-case)形式
+[root@basic ~]# declare -l name='Bob'   # -l     When the variable is assigned a value, all upper-case characters are converted to lower-case.  The upper-case attribute is disabled.
+[root@basic ~]# echo $name
+bob
+[root@basic ~]# name='ABCD'
+[root@basic ~]# echo $name
+abcd
+
+
+
+
+
+
+
+
+
+
+
+
+
