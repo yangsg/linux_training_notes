@@ -1,0 +1,61 @@
+
+
+keyword read
+
+help read | less
+
+man bash   #/       read \[
+
+
+语法: read [-ers] [-a aname] [-d delim] [-i text] [-n nchars] [-N nchars] [-p prompt] [-t timeout] [-u fd] [name ...]
+
+说明:
+    从 standard input 或 -u 选项参数 指定的 文件描述符 fd 读取一行(one line), 读取的第1个 word 赋给 第 1 个 name,
+    第2个 word 赋给 第 2 个 name, 等等以此类推, 且将剩余的 words 包括 这些words 之间的分隔符 赋给 最后的 name.
+    如果 要从 stream 中 读取的 words 少于 names, 则剩下多余的 names 会被赋为 empty value. 变量 IFS 中的 characters 用于 切分
+    line 成为 words.  The backslash character (\) may  be  used
+    to remove any special meaning for the next character read and for line continuation.
+
+
+[root@basic ~]# read name age
+Bob  25
+[root@basic ~]# echo $name $age
+Bob 25
+
+
+[root@basic ~]# read age description
+25  Bob is 25 years old.
+[root@basic ~]# echo $age
+25
+[root@basic ~]# echo $description
+Bob is 25 years old.
+
+[root@basic ~]# read -p "Please input your name:" username   # -p prompt #读取时提供 prompt 提示文本
+Please input your name:Bob
+[root@basic ~]# echo $username
+Bob
+
+[root@basic ~]# read -p "Please input your name:" -t 2  username   # -t timeout # 设置读取等待的超时时间, 单位为‘秒’, 此例中为 2 seconds
+Please input your name:[root@basic ~]#
+
+[root@basic ~]# read text
+a\tb
+[root@basic ~]# echo $text
+atb
+[root@basic ~]# read -r text   # -r     Backslash does not act as an escape character 就好像将 '\' 当做原始raw 字符串来看待一样
+a\tb
+[root@basic ~]# echo $text
+a\tb
+
+
+https://stackoverflow.com/questions/10929453/read-a-file-line-by-line-assigning-the-value-to-a-variable
+
+while IFS='' read -r line || [[ -n "$line" ]] ; do
+  echo "$line";
+done < a.txt
+
+//   解释:
+//   IFS='' (or IFS=) prevents leading/trailing whitespace from being trimmed.
+//   -r prevents backslash escapes from being interpreted.
+//   || [[ -n $line ]] prevents the last line from being ignored if it doesn't end with a \n (since read returns a non-zero exit code when it encounters EOF).
+
