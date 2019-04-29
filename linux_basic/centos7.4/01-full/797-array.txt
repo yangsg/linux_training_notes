@@ -107,6 +107,7 @@ two
 
 
 
+https://www.linuxjournal.com/content/bash-associative-arrays
 https://riptutorial.com/bash/example/6886/associative-arrays
 
 关联数组必须先使用 declare -A 来先声明,否则如果只是简单的使用形如 array=([xx]=value)来定义，那么array 还是一个indexed array, 其key 无法包含空格字符
