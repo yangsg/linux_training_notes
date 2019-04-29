@@ -1,0 +1,57 @@
+
+# keyword PARAMETERS
+
+man bash  #/^PARAMETERS
+
+
+
+PARAMETERS  (原汁原味的描述见 man bash)
+A  parameter 是 存储 value 的实体, 其可以是 name, number 或  man bash 帮助页的 Special Parameters 部分描述的 special characters 之一.
+变量(variable) 是用 name 表示的 parameter.  variable 具有1个 value 和 0个或多个 attributes. Attributes 是使用 shell 内置shell 内置命令
+declare 赋予的.
+
+A parameter 如果被赋了值就是被设置(set) 了. The null string 也是有效的 value. 一旦 variable 被设置了，它只有使用 shell 内置命令 unset
+才能被 unset (注：有些 attributes 是无法被unset, 如 variable 的 readonly 属性).
+
+变量可以使用如下形式的语句来赋值:
+
+              name=[value]
+
+如果 没有给出 value, 则  variable 被赋值为 null string. 所有 value 都会经历 tilde expansion, parameter and variable expansion,
+command substitution, arithmetic expansion, and quote removal, 如果变量 设置了 integer attribute,
+那么其 value 会按照 arithmetic expression 来计算求值(即使没有使用 $((...)) expansion). 赋值语句 也可能作为
+shell 内置命令 alias, declare, typeset, export, readonly, and local 的参数出现.
+
+
+在将 value 赋值给 shell variable 或  array index 的赋值语句的上下文(场景)中，操作符 += 可被用于 append to 或 add to 到该变量
+的前一个 value 上. 当 += 用于 设置了 integer attribute 的变量时, value 被按照 arithmetic expression 来计算求值并加到(add to)
+变量的当前值上. 其也是一个计算求值. 当 += 通过 复合赋值 被应用于 array variable 时, 该 variable 的 value 不会像使用操作符 =
+那样被 unset, 而是 新的 values 被 appended 到数组 的 maximum index + 1 的索引位置(针对indexed arrays) 或 作为额外的
+关联数组(associative array)的 key-value 键值对 被 添加(added).  当应用于 string-valued 的变量时， value 会被 expanded
+并被 appended 到 变量的 value 上.
+
+
+
+#!/bin/bash
+
+name=       # 此处 name 被 设置了, 只不过 value 为 null string 而已
+if [ -v name ]; then
+  echo "name 被设置了"
+else
+  echo "name 没有被设置"
+fi
+
+declare -i num=3  # -i 用于 声明变量 num 为一个 integer 的变量
+num+=4            # 因为 num 具有 -i (即被视作 integer)这个attribute, 所以会自动执行算术计算操作
+echo $num         # 输出 7
+
+array=(one two)
+array+=(three four) # 向 索引数组(indexed array) 追加 新的元素
+
+echo "${array[@]}"  # one two three four
+
+unset array
+declare -A array=([one]=111)  # 使用 declare 的 -A 选项 声明一个关联数组 并同时对其初始化
+array+=([two]=222) # 向 关联数组(associative array) 添加 新的 key-value 键值对
+declare -p array   # declare -A array='([one]="111" [two]="222" )'
+
