@@ -106,28 +106,59 @@ four
 two
 
 
-array=([name]=Bob [age]=25 ['statement']='My name is Bob')
+
+https://riptutorial.com/bash/example/6886/associative-arrays
+
+关联数组必须先使用 declare -A 来先声明,否则如果只是简单的使用形如 array=([xx]=value)来定义，那么array 还是一个indexed array, 其key 无法包含空格字符
+[root@basic ~]# declare -A cities     # 使用 declare -A 声明一个关联数组 associative array.
+[root@basic ~]# cities=(['Bei Jing']=bj ['Shang Hai']=sh ['Chong Qing']=cq)   # 初始化关联数组
+[root@basic ~]# declare -p cities        # 使用 shell 内置命令 declare 显示 数组的内容(该内容可以作为一个 assignments 来重用)
+declare -A cities='(["Chong Qing"]="cq" ["Bei Jing"]="bj" ["Shang Hai"]="sh" )'
+
+[root@basic ~]# echo "${cities[@]}"
+cq bj sh
+[root@basic ~]# echo "${cities[*]}"
+cq bj sh
+
+[root@basic ~]# echo "${#cities[@]}"   # 显示关联数组 (associative array) 元素个数(注: 此例中 语法与 indexed array的语法一样 )
+3
+[root@basic ~]# echo "${#cities[*]}"   # 显示关联数组 (associative array) 元素个数(注: 此例中 语法与 indexed array的语法一样 )
+3
+
+[root@basic ~]# echo "${cities['Chong Qing']}"  # 根据指定的 key 访问关联数组(associative array)中其对应的 value
+cq
+[root@basic ~]# unset cities['Chong Qing']   # 销毁 关联数组 (associative array)中指定key对应的元素(或 entry 或 key-value 键值对)
+[root@basic ~]# declare -p cities
+declare -A cities='(["Bei Jing"]="bj" ["Shang Hai"]="sh" )'
+
+[root@basic ~]# unset cities         # 销毁整个关联数组(associative array), 等价于 `unset cities[@]`  或 `unset cities[*]`, 其实与销毁整个indexed array 的语法是一样的
+[root@basic ~]# declare -p cities
+bash: declare: cities: not found
 
 
 
 
 
+如下是使用for 循环 迭代遍历数组的一些例子(脚本)
 
+#!/bin/bash
 
+declare -a array=(one two three four)  # 声明并初始化一个 indexed array
+for value in "${array[@]}"; do
+  echo $value
+done
 
+for index in "${!array[@]}"; do
+  echo "$index  :  ${array[$index]}"
+done
 
+unset array      # 这里必须要 unset array, 因为下面声明了一个同名但类型为关联数组的变量，否者下面一行会报error: "array: cannot convert indexed to associative array"
+declare -A array=(['Bei Jing']=bj ['Shang Hai']=sh ['Chong Qing']=cq) # 声明并初始化一个 associative array
+for value in "${array[@]}"; do  # 注：这里的array 是一个关联数组
+  echo $value
+done
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+for key in "${!array[@]}"; do   # 注：这里的array 是一个关联数组
+  echo "$key  :  ${array[$key]}"
+done
 
