@@ -27,6 +27,9 @@ do
 done
 
 
+#  其他
+echo $#      #变量 井字符 # Expands to the number of positional parameters in decimal.
+
 echo '--------观察 ${#VAR} 的用法, 参考 《advanced bash script guide》------------------------------------'
 # 形如语法 ${#VAR} 用于计算字符个数, 如果 VAR 为 "*" or "@", 则${#VAR}表示位置参数(positional parameters)个数或数组(array)元素个数
 message_text='hello'
