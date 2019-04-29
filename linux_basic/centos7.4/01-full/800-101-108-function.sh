@@ -96,3 +96,5 @@ fn_echo_positional_parameters  a b
 fn_echo_positional_parameters  a b e f g
 fn_echo_positional_parameters  a b e f g 'h i j k l m n'
 
+# function 的更多用法见 《Advanced Bash-Scripting Guide》
+
