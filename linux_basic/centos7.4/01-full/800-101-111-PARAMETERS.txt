@@ -55,3 +55,8 @@ declare -A array=([one]=111)  # 使用 declare 的 -A 选项 声明一个关联�
 array+=([two]=222) # 向 关联数组(associative array) 添加 新的 key-value 键值对
 declare -p array   # declare -A array='([one]="111" [two]="222" )'
 
+string01='hello'
+string02=' world'
+string01+="$string02"
+echo "$string01"   # hello world
+
