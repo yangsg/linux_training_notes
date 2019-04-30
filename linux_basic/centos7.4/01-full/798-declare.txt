@@ -52,14 +52,6 @@ bob
 abcd
 
 
-
-
-
-
-
-
-
-
-
-
+关于使用declare 命令声明数组，见如下链接:
+https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/01-full/797-array.txt
 
