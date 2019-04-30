@@ -40,9 +40,6 @@ four
 [root@basic ~]# echo $((2#111))  # 二进制数
 7
 
-[root@basic ~]# echo $((2#111))  # 二进制数
-7
-
 [root@basic ~]# echo $((3#20))   # 三进制数
 6
 
