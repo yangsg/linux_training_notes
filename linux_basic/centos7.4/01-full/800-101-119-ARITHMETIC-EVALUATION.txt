@@ -1,0 +1,105 @@
+
+# keyword ARITHMETIC EVALUATION
+
+man bash  #/^ARITHMETIC EVALUATION
+
+ARITHMETIC EVALUATION  (原汁原味的描述见 man bash)
+shell 允许特定环境下(见 shell内置命令 let 和 declare 以及 Arithmetic Expansion)的 算术表达式 (arithmetic expressions) 的求值计算操作.
+求值计算是按照 fixed-width  integers 完成的，且不会检查溢出，尽管 除以 0 会被捕获且标记为error. 算术操作符 和 它们的 优先级，结核性
+和 值 都和 C 语言是相同的.
+
+如下几个例子演示了几个允许 算术运算 的场景或上下文
+[root@basic ~]# let num=1+2
+[root@basic ~]# echo $num
+3
+
+[root@basic ~]# declare -i num
+[root@basic ~]# num=1+2
+[root@basic ~]# echo $num
+3
+
+[root@basic ~]# if ((2 > 1)); then echo 'success'; else echo 'fail'; fi
+
+[root@basic ~]# echo $((1+2))
+3
+
+[root@basic ~]# array=(one two three four five six)
+[root@basic ~]# echo "${array[1+2]}"
+four
+
+[root@basic ~]# echo $((020))    # 使用前导 0 表示八进制数 (和c语言类似)
+16
+[root@basic ~]# echo $((8#20))   # 八进制数  [base#]n 为通用表示法,其中 base 为 2 到 64 之间的十进制数
+16
+
+[root@basic ~]# echo $((0x20))   # 使用前导 0x 或  0X 表示十六进制数
+32
+[root@basic ~]# echo $((16#20))  # 使用 [base#]n 形式来表示 十六进制
+32
+
+[root@basic ~]# echo $((2#111))  # 二进制数
+7
+
+[root@basic ~]# echo $((2#111))  # 二进制数
+7
+
+[root@basic ~]# echo $((3#20))   # 三进制数
+6
+
+[root@basic ~]# echo $((xxxxxxxx + 3))  # 因为变量 xxxxxxxx 根本就没有设置(即 xxxxxxxx is unset), 所在做算术运算时其值会被视为 0.
+3
+
+[root@basic ~]# yyyyyyy=
+[root@basic ~]# echo $((yyyyyyy + 3))   # 因为 yyyyyyy 的值 为 null, 所以做算术运算时其值会被视为 0.
+3
+
+[root@basic ~]# declare -i  num=(2+7)*10  # 使用括号() 覆盖默认的优先级
+[root@basic ~]# echo $num
+90
+
+[root@basic ~]# echo $((num))             # 在算术表达式中，可直接使用 变量名(如此处的 num) 来引用 shell 变量
+90
+
+
+
+如下是 算术 操作符 的列表，按优先级是否相同被分组到了不同的层级(levels), 且优先级从上往下 逐步降低.
+
+       id++ id--
+              variable post-increment and post-decrement
+       ++id --id
+              variable pre-increment and pre-decrement
+       - +    unary minus and plus
+       ! ~    logical and bitwise negation
+       **     exponentiation
+       * / %  multiplication, division, remainder
+       + -    addition, subtraction
+       << >>  left and right bitwise shifts
+       <= >= < >
+              comparison
+       == !=  equality and inequality
+       &      bitwise AND
+       ^      bitwise exclusive OR
+       |      bitwise OR
+       &&     logical AND
+       ||     logical OR
+       expr?expr:expr
+              conditional operator
+       = *= /= %= += -= <<= >>= &= ^= |=
+              assignment
+       expr1 , expr2
+              comma
+
+shell 变量允许作为操作数(operands), parameter expansion 会先于 expression 执行. 在 expression 中, shell variables
+可以直接通过 name 来引用 而不需要使用 parameter expansion 的语法. 当通过 非 parameter expansion 的语法的 name 引用变量时,
+如果该变量为 null 或 处于 unset 状态, 则计算式会将该变量视为 0 . variable 在被引用时或 当 一个 通过 declare  -i
+声明的具有 integer  attribute 的变量被赋值时, 其值会按照 arithmetic expression 来计算. 一个 null 值 被求值 为 0.
+在 expression 中使用的 shell variable 其是否 具有 integer attribute 则不是必须的.
+有0开头的常量被解释为 八进制 数. 而开头为 0x or 0X 的数表示是 十六进制的. 否则, 具有 [base#]n 形式的 numbers,
+其中, 可选的 base 是一个 2 and 64 范围内的十进制数，其表示 arithmetic base, 而 n 就是用该 arithmetic base 表示的number
+(如 8#20 表示的是 十进制中的 16). 如果 base# 被省略不写，则默认 base 为 10. 大于 9 的数字 使用
+lowercase letters, the uppercase letters, @, and _ 表示, 如果 base 小于 或 等于 36, lowercase and uppercase letters
+可以被互换来表示 10 和 35 范围的 数.
+
+操作符 按照 优先级 顺序来 来 计算，括号'()' 中的 Sub-expressions 会首先被计算 因此 可以 覆盖默认的 优先级规格.
+
+
