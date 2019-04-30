@@ -1,0 +1,19 @@
+
+# keyword CONDITIONAL EXPRESSIONS
+
+man bash  #/^CONDITIONAL EXPRESSIONS
+
+
+CONDITIONAL EXPRESSIONS
+
+Conditional expressions 被复合命令 [[ 和 shell内置命令 test and [ 用于 测试 文件 attributes 和
+执行 string and arithmetic  comparisons. 表达式由 unary or binary primaries 形成。如果
+primaries 的 file argument 形式为 /dev/fd/n , 那么会检查文件描述符 n. 如果 primaries 的某个
+file argument 为 /dev/stdin, /dev/stdout, or /dev/stderr 其中之一，则相应的会检查文件描述符
+0, 1, or 2.
+
+除非另外指定，否则 操作 files 的 primaries 会 follow symbolic links 并 操作 link 的 target,
+而非 link 文件本身.
+
+当 使用 [[ 时， 操作符 < and > 使用当前 locale 来使用 字典顺序排序。 而 test 命令 使用 ASCII ordering 来排序
+
