@@ -72,7 +72,7 @@ ______________
 -rwxr-xr-x.   1 root root    1062608 Aug 18  2017 grub2-fstest
 
 
-如下所有示例来自 《The Linux Command Line》
+如下示例来自 《The Linux Command Line》
 [root@basic ~]# vim distros.txt   # 创建一个 demo 文件
 SUSE 10.2 12/07/2006
 Fedora 10 11/25/2008
@@ -129,5 +129,7 @@ Fedora 5 03/20/2006
 
 
 
-sort 用法 特性 实在有点多，更多信息见 相关 文档 或 书籍
+https://stackoverflow.com/questions/537191/the-sort-r-command-doesnt-sort-lines-randomly-in-linux
+[root@basic ~]# sort -R --random-source=/dev/urandom  < <(echo -e '2\n1\n3\n5\n4')   # 按随机顺序排序(类似于洗牌)
+[root@basic ~]# sort -R --random-source=/dev/urandom  < <(echo -e '2\n1\n3\n5\n4')
 
