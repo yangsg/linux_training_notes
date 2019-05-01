@@ -1,0 +1,30 @@
+
+# keyword alias
+
+help  alias
+
+作用: Define or display aliases.
+
+语法: alias [-p] [name[=value] ... ]
+
+
+
+[root@basic ~]# alias   # 当没有指定参数时，等价于 `alias -p`, 以可重用的形式显示 aliases 列表
+alias cp='cp -i'
+alias egrep='egrep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias grep='grep --color=auto'
+alias l.='ls -d .* --color=auto'
+alias ll='ls -l --color=auto'
+alias ls='ls --color=auto'
+alias mv='mv -i'
+alias rm='rm -i'
+alias which='alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde'
+
+
+
+一些绕过(不修改既有 alias 的前提下) alias 的方法, 以 rm 命令为例:
+[root@basic ~]# /usr/bin/rm a.txt
+[root@basic ~]# \rm a.txt
+[root@basic ~]# command rm a.txt
+
