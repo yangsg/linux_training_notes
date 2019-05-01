@@ -8,6 +8,9 @@ help false
 
 语法: false
 
+[root@basic ~]# type false
+false is a shell builtin
+
 [root@basic ~]# false
 
 while ! false; do
