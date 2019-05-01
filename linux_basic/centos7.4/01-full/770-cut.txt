@@ -17,6 +17,8 @@ man cut
           N-M    from N'th to M'th (included) byte, character or field
           -M     from first to M'th (included) byte, character or field
 
+[root@basic ~]# echo -e '1\t2\t3\t4\t5' | cut -f 2-4  # 如果没有使用 -d 选项明确指定特定的分隔符, 则默认使用 '\t' [Tab] 作为分隔符
+2       3       4
 
 [root@basic ~]# cut -d ':' -f 1 /etc/passwd  # -f, --fields=LIST: select only these fields;  also print any line that contains no delimiter character, unless the -s option is specified
 [root@basic ~]# cut -d ':' -s -f 1 /etc/passwd  # -s, --only-delimited: do not print lines not containing delimiters
