@@ -1,0 +1,133 @@
+
+# keyword sort
+
+man sort
+info sort   # 注: 要较清楚的理解 sort, 可以同时参考 info sort 和 《The Linux Command Line》, 同时可以加 --debug 参数来观察
+
+
+作用: sort - sort lines of text files
+
+语法: sort [OPTION]... [FILE]...
+语法: sort [OPTION]... --files0-from=F
+
+说明: Write sorted concatenation of all FILE(s) to standard output.
+      With no FILE, or when FILE is -, read standard input.
+
+
+sort 默认(即没有明确指定 -t 选项)使用 whitespace characters (spaces and tabs) 作为 fields 之间的定界符(delimiters),
+并且在执行sort 时 delimiters 会被included 到 field 中.
+所以 ' foo       bar', 'sort' breaks it into fields ' foo' and '       bar'
+
+[root@basic ~]# sort --debug -k 1,1 -k 2,2  <<<  ' foo       bar'  # 可以通过 --debug 来可视化的观察  Field 的分解情况
+sort: using ‘en_US.UTF-8’ sorting rules        # 注：通过实际测试, 在 sort的比较时, blank 被 LC_COLLATE="en_US.UTF-8" 设置忽略掉了(但注意：在计算char的位置时是不会忽略空格的).
+sort: leading blanks are significant in key 1; consider also specifying 'b'
+sort: leading blanks are significant in key 2; consider also specifying 'b'
+ foo       bar
+____
+    __________
+______________
+
+
+[root@basic ~]# sort /etc/passwd
+[root@basic ~]# sort -r /etc/passwd   # 反序排序 # -r, --reverse: reverse the result of comparisons
+
+
+
+
+       -t, --field-separator=SEP:  use SEP instead of non-blank to blank transition
+       -k, --key=KEYDEF: sort via a key; KEYDEF gives location and type
+       -n, --numeric-sort: compare according to string numerical value
+
+       KEYDEF  is  F[.C][OPTS][,F[.C][OPTS]]  for  start  and stop position, where F is a field number and C a character position in the field;
+       both are origin 1, and the stop position defaults to the line's end.  If neither -t nor -b is in effect, characters in a field are counted
+       from the beginning of the preceding whitespace.   OPTS  is  one  or  more  single-letter ordering options [bdfgiMhnRrV],
+       which override global ordering options for that key.  If no key is given, use the entire line as the key.
+
+
+
+[root@basic ~]# sort -t ':' -n -k 3  /etc/passwd  # 按照 uid 数的大小升序排序 # -t, --field-separator=SEP  # -k, --key=KEYDEF # -n, --numeric-sort
+
+[root@basic ~]# du -s /usr/share/* | sort -nr | head   # 显示 /usr/share/ 下 10 个最占磁盘空间的 文件或目录
+122544  /usr/share/locale
+71104   /usr/share/emacs
+59980   /usr/share/doc
+43040   /usr/share/icons
+39512   /usr/share/man
+25188   /usr/share/vim
+21572   /usr/share/perl5
+18828   /usr/share/backgrounds
+9700    /usr/share/i18n
+9528    /usr/share/info
+
+[root@basic ~]# ls -l /usr/bin | sort -nr -k 5 | head      # 使用 sort 命令来根据 文件大小 来排序
+-rwxr-xr-x.   1 root root   13412472 Nov  3 01:30 emacs-24.3-nox
+-rwxr-xr-x.   1 root root    4859392 Aug  4  2017 ld.gold
+-rwxr-xr-x.   1 root root    3073568 Aug  4  2017 dwp
+-rwxr-xr-x.   1 root root    2294208 Oct 31 03:57 vim
+-rwxr-xr-x. 113 root root    1523792 Nov 20 00:06 git-upload-archive
+-rwxr-xr-x. 113 root root    1523792 Nov 20 00:06 git-receive-pack
+-rwxr-xr-x. 113 root root    1523792 Nov 20 00:06 git
+-rwxr-xr-x.   1 root root    1440552 Aug  5  2017 systemd-analyze
+-rwxr-xr-x.   1 root root    1129096 Oct 31 02:25 gnome-keyring-daemon
+-rwxr-xr-x.   1 root root    1062608 Aug 18  2017 grub2-fstest
+
+
+如下所有示例来自 《The Linux Command Line》
+[root@basic ~]# vim distros.txt   # 创建一个 demo 文件
+SUSE 10.2 12/07/2006
+Fedora 10 11/25/2008
+SUSE 11.0 06/19/2008
+Ubuntu 8.04 04/24/2008
+Fedora 8 11/08/2007
+SUSE 10.3 10/04/2007
+Ubuntu 6.10 10/26/2006
+Fedora 7 05/31/2007
+Ubuntu 7.10 10/18/2007
+Ubuntu 7.04 04/19/2007
+SUSE 10.1 05/11/2006
+Fedora 6 10/24/2006
+Fedora 9 05/13/2008
+Ubuntu 6.06 06/01/2006
+Ubuntu 8.10 10/30/2008
+Fedora 5 03/20/2006
+
+[root@basic ~]# sort --key=1,1 --key=2n distros.txt   # 第1列按字典排序，第2列按 number 排序(注: 按number排序时在比较时会忽略掉空白(blank:如space 和 tab)字符)
+Fedora 5 03/20/2006
+Fedora 6 10/24/2006
+Fedora 7 05/31/2007
+Fedora 8 11/08/2007
+Fedora 9 05/13/2008
+Fedora 10 11/25/2008
+SUSE 10.1 05/11/2006
+SUSE 10.2 12/07/2006
+SUSE 10.3 10/04/2007
+SUSE 11.0 06/19/2008
+Ubuntu 6.06 06/01/2006
+Ubuntu 6.10 10/26/2006
+Ubuntu 7.04 04/19/2007
+Ubuntu 7.10 10/18/2007
+Ubuntu 8.04 04/24/2008
+Ubuntu 8.10 10/30/2008
+
+[root@basic ~]# sort -k 3.7nbr -k 3.1nbr -k 3.4nbr distros.txt #先后按 年,月,日 排序. 类似‘3.7nbr’中'b'用于忽略leading blank. 因计算char的position默认会从leanding blank开始(if exist)
+Fedora 10 11/25/2008
+Ubuntu 8.10 10/30/2008
+SUSE 11.0 06/19/2008
+Fedora 9 05/13/2008
+Ubuntu 8.04 04/24/2008
+Fedora 8 11/08/2007
+Ubuntu 7.10 10/18/2007
+SUSE 10.3 10/04/2007
+Fedora 7 05/31/2007
+Ubuntu 7.04 04/19/2007
+SUSE 10.2 12/07/2006
+Ubuntu 6.10 10/26/2006
+Fedora 6 10/24/2006
+Ubuntu 6.06 06/01/2006
+SUSE 10.1 05/11/2006
+Fedora 5 03/20/2006
+
+
+
+sort 用法 特性 实在有点多，更多信息见 相关 文档 或 书籍
+
