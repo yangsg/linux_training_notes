@@ -1,0 +1,17 @@
+
+# keyword true
+
+help true
+
+作用: Return a successful result. Always succeeds.
+
+语法: true
+
+[root@basic ~]# type true
+true is a shell builtin
+
+while true; do
+   echo 'success'
+   break
+done
+
