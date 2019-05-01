@@ -14,19 +14,52 @@
 
 
 /etc/issue  # man 5 issue # man agetty
+/etc/issue.net
+/etc/motd
+
 
 /etc/os-release
 /etc/redhat-release
 /etc/centos-release
 
-/etc/shells
 
+/etc/man_db.conf
 ~/.bash_history
 
+/etc/shells
+
+
+
+/etc/profile  --> /etc/profile.d/*.sh
+                  /etc/profile.d/lang.sh  --> /etc/locale.conf
+
+~/.bash_profile, ~/.bash_login, and ~/.profile   (此处之所以提供这么多功能重叠的文件, 是为了照顾从不同 shell 转过来的用户的习惯)
+    ~/.bashrc  --> /etc/bashrc
+
+
+~/.bash_logout 和 /etc/bash.bash_logout
+
+
+
+/usr/share/bash-completion/completions/*
+/etc/profile.d/bash_completion.sh
+
+
+/boot/vmlinuz-3.10.0-693.el7.x86_64    'vmlinuz' 的 'vm' 表示 'virtual memory', 支持虚拟内存, 'z' 表示 'zip', 表压缩过的格式
+
+目录:
+/etc/skel/      'skel' 简写自单词 ‘skeleton’  骨架
 
 
 
 
+一些常见的变量:
+PATH
+MAIL
+USER
+HOSTNAME
+HISTSIZE
+PS1
 
 
 
