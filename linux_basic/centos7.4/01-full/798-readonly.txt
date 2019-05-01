@@ -1,0 +1,40 @@
+
+# keyword readonly
+
+help readonly
+
+man bash  #/^       readonly \[
+
+作用: Mark shell variables as unchangeable.
+
+语法: readonly [-aAf] [name[=value] ...] or readonly -p
+
+说明: Mark each NAME as read-only; the values of these NAMEs may not be changed by subsequent assignment.  If VALUE is supplied, assign VALUE before marking as read-only.
+
+注：`readonly var` 与 `declare -r var` 的作用是一样的
+
+[root@basic ~]# readonly # 等价于 `readonly -p`, 显示所有只读的 variables 和 functions 的列表
+[root@basic ~]# readonly -p
+
+
+[root@basic ~]# array=(one two three)
+[root@basic ~]# declare -p array
+declare -a array='([0]="one" [1]="two" [2]="three")'
+[root@basic ~]# readonly -a array    # 将名为 array 的 indexed array 标记为只读(该只读特性无法被unset掉,唯一的办法就是退出并重新进入shell). # -a    refer to indexed array variables
+[root@basic ~]# declare -p array
+declare -ar array='([0]="one" [1]="two" [2]="three")'
+
+[root@basic ~]# readonly -A array=(['Bei Jing']=bj ['Shang Hai']=sh ['Chong qing']=cq)  # 将 关联数组(associative array)标记为只读  # -A    refer to associative array variables
+[root@basic ~]# declare -p array
+declare -Ar array='(["Chong qing"]="cq" ["Bei Jing"]="bj" ["Shang Hai"]="sh" )'
+
+
+
+
+将一个函数标记为 readonly 的例子
+function fn01() {
+  echo 'function fn01'
+}
+
+[root@basic ~]# readonly -f fn01   # 当标记 函数 只读时必须加 -f 选项(因为`readonly fn01`这里无效或这里表达的语义不正确) # -f        refer to shell functions
+
