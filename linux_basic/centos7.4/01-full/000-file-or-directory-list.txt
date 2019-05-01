@@ -64,7 +64,16 @@ USER
 HOSTNAME
 HISTSIZE
 PS1
+?
+$
 -
+
+
+man 7 glob
+
+/dev/null
+/dev/zero
+
 
 
 
