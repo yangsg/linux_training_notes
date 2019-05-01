@@ -19,6 +19,9 @@
 /etc/redhat-release
 /etc/centos-release
 
+/etc/shells
+
+~/.bash_history
 
 
 

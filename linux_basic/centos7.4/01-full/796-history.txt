@@ -1,0 +1,47 @@
+
+# keyword history
+
+help history
+
+
+作用: Display or manipulate the history list.
+
+语法: history [-c] [-d offset] [n] or history -anrw [filename] or history -ps arg [arg...]
+
+说明: Display the history list with line numbers, prefixing each modified entry with a `*'.  An argument of N lists only the last N entries.
+
+
+注: 如果提供的 filename, history 命令使用的是 filename, 否则如果 $HISTFILE 有值, 则使用 $HISTFILE 指定的文件, 否则使用~/.bash_history
+
+
+[root@basic ~]# history | less   # 显示所有的历史命令
+
+[root@basic ~]# history  20      # 显示最近执行的 20 条历史命令
+
+[root@basic ~]# history -a myhist_file  # 将当前session 中的历史命令追加到 指定的 myhist_file 文件中 # -a        append history lines from this session to the history file
+[root@basic ~]# history -a    # 将当前 session 中的历史命令追加到默认的 $HISTFILE 变量指定文件中，其通常为 ~/.bash_history
+
+[root@basic ~]# history -w myhist_file  # 将当前所有的 历史命令 写到指定的 myhist_file 文件中
+[root@basic ~]# history -w              # 将当前 session 中的历史命令写到默认的 $HISTFILE 变量指定文件中，其通常为 ~/.bash_history (注：写之前会自动truncate这个 ~/.bash_history 文件)
+
+
+[root@basic ~]# history -d 1005         #删除编号为 1005 对应的历史命令 # -d offset delete the history entry at offset OFFSET.
+
+[root@basic ~]# history -s echo abc     # -s        append the ARGs to the history list as a single entry
+[root@basic ~]# history
+ 1017  echo abc
+ 1018  history
+
+
+[root@basic ~]# history -c              # clear 当前会话中的所有历史命令 # -c        clear the history list by deleting all of the entries
+[root@basic ~]# history -w              # 注: 如果是在 clear 之后执行write操作，则以前的所有保存在对应文件里的历史命令都会因truncate而丢失
+
+[root@basic ~]# history -r myhist_file  # -r        read the history file and append the contents to the history list
+
+
+如果 变量 $HISTTIMEFORMAT 被设置 且 值非 null, 则其值会被按照 strftime(3) 的 格式字符串那样来 print 与每个显示 history entry 关联的时间戳. 否则不会print 时间戳.
+[root@basic ~]# man 3 strftime
+[root@basic ~]# export HISTTIMEFORMAT="%F_%T    "   # 通常默认 HISTTIMEFORMAT 的值为 null string
+[root@basic ~]# history | tail -n 1
+ 1029  2019-05-01_08:12:49    history | tail -n 1
+
