@@ -1,7 +1,13 @@
-
+STFILESIZEHISTFILESIZE
 # keyword history
 
 help history
+
+man bash  #/^HISTORY
+man bash  #/^HISTORY EXPANSION
+man bash  #/^       history \[
+
+
 
 
 作用: Display or manipulate the history list.
@@ -44,4 +50,19 @@ help history
 [root@basic ~]# export HISTTIMEFORMAT="%F_%T    "   # 通常默认 HISTTIMEFORMAT 的值为 null string
 [root@basic ~]# history | tail -n 1
  1029  2019-05-01_08:12:49    history | tail -n 1
+
+
+一些与history 或 history file 相关的变量: HISTSIZE  HISTFILESIZE  HISTFILE  HISTTIMEFORMAT
+[root@basic ~]# echo $HISTSIZE   # 退出交互式的shell是，最后 $HISTSIZE 条命令会被copy到 $HISTFILE 指定的文件中 ($HISTSIZE 默认 500, 但为 /etc/profile 修改为了 1000)
+1000
+[root@basic ~]# echo $HISTFILESIZE # history file 中能包含的最大历史命令条数 (更多详细信息，见 man bash #/^       HISTFILESIZE )
+1000
+[root@basic ~]# echo $HISTFILE
+/root/.bash_history
+[root@basic ~]# echo $HISTTIMEFORMAT
+
+[root@basic ~]#
+
+
+
 
