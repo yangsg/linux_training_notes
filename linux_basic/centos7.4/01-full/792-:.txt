@@ -1,0 +1,30 @@
+
+# keyword :
+
+
+help :
+
+man bash  #/^SHELL BUILTIN COMMANDS
+man bash  #/^       :
+
+作用: Null command.  No effect; the command does nothing. Always succeeds.
+
+可将 : 视为 true 的同义词
+
+[root@basic ~]# type :
+: is a shell builtin
+
+[root@basic ~]# :
+[root@basic ~]# : > ~/a.txt   # truncate a.txt 文件
+
+
+命令 : 可在 期待 二元操作的地方 提供一个 占位符(placeholder)
+[root@basic ~]# : ${username=`whoami`}
+[root@basic ~]# echo $username
+root
+
+
+function fn_do_nothing() {
+  :
+}
+
