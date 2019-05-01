@@ -1,0 +1,99 @@
+
+# keyword uniq
+
+man uniq
+
+
+作用: uniq - report or omit repeated lines
+
+语法: uniq [OPTION]... [INPUT [OUTPUT]]
+
+说明:  Filter adjacent matching lines from INPUT (or standard input), writing to OUTPUT (or standard output).
+       With no options, matching lines are merged to the first occurrence.
+
+       Note:  'uniq' does not detect repeated lines unless they are adjacent.  You may want to sort the input first, or use 'sort -u' without 'uniq'.
+              Also, comparisons honor the rules specified by 'LC_COLLATE'.
+
+
+[root@basic ~]# vim a.txt  # 创建示例文件
+a
+b
+c
+a
+b
+c
+A
+B
+A
+
+
+
+
+
+[root@basic ~]#
+[root@basic ~]# sort a.txt | uniq    # 执行 uniq 前必须对 文件排序 (因为uniq 只能检测到 毗邻的行 是否重复, 所以其input 保证排序就可以)
+
+a
+A
+b
+B
+c
+[root@basic ~]# sort a.txt | uniq -c  # 显示出现的次数  # -c, --count# prefix lines by the number of occurrences
+      5
+      2 a
+      2 A
+      2 b
+      1 B
+      2 c
+
+[root@basic ~]# sort a.txt | uniq -c -d   # 只显示重复了的行 # -d, --repeated: only print duplicate lines, one for each group
+      5
+      2 a
+      2 A
+      2 b
+      2 c
+
+[root@basic ~]# sort a.txt  | uniq -c -u   # 只显示未重复的行 # -u, --unique: only print unique lines
+      1 B
+[root@basic ~]# sort a.txt  | uniq -c -i   # 忽略字母大小写   # -i, --ignore-case: ignore differences in case when comparing
+      5
+      4 a
+      3 b
+      2 c
+
+[root@basic ~]# sort a.txt  | uniq  --group=prepend   # --group[=METHOD]: show all items, separating groups with an empty line METHOD={separate(default),prepend,append,both}
+
+
+
+
+
+
+
+a
+a
+
+A
+A
+
+b
+b
+
+B
+
+c
+c
+[root@basic ~]# vim b.txt
+1a
+2a
+9b
+8c
+[root@basic ~]# sort b.txt | uniq -c
+      1 1a
+      1 2a
+      1 8c
+      1 9b
+[root@basic ~]# sort b.txt | uniq -c -s 1   # -s, --skip-chars=N: avoid comparing the first N characters
+      2 1a
+      1 8c
+      1 9b
+
