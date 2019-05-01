@@ -1,0 +1,35 @@
+
+# keyword set
+
+man bash  #/^       set \[
+
+help set | less
+
+
+
+作用: Set or unset values of shell options and positional parameters.  Change the value of shell attributes and positional parameters, or display the names and values of shell variables.
+
+语法: set [-abefhkmnptuvxBCHP] [-o option-name] [--] [arg ...]
+语法: set [+abefhkmnptuvxBCEHPT] [+o option-name] [--] [arg ...]
+
+说明: Using + rather than - causes these flags to be turned off.
+      set 的选项 同时也可作为 bash 命令的选项 (见 man bash)
+
+常用的选项有:
+      -n  Read commands but do not execute them.
+      -u  Treat unset variables as an error when substituting.
+      -v  Print shell input lines as they are read.
+      -x  Print commands and their arguments as they are executed.
+
+利用 set 的一些选项来调试(debug)的技巧见：
+        http://tldp.org/LDP/abs/html/debugging.html
+        http://tldp.org/LDP/abs/html/options.html
+
+与调试 相关的变量或命令还有: caller   trap  $BASH_ARGC  $BASH_ARGV $BASH_COMMAND $BASH_EXECUTION_STRING $BASH_SOURCE $BASH_SUBSHELL
+
+
+[root@basic ~]# set    # 当没有给出任何选项和参数时，set 默认显示所有的 shell variables
+
+[root@basic ~]# echo $-   # 通过变量 $- 可查看 shell 当前的所有 flags 设置
+himBH
+
