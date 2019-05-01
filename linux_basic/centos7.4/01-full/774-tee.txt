@@ -1,0 +1,24 @@
+
+# keyword tee
+
+man tee
+
+作用: tee - read from standard input and write to standard output and files
+
+语法: tee [OPTION]... [FILE]...
+
+说明: Copy standard input to each FILE, and also to standard output.
+      If a FILE is -, copy again to standard output.
+
+
+[root@basic ~]# tee a.txt <<< "hello"
+hello
+
+[root@basic ~]# tee a.txt b.txt <<< "hello"
+hello
+
+[root@basic ~]# ls xxx |& tee a.txt  # 使用管道符 '|&' 可以将 ls 命令的 错误输出流 stderr 也 连接到 管道 pipe 中  
+
+[root@basic ~]# tee -a a.txt <<< "hello"  # -a, --append: append to the given FILEs, do not overwrite
+
+
