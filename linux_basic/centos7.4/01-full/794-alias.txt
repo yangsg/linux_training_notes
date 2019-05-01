@@ -21,6 +21,8 @@ alias mv='mv -i'
 alias rm='rm -i'
 alias which='alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde'
 
+[root@basic ~]# alias rm  # 显示命令 rm 的 alias 定义
+alias rm='rm -i'
 
 
 一些绕过(不修改既有 alias 的前提下) alias 的方法, 以 rm 命令为例:

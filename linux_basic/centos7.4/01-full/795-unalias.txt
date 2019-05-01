@@ -1,0 +1,21 @@
+
+
+# keyword unalias
+
+help unalias
+
+作用: Remove each NAME from the list of defined aliases.
+
+语法: unalias [-a] name [name ...]
+
+
+[root@basic ~]# alias rm
+alias rm='rm -i'
+[root@basic ~]# unalias rm   # 删除 命令 rm 的 alias 定义
+[root@basic ~]# alias rm
+bash: alias: rm: not found   <----  可以看到已经不存在 对应的 rm 的 alias 了
+
+[root@basic ~]# unalias -a   # 删除所有的 alias 定义
+[root@basic ~]# alias
+
+
