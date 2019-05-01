@@ -1,0 +1,46 @@
+
+# keyword cut
+
+man cut
+
+
+作用: cut - remove sections from each line of files
+
+语法: cut OPTION... [FILE]...
+
+说明: Print selected parts of lines from each FILE to standard output.
+      With no FILE, or when FILE is -, read standard input.
+
+      每个范围(range) 的书写格式如下(多个range可以用逗号(comma ',')分隔), 被选择的input 的顺序与被读取的顺序相同, 且只会输出一次:
+          N      N'th byte, character or field, counted from 1
+          N-     from N'th byte, character or field, to end of line
+          N-M    from N'th to M'th (included) byte, character or field
+          -M     from first to M'th (included) byte, character or field
+
+
+[root@basic ~]# cut -d ':' -f 1 /etc/passwd  # -f, --fields=LIST: select only these fields;  also print any line that contains no delimiter character, unless the -s option is specified
+[root@basic ~]# cut -d ':' -s -f 1 /etc/passwd  # -s, --only-delimited: do not print lines not containing delimiters
+
+[root@basic ~]# cut -d ':' -f 3-4,1 /etc/passwd | head -n 1
+root:0:0
+[root@basic ~]# cut -d ':' -f 1,3-4 /etc/passwd | head -n 1  # bad practice 注意选项 '-f 1,3-4' 和 '-f 3-4,1' 输出的顺序一致，这说明 输出顺序与 read的顺序相同,而与各个ranges的顺序无关
+root:0:0
+[root@basic ~]# cut -d ':' -f 1,1,1,1 /etc/passwd | head -n 1  # bad practice 注：该例只为演示效果用,用于说明 the selected input 只会被written 一次
+root
+
+[root@basic ~]# cut -d ':' -f 3- /etc/passwd | head -n 1
+0:0:root:/root:/bin/bash
+[root@basic ~]# cut -d ':' -f -3 /etc/passwd | head -n 1
+root:x:0
+
+
+[root@basic ~]# echo 123456789 | cut -c 5         # 5       # -c, --characters=LIST: select only these characters
+[root@basic ~]# echo 123456789 | cut -c 5-        # 56789
+[root@basic ~]# echo 123456789 | cut -c 5-7       # 567
+[root@basic ~]# echo 123456789 | cut -c -7        # 1234567
+
+[root@basic ~]# echo 'ab'   | cut -b 1     # a   # -b, --bytes=LIST: select only these bytes
+[root@basic ~]# echo '汉字' | cut -b 1     # �   # 注意: 这里 multibyte characters 被硬生生的给 split 断了
+[root@basic ~]# echo '汉字' | cut -b 1 -n  # 汉  # -n     with -b: don't split multibyte characters
+[root@basic ~]# echo '汉字' | cut -b 2 -n  # 字
+
