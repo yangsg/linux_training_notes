@@ -1,0 +1,17 @@
+
+# keyword false
+
+help false
+
+
+作用: Return an unsuccessful result. Always fails.
+
+语法: false
+
+[root@basic ~]# false
+
+while ! false; do
+   echo 'success'
+   break
+done
+
