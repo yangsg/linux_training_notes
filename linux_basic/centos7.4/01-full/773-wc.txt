@@ -1,0 +1,37 @@
+
+# keyword wc
+
+man wc
+
+作用: wc - print newline, word, and byte counts for each file
+
+语法: wc [OPTION]... [FILE]...
+语法: wc [OPTION]... --files0-from=F
+
+说明:
+     Print  newline,  word,  and  byte  counts for each FILE, and a total line if more than one FILE is specified.  With no FILE, or when FILE is -, read standard input.  A word is a
+     non-zero-length sequence of characters delimited by white space.  The options below may be used to select which counts are printed, always in the following order: newline, word,
+     character, byte, maximum line length.
+
+
+[root@basic ~]# wc /etc/man_db.conf
+ 131  723 5171 /etc/man_db.conf
+
+[root@basic ~]# wc -l -w -c /etc/man_db.conf   # 这也是 wc 的默认行为, 等价于 `wc /etc/man_db.conf`
+ 131  723 5171 /etc/man_db.conf
+
+[root@basic ~]# wc -l /etc/man_db.conf  # -l, --lines: print the newline counts
+131 /etc/man_db.conf
+
+[root@basic ~]# wc -w /etc/man_db.conf  # -w, --words: print the word counts
+723 /etc/man_db.conf
+
+[root@basic ~]# wc -c /etc/man_db.conf  # -c, --bytes: print the byte counts
+5171 /etc/man_db.conf
+
+[root@basic ~]# wc -m /etc/man_db.conf  # -m, --chars: print the character counts
+5171 /etc/man_db.conf
+
+[root@basic ~]# wc -L /etc/man_db.conf  # -L, --max-line-length: print the length of the longest line
+77 /etc/man_db.conf
+
