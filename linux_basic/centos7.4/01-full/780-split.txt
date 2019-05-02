@@ -1,0 +1,29 @@
+
+# keyword split
+
+man split
+info split
+
+作用: split - split a file into pieces
+
+语法: split [OPTION]... [INPUT [PREFIX]]
+
+说明: Output fixed-size pieces of INPUT to PREFIXaa, PREFIXab, ...; default size is 1000 lines, and default PREFIX is 'x'.  With no INPUT, or when INPUT is -, read standard input.
+
+
+[root@basic ~]# mkdir dir01
+[root@basic ~]# cd dir01
+[root@basic dir01]# split -b 300k /etc/services services   # -b, --bytes=SIZE: put SIZE bytes per output file
+[root@basic dir01]# ls services*
+servicesaa  servicesab  servicesac
+[root@basic dir01]# cat services* >> servicesback          # 利用cat 即 pathname expansion 的特性来还原成原始文件
+
+[root@basic dir01]# md5sum servicesback /etc/services      # 验证 内容 是否 一致
+8e0abe8547f0411554a35b97447b2fbd  servicesback
+8e0abe8547f0411554a35b97447b2fbd  /etc/services
+
+
+其他更多示例见:
+https://www.linuxtechi.com/split-command-examples-for-linux-unix/
+https://www.thegeekstuff.com/2012/10/15-linux-split-and-join-command-examples-to-manage-large-files/
+
