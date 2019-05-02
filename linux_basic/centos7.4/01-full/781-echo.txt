@@ -1,0 +1,44 @@
+
+# keyword echo
+
+help echo
+
+man bash  #/^       echo \[
+
+
+作用: Write arguments to the standard output.
+
+语法: echo [-neE] [arg ...]
+
+说明: Display the ARGs on the standard output followed by a newline.
+
+
+
+echo 命令在用于观察 bash 的 expansion 特性时 很有用
+
+[root@basic ~]# type echo
+echo is a shell builtin
+
+
+[root@basic ~]# echo hello world    # 等价于 `echo -E hello world` # -E        explicitly suppress interpretation of backslash escapes
+hello world
+[root@basic ~]# echo hello             world
+hello world
+[root@basic ~]# echo -n hello    # -n        do not append a newline
+hello[root@basic ~]#
+
+[root@basic ~]# echo -e 'a\tb'   # -e        enable interpretation of the following backslash escapes
+a       b
+
+
+[root@basic ~]# echo -n  A | od -t cxCoC
+0000000   A
+         41
+        101
+0000001
+
+[root@basic ~]# echo -e '\0101'  # \0nnn     the character whose ASCII code is NNN (octal).  NNN can be 0 to 3 octal digits
+A
+[root@basic ~]# echo -e '\x41'   # \xHH      the eight-bit character whose value is HH (hexadecimal).  HH can be one or two hex digits
+A
+
