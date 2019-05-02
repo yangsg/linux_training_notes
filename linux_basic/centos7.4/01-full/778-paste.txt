@@ -1,0 +1,37 @@
+
+# keyword paste
+
+man paste
+info paste
+
+
+作用: paste - merge lines of files
+
+语法: paste [OPTION]... [FILE]...
+
+说明: Write lines consisting of the sequentially corresponding lines from each FILE, separated by TABs, to standard output.  With no FILE, or when FILE is -, read standard input.
+
+
+[root@basic ~]# paste   <(echo -e  "one\ntwo")   <(echo -e "111\n222\n333")
+one     111
+two     222
+        333
+
+[root@basic ~]# paste -d ':'   <(echo -e  "one\ntwo")   <(echo -e "111\n222")  # -d, --delimiters=LIST: reuse characters from LIST instead of TABs
+one:111
+two:222
+
+[root@basic ~]# paste -sd ':' <(echo -e 'ab\ncd\nef\ngh')  # -s, --serial: paste one file at a time instead of in parallel
+ab:cd:ef:gh
+
+[root@basic ~]# openssl rand -hex 6 | fold -w2 | paste -sd ':'
+7f:aa:2f:ec:a0:8f
+
+
+[root@basic ~]# seq 4 | paste -d ' ' - -   # Join consecutive lines with a space:
+1 2
+3 4
+
+
+更多示例见 info paste
+
