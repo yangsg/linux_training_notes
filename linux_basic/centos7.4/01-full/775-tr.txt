@@ -60,7 +60,7 @@ abcdefghijklmnopqrstuvwxyz[root@basic ~]#
  A A B c B c d e f
 
 
-如下是删除包含连字符(hyphen)在内的字符
+如下是删除包含连字符(hyphen)在内的字符集的例子
 [root@basic ~]# echo 'A-axMBC' | tr -d axM-   # 删除字符 'a', 'x', 'M', '-', # put the hyphen at the end of the list of characters
 ABC
 [root@basic ~]# echo 'A-axMBC' | tr -d -- -axM # 删除字符 'a', 'x', 'M', '-', # use '--' to terminate option processing
