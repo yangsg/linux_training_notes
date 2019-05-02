@@ -47,6 +47,14 @@
 /usr/share/bash-completion/completions/*
 /etc/profile.d/bash_completion.sh
 
+/etc/init.d/*  (systemV)
+
+/etc/rc.d/rc.local
+
+/etc/init.d/netconsole
+
+
+
 
 /boot/vmlinuz-3.10.0-693.el7.x86_64    'vmlinuz' 的 'vm' 表示 'virtual memory', 支持虚拟内存, 'z' 表示 'zip', 表压缩过的格式
 
