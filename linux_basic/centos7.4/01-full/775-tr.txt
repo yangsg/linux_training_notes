@@ -1,0 +1,70 @@
+
+# keyword tr
+
+man tr
+info tr
+
+
+作用: Translate, squeeze, and/or delete characters from standard input, writing to standard output.
+
+语法: tr [OPTION]... SET1 [SET2]      # 关于 SET1,SET2的写法规则见 man tr
+
+
+
+[root@basic ~]# tr a-z A-Z <<< 'lowercase letters'   # 注意这种方式不具有可移植性
+LOWERCASE LETTERS
+
+[root@basic ~]# tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ <<< 'lowercase letters'
+LOWERCASE LETTERS
+
+注: Only [:lower:] and [:upper:] are guaranteed to expand in ascending order; used in SET2 while translating, they may only be used in pairs to specify case conversion.
+[root@basic ~]# tr [:lower:] [:upper:] <<< 'lowercase letters'   # 小写转换为大写  # Translation  occurs  if -d is not given and both SET1 and SET2 appear.
+LOWERCASE LETTERS
+
+[root@basic ~]# tr [:lower:] A <<< 'lowercase letters'    # set1 长度 可以 大于 set2
+AAAAAAAAA AAAAAAA
+
+
+注： -s uses SET1 if not translating nor deleting; else squeezing uses SET2 and occurs after translation or deletion.
+[root@basic ~]# echo "aaabbbccc" | tr -s ab  # 注意重复的字符必须毗邻才能被挤压 #-s, --squeeze-repeats
+abccc
+
+[root@basic ~]# cat a.txt | tr -s '\n'   # Convert each sequence of repeated newlines to a single newline
+
+
+[root@basic ~]# echo 'hello       world     yes   I         know'  | tr -s ' '
+hello world yes I know
+[root@basic ~]# echo 'hello       world     yes   I         know'  | tr -s ' ' '-'
+hello-world-yes-I-know
+[root@basic ~]# echo 'hello       world     yes   I         know'  | tr -t ' ' '-'
+hello-------world-----yes---I---------know
+
+[root@basic ~]# tr -d '\r' < <(echo -e 'a\r\nb\r\nc') | od -t cxC   # -d, --delete: delete characters in SET1, do not translate
+0000000   a  \n   b  \n   c  \n
+         61  0a  62  0a  63  0a
+0000006
+
+[root@basic ~]# cat a.txt | tr -d '\0'  #Remove all zero bytes
+
+[root@basic ~]# echo {a..z} | tr -d '[:space:]'  # 生成a 到 z 的连续的小写字母
+abcdefghijklmnopqrstuvwxyz[root@basic ~]#
+
+[root@basic ~]# echo 'a b c' | tr  -cs '[:alnum:]'  '[\n*]'   # -c, -C, --complement: use the complement of SET1  # [CHAR*] in SET2, copies of CHAR until length of SET1
+
+
+[root@basic ~]# echo ' a a b c b c d e f'  | tr 'abcdef' 'AB'     # SET2 is extended to length of SET1 by repeating its last character as necessary.
+ A A B B B B B B B
+[root@basic ~]# echo ' a a b c b c d e f'  | tr -t 'abcdef' 'AB'  # -t, --truncate-set1: first truncate SET1 to length of SET2 # -t may be used only when translating.
+ A A B c B c d e f
+[root@basic ~]# echo ' a a b c b c d e f'  | tr 'ab' 'ABCDEF'     # Excess characters of SET2 are ignored.
+ A A B c B c d e f
+
+
+如下是删除包含连字符(hyphen)在内的字符
+[root@basic ~]# echo 'A-axMBC' | tr -d axM-   # 删除字符 'a', 'x', 'M', '-', # put the hyphen at the end of the list of characters
+ABC
+[root@basic ~]# echo 'A-axMBC' | tr -d -- -axM # 删除字符 'a', 'x', 'M', '-', # use '--' to terminate option processing
+ABC
+[root@basic ~]# echo 'A-axMBC' | tr -d '[=-=]axM'  #删除字符'a','x','M','-', #More generally,use the character class notation '[=c=]' with '-' (or any other character) in place of the 'c':
+ABC
+
