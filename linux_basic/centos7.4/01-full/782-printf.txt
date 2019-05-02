@@ -1,0 +1,38 @@
+
+# keyword printf
+
+help printf
+
+man bash  #/^       printf \[
+
+man 1 printf
+man 3 printf
+
+作用: Formats and prints ARGUMENTS under control of the FORMAT.
+
+语法: printf [-v var] format [arguments]
+
+
+
+
+[root@basic ~]# type printf
+printf is a shell builtin
+
+[root@basic ~]# printf '%s\t%s\n' one two
+one     two
+
+[root@basic ~]# printf -v name '%s\t%s\n' Bob   # -v var:    assign the output to shell variable VAR rather than display it on the standard output
+[root@basic ~]# printf '%s\n' $name
+Bob
+
+[root@basic ~]# printf '\101 \n'    # \NNN   byte with octal value NNN (1 to 3 digits)
+A
+[root@basic ~]# printf '\x41 \n'    # \xHH   byte with hexadecimal value HH (1 to 2 digits)
+A
+[root@basic ~]# printf '\u0041 \n'  # \uHHHH Unicode (ISO/IEC 10646) character with hex value HHHH (4 digits)
+A
+
+
+其他参考:
+https://unicode-table.com/en/
+
