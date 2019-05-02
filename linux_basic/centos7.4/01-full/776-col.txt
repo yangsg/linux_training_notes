@@ -1,0 +1,34 @@
+
+# keyword col
+
+man col
+
+
+作用: col - filter reverse line feeds from input
+
+语法: col [options]
+
+说明:
+       col  filters  out  reverse (and half-reverse) line feeds so the output is in the correct order with only forward and half-forward line feeds, and replaces white-space characters
+       with tabs where possible.  This can be useful in processing the output of nroff(1) and tbl(1).
+
+       col reads from standard input and writes to standard output.
+
+[root@basic ~]# man bash | col -b > bash.mantxt
+
+
+
+
+更多 col 示例 见  https://www.geeksforgeeks.org/col-command-in-linux-with-examples/
+
+
+
+其他参考:
+https://stackoverflow.com/questions/10638382/what-is-a-reverse-line-feed
+//  A reverse line feed makes the cursor go back up to the previous line. A regular line feed makes the cursor go to the next line.
+//
+//  Edit: ThePower is correct, these terms originate from the days of line printers, "feed" meaning to feed the paper through the printer,
+//  in this case by one line, and reverse line feed moving the paper backwards by one line.
+
+https://www.computerhope.com/jargon/l/lf.htm
+
