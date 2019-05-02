@@ -1,0 +1,63 @@
+
+user
+group
+other
+
+       /etc/passwd   # man 5 passwd
+       /etc/shadow   # man 5 shadow
+       /etc/group
+       /etc/gshadow
+       /etc/default/useradd
+       /etc/skel/
+       /etc/login.defs      # Shadow password suite configuration.
+
+[root@basic ~]# head -n 1 /etc/passwd  # man 5 passwd
+root:x:0:0:root:/root:/bin/bash
+用户名:密码占位符:uid:gid:说明信息:宿主目录:shell
+
+uid:
+    centos7 上 ( /etc/login.defs )
+     0   系统管理员
+     1-999   系统账号
+            1-200    distributions 自行建立的系统账号
+            201-999  若用户有系统账号需求时，可以使用的账号 UID
+            1000-60000  给一般使用者用的。事实上，目前的 linux 核心 (3.10.x 版)已经可以支持到 4294967295 (2^32-1) 这么大的 UID 号码喔！
+gid:
+     基本组(或 初始组)
+     附加组
+
+         有效组 effective group
+
+
+[root@basic ~]# head -n 1 /etc/shadow    # man 5 shadow
+root:$6$r8wY0xxxxxxxxxxxxxxxxxx8n7rWETs.OaeyKylxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxuu2E5CiZcLk1/XKcrMvTLwuiomrWRkrlV1::0:99999:7:::
+用户名:加密密码:最近更动密码的日期:密码不可被更动的天数:密码需要重新变更的天数:密码需要变更期限前的警告天数:密码过期后的账号宽限时间(密码失效日):账号失效日期:保留
+
+[root@basic ~]# chage --list root
+Last password change                                    : never
+Password expires                                        : never  密码过期(作废)时间
+Password inactive                                       : never
+Account expires                                         : never  账号过期(作废)时间  (账号与密码 可理解为 猪 和 毛 的关系)
+Minimum number of days between password change          : 0   (该设置建议保持为 0, 因为如果发生安全入侵是可能很麻烦)
+Maximum number of days between password change          : 99999 (为提高密码安全性，可以修改为指定一段时间内必须修改密码)
+Number of days of warning before password expires       : 7
+
+
+[root@basic ~]# authconfig --test | grep hashing    # 获取当前系统 shadow 的加密机制
+ password hashing algorithm is sha512
+
+
+[root@basic ~]# head -n 1 /etc/group                # man 5 group
+root:x:0:
+group_name:密码占位符:GID:user_list(多user之间用逗号分隔)
+
+
+有效群组(effective group)与初始群组(initial group)
+
+[root@basic ~]# head -n 1 /etc/gshadow   # man 5 gshadow
+root:::
+group_name:密码:群组管理员的账号:有加入该群组支持的所属账号
+
+
+
+
