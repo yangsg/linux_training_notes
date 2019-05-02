@@ -1,0 +1,29 @@
+
+# keyword expand
+
+man expand
+info expand
+
+作用: expand - convert tabs to spaces
+
+语法: expand [OPTION]... [FILE]...
+
+说明: Convert tabs in each FILE to spaces, writing to standard output.  With no FILE, or when FILE is -, read standard input.
+
+
+[root@basic ~]# expand < <(echo -e 'a\tb\tc')  # 默认 expand 将 '\t' 转换为 8 个 space
+a       b       c
+
+[root@basic ~]# expand -t 4 < <(echo -e 'a\tb\tc')  # -t, --tabs=NUMBER: have tabs NUMBER characters apart, not 8
+a   b   c
+
+[root@basic ~]# echo -n -e '\t' | od -t cxC
+0000000  \t
+         09
+0000001
+
+[root@basic ~]# echo -n -e 'a\t' | expand -i | od -t cxC   # -i, --initial: do not convert tabs after non blanks
+0000000   a  \t
+         61  09
+0000002
+
