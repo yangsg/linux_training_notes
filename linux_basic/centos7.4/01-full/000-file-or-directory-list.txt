@@ -9,6 +9,10 @@
 /etc/group   # man 5 group
 /etc/gshadow # man 5 gshadow
 
+/etc/default/useradd
+/etc/login.defs
+/etc/skel/      'skel' 简写自单词 ‘skeleton’  骨架
+
 
 
 
