@@ -34,6 +34,51 @@ Number of days of warning before password expires       : 7
 
 
 
+[root@basic ~]# chage -l user01
+Last password change                                    : Apr 09, 2019
+Password expires                                        : Jun 08, 2019
+Password inactive                                       : Jun 11, 2019
+Account expires                                         : never    <--- 此处为 账号 永不作废
+Minimum number of days between password change          : 0
+Maximum number of days between password change          : 60
+Number of days of warning before password expires       : 7
+[root@basic ~]# grep 'user01' /etc/shadow     # 注意 /etc/shadow 的第八个字段为空, 表示账号永不作废
+user01:$6$xxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:17995:0:60:7:3::
+[root@basic ~]# chage -E 0 user01   # 使账号立刻作废(即完全锁定账号account),账号无法再次登录#注:如果该作废的账号已经处于登录状态,则其还能利用本次登录使用系统.如想干掉它,还需杀死其进程
+[root@basic ~]# chage -l user01     # 观察账号作废后的老化信息
+Last password change                                    : Apr 09, 2019
+Password expires                                        : Jun 08, 2019
+Password inactive                                       : Jun 11, 2019
+Account expires                                         : Jan 01, 1970  <----- 此处表账号作废时间为 1970-01-01
+Minimum number of days between password change          : 0
+Maximum number of days between password change          : 60
+Number of days of warning before password expires       : 7
+[root@basic ~]# grep 'user01' /etc/shadow      # 命令 `chage -E 0 user01` 执行后 /etc/shadow 中对应的第八个字段被设置为了 0
+user01:$6$xxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:17995:0:60:7:3:0:
+
+
+[root@basic ~]# passwd -S user01     # 注: 命令 `passwd -S` 无法用于显示 账号account 的 过期信息(即 /etc/shadow 中的第8个字段)
+user01 PS 2019-04-09 0 60 7 3 (Password set, SHA512 crypt.)
+
+
+[root@basic ~]# chage -E -1 user01   # -E 选项参数为 -1 时表示删除账号作废信息(即移除/etc/shadow第8字段内容), 结果就是账号永不作废
+[root@basic ~]# chage -l user01
+Last password change                                    : Apr 09, 2019
+Password expires                                        : Jun 08, 2019
+Password inactive                                       : Jun 11, 2019
+Account expires                                         : never  <---- 执行命令 `chage -E -1 user01` 后的效果 (账号永不作废)
+Minimum number of days between password change          : 0
+Maximum number of days between password change          : 60
+Number of days of warning before password expires       : 7
+[root@basic ~]# grep 'user01' /etc/shadow   # 命令 `chage -E -1 user01` 执行后 /etc/shadow 中对应的第八个字段的内容被移除了
+user01:$6$xxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:17995:0:60:7:3::
+
+
+
+
+
+
+
 
 
 
