@@ -19,14 +19,17 @@ info useradd
       Depending on command line options, the useradd command will update system files and may also create the new user's home directory and copy initial files.
 
 
-[root@basic ~]# useradd -D   # 显示 useradd 当前的默认值  # 注: 如果 -D 和某些options 配合使用, 可用于更新 useradd 的默认值
-GROUP=100
-HOME=/home
-INACTIVE=-1
-EXPIRE=
-SHELL=/bin/bash
-SKEL=/etc/skel
-CREATE_MAIL_SPOOL=yes
+[root@basic ~]# useradd -D   # 显示 useradd 当前的默认值  # 注: 如果 -D 和某些options 配合使用, 可用于更新 useradd 的默认值 (见 /etc/default/useradd)
+GROUP=100    #针对该行设置, RHEL, Fedora, CentOS 使用的是 私有群组机制(优点:保密性好) , 所以不会参考此处的‘GROUP=100’设置. 与之对应的是 公共群组机制 (如 SuSE)
+HOME=/home   #用户家目录的基准目录(basedir)
+INACTIVE=-1  #密码过期后是否会失效(或宽限天数)的设定值 (0: 密码过期立刻失效, -1:密码永不失效, 如果是number,如30：表密码过期后再过30天才失效(即失效前的宽限天数))
+EXPIRE=      #账号失效的日期, 即 /etc/shadow 内的第八字段(付费的会员制系统也许可以设置该值)
+SHELL=/bin/bash #默认使用的 shell 程序文件名 (系统可用的shell 见 /etc/shells)
+SKEL=/etc/skel  # 用户家目录参考基准目录
+CREATE_MAIL_SPOOL=yes  # 建立使用者的 mailbox
+
+[root@basic ~]# less /etc/login.defs   # 参看其他参考文件
+[root@basic ~]# ls -Al /etc/skel/
 
 
 [root@basic ~]# useradd user01     # 创建一个普通用户 'user01'
@@ -49,6 +52,19 @@ total 16
 -rw-r--r-- 1 user01 user01 334 Oct 30  2018 .emacs
 
 
+[root@basic ~]# id user01
+uid=1001(user01) gid=1001(user01) groups=1001(user01)
+[root@basic ~]# groups user01
+user01 : user01
+
+[root@basic ~]# chage --list user01
+Last password change                                    : May 02, 2019
+Password expires                                        : never
+Password inactive                                       : never
+Account expires                                         : never
+Minimum number of days between password change          : 0
+Maximum number of days between password change          : 99999
+Number of days of warning before password expires       : 7
 
 
 
