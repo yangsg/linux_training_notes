@@ -12,7 +12,79 @@ man usermod
 说明: The usermod command modifies the system account files to reflect the changes that are specified on the command line.
 
 
-[root@basic ~]# useradd user02
+[root@basic ~]# useradd  user10
+[root@basic ~]# usermod -l user20 user10   # -l, --login NEW_LOGIN: 修改账号名 (用户的宿主目录和mail spool 目录可能需要手动变更以反映账号名的变化)
+[root@basic ~]# grep 'user20' /etc/passwd
+user20:x:1013:1013::/home/user10:/bin/bash
+
+[root@basic ~]# ls -ld /var/spool/mail/user20
+-rw-rw---- 1 user20 mail 0 May  3 21:41 /var/spool/mail/user20
+
+[root@basic ~]# usermod -m -d  /home/user20 user20  # -d, --home HOME_DIR  # -m, --move-home  # 修改宿主目录且移动旧宿主目录的内容到此处
+[root@basic ~]# grep 'user20' /etc/passwd
+user20:x:1013:1013::/home/user20:/bin/bash
+
+[root@basic ~]# ls -ld /home/user20/   # 注意观察下面用户组并没有自动更新
+drwx------ 2 user20 user10 76 May  3 21:58 /home/user20/
+[root@basic ~]# ls -Al /home/user20/
+total 16
+-rw-r--r-- 1 user20 user10  18 Aug  3  2017 .bash_logout
+-rw-r--r-- 1 user20 user10 193 Aug  3  2017 .bash_profile
+-rw-r--r-- 1 user20 user10 231 Aug  3  2017 .bashrc
+-rw-r--r-- 1 user20 user10 334 Oct 30  2018 .emacs
+
+[root@basic ~]# usermod -L user30     # -L, --lock:  锁住用户密码(在/etc/shadow的加密密码前加!前缀), 如果想锁住account(不仅仅是密码访问), 还应该将 EXPIRE_DATE 设置为 1
+[root@basic ~]# grep 'user30' /etc/shadow   # 观察 用户密码锁住 后 /etc/shadow 中对应加密密码添加了符号 ! 作为前缀
+user30:!$6$xxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:18019:0:99999:7:::
+[root@basic ~]# passwd -S user30      # 注意下面的 LK 表示 密码已被锁住
+user30 LK 2019-05-03 0 99999 7 -1 (Password locked.)
+
+[root@basic ~]# usermod -U user30     # -U, --unlock # 解锁密码,与 -L, --lock 行为相反.如想解锁账号(不仅仅是密码访问),还应该设置 EXPIRE_DATE(如99999或与/etc/default/useradd的EXPIRE相同)
+[root@basic ~]# grep 'user30' /etc/shadow   # 观察解锁后 /etc/shadow 中加密密码的变化(移除的前缀符号 ! )
+user30:$6$xxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:18019:0:99999:7:::
+[root@basic ~]# passwd -S user30            # 使用 passwd -S 观察 密码解锁后的变化 (LK 变成了 PS)
+user30 PS 2019-05-03 0 99999 7 -1 (Password set, SHA512 crypt.)
+
+
+
+[root@basic ~]# usermod -f 3 user30   # -f, --inactive INACTIVE: 设置密码过期后其失效作废天数(亦即过期后宽限天数), 此例中 密码过期后 还能宽限 3 天
+[root@basic ~]# grep 'user30' /etc/shadow  # 命令 `usermod -f 3 user30` 执行后 /etc/shadow 中对应的第七个字段的内容被修改成了 2
+user30:$6$xxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:18019:0:99999:7:3::
+[root@basic ~]# passwd -S user30   # 观察下面的数字 3
+user30 PS 2019-05-03 0 99999 7 3 (Password set, SHA512 crypt.)
+[root@basic ~]# chage -l user30
+Last password change                                    : May 03, 2019
+Password expires                                        : never
+Password inactive                                       : never   <---- 虽然执行了`usermod -f 3 user30`,但最大生命周期为 99999(never), 所以这里Password inactive还是never
+Account expires                                         : never
+Minimum number of days between password change          : 0
+Maximum number of days between password change          : 99999   <--- 密码最大生命周期的设置会影响到 Password inactive 等其他老化时间段的设置是否有意义
+Number of days of warning before password expires       : 7
+[root@basic ~]# chage -M 50 user30      # 设置密码最大生命周期, 此例中指 user01应该在 50天以内 修改一次密码
+[root@basic ~]# grep 'user30' /etc/shadow
+user30:$6$zbEVL.Jm$avQy2E3B34Kr.0IFBAbq9W9N4pcVmYN66G6zgr2ada6W7ZvtA8TOT01yqu6TuFpcYok0JHvwuCvuitzfXiat20:18019:0:50:7:3::
+[root@basic ~]# passwd -S user30   # 观察下面的数字 50
+user30 PS 2019-05-03 0 50 7 3 (Password set, SHA512 crypt.)
+[root@basic ~]# chage -l user30
+Last password change                                   : May 03, 2019
+Password expires                                       : Jun 22, 2019  <--- 从never 变为了 具体日期
+Password inactive                                      : Jun 25, 2019  <--- 从never 变为了 具体日期
+Account expires                                        : never
+Minimum number of days between password change         : 0
+Maximum number of days between password change         : 50 <--这里将密码最大生命周期设置为了50(即50天内应该修改一次密码),可发现其他某些老化时间设置随之产生了变化(从never变为了具体日期)
+Number of days of warning before password expires      : 7
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
