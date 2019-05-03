@@ -1,0 +1,29 @@
+
+# keyword groupadd
+
+man groupadd
+
+作用: groupadd - create a new group
+
+语法: groupadd [options] group
+
+说明:
+       The groupadd command creates a new group account using the values specified on the command line plus the default values from the system.
+       The new group will be entered into the system files as needed.
+
+文件: /etc/group /etc/gshadow /etc/login.defs
+
+
+[root@basic ~]# groupadd group01  # 其 gid 默认为 大于等于 GID_MIN (/etc/login.defs)且 大于所有其他现有已存在的用户组
+
+[root@basic ~]# grep 'group01' /etc/group /etc/gshadow
+/etc/group:group01:x:1003:
+/etc/gshadow:group01:!::
+
+[root@basic ~]# groupadd -r sysgroup01  # -r, --system:创建系统用户组, gid 范围: SYS_GID_MIN-SYS_GID_MAX (/etc/login.defs)
+[root@basic ~]# grep 'sysgroup01' /etc/{group,gshadow}
+/etc/group:sysgroup01:x:995:
+/etc/gshadow:sysgroup01:!::
+
+[root@basic ~]# groupadd -g 1007 group02  # -g, --gid GID # 创建指定 gid 的用户组(该gid必须唯一且为非负数)
+
