@@ -1,0 +1,23 @@
+
+# keyword usermod
+
+man usermod
+
+
+作用: usermod - modify a user account
+
+语法: usermod [options] LOGIN
+语法: usermod [-c COMMENT] [-d HOME_DIR] [-e EXPIRE_DATE] [-f INACTIVE] [-g gid] [-[a]G GROUP1[,GROUP2,...[,GROUPN]]]] [-l NEW_LOGIN] [-L] [-m] [-o] [-p PASSWORD] [-R CHROOT_DIR] [-s SHELL] [-u UID] [-U] [-Z SEUSER] LOGIN
+
+说明: The usermod command modifies the system account files to reflect the changes that are specified on the command line.
+
+
+[root@basic ~]# useradd user02
+
+
+
+
+
+
+
+
