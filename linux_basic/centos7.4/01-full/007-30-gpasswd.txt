@@ -1,0 +1,54 @@
+
+# keyword gpasswd
+
+man gpasswd
+
+
+作用:
+       gpasswd - administer /etc/group and /etc/gshadow
+
+语法:
+       gpasswd [option] group
+
+说明:
+       The gpasswd command is used to administer /etc/group, and /etc/gshadow. Every group can have administrators, members and a password.
+       System administrators can use the -A option to define group administrator(s) and the -M option to define members. They have all rights of group administrators and members.
+       gpasswd called by a group administrator with a group name only prompts for the new password of the group.
+       If a password is set the members can still use newgrp(1) without a password, and non-members must supply the password.
+
+
+[root@basic ~]# useradd user03
+[root@basic ~]# useradd user04
+[root@basic ~]# useradd user05
+[root@basic ~]# groupadd group_nodejs
+[root@basic ~]# gpasswd -a user03 group_nodejs   # -a, --add user: 添加 user 到用户组
+[root@basic ~]# grep 'user03' /etc/group /etc/gshadow
+/etc/group:user03:x:1004:
+/etc/group:group_nodejs:x:1006:user03   <---
+/etc/gshadow:user03:!::
+/etc/gshadow:group_nodejs:!::user03     <---
+
+
+[root@basic ~]# gpasswd -M user04,user05 group_nodejs  # -M, --members user,...: 设置用户组成员列表, 相当于先清空该组的以前的所有用户成员,再将指定的新的 user list 加进来
+[root@basic ~]# grep 'group_nodejs' /etc/group /etc/gshadow
+/etc/group:group_nodejs:x:1006:user04,user05  <---
+/etc/gshadow:group_nodejs:!::user04,user05    <---
+
+[root@basic ~]# id user03
+uid=1003(user03) gid=1004(user03) groups=1004(user03)
+[root@basic ~]# id user04
+uid=1004(user04) gid=1005(user04) groups=1005(user04),1006(group_nodejs)
+[root@basic ~]# id user05
+uid=1005(user05) gid=1007(user05) groups=1007(user05),1006(group_nodejs)
+
+
+[root@basic ~]# gpasswd -d user04 group_nodejs  # -d, --delete user: 从组中移除用户
+[root@basic ~]# grep 'group_nodejs' /etc/group /etc/gshadow
+/etc/group:group_nodejs:x:1006:user05  <---
+/etc/gshadow:group_nodejs:!::user05    <---
+
+[root@basic ~]# id user04
+uid=1004(user04) gid=1005(user04) groups=1005(user04)
+[root@basic ~]# id user05
+uid=1005(user05) gid=1007(user05) groups=1007(user05),1006(group_nodejs)
+
