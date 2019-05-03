@@ -84,7 +84,7 @@ passwd: all authentication tokens updated successfully.
   467  echo "abc543CC" | passwd --stdin user01
 
 
-[root@basic ~]# passwd -S user01   # -S, --status # 显示给定用户的passwd 的简要状态信息 (仅 root 可用)
+[root@basic ~]# passwd -S user01   # -S, --status # 显示给定用户的passwd 的简要状态信息 (仅 root 可用) # 注: `passwd -S` 命令无法用于显示账号account的作废信息(即/etc/shadow的第8个字段)
 user01 PS 2019-05-03 0 99999 7 -1 (Password set, SHA512 crypt.)
 
 [root@basic ~]# passwd -n 0  user01  # -n, --minimum DAYS:  设置密码最小生命周期(仅 root 可用), 通常应保持为默认的 0,以防系统入侵时造成麻烦
