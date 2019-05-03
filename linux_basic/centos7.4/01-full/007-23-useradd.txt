@@ -12,7 +12,7 @@ info useradd
 语法: useradd -D [options]
 
 语法: useradd [-u UID] [-g 初始群组] [-G 次要群组] [-mM] [-c 说明栏] [-d 家目录绝对路径] [-s shell] 使用者账号名
-语法: useradd [-r] [-u UID] [-g gid] [-G GROUP1[,GROUP2,...[,GROUPN]]]] [-mM] [-s SHELL] [-b BASE_DIR] [-d HOME_DIR] [-e account_EXPIRE_DATE] [-f password_INACTIVE] [-c COMMENT] [-k SKEL_DIR] [-R CHROOT_DIR] [-U] [-Z SEUSER] username
+语法: useradd [-r] [-u UID] [-g GROUP] [-G GROUP1[,GROUP2,...[,GROUPN]]]] [-mM] [-s SHELL] [-b BASE_DIR] [-d HOME_DIR] [-e account_EXPIRE_DATE] [-f password_INACTIVE] [-c COMMENT] [-k SKEL_DIR] [-R CHROOT_DIR] [-U] [-Z SEUSER] username
 
 
 说明: When invoked without the -D option, the useradd command creates a new user account using the values specified on the command line plus the default values from the system.
@@ -89,4 +89,58 @@ Number of days of warning before password expires       : -1
 
 [root@basic ~]# passwd -S sysuser01
 sysuser01 LK 2019-05-03 -1 -1 -1 -1 (Password locked.)
+
+
+
+[root@basic ~]# groupadd project01
+[root@basic ~]# groupadd project02
+[root@basic ~]# useradd -G project01,project02  user02  # -G, --groups GROUP1[,GROUP2,...[,GROUPN]]] : 创建用户时同时指定其所属的附加组列表
+
+[root@basic ~]# id user02
+uid=1002(user02) gid=1004(user02) groups=1004(user02),1002(project01),1003(project02)
+
+[root@basic ~]# grep -in 'user02' /etc/{passwd,shadow,group,gshadow}
+/etc/passwd:23:user02:x:1002:1004::/home/user02:/bin/bash
+/etc/shadow:23:user02:!!:18019:0:99999:7:::
+/etc/group:41:project01:x:1002:user02 <--- 附加组 project01
+/etc/group:42:project02:x:1003:user02 <--- 附加组 project02
+/etc/group:43:user02:x:1004:          <--- 基本组(初始用户组)
+/etc/gshadow:41:project01:!::user02
+/etc/gshadow:42:project02:!::user02
+/etc/gshadow:43:user02:!::
+
+
+[root@basic ~]# cat /etc/shells
+/bin/sh
+/bin/bash
+/sbin/nologin
+/usr/bin/sh
+/usr/bin/bash
+/usr/sbin/nologin
+
+[root@basic ~]# useradd -s /sbin/nologin user03  # -s, --shell SHELL: 创建账号是指定特定的 登录 shell
+[root@basic ~]# grep 'user03' /etc/passwd
+user03:x:1003:1005::/home/user03:/sbin/nologin
+
+[root@basic ~]# useradd -M -s /sbin/nologin user04  # -M, --no-create-home: 不创建账号的宿主目录
+[root@basic ~]# grep 'user04' /etc/passwd
+user04:x:1004:1006::/home/user04:/sbin/nologin
+[root@basic ~]# ls /home/user04
+ls: cannot access /home/user04: No such file or directory
+
+[root@basic ~]# useradd -u 1007 user05    # -u, --uid UID: 创建账号是指定特定的 uid (必须唯一，非负数), 如不指定默认使用大于等于UID_MIN(/etc/login.defs)且大于其他已存在的所有账号的uid
+[root@basic ~]# grep 'user05' /etc/passwd
+user05:x:1007:1007::/home/user05:/bin/bash
+
+[root@basic ~]# useradd -g project01 user06  # -g, --gid GROUP： 指定基本(初始)用户组, 可以为 groupname 或 gid
+[root@basic ~]# id user06
+uid=1008(user06) gid=1002(project01) groups=1002(project01)
+
+[root@basic ~]# useradd -g 1002 user07
+[root@basic ~]# id user07
+uid=1009(user07) gid=1002(project01) groups=1002(project01)
+
+[root@basic ~]# useradd -c 'this is test user' test    # -c, --comment COMMENT: 指定描述注释信息
+[root@basic ~]# grep 'test' /etc/passwd
+test:x:1010:1010:this is test user:/home/test:/bin/bash
 
