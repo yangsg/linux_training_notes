@@ -68,4 +68,25 @@ Number of days of warning before password expires       : 7
 
 
 
+[root@basic ~]# useradd -r sysuser01  # -r, --system: 创建系统账号(在/etc/shadow中不会有老化信息, id范围为/etc/login.defs中的SYS_UID_MIN-SYS_UID_MAX,且默认不会创建宿主目录,会忽略/etc/login.defs中的 CREATE_HOME 设定)
+[root@basic ~]# grep 'sysuser01' /etc/{passwd,shadow,group,gshadow}
+/etc/passwd:sysuser01:x:998:996::/home/sysuser01:/bin/bash
+/etc/shadow:sysuser01:!!:18019::::::  <-- 使用 -r 选项创建的 系统账号在 /etc/shadow 中不会有老化信息
+/etc/group:sysuser01:x:996:
+/etc/gshadow:sysuser01:!::
+
+[root@basic ~]# id sysuser01
+uid=998(sysuser01) gid=996(sysuser01) groups=996(sysuser01)
+
+[root@basic ~]# chage -l sysuser01
+Last password change                                    : May 03, 2019
+Password expires                                        : never
+Password inactive                                       : never
+Account expires                                         : never
+Minimum number of days between password change          : -1
+Maximum number of days between password change          : -1
+Number of days of warning before password expires       : -1
+
+[root@basic ~]# passwd -S sysuser01
+sysuser01 LK 2019-05-03 -1 -1 -1 -1 (Password locked.)
 
