@@ -99,58 +99,22 @@ user01 PS 2019-05-03 0 60 7 3 (Password set, SHA512 crypt.)
 
 [root@basic ~]# passwd -l user01   # -l, --lock #(仅仅)锁住密码(在/etc/shadow的加密密码前加!前缀)(仅root可用).注:此时账号并没完全锁住(其还可通过ssh公钥认证),命令`chage -E 0 user`可用于完全锁住
 [root@basic ~]# grep 'user01' /etc/shadow  # 观察 用户密码锁住 后 /etc/shadow 中对应加密密码添加了符号 ! 作为前缀
-user01:!!$6$KaOe6A1I$GemxNV9mXDg3UgC2qWnoYQfgJd4ml4WHnqHBNDTAdovsBjr2QtIpA88Hd.PQyHxQ/JyKOrPjADCWw5/eq6tMj1:18019:0:60:7:3::
+user01:!!$6$xxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:18019:0:60:7:3::
 [root@basic ~]# passwd -S user01  # 注意下面的 LK 表示 密码已被锁住
 user01 LK 2019-05-03 0 60 7 3 (Password locked.)
 
-[root@basic ~]# passwd -u user01   # -u, --unlock # 解锁密码, 与 -l, --lock 行为相反.
+[root@basic ~]# passwd -u user01   # -u, --unlock # 解锁密码, 与 -l, --lock 行为相反.(仅root可用)
 [root@basic ~]# grep 'user01' /etc/shadow  # 观察解锁后 /etc/shadow 中加密密码的变化(移除的前缀符号 ! )
 user01:$6$Kxxxxxxx$GemxNV9mXDg3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:18019:0:60:7:3::
 [root@basic ~]# passwd -S user01   # 使用 passwd -S 观察 密码解锁后的变化 (LK 变成了 PS)
 user01 PS 2019-05-03 0 60 7 3 (Password set, SHA512 crypt.)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+[root@basic ~]# grep 'user01' /etc/shadow
+user01:$6$xxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:18019:0:60:7:3::
+[root@basic ~]# passwd -e user01     # -e, --expire: 使密码立刻过期, 强制用户下次尝试登录时修改密码
+[root@basic ~]# grep 'user01' /etc/shadow # 观察使用passwd命令强制密码过期后/etc/shadow中对应的第3个字段数字变为了0, 该字段为 0 时具有特殊意义:用户下次尝试登录时需修改密码
+user01:$6$xxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:0:0:60:7:3::
+[root@basic ~]# passwd -S user01     # 注意下面的 '1970-01-01'
+user01 PS 1970-01-01 0 60 7 3 (Password set, SHA512 crypt.)
 
