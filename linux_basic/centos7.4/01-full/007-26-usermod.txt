@@ -62,7 +62,7 @@ Maximum number of days between password change          : 99999   <--- 密码最
 Number of days of warning before password expires       : 7
 [root@basic ~]# chage -M 50 user30      # 设置密码最大生命周期, 此例中指 user01应该在 50天以内 修改一次密码
 [root@basic ~]# grep 'user30' /etc/shadow
-user30:$6$zbEVL.Jm$avQy2E3B34Kr.0IFBAbq9W9N4pcVmYN66G6zgr2ada6W7ZvtA8TOT01yqu6TuFpcYok0JHvwuCvuitzfXiat20:18019:0:50:7:3::
+user30:$xxxxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:18019:0:50:7:3::
 [root@basic ~]# passwd -S user30   # 观察下面的数字 50
 user30 PS 2019-05-03 0 50 7 3 (Password set, SHA512 crypt.)
 [root@basic ~]# chage -l user30
@@ -75,6 +75,40 @@ Maximum number of days between password change         : 50 <--这里将密码�
 Number of days of warning before password expires      : 7
 
 
+
+ A value of 0 disables the account as soon as the password has expired, and a value of -1 disables the feature
+
+
+[root@basic ~]# usermod -f 0 user30
+[root@basic ~]# grep 'user30' /etc/shadow
+user30:$6$xxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:18019:0:50:7:0::
+[root@basic ~]# passwd -S user30
+user30 PS 2019-05-03 0 50 7 0 (Password set, SHA512 crypt.)
+[root@basic ~]# chage -l user30
+Last password change                                    : May 03, 2019
+Password expires                                        : Jun 22, 2019
+Password inactive                                       : Jun 22, 2019
+Account expires                                         : never
+Minimum number of days between password change          : 0
+Maximum number of days between password change          : 50
+Number of days of warning before password expires       : 7
+
+
+
+
+[root@basic ~]# usermod -f -1 user30
+[root@basic ~]# grep 'user30' /etc/shadow
+user30:$xxxxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:18019:0:50:7:::
+[root@basic ~]# passwd -S user30
+user30 PS 2019-05-03 0 50 7 -1 (Password set, SHA512 crypt.)
+[root@basic ~]# chage -l user30
+Last password change                                    : May 03, 2019
+Password expires                                        : Jun 22, 2019
+Password inactive                                       : never
+Account expires                                         : never
+Minimum number of days between password change          : 0
+Maximum number of days between password change          : 50
+Number of days of warning before password expires       : 7
 
 
 
