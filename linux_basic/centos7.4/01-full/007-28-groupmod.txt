@@ -1,0 +1,28 @@
+
+# keyword groupmod
+
+man groupmod
+
+
+作用: groupmod - modify a group definition on the system
+
+语法: groupmod [options] GROUP
+
+说明: The groupmod command modifies the definition of the specified GROUP by modifying the appropriate entry in the group database.
+
+文件:
+       /etc/group
+       /etc/gshadow
+       /etc/login.defs
+       /etc/passwd
+
+
+
+[root@basic ~]# groupmod -g 1008 group02  # bad practice # 实际环境中千万别随意修改 gid,容易造成资源混乱(许多使用旧gid的文件都需要自己手动修改成新的gid). 所以还是别随意修改的好
+
+
+[root@basic ~]# groupmod -n group_newname group02  # -n, --new-name NEW_GROUP: 修改组名
+[root@basic ~]# grep 'group_newname'  /etc/group /etc/gshadow
+/etc/group:group_newname:x:1008:
+/etc/gshadow:group_newname:!::
+
