@@ -4,7 +4,7 @@ group
 other
 
        /etc/passwd   # man 5 passwd
-       /etc/shadow   # man 5 shadow
+       /etc/shadow   # man 5 shadow  # 注: 要启用密码有效性(合法性)检查,首先要保证/etc/shadow的第5个字段不能为空(对应于 maximum password age 字段)
        /etc/group
        /etc/gshadow
        /etc/default/useradd
