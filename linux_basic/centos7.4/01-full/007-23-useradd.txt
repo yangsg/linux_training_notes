@@ -1,0 +1,55 @@
+
+# keyword useradd
+
+man useradd
+info useradd
+
+
+作用: useradd - create a new user or update default new user information
+
+语法: useradd [options] LOGIN
+语法: useradd -D
+语法: useradd -D [options]
+
+语法: useradd [-u UID] [-g 初始群组] [-G 次要群组] [-mM] [-c 说明栏] [-d 家目录绝对路径] [-s shell] 使用者账号名
+语法: useradd [-r] [-u UID] [-g gid] [-G GROUP1[,GROUP2,...[,GROUPN]]]] [-mM] [-s SHELL] [-b BASE_DIR] [-d HOME_DIR] [-e account_EXPIRE_DATE] [-f password_INACTIVE] [-c COMMENT] [-k SKEL_DIR] [-R CHROOT_DIR] [-U] [-Z SEUSER] username
+
+
+说明: When invoked without the -D option, the useradd command creates a new user account using the values specified on the command line plus the default values from the system.
+      Depending on command line options, the useradd command will update system files and may also create the new user's home directory and copy initial files.
+
+
+[root@basic ~]# useradd -D   # 显示 useradd 当前的默认值  # 注: 如果 -D 和某些options 配合使用, 可用于更新 useradd 的默认值
+GROUP=100
+HOME=/home
+INACTIVE=-1
+EXPIRE=
+SHELL=/bin/bash
+SKEL=/etc/skel
+CREATE_MAIL_SPOOL=yes
+
+
+[root@basic ~]# useradd user01     # 创建一个普通用户 'user01'
+[root@basic ~]# grep 'user01' /etc/{passwd,shadow,group,gshadow}
+/etc/passwd:user01:x:1001:1001::/home/user01:/bin/bash
+/etc/shadow:user01:!!:18018:0:99999:7:::
+/etc/group:user01:x:1001:
+/etc/gshadow:user01:!::
+
+
+[root@basic ~]# ls -l /var/spool/mail/user01
+-rw-rw---- 1 user01 mail 0 May  3 07:49 /var/spool/mail/user01
+
+[root@basic ~]# ls -ld /home/user01/; ls -Al /home/user01/
+drwx------ 2 user01 user01 107 May  3 07:49 /home/user01/
+total 16
+-rw-r--r-- 1 user01 user01  18 Aug  3  2017 .bash_logout
+-rw-r--r-- 1 user01 user01 193 Aug  3  2017 .bash_profile
+-rw-r--r-- 1 user01 user01 231 Aug  3  2017 .bashrc
+-rw-r--r-- 1 user01 user01 334 Oct 30  2018 .emacs
+
+
+
+
+
+
