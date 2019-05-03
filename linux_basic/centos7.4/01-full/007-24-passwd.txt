@@ -29,6 +29,8 @@ info passwd
 
 记住2点: Protect your password(隐私), Choose a hard-to-guess password(提升暴力猜测和破解的难度)
 
+注: 要启用密码有效性(合法性)检查,首先要保证/etc/shadow的第5个字段不能为空(对应于 maximum password age 字段)
+
 CONFORMING TO
        Linux-PAM (Pluggable Authentication modules for Linux).
 
