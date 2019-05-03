@@ -76,6 +76,42 @@ passwd: all authentication tokens updated successfully.
 root:$6$8xxxxxxo$9HSOcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxzsC0ojP/:18019:0:99999:7:::
 
 
+[root@basic ~]# echo "abc543CC" | passwd --stdin user01 #注:正常不应该直接在控制台以明文的方式(容易写入~/.bash_history),而应在某种脚本中使用 --stdin 这种设置方式(此处只是为了演示目的)
+Changing password for user user01.
+passwd: all authentication tokens updated successfully.
+
+[root@basic ~]# history | grep passwd  | grep -- '--stdin'  # 在历史命令找出了 明文的 密码设置 (所以 passwd --stdin 只应在必要时在某些脚本中并且以安全的方式使用)
+  467  echo "abc543CC" | passwd --stdin user01
+
+
+[root@basic ~]# passwd -S user01   # -S, --status # 显示给定用户的passwd 的简要状态信息 (仅 root 可用)
+user01 PS 2019-05-03 0 99999 7 -1 (Password set, SHA512 crypt.)
+
+[root@basic ~]# passwd -n 0  user01  # -n, --minimum DAYS:  设置密码最小生命周期(仅 root 可用), 通常应保持为默认的 0,以防系统入侵时造成麻烦
+[root@basic ~]# passwd -x 60 user01  # -x, --maximum DAYS:  设置密码最大生命周期(仅 root 可用), 此例中指 user01应该在 60天以内 修改一次密码
+[root@basic ~]# passwd -w 7  user01  # -w, --warning DAYS:  设置密码过期前的警告天数(仅 root 可用), 此例中 提前 7 天 就像 user01 显示警告信息
+[root@basic ~]# passwd -i 3  user01  # -i, --inactive DAYS: 设置密码过期后其失效作废天数(亦即过期后宽限天数)(仅 root 可用), 此例中 密码过期后 还能宽限 3 天
+[root@basic ~]# grep 'user01' /etc/shadow   # 查看设置后密码文件的修改情况
+user01:$6$KxxxxxxI$Gemxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx6tMj1:18019:0:60:7:3::
+[root@basic ~]# passwd -S user01            # 使用 passwd -S 命令查看密码状态的简要信息
+user01 PS 2019-05-03 0 60 7 3 (Password set, SHA512 crypt.)
+
+
+[root@basic ~]# passwd -l user01   # -l, --lock #(仅仅)锁住密码(在/etc/shadow的加密密码前加!前缀)(仅root可用).注:此时账号并没完全锁住(其还可通过ssh公钥认证),命令`chage -E 0 user`可用于完全锁住
+[root@basic ~]# grep 'user01' /etc/shadow  # 观察 用户密码锁住 后 /etc/shadow 中对应加密密码添加了符号 ! 作为前缀
+user01:!!$6$KaOe6A1I$GemxNV9mXDg3UgC2qWnoYQfgJd4ml4WHnqHBNDTAdovsBjr2QtIpA88Hd.PQyHxQ/JyKOrPjADCWw5/eq6tMj1:18019:0:60:7:3::
+[root@basic ~]# passwd -S user01  # 注意下面的 LK 表示 密码已被锁住
+user01 LK 2019-05-03 0 60 7 3 (Password locked.)
+
+[root@basic ~]# passwd -u user01   # -u, --unlock # 解锁密码, 与 -l, --lock 行为相反.
+[root@basic ~]# grep 'user01' /etc/shadow  # 观察解锁后 /etc/shadow 中加密密码的变化(移除的前缀符号 ! )
+user01:$6$Kxxxxxxx$GemxNV9mXDg3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:18019:0:60:7:3::
+[root@basic ~]# passwd -S user01   # 使用 passwd -S 观察 密码解锁后的变化 (LK 变成了 PS)
+user01 PS 2019-05-03 0 60 7 3 (Password set, SHA512 crypt.)
+
+
+
+
 
 
 
