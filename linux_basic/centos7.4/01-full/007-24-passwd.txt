@@ -1,0 +1,120 @@
+
+# keyword passwd
+
+man passwd
+info passwd
+
+作用: passwd - update user's authentication tokens
+
+语法: passwd [-k] [-l] [-u [-f]] [-d] [-e] [-n mindays] [-x maxdays] [-w warndays] [-i inactivedays] [-S] [--stdin] [username]
+语法: passwd [-l] [-u] [--stdin] [-S] [-n 日数] [-x 日数] [-w 日数] [-i 日数] [账号名]
+
+说明:
+//     The passwd utility is used to update user's authentication token(s).
+//
+//     This  task  is achieved through calls to the Linux-PAM and Libuser API.  Essentially, it initializes itself as a "passwd" service with Linux-PAM and utilizes configured password
+//     modules to authenticate and then update a user's password.
+//
+//     A simple entry in the global Linux-PAM configuration file for this service would be:
+//
+//      #
+//      # passwd service entry that does strength checking of
+//      # a proposed password before updating it.
+//      #
+//      passwd password requisite pam_cracklib.so retry=3
+//      passwd password required pam_unix.so use_authtok
+//      #
+//
+//     Note, other module types are not required for this application to function correctly.
+
+记住2点: Protect your password(隐私), Choose a hard-to-guess password(提升暴力猜测和破解的难度)
+
+CONFORMING TO
+       Linux-PAM (Pluggable Authentication modules for Linux).
+
+       FILES
+              /etc/pam.d/passwd - the Linux-PAM configuration file
+
+SEE ALSO
+       pam(8), pam.d(5), libuser.conf(5), and pam_chauthtok(3).
+
+              For more complete information on how to configure this application with Linux-PAM, see the Linux-PAM System Administrators' Guide.
+                    http://linux-pam.org/Linux-PAM-html/Linux-PAM_SAG.html
+                    https://beausanders.org/linux_shared_files/Linux-PAM_System_Administrators_Guide.pdf
+
+
+
+[root@basic ~]# passwd user01      #以 root 身份为 user01 用户修改密码 # 注: PAM 的管理机制写在/etc/pam.d/passwd中,pam_cracklib.so 模块会检验密码并取代/etc/login.defs中PASS_MIN_LEN设定
+Changing password for user user01.
+New password:
+Retype new password:
+passwd: all authentication tokens updated successfully.
+
+[root@basic ~]# grep 'user01'  /etc/shadow    # 观察密码修改后 /etc/shadow 的变更情况
+user01:$6$Uxxxxxxt$.FNMVC1GL5xxxxxxxxxxxxxxxxxxxxxxxxxma3ENtjcS0lpqdmGfTnFEvoZBZjIAcsY.t0dcBTfMITM8YGXLs/:18019:0:99999:7:::
+
+[root@basic ~]# chage --list user01
+Last password change                                    : May 03, 2019
+Password expires                                        : never
+Password inactive                                       : never
+Account expires                                         : never
+Minimum number of days between password change          : 0
+Maximum number of days between password change          : 99999
+Number of days of warning before password expires       : 7
+
+
+[root@basic ~]# grep 'root' /etc/shadow
+root:$6$xxxxxxxxxxU5Vq1o$sCTMvv8n7xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxcrMvTLwuiomrWRkrlV1::0:99999:7:::
+
+[root@basic ~]# passwd            # 如果没有加 username 参数，则修改当前用户自己的密码
+Changing password for user root.
+New password:
+Retype new password:
+passwd: all authentication tokens updated successfully.
+
+[root@basic ~]# grep 'root' /etc/shadow
+root:$6$8xxxxxxo$9HSOcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxzsC0ojP/:18019:0:99999:7:::
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
