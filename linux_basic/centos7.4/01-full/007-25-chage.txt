@@ -14,6 +14,9 @@ man chage
           The chage command changes the number of days between password changes and the date of the last password change.
           This information is used by the system to determine when a user must change his/her password.
 
+          chage 命令 除了 -l 选项外, 其他所有设置选项都 仅 root 可用
+注: 要启用密码有效性(合法性)检查,首先要保证/etc/shadow的第5个字段不能为空(对应于 maximum password age 字段)
+
 
 [root@basic ~]# chage -l user01   # 显示账号老化信息 # -l, --list Show account aging information.
 Last password change                                    : May 03, 2019
@@ -74,19 +77,89 @@ Number of days of warning before password expires       : 7
 user01:$6$xxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:17995:0:60:7:3::
 
 
+[root@basic ~]# echo $(($(date --date="2019-06-29" +%s)/86400+1))  # 将日期转换为相对于 1970-01-01 的天数
+18076
+[root@basic ~]# chage -E 18076 user01  # 使用表天数的 number 来设置账号作废时间为 2019-06-29 日. 因 18076 即为 相对于 1970-01-01 的天数
+[root@basic ~]# chage -l user01
+Last password change                                    : Apr 09, 2019
+Password expires                                        : Jun 08, 2019
+Password inactive                                       : Jun 11, 2019
+Account expires                                         : Jun 29, 2019  <---- 执行命令 `chage -E 18076 user01` 后的效果(账号将于 2019-06-29 作废)
+Minimum number of days between password change          : 0
+Maximum number of days between password change          : 60
+Number of days of warning before password expires       : 7
+[root@basic ~]# grep 'user01' /etc/shadow   # 命令 `chage -E 18076 user01` 执行后 /etc/shadow 中对应的第八个字段的内容被修改成了 18076
+user01:$6$xxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:17995:0:60:7:3:18076:
+
+
+[root@basic ~]# passwd -S user01
+user01 PS 2019-04-09 0 60 7 3 (Password set, SHA512 crypt.)
+[root@basic ~]# chage -I 2 user01   # 设置密码过期后其失效作废天数(亦即过期后宽限天数), 此例中 密码过期后 还能宽限 2 天
+[root@basic ~]# passwd -S user01    # 注意下面的数字 2
+user01 PS 2019-04-09 0 60 7 2 (Password set, SHA512 crypt.)
+[root@basic ~]# grep 'user01' /etc/shadow  # 命令 `chage -I 2 user01` 执行后 /etc/shadow 中对应的第七个字段的内容被修改成了 2
+user01:$6$xxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:17995:0:60:7:2:18076:
+
+
+[root@basic ~]# chage -m 0 user01  # 设置密码最小生命周期(仅 root 可用), 通常应保持为默认的 0,以防系统入侵时造成麻烦
+[root@basic ~]# passwd -S user01   # 观察下面的数字 0
+user01 PS 2019-04-09 0 60 7 2 (Password set, SHA512 crypt.)
+[root@basic ~]# grep 'user01' /etc/shadow  # 命令 `chage -m 0 user01` 执行后 /etc/shadow 中对应的第四个字段的内容被修改成了 0
+user01:$6$xxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:17995:0:60:7:2:18076:
+
+[root@basic ~]# chage -l user01
+Last password change                                    : Apr 09, 2019
+Password expires                                        : Jun 08, 2019
+Password inactive                                       : Jun 10, 2019
+Account expires                                         : Jun 29, 2019
+Minimum number of days between password change          : 0    # 密码最小生命周期, 通常应保持为默认的 0,以防系统入侵时造成麻烦
+Maximum number of days between password change          : 60
+Number of days of warning before password expires       : 7
+
+
+[root@basic ~]# chage -M 50 user01   # 设置密码最大生命周期, 此例中指 user01应该在 50天以内 修改一次密码
+[root@basic ~]# passwd -S user01     # 观察下面的数字 50
+user01 PS 2019-04-09 0 50 7 2 (Password set, SHA512 crypt.)
+[root@basic ~]# grep 'user01' /etc/shadow  # 命令 `chage -M 50 user01` 执行后 /etc/shadow 中对应的第五个字段的内容被修改成了 50
+user01:$6$xxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:17995:0:50:7:2:18076:
+[root@basic ~]# chage -l user01
+Last password change                                    : Apr 09, 2019
+Password expires                                        : May 29, 2019
+Password inactive                                       : May 31, 2019
+Account expires                                         : Jun 29, 2019
+Minimum number of days between password change          : 0
+Maximum number of days between password change          : 50  <--- 执行命令 `chage -M 50 user01` 后的效果(密码应该在 50 天以内修改一次)
+Number of days of warning before password expires       : 7
+
+
+[root@basic ~]# chage -M -1 user01   #选项-M 的参数值为-1时,表示删除了密码的有效性(合法性)检查或验证((即移除/etc/shadow第5字段内容,表没有密码的(最大生命周期,警告时间段,作废宽限时间段)))
+[root@basic ~]# passwd -S user01     # 观察下面的数字 0
+user01 PS 2019-04-09 0 -1 7 2 (Password set, SHA512 crypt.)
+[root@basic ~]# grep 'user01' /etc/shadow  #命令 `chage -M -1 user01` 执行后 /etc/shadow 中对应的第五个字段的内容被移除变成了空(即移除了密码的合法性检查)
+user01:$6$xxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:17995:0::7:2:18076:
+[root@basic ~]# chage -l user01
+Last password change                                    : Apr 09, 2019
+Password expires                                        : never
+Password inactive                                       : never
+Account expires                                         : Jun 29, 2019
+Minimum number of days between password change          : 0
+Maximum number of days between password change          : -1 <--- 执行命令 `chage -M -1 user01` 后的效果(即移除了密码的合法性检查)
+Number of days of warning before password expires       : 7
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+[root@basic ~]# chage -M 50 user01 # 设置密码最大生命周期, 此例中指 user01应该在 50天以内 修改一次密码
+[root@basic ~]# chage -W 8 user01  # 设置密码过期前的警告天数, 此例中 提前 8 天 就向 user01 显示警告信息
+[root@basic ~]# passwd -S user01   # 观察下面的数字 8
+user01 PS 2019-04-09 0 50 8 2 (Password set, SHA512 crypt.)
+[root@basic ~]# grep 'user01' /etc/shadow  # 命令 `chage -W 8 user01` 执行后 /etc/shadow 中对应的第6个字段的内容设置为了 8
+user01:$6$t3pF8Uax$v4nqaXZ5aRUJig/zIS28bDe8CMCW5r5Sa5wCje/44G7nS6DiO7TBPSt.8IBorHJ.F0CrsttRTWkC0OdIONd8v.:17995:0:50:8:2:18076:
+[root@basic ~]# chage -l user01
+Last password change                                    : Apr 09, 2019
+Password expires                                        : May 29, 2019
+Password inactive                                       : May 31, 2019
+Account expires                                         : Jun 29, 2019
+Minimum number of days between password change          : 0
+Maximum number of days between password change          : 50
+Number of days of warning before password expires       : 8  <--- 执行命令 `chage -W 8 user01` 后的效果(即密码过期前提前 8 天 就向 用户显示警告信息)
 
