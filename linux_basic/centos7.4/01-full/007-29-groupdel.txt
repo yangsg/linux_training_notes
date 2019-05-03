@@ -1,0 +1,21 @@
+
+
+作用: groupdel - delete a group
+
+语法: groupdel [options] GROUP
+
+说明: The groupdel command modifies the system account files, deleting all entries that refer to GROUP. The named group must exist.
+
+警告:
+       You may not remove the primary group of any existing user. You must remove the user before you remove the group.
+       You should manually check all file systems to ensure that no files remain owned by this group.
+
+
+[root@basic ~]# grep 'group03' /etc/group  /etc/gshadow
+/etc/group:group03:x:1008:
+/etc/gshadow:group03:!::
+
+[root@basic ~]# groupdel group03   # 删除 用户组 group03, 注意: 在删除之前应该先认真考虑分析删除后对系统造成的影响, 再决定是否执行此操作.
+[root@basic ~]# grep 'group03' /etc/group  /etc/gshadow
+[root@basic ~]#
+
