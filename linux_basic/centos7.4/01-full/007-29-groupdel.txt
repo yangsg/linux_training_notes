@@ -1,4 +1,7 @@
 
+# keyword groupdel
+
+man groupdel
 
 作用: groupdel - delete a group
 
