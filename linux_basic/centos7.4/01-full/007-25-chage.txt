@@ -1,0 +1,47 @@
+
+# keyword chage
+
+man chage
+
+
+
+作用: chage - change user password expiry information
+
+语法: chage -l LOGIN
+语法: chage [-d LAST_DAY] [-E EXPIRE_DATE] [-I INACTIVE] [-m MIN_DAYS] [-M MAX_DAYS] [-R CHROOT_DIR] [-W WARN_DAYS] LOGIN
+
+说明:
+          The chage command changes the number of days between password changes and the date of the last password change.
+          This information is used by the system to determine when a user must change his/her password.
+
+
+[root@basic ~]# chage -l user01   # 显示账号老化信息 # -l, --list Show account aging information.
+Last password change                                    : May 03, 2019
+Password expires                                        : Jul 02, 2019
+Password inactive                                       : Jul 05, 2019
+Account expires                                         : never
+Minimum number of days between password change          : 0
+Maximum number of days between password change          : 60
+Number of days of warning before password expires       : 7
+
+
+[root@basic ~]# chage -d 0 user01      # 设置为 0 时 表示 密码 立即过期，强制用户下次尝试登录时修改密码
+[root@basic ~]# chage -d 2019-04-29 user01  # -d, --lastday LAST_DAY: 设置最近修改密码的时间, 该时间可表示为：a.YYYY-MM-DD b. 相对1970-01-01的天数 c. 特殊值 0 表示强制用户登录时修改密码
+
+[root@basic ~]# echo $(($(date --date="2019-04-09" +%s)/86400+1))  # 将日期转换为相对于 1970-01-01 的天数
+17995
+[root@basic ~]# chage -d 17995 user01  # 使用表天数的 number 来设置最近修改密码的时间为 2019-04-09 日. 因 17995 即为 相对于 1970-01-01 的天数
+
+
+
+
+
+
+
+
+
+
+
+
+
+
