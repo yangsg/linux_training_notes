@@ -9,6 +9,9 @@ man cp
 语法: cp [OPTION]... SOURCE... DIRECTORY
 语法: cp [OPTION]... -t DIRECTORY SOURCE...
 
+其他说明: 支持 ACLs 的系统 对命令 `cp -p` 的影响 (见 man 5 acl)
+          If the -p flag is specified, the cp(1) utility also preserves ACLs.  If this is not possible, a warning is produced.
+
 
 [root@basic ~]# cp -r dir01/  /tmp/    # -R, -r, --recursive: copy directories recursively   递归复制，复制目录时很有用
 
