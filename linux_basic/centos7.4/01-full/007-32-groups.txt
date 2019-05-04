@@ -1,0 +1,23 @@
+
+# keyword groups
+
+man groups
+
+
+作用: groups - print the groups a user is in
+
+语法: groups [OPTION]... [USERNAME]...
+
+说明: Print group memberships for each USERNAME or, if no USERNAME is specified, for the current process (which may differ if the groups database has changed).
+
+
+[root@basic ~]# groups
+root
+
+[root@basic ~]# groups user02
+user02 : user02 project01 project02
+
+[root@basic ~]# groups user02 user03
+user02 : user02 project01 project02
+user03 : user03
+
