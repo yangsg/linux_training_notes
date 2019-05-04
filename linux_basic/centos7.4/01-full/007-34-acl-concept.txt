@@ -1,0 +1,103 @@
+
+# keyword acl
+
+man 5 acl
+
+技术名称: acl — Access Control Lists
+
+基本概念: (更多详细信息见 man 5 acl 及 其他 手册 和 书籍)
+
+ACL TYPES:
+      access ACL
+      default ACL (directory)
+
+
+an ACL {
+   ACL Entries {  // entry格式:  tag-type:[tag-qualifier]:permissions
+      ACL_USER_OBJ  : unique  required  --> owner
+
+      ACL_USER      : [0, n]  has qualifier
+
+      ACL_GROUP_OBJ : unique  required  --> if ACL_MASK: ACL_MASK --> group;  else: ACL_GROUP_OBJ --> group
+
+      ACL_GROUP     : [0, n]  has qualifier
+
+      ACL_MASK      : if ACL_USER or ACL_GROUP: must existed && unique; else: optional
+
+      ACL_OTHER     : unique  required  --> other
+   }
+}
+
+
+
+test against(when access check proccess):
+
+    ACL_USER_OBJ  ~=  effective user ID
+    ACL_USER      ~=  effective user ID
+
+    ACL_GROUP_OBJ ~=  effective group ID, as well as all supplementary group IDs
+    ACL_GROUP     ~=  effective group ID, as well as all supplementary group IDs
+
+
+new object's permissions determined by:
+
+      if default_ACL:
+          default_ACL && mode parameter
+      else:
+          file umask && mode parameter
+
+
+effective access permissions(note: ACL_MASK only controls [ACL_USER, ACL_GROUP_OBJ, or ACL_GROUP_OBJ]):
+     effective = acl_entry_permission && ACL_MASK
+
+
+
+
+ACCESS CHECK ALGORITHM:
+        case ACL_USER_OBJ:
+          check_entry_permision;
+            return;
+
+        case ACL_USER:
+          check entry_permision && ACL_MASK;
+            return;
+
+        case ACL_GROUP_OBJ:
+        case ACL_GROUP:
+          check entry_permision && ACL_MASK;
+            return;
+
+        case ACL_OTHER
+           check entry_permision;
+           return;
+
+
+ACL TEXT FORMS:
+    entry tag type keyword:
+        long text form:
+            user:  ACL_USER_OBJ or ACL_USER
+            group: ACL_GROUP_OBJ or ACL_GROUP
+            mask:  ACL_MASK
+            other: ACL_OTHER
+
+        short text form:
+            u
+            g
+            m
+            o
+
+      for examples:  注:  tag-type:[tag-qualifier]:permissions     其中 tag-qualifier 可以是 id 或 name
+
+           user::rw-
+           user:lisa:rw-         #effective:r--
+           group::r--
+           group:toolies:rw-     #effective:r--
+           mask::r--
+           other::r--
+
+           u::rw-,u:lisa:rw-,g::r--,g:toolies:rw-,m::r--,o::r--
+           g:toolies:rw,u:lisa:rw,u::wr,g::r,o::r,m::r
+
+
+支持 ACL 的系统在某些情况下对 ls, cp, mv 等命令的行为的影响见 man 5 acl
+
