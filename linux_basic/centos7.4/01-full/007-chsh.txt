@@ -1,0 +1,43 @@
+
+# keyword chsh
+
+man chsh
+
+作用: chsh - change your login shell
+
+语法: chsh [-s shell] [-l] [-u] [-v] [username]
+
+说明:
+       chsh is used to change your login shell.  If a shell is not given on the command line, chsh prompts for one.
+       chsh is used to change local entries only. Use ypchsh, lchsh or any other implementation for non-local entries.
+
+
+
+[Bob@basic ~]$ grep 'Bob' /etc/passwd
+Bob:x:1018:1018::/home/Bob:/bin/bash
+
+[Bob@basic ~]$ chsh -l   # -l, --list-shells: Print the list of shells listed in /etc/shells and exit.
+/bin/sh
+/bin/bash
+/sbin/nologin
+/usr/bin/sh
+/usr/bin/bash
+/usr/sbin/nologin
+
+[Bob@basic ~]$ chsh -s /sbin/nologin   # -s, --shell shell: Specify your login shell.
+[Bob@basic ~]$ grep 'Bob' /etc/passwd
+Bob:x:1018:1018::/home/Bob:/sbin/nologin
+
+[Bob@basic ~]$ chsh -s /bin/bash
+
+
+[root@basic ~]# grep 'Bob' /etc/passwd
+Bob:x:1018:1018::/home/Bob:/bin/bash
+
+[root@basic ~]# chsh -s /sbin/nologin Bob
+
+[root@basic ~]# grep 'Bob' /etc/passwd
+Bob:x:1018:1018::/home/Bob:/sbin/nologin
+
+[root@basic ~]# chsh -s /bin/bash Bob
+
