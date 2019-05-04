@@ -1,0 +1,24 @@
+
+# keyword userdel
+
+man userdel
+
+
+作用: userdel - delete a user account and related files
+
+语法: userdel [options] LOGIN
+
+说明: The userdel command modifies the system account files, deleting all entries that refer to the user name LOGIN. The named user must exist.
+
+文件:
+       /etc/group
+       /etc/login.defs
+       /etc/passwd
+       /etc/shadow
+
+
+[root@basic ~]# userdel user40     # 删除账号 user40, 但 user40 的宿主目录 和 邮件文件依然残留在系统中
+[root@basic ~]# userdel -r user41  # -r, --remove: 删除账号时同时删除 宿主目录 和其 邮件文件. 当 其他文件系统上的文件可能仍需要手动删除.
+
+更多细节见 man userdel
+
