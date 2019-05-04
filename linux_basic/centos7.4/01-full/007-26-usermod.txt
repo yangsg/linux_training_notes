@@ -11,6 +11,12 @@ man usermod
 
 说明: The usermod command modifies the system account files to reflect the changes that are specified on the command line.
 
+文件:
+       /etc/group
+       /etc/gshadow
+       /etc/login.defs
+       /etc/passwd
+       /etc/shadow
 
 [root@basic ~]# useradd  user10
 [root@basic ~]# usermod -l user20 user10   # -l, --login NEW_LOGIN: 修改账号名 (用户的宿主目录和mail spool 目录可能需要手动变更以反映账号名的变化)
