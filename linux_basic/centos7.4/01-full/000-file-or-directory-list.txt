@@ -10,7 +10,7 @@
 /etc/gshadow # man 5 gshadow
 
 /etc/default/useradd
-/etc/login.defs
+/etc/login.defs       # man 5 login.defs
 /etc/skel/      'skel' 简写自单词 ‘skeleton’  骨架
 
 
