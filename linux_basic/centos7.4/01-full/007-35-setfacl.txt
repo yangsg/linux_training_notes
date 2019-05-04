@@ -1,0 +1,69 @@
+
+# keyword setfacl
+
+man setfacl
+
+
+作用: setfacl - set file access control lists
+
+语法: setfacl [-bkndRLPvh] [{-m|-x} acl_spec] [{-M|-X} acl_file] file ...
+
+语法: setfacl --restore=file
+
+
+其他参考:
+      man 5 acl
+      《linux/unix 系统编程手册》
+      《鸟哥的linux私房菜》
+      https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/01-full/007-34-acl-concept.txt
+
+
+说明:
+//    选项 -m, 和 -x 期望  ACL 在command line 上, 多个  ACL entries 可以用 逗号分隔 (`,'),
+//    选项 -M, and -X 从 file 或 standard input 中读取 ACL.
+//    选项 --set and --set-file 用于设置 file 或 directory 的 ACL. 之前的 ACL 会被替换掉. 针对该操作的 ACL entries 必须包含 permissions.
+//    选项 -m (--modify) 和 -M (--modify-file) 用于 修改 file 或 directory 的 ACL. 针对该操作的 ACL entries 必须包含 permissions.
+//
+//    选项 -x  (--remove)  and -X (--remove-file) 用于 删除 ACL entries. 删除 一个并不存在 的 entry 不是一个错误.
+//    只有没带 perms field 的 ACL entries 可作为参数接受, 除非 定义了 POSIXLY_CORRECT .
+//
+//    当 使用 -M, 和 -X 从 files 中读取时, setfacl 接受 由 getfacl 产生的 output . 每行最多只能有 一个 ACL entry.
+//    在Pound sign (`#') 之后 到 行 end 的一切 都被 视为 comment.
+//
+//    如果 setfacl 被用在 不支持 ACLs 的 file system 上, setfacl operates on the file mode permission bits.
+//    If the ACL does not fit completely in the permission bits,setfacl modifies the file mode permission bits to reflect the ACL as closely as possible,
+//    writes an error message to standard error, and returns with an exit status greater than 0.
+
+
+//   PERMISSIONS
+//      file 的 owner 和 processes capable of CAP_FOWNER 被授予了 修改 file 的 ACLs 的权利. 这类似于访问 file mode 时 必须具有的  permissions.
+//      (在 当前 linux systems 中，root 是 仅有的 具有 CAP_FOWNER capability 的 user)
+
+
+[Bob@basic ~]$ touch acl_test1
+[Bob@basic ~]$ ls -l acl_test1
+-rw-rw-r-- 1 Bob Bob 0 May  4 19:28 acl_test1
+[Bob@basic ~]$ setfacl -m u:Alice:rx acl_test1   # -m --modify
+[Bob@basic ~]$ ls -l acl_test1
+-rw-rwxr--+ 1 Bob Bob 0 May  4 19:28 acl_test1  <--- 设置 acl 后 ls -l 命令输出中 权限字段内容的 末尾 多出了 一个 加号 '+'
+
+[Bob@basic ~]$ setfacl -m u::rwx acl_test1
+[Bob@basic ~]$ setfacl -m g:mygroup01:rx acl_test1
+[Bob@basic ~]$ setfacl -m m::r acl_test1
+
+[Bob@basic ~]$ getfacl acl_test1
+# file: acl_test1
+# owner: Bob
+# group: Bob
+user::rwx                                         # ACL_USER_OBJ
+user:Alice:r-x                  #effective:r--    # ACL_USER
+group::rw-                      #effective:r--    # ACL_GROUP_OBJ
+group:mygroup01:r-x             #effective:r--    # ACL_GROUP
+mask::r--                                         # ACL_MASK (注: ACL_MASK 会 控制 ACL_USER, ACL_GROUP_OBJ, ACL_GROUP 的 permssions, 但不会控制 ACL_USER_OBJ 和 ACL_OTHER)
+other::r--                                        # ACL_OTHER
+
+[Bob@basic ~]$ ls -l acl_test1
+-rwxr--r--+ 1 Bob Bob 0 May  4 19:28 acl_test1 <--- 注意: perms中间的 r-- 是 ACL_MASK 的perm,而非 ACL_GROUP_OBJ 的(规则:ACL_MASK存在,中间显示ACL_MASK, ACL_MASK不存在,显示ACL_GROUP_OBJ)
+
+
+
