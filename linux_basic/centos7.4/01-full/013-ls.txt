@@ -8,6 +8,14 @@ man ls
 
 语法: ls [OPTION]... [FILE]...
 
+
+其他说明: 支持 ACLs 的系统 对命令 `ls -l` 的影响 (见 man 5 acl)
+     For files that have a default ACL or an access ACL that contains more than the three
+     required ACL entries, the ls(1) utility in the long form produced by ls -l displays a plus
+     sign (+) after the permission string.
+
+
+
 [root@basic ~]# ls -a ~Bob/   # -a, --all: do not ignore entries starting with .
 .  ..  a.txt  .bash_logout  .bash_profile  .bashrc  .emacs  .screenrc  .vimrc
 
