@@ -1,0 +1,42 @@
+
+# keyword id
+
+man id
+info id
+
+
+作用: id - print real and effective user and group IDs
+
+语法: id [OPTION]... [USER]
+
+说明: Print user and group information for the specified USER, or (when USER omitted) for the current user.
+
+
+[root@basic ~]# id
+uid=0(root) gid=0(root) groups=0(root)
+
+[root@basic ~]# id user01
+uid=1001(user01) gid=1001(user01) groups=1001(user01)
+
+
+[root@basic ~]# id user02
+uid=1002(user02) gid=1004(user02) groups=1004(user02),1002(project01),1003(project02)
+
+[root@basic ~]# id -u user02  # -u, --user: print only the effective user ID
+1002
+[root@basic ~]# id -g user02  # -g, --group: print only the effective group ID
+1004
+[root@basic ~]# id -G user02  # -G, --groups: print all group IDs
+1004 1002 1003
+
+[root@basic ~]# id -un user02 # -n, --name: print a name instead of a number, for -ugG
+user02
+[root@basic ~]# id -gn user02
+user02
+[root@basic ~]# id -Gn user02
+user02 project01 project02
+
+
+[root@basic ~]# id -ru root  # -r, --real: print the real ID instead of the effective ID, with -ugG  (通常用于脚本中)
+0
+
