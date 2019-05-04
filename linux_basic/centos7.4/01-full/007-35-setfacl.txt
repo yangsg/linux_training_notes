@@ -47,9 +47,9 @@ man setfacl
 [Bob@basic ~]$ ls -l acl_test1
 -rw-rwxr--+ 1 Bob Bob 0 May  4 19:28 acl_test1  <--- 设置 acl 后 ls -l 命令输出中 权限字段内容的 末尾 多出了 一个 加号 '+'
 
-[Bob@basic ~]$ setfacl -m u::rwx acl_test1
-[Bob@basic ~]$ setfacl -m g:mygroup01:rx acl_test1
-[Bob@basic ~]$ setfacl -m m::r acl_test1
+[Bob@basic ~]$ setfacl -m u::rwx acl_test1         # 设置 ACL_USER_OBJ 的 acl entry (亦对应于 owner 的 perm)
+[Bob@basic ~]$ setfacl -m g:mygroup01:rx acl_test1 # 设置 ACL_GROUP 的 acl entry
+[Bob@basic ~]$ setfacl -m m::r acl_test1           # 设置 ACL_MASK  的 acl entry
 
 [Bob@basic ~]$ getfacl acl_test1
 # file: acl_test1
@@ -64,6 +64,131 @@ other::r--                                        # ACL_OTHER
 
 [Bob@basic ~]$ ls -l acl_test1
 -rwxr--r--+ 1 Bob Bob 0 May  4 19:28 acl_test1 <--- 注意: perms中间的 r-- 是 ACL_MASK 的perm,而非 ACL_GROUP_OBJ 的(规则:ACL_MASK存在,中间显示ACL_MASK, ACL_MASK不存在,显示ACL_GROUP_OBJ)
+
+[Bob@basic ~]$ setfacl -m u:John:r,g:project01:rw acl_test1   # 一次设置多个 acl entries.
+[Bob@basic ~]$ getfacl acl_test1
+# file: acl_test1
+# owner: Bob
+# group: Bob
+user::rwx
+user:Alice:r-x
+user:John:r--
+group::rw-
+group:project01:rw-
+group:mygroup01:r-x
+mask::rwx
+other::r--
+
+
+[Bob@basic ~]$ setfacl -x g:project01 acl_test1  #-x  --remove: 删除指定的 acl entry
+[Bob@basic ~]$ getfacl acl_test1
+# file: acl_test1
+# owner: Bob
+# group: Bob
+user::rwx
+user:Alice:r-x
+user:John:r--
+group::rw-
+group:mygroup01:r-x
+mask::rwx
+other::r--
+
+
+[Bob@basic ~]$ setfacl -x u:John,u:Alice acl_test1   # 删除多个 acl entries
+[Bob@basic ~]$ getfacl acl_test1
+# file: acl_test1
+# owner: Bob
+# group: Bob
+user::rwx
+group::rw-
+group:mygroup01:r-x
+mask::rwx
+other::r--
+
+[Bob@basic ~]$ setfacl -b acl_test1  # -b, --remove-all: 删除所有扩展(extended)的acl entries, 基本的 owner, group 和 other 的 ACL entries 会被保留.
+[Bob@basic ~]$ getfacl acl_test1
+# file: acl_test1
+# owner: Bob
+# group: Bob
+user::rwx
+group::rw-
+other::r--
+
+
+[Bob@basic ~]$ setfacl -m g::r,u:John:x,g:project01:rx acl_test1
+[Bob@basic ~]$ getfacl acl_test1
+# file: acl_test1
+# owner: Bob
+# group: Bob
+user::rwx
+user:John:--x
+group::r--
+group:project01:r-x
+mask::r-x
+other::r--
+[Bob@basic ~]$ setfacl -m g:project02:w acl_test1
+[Bob@basic ~]$ getfacl acl_test1
+# file: acl_test1
+# owner: Bob
+# group: Bob
+user::rwx
+user:John:--x
+group::r--
+group:project01:r-x
+group:project02:-w-
+mask::rwx <--注:setfacl默认会重新计算ACL mask entry.除非mask entry被显示给出.mask entry会被设置为所有ACL_GROUP_OBJ,ACL_USE和ACL_GROUP的entries的perms的并集.(这些entries都受ACL_MASK控制)
+other::r--
+
+
+[Bob@basic ~]$ setfacl -b acl_test1   # 清空 文件所有的扩展 acl entries
+[Bob@basic ~]$ getfacl acl_test1
+# file: acl_test1
+# owner: Bob
+# group: Bob
+user::rwx
+group::r--
+other::r--
+[Bob@basic ~]$ setfacl -m u:John:w acl_test1
+[Bob@basic ~]$ getfacl acl_test1
+# file: acl_test1
+# owner: Bob
+# group: Bob
+user::rwx
+user:John:-w-
+group::r--
+mask::rw-
+other::r--
+[Bob@basic ~]$ setfacl -n -m u:Alice:x acl_test1  #-n, --no-mask:不重新计算有效权限的掩码(effective rights mask).-n 选项用于禁用setfacl(不管设置还是删除)默认的重新计算effective rights mask的行为.
+[Bob@basic ~]$ getfacl acl_test1
+# file: acl_test1
+# owner: Bob
+# group: Bob
+user::rwx
+user:Alice:--x                  #effective:---
+user:John:-w-
+group::r--
+mask::rw-
+other::r--
+
+[Bob@basic ~]$ setfacl -m u:smith:rwx,m::r acl_test1 # 因为明确的给出了ACL_MASK 的entry的perm, 所以此种情况也不会再按setfacl的默认行为重新计算ACL_MASK的perm,而是使用给定的ACL_MASK的perm
+[Bob@basic ~]$ getfacl acl_test1
+# file: acl_test1
+# owner: Bob
+# group: Bob
+user::rwx
+user:Alice:--x                  #effective:---
+user:John:-w-                   #effective:---
+user:smith:rwx                  #effective:r--
+group::r--
+mask::r--
+other::r--
+
+
+
+
+-n
+-R
+-b
 
 
 
