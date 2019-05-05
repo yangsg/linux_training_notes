@@ -1,0 +1,40 @@
+
+# keyword visudo
+
+man visudo
+
+
+作用: visudo — edit the sudoers file
+
+语法: visudo [-chqsV] [-f sudoers] [-x output_file]
+
+
+说明:
+    visudo 以一种安全的方式编辑 sudoers 文件. visudo 通过对 sudoers 文件 加锁 来 阻止 多个同时编辑(multiple simultaneous edits),
+    提供了基本的健康检查，和 错误分析的检查. 如果 sudoers 当前正在被编辑, 你将收到一个 try again later 的 消息.
+
+    visudo 会在 编辑 sudoers 之后 对其进行分析，且如果存在 syntax error, 所做的修改将不会被保存(save). 找到错误后, 
+    visudo 会打印一条 表示 error 产生所在的 line number(s)信息。并且用户会 收到 如 “What now?” 的提示. 此时, 用户
+    可以  键入 'e' 来重新编辑 sudoers 文件, 'x' 来 不保存退出, 或者 'Q' 来 保存退出. 选项 'Q' 应该被非常非常小心
+    地使用因为 visudo 存在 parse error, 那么 sudo 和 no one 将能够 再 执行 sudo 命令 一直到 error 被解决.
+    如果parse error 被监测到之后 键入 'e' 来编辑  sudoers 文件, 则 光标(cursor) 将被置于 error 产生所在的行(如果编辑器支持此特性).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
