@@ -1,0 +1,35 @@
+
+# keyword sudo
+
+man sudo
+
+
+作用: sudo, sudoedit — execute a command as another user
+
+语法: sudo -h | -K | -k | -V
+语法: sudo -v [-AknS] [-a type] [-g group] [-h host] [-p prompt] [-u user]
+语法: sudo -l [-AknS] [-a type] [-g group] [-h host] [-p prompt] [-U user] [-u user] [command]
+语法: sudo [-AbEHnPS] [-a type] [-C num] [-c class] [-g group] [-h host] [-p prompt] [-r role] [-t type] [-u user] [VAR=value] [-i | -s] [command]
+语法: sudoedit [-AknS] [-a type] [-C num] [-c class] [-g group] [-h host] [-p prompt] [-u user] file ...
+
+
+说明:
+      sudo 允许被批准的 user 作为 superuser 或 another user 来执行命令, 就像 security policy 所指定的那样.
+      调用 user 的 real user ID (非effective) 被用于 确定 用来 查询 security policy 的 user name.
+
+      sudo 支持 用于 security policies 和 input/output logging 的插件架构(plugin architecture). 第三方组织可以 开发和分发他们自己的
+      policy 和 I/O logging plugins 用于和 sudo front end 无缝地集成工作. 其默认的 security policy 为 sudoers. sudoers 通过
+      文件/etc/sudoers 或 通过 LDAP 来配置.
+
+      security policy 确认 user 执行 sudo 应具有的 privileges(如果有的话). 该 policy 可能要求 users 通过 password 认证其自身 或 其他认证机制.
+      如果 authentication 是必须的， sudo 将在 配置的时间限制(configurable time limit)内未输入 user's password 时 退出. 该 limit 是 policy-specific.
+      默认的 sudoers security policy 的 密码提示超时 时间 为 5 minutes.
+
+      Security policies 可以 提供 凭证缓存(credential caching) 来允许 user 在 一段时间内 再次 执行 sudo 命令时 无需 必须的 authentication.
+      sudoers policy 缓存 credentials 时间 为 5 minutes, 除非 在 sudoers(5) 中被覆盖. 通过执行 `sudo -v` 命令, 用户可以 update 缓存的 credentials 而不必 执行 一条命令.
+
+           When invoked as sudoedit, the -e option (described below), is implied.
+
+      Security policies 可以 记录 使用 sudo 的 成功或失败的尝试. 如果 配置了 I/O plugin, 则执行的命令的 input 和 output 也可以被记录.
+
+
