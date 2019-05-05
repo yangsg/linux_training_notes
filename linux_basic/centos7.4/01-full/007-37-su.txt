@@ -38,6 +38,7 @@ man su
 [root@basic ~]# su - Bob        #  -, -l, --login: Starts the shell as login shell with an environment similar to a real login
 [root@basic ~]# su -l Bob       #  等价于 `su - Bob`
 [root@basic ~]# su --login Bob  #  等价于 `su - Bob`
+[Bob@basic ~]$ exit
 
 
 [Bob@basic ~]$ su -    # 等价于 `su - root`,  When called without arguments su defaults to running an interactive shell as root.
