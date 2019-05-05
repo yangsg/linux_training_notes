@@ -512,5 +512,122 @@ default:other::---
 
 
 
+--restore=file
+   Restore  a  permission backup created by `getfacl -R' or similar. All permissions of a complete directory subtree
+   are restored using this mechanism. If the input  contains  owner  comments  or  group  comments,  setfacl
+   attempts to restore the owner and owning group. If the input contains flags comments (which define the setuid,
+   setgid, and sticky bits), setfacl sets those three bits accordingly; otherwise, it clears  them.  This  option
+   cannot be mixed with other options except `--test'.
+
+
+[Bob@basic ~]$ getfacl -R dir01/  >  dir01.recursive.facl.backup   # 递归备份目录 dir01/ 及其下 所有对象的 所有 ACL
+[Bob@basic ~]$ cat dir01.recursive.facl.backup      # 观察一些备份内容长什么样子
+# file: dir01/
+# owner: Bob
+# group: Bob
+user::rwx
+user:Alice:--x  #effective:---
+user:John:-w-   #effective:---
+user:smith:rwx  #effective:r--
+group::r--
+mask::r--
+other::r--
+
+# file: dir01//a.txt
+# owner: Bob
+# group: Bob
+user::rw-
+user:Alice:rwx
+group::rw-
+mask::rwx
+other::r--
+
+[Bob@basic ~]$ setfacl --test --restore=./dir01.recursive.facl.backup
+dir01/: *,*
+dir01//a.txt: *,*
+
+[Bob@basic ~]$ setfacl -R -b dir01/
+[Bob@basic ~]$ find dir01/ -exec ls -l '{}' \;    # 观察dir01/ 及其所有内容的 `ls -l` 结果的permissions字段最后都不包含加号 '+', 则证明所有 扩展的 acl entries 都不存在了
+total 0
+-rw-rw-r-- 1 Bob Bob 0 May  5 08:17 a.txt
+-rw-rw-r-- 1 Bob Bob 0 May  5 08:17 dir01/a.txt
+[Bob@basic ~]$ getfacl -R dir01    # 观察
+# file: dir01
+# owner: Bob
+# group: Bob
+user::rwx
+group::r--
+other::r--
+
+# file: dir01/a.txt
+# owner: Bob
+# group: Bob
+user::rw-
+group::rw-
+other::r--
+
+
+[Bob@basic ~]$ chmod -R a+rx dir01/
+[Bob@basic ~]$ getfacl -R dir01/
+# file: dir01/
+# owner: Bob
+# group: Bob
+user::rwx
+group::r-x
+other::r-x
+
+# file: dir01//a.txt
+# owner: Bob
+# group: Bob
+user::rwx
+group::rwx
+other::r-x
+
+[Bob@basic ~]$ setfacl --test --restore=./dir01.recursive.facl.backup   #先加 --test 选项 预览一下 --restore=file 的还原效果(注:--restore=file 选项除了--test之外,不能和任何其他选项混用)
+dir01/: u::rwx,u:Alice:--x,u:John:-w-,u:smith:rwx,g::r--,m::r--,o::r--,*
+dir01//a.txt: u::rw-,u:Alice:rwx,g::rw-,m::rwx,o::r--,*
+
+[Bob@basic ~]$ setfacl --restore=./dir01.recursive.facl.backup    # 还原备份的 acl 文件 # --restore=file: Restore  a  permission backup created by `getfacl -R' or similar.
+[Bob@basic ~]$ find dir01/ -exec ls -l '{}' \;
+total 0
+-rw-rwxr--+ 1 Bob Bob 0 May  5 08:17 a.txt
+-rw-rwxr--+ 1 Bob Bob 0 May  5 08:17 dir01/a.txt
+
+[Bob@basic ~]$ getfacl -R dir01/    # 查看还原效果
+# file: dir01/
+# owner: Bob
+# group: Bob
+user::rwx
+user:Alice:--x                  #effective:---
+user:John:-w-                   #effective:---
+user:smith:rwx                  #effective:r--
+group::r--
+mask::r--
+other::r--
+
+# file: dir01//a.txt
+# owner: Bob
+# group: Bob
+user::rw-
+user:Alice:rwx
+group::rw-
+mask::rwx
+other::r--
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
