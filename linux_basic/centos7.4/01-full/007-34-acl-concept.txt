@@ -47,7 +47,7 @@ new object's permissions determined by:
           file umask && mode parameter
 
 
-effective access permissions(note: ACL_MASK only controls [ACL_USER, ACL_GROUP_OBJ, or ACL_GROUP_OBJ]):
+effective access permissions(note: ACL_MASK only controls [ACL_USER, ACL_GROUP_OBJ, or ACL_GROUP]):
      effective = acl_entry_permission && ACL_MASK
 
 
