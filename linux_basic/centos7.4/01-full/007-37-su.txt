@@ -1,0 +1,74 @@
+
+
+# keyword su
+
+man su
+
+作用: su - run a command with substitute user and group ID
+
+语法: su [options...] [-] [user [args...]]
+
+说明:
+       su allows to run commands with substitute user and group ID.
+
+       When called without arguments su defaults to running an interactive shell as root.
+
+       For  backward compatibility su defaults to not change the current directory and to only set the environment variables HOME and SHELL (plus USER and LOGNAME if the target user is
+       not root).  It is recommended to always use the --login option (instead it's shortcut -) to avoid side effects caused by mixing environments.
+
+       This version of su uses PAM for authentication, account and session management.  Some configuration options found in other su implementations such as e.g.  support  of  a  wheel
+       group have to be configured via PAM.
+
+
+文件:
+       /etc/pam.d/su    default PAM configuration file
+       /etc/pam.d/su-l  PAM configuration file if --login is specified
+       /etc/default/su  command specific logindef config file
+       /etc/login.defs  global logindef config file
+
+
+-, -l, --login
+      Starts the shell as login shell with an environment similar to a real login:
+
+         o      clears all environment variables except for TERM
+         o      initializes the environment variables HOME, SHELL, USER, LOGNAME, PATH
+         o      changes to the target user's home directory
+         o      sets argv[0] of the shell to '-' in order to make the shell a login shell
+
+[root@basic ~]# su - Bob        #  -, -l, --login: Starts the shell as login shell with an environment similar to a real login
+[root@basic ~]# su -l Bob       #  等价于 `su - Bob`
+[root@basic ~]# su --login Bob  #  等价于 `su - Bob`
+
+
+[Bob@basic ~]$ su -    # 等价于 `su - root`,  When called without arguments su defaults to running an interactive shell as root.
+
+
+[root@basic ~]# su - Bob -c 'echo $USER, $HOME, $SHELL, $LOGNAME, $PATH'  # -c command, --command=command: Pass command to the shell with the -c option.
+Bob, /home/Bob, /bin/bash, Bob, /usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/home/Bob/.local/bin:/home/Bob/bin
+
+
+[root@basic ~]# su - Bob -s /bin/bash -c 'echo $USER'   # -s SHELL, --shell=SHELL: Runs the specified shell instead of the default.
+Bob
+
+
+
+[Bob@basic ~]$ id
+uid=1018(Bob) gid=1018(Bob) groups=1018(Bob)
+
+[root@basic ~]# su - Bob -g project01  # -g, --group=group: 指定基本组(primary group), 该选项仅 root 可用.
+[Bob@basic ~]$ id
+uid=1018(Bob) gid=1002(project01) groups=1002(project01)
+
+
+[root@basic ~]# su - Bob -G project02  # -G, --supp-group=group: 指定一个附加组,该选项仅root可用. 如果没有结合使用-g, --group=group选项,则指定的附加组也会作为基本组
+[Bob@basic ~]$ id
+uid=1018(Bob) gid=1003(project02) groups=1003(project02)
+
+
+[root@basic ~]# su - Bob -g project01 -G project02
+[Bob@basic ~]$ id
+uid=1018(Bob) gid=1002(project01) groups=1002(project01),1003(project02)
+
+[root@basic ~]# su Bob   # (不推荐, 因容易造成环境资源混乱) 没有加 -, -l, --login 时表示不以 login shell 启动 shell
+[Bob@basic root]$
+
