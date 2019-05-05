@@ -2,6 +2,7 @@
 # keyword visudo
 
 man visudo
+man 5 sudoers
 
 
 作用: visudo — edit the sudoers file
@@ -21,6 +22,13 @@ man visudo
 
 
 
+
+
+
+使用者账号 登入者的来源主机名=(可切换的身份) 可下达的指令
+root    ALL=(ALL)       ALL
+
+%wheel        ALL=(ALL)       NOPASSWD: ALL
 
 
 
