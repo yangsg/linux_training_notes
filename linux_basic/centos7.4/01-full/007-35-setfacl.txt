@@ -53,6 +53,9 @@ man setfacl
 
        --  End of command line options. All remaining parameters are interpreted as file names, even if they start with adash.
 
+       -   If the file name parameter is a single dash, setfacl reads a list of files from standard input.
+
+
 
 
 [Bob@basic ~]$ touch acl_test1
