@@ -41,6 +41,19 @@ man setfacl
 //      file 的 owner 和 processes capable of CAP_FOWNER 被授予了 修改 file 的 ACLs 的权利. 这类似于访问 file mode 时 必须具有的  permissions.
 //      (在 当前 linux systems 中，root 是 仅有的 具有 CAP_FOWNER capability 的 user)
 
+其他选项:
+       -L, --logical
+           Logical walk, follow symbolic links to directories. The default behavior is to follow symbolic link arguments,
+           and skip symbolic links encountered in subdirectories.  Only effective in combination with  -R.   This  option
+           cannot be mixed with `--restore'.
+
+       -P, --physical
+           Physical  walk,  do  not follow symbolic links to directories.  This also skips symbolic link arguments.  Only
+           effective in combination with -R.  This option cannot be mixed with `--restore'.
+
+       --  End of command line options. All remaining parameters are interpreted as file names, even if they start with adash.
+
+
 
 [Bob@basic ~]$ touch acl_test1
 [Bob@basic ~]$ ls -l acl_test1
@@ -617,17 +630,5 @@ other::r--
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+更多信息 和 细节 见 man setfacl
 
