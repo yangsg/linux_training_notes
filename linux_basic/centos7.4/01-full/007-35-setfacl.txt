@@ -18,6 +18,8 @@ man setfacl
       https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/01-full/007-34-acl-concept.txt
 
 
+注: 使用 setfacl 修改ACL_USER, ACL_GROUP_OBJ,or ACL_GROUP的acl entry的时候应该先考虑 是否需要加-n, --no-mask选项来避免 ACL_MASK entry 的 perm被重新计算(recalculate)这种setfacl的默认行为
+
 说明:
 //    选项 -m, 和 -x 期望  ACL 在command line 上, 多个  ACL entries 可以用 逗号分隔 (`,'),
 //    选项 -M, and -X 从 file 或 standard input 中读取 ACL.
