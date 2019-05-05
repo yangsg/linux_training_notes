@@ -142,7 +142,7 @@ mask::rwx <--注:setfacl默认会重新计算ACL mask entry.除非mask entry被�
 other::r--
 
 
-[Bob@basic ~]$ setfacl -b acl_test1   # 清空 文件所有的扩展 acl entries
+[Bob@basic ~]$ setfacl -b acl_test1   # -b, --remove-all: 删除所有扩展(extended)的acl entries, 基本的 owner, group 和 other 的 ACL entries 会被保留.
 [Bob@basic ~]$ getfacl acl_test1
 # file: acl_test1
 # owner: Bob
@@ -188,9 +188,241 @@ other::r--
 
 
 
--n
--R
--b
 
 
+
+[Bob@basic ~]$ getfacl dir01/
+# file: dir01/
+# owner: Bob
+# group: Bob
+user::rwx
+group::rwx
+other::r-x
+
+[Bob@basic ~]$ setfacl -R -m g:project01:rx dir01/  # -R, --recursive: 递归地应用setfacl的操作. 该选项不能与 '--restore' 选项 混合使用
+[Bob@basic ~]$ getfacl dir01/
+# file: dir01/
+# owner: Bob
+# group: Bob
+user::rwx
+group::rwx
+group:project01:r-x
+mask::rwx
+other::r-x
+[Bob@basic ~]$ getfacl dir01/a.txt
+# file: dir01/a.txt
+# owner: Bob
+# group: Bob
+user::rw-
+group::rw-
+group:project01:r-x
+mask::rwx
+other::r--
+
+
+[Bob@basic ~]$ setfacl -R -b dir01/  # -R, --recursive: 递归地应用setfacl的操作. 该选项不能与 '--restore' 选项 混合使用
+[Bob@basic ~]$ getfacl dir01/
+# file: dir01/
+# owner: Bob
+# group: Bob
+user::rwx
+group::rwx
+other::r-x
+[Bob@basic ~]$ getfacl dir01/a.txt
+# file: dir01/a.txt
+# owner: Bob
+# group: Bob
+user::rw-
+group::rw-
+other::r--
+
+[Bob@basic ~]$ getfacl acl_test1 | setfacl --set-file=- dir01/  # --set-file 用于设置 file 或 directory 的 ACL, 之前的ACL会被替换掉 
+[Bob@basic ~]$ getfacl dir01/
+# file: dir01/
+# owner: Bob
+# group: Bob
+user::rwx
+user:Alice:--x                  #effective:---
+user:John:-w-                   #effective:---
+user:smith:rwx                  #effective:r--
+group::r--
+mask::r--
+other::r--
+
+
+[Bob@basic ~]$ mkdir mydir
+[Bob@basic ~]$ getfacl mydir/
+# file: mydir/
+# owner: Bob
+# group: Bob
+user::rwx
+group::rwx
+other::r-x
+
+-d, --default
+         All  operations  apply  to  the Default ACL. Regular ACL entries in the input set are promoted to Default ACL entries. Default ACL entries
+         in the input set are discarded. (A warning is issued if that happens).
+
+[Bob@basic ~]$ setfacl -d -m u::rwx,u:John:rx,g::rx,g:smith:rwx,o::- mydir/  # -d, --default: 所有操作会应用到 Default ACL 上.
+[Bob@basic ~]$ getfacl mydir/
+# file: mydir/
+# owner: Bob
+# group: Bob
+user::rwx
+group::rwx
+other::r-x
+default:user::rwx
+default:user:John:r-x
+default:group::r-x
+default:group:smith:rwx
+default:mask::rwx
+default:other::---
+[Bob@basic ~]$ setfacl -k mydir/   #-k, --remove-default:删除Default ACL(即清空Default ACL中的所有acl entries).Remove the Default ACL.If no Default ACL exists,no warnings are issued
+[Bob@basic ~]$ getfacl mydir/
+# file: mydir/
+# owner: Bob
+# group: Bob
+user::rwx
+group::rwx
+other::r-x
+
+
+
+
+[Bob@basic ~]$ mkdir dir02
+[Bob@basic ~]$ getfacl dir02/
+# file: dir02/
+# owner: Bob
+# group: Bob
+user::rwx
+group::rwx
+other::r-x
+
+[Bob@basic ~]$ getfacl -d dir02/
+# file: dir02/
+# owner: Bob
+# group: Bob
+
+[Bob@basic ~]$ getfacl --access acl_test1 | setfacl -d -M- dir02/  # Copying the access ACL into the Default ACL  # -M, --modify-file #-d, --default
+[Bob@basic ~]$ getfacl dir02/
+# file: dir02/
+# owner: Bob
+# group: Bob
+user::rwx
+group::rwx
+other::r-x
+default:user::rwx
+default:user:Alice:--x          #effective:---
+default:user:John:-w-           #effective:---
+default:user:smith:rwx          #effective:r--
+default:group::r--
+default:mask::r--
+default:other::r--
+
+
+
+
+
+
+
+
+
+
+
+
+[Bob@basic ~]$ mkdir dir03
+[Bob@basic ~]$ setfacl -d -m u::rwx,u:John:rx,g::rx,g:smith:rwx,o::- dir03/
+[Bob@basic ~]$ getfacl dir03/
+# file: dir03/
+# owner: Bob
+# group: Bob
+user::rwx
+group::rwx
+other::r-x
+default:user::rwx
+default:user:John:r-x
+default:group::r-x
+default:group:smith:rwx
+default:mask::rwx
+default:other::---
+[Bob@basic ~]$ setfacl -m u:John:r dir03/
+[Bob@basic ~]$ getfacl dir03/
+# file: dir03/
+# owner: Bob
+# group: Bob
+user::rwx
+user:John:r--
+group::rwx
+mask::rwx
+other::r-x
+default:user::rwx
+default:user:John:r-x
+default:group::r-x
+default:group:smith:rwx
+default:mask::rwx
+default:other::---
+[Bob@basic ~]$ setfacl -m m::rx dir03/
+[Bob@basic ~]$ getfacl dir03/
+# file: dir03/
+# owner: Bob
+# group: Bob
+user::rwx
+user:John:r--
+group::rwx                      #effective:r-x
+mask::r-x
+other::r-x
+default:user::rwx
+default:user:John:r-x
+default:group::r-x
+default:group:smith:rwx
+default:mask::rwx
+default:other::---
+[Bob@basic ~]$ setfacl -d -m m::rw dir03/
+[Bob@basic ~]$ getfacl dir03/
+# file: dir03/
+# owner: Bob
+# group: Bob
+user::rwx
+user:John:r--
+group::rwx                      #effective:r-x
+mask::r-x      <-------------------------------------- 观察
+other::r-x
+default:user::rwx
+default:user:John:r-x           #effective:r--
+default:group::r-x              #effective:r--
+default:group:smith:rwx         #effective:rw-
+default:mask::rw-    <-------------------------------------- 观察
+default:other::---
+[Bob@basic ~]$ setfacl --mask -m m::rx dir03/  # --mask: 强制重新计算mask, Do recalculate the effective rights mask, even if an ACL mask entry was explicitly given. (See the -n option.)
+[Bob@basic ~]$ getfacl dir03/
+# file: dir03/
+# owner: Bob
+# group: Bob
+user::rwx
+user:John:r--
+group::rwx
+mask::rwx  <--- 观察: 当使用 --mask 选项时,将强制重新计算 effective rights mask, 即使 ACL mask entry 被明确或显示给出
+other::r-x
+default:user::rwx
+default:user:John:r-x           #effective:r--
+default:group::r-x              #effective:r--
+default:group:smith:rwx         #effective:rw-
+default:mask::rw-
+default:other::---
+[Bob@basic ~]$ setfacl -d --mask -m m::r dir03/ #--mask: 强制重新计算mask, Do recalculate the effective rights mask, even if an ACL mask entry was explicitly given. (See the -n option.)
+[Bob@basic ~]$ getfacl dir03/
+# file: dir03/
+# owner: Bob
+# group: Bob
+user::rwx
+user:John:r--
+group::rwx
+mask::rwx
+other::r-x
+default:user::rwx
+default:user:John:r-x
+default:group::r-x
+default:group:smith:rwx
+default:mask::rwx <--- 观察: 当使用 --mask 选项时,将强制重新计算 effective rights mask, 即使 ACL mask entry 被明确或显示给出
+default:other::---
 
