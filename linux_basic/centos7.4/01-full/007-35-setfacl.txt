@@ -426,3 +426,91 @@ default:group:smith:rwx
 default:mask::rwx <--- 观察: 当使用 --mask 选项时,将强制重新计算 effective rights mask, 即使 ACL mask entry 被明确或显示给出
 default:other::---
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[Bob@basic ~]$ setfacl -m m::- dir03/
+[Bob@basic ~]$ getfacl dir03/
+# file: dir03/
+# owner: Bob
+# group: Bob
+user::rwx
+user:John:r--                   #effective:---
+group::rwx                      #effective:---
+mask::---      <------------ 观察此时的状态
+other::r-x
+default:user::rwx
+default:user:John:r-x
+default:group::r-x
+default:group:smith:rwx
+default:mask::rwx
+default:other::---
+[Bob@basic ~]$ setfacl --test -m g:Alice:r dir03/  # --test: Test mode. Instead of changing the ACLs of any files, the resulting ACLs are listed.
+dir03/: u::rwx,u:John:r--,g::rwx,g:Alice:r--,m::rwx,o::r-x,*  <----  观察--test 选项输出的计算出的 临时的effective ACL_MASK righs的值.
+[Bob@basic ~]$ getfacl dir03/
+# file: dir03/
+# owner: Bob
+# group: Bob
+user::rwx
+user:John:r--                   #effective:---
+group::rwx                      #effective:---
+mask::---  <--- 命令 setfacl 的 --test 选项并不会去实际真实地修改任何文件的ACL, 所以此处mask的perm并没有发生改变. --test 作用是为你提供一个预览功能,给你一个预估命令执行后结果的一个快照
+other::r-x
+default:user::rwx
+default:user:John:r-x
+default:group::r-x
+default:group:smith:rwx
+default:mask::rwx
+default:other::---
+[Bob@basic ~]$ setfacl -d -m m::- dir03/
+[Bob@basic ~]$ getfacl dir03/
+# file: dir03/
+# owner: Bob
+# group: Bob
+user::rwx
+user:John:r--                   #effective:---
+group::rwx                      #effective:---
+mask::---
+other::r-x
+default:user::rwx
+default:user:John:r-x           #effective:---
+default:group::r-x              #effective:---
+default:group:smith:rwx         #effective:---
+default:mask::---
+default:other::---
+[Bob@basic ~]$ setfacl --test -d -m g:Alice:r dir03/   # --test: Test mode. Instead of changing the ACLs of any files, the resulting ACLs are listed.
+dir03/: *,d:u::rwx,d:u:John:r-x,d:g::r-x,d:g:Alice:r--,d:g:smith:rwx,d:m::rwx,d:o::---
+[Bob@basic ~]$ getfacl dir03/
+# file: dir03/
+# owner: Bob
+# group: Bob
+user::rwx
+user:John:r--                   #effective:---
+group::rwx                      #effective:---
+mask::---
+other::r-x
+default:user::rwx
+default:user:John:r-x           #effective:---
+default:group::r-x              #effective:---
+default:group:smith:rwx         #effective:---
+default:mask::---  <--- 命令setfacl的--test选项并不会去实际真实地修改任何文件的ACL,所以此处mask的perm并没有发生改变.--test作用是为你提供一个预览功能,给你一个预估命令执行后结果的一个快照
+default:other::---
+
+
+
+
+
+
+
+
