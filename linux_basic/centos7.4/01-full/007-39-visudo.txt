@@ -21,28 +21,20 @@ man 5 sudoers
     如果parse error 被监测到之后 键入 'e' 来编辑  sudoers 文件, 则 光标(cursor) 将被置于 error 产生所在的行(如果编辑器支持此特性).
 
 
+FILES
+     /etc/sudo.conf            Sudo front end configuration
+     /etc/sudoers              List of who can run what
+     /etc/sudoers.tmp          Lock file for visudo
 
 
 
 
+
+
+“who where = (as_whom) what”
 使用者账号 登入者的来源主机名=(可切换的身份) 可下达的指令
+
 root    ALL=(ALL)       ALL
 
 %wheel        ALL=(ALL)       NOPASSWD: ALL
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
