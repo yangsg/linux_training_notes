@@ -1,0 +1,50 @@
+
+# keyword w
+
+man w
+
+
+作用: w - Show who is logged on and what they are doing.
+
+语法: w [options] user [...]
+
+
+说明:
+       w 显示 当前 machine 上 的 users 的信息 和 其 processes.  The header shows, in this order, the current time, how long the system has been running,
+       how many users are currently logged on, and the system load averages for the past 1, 5, and 15 minutes.
+
+       The following entries are displayed for each user: login name, the tty name, the remote host, login time, idle time, JCPU, PCPU, and the command line of their current process.
+
+       The JCPU time is the time used by all processes attached to the tty.  It does not include past background jobs, but does include currently running background jobs.
+
+       The PCPU time is the time used by the current process, named in the "what" field.
+
+
+
+[root@basic ~]# w
+ 21:55:54 up 1 min,  2 users,  load average: 0.57, 0.22, 0.08
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+root     tty1                      21:55   42.00s  0.03s  0.03s -bash
+root     pts/0    192.168.175.1    21:55    2.00s  0.05s  0.00s w
+
+[root@basic ~]# w -h       # -h, --no-header: Don't print the header.
+root     tty1                      21:55    1:17   0.03s  0.03s -bash
+root     pts/0    192.168.175.1    21:55    5.00s  0.05s  0.00s w -h
+
+[root@basic ~]# w -s       # -s, --short: Use the short format.  Don't print the login time, JCPU or PCPU times.
+ 21:59:05 up 4 min,  2 users,  load average: 0.04, 0.13, 0.06
+USER     TTY      FROM              IDLE WHAT
+root     tty1                       3:53  -bash
+root     pts/0    192.168.175.1     1.00s w -s
+
+
+[Bob@basic ~]$ w Bob    # 显示指定用户的信息. 此例显示 用户 Bob 的信息.
+ 22:05:25 up 11 min,  3 users,  load average: 0.00, 0.04, 0.05
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+Bob      pts/1    192.168.175.1    22:05    5.00s  0.01s  0.00s w Bob
+
+文件:
+       /var/run/utmp
+              information about who is currently logged on
+       /proc  process information
+
