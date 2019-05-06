@@ -1,0 +1,519 @@
+
+
+# keyword sudoers
+
+man 5 sudoers
+
+
+
+名称: sudoers — default sudo security policy plugin
+
+其他:
+man 5 sudo.conf
+
+说明:
+
+
+    sudoers policy plugin 确定 用户的  sudo privileges, 它是 默认 的 sudo policy plugin. 该 policy 被 /etc/sudoers 或 可选的 LDAP 驱动(driven)
+
+    关于 policy format 见地下 SUDOERS FILE FORMAT 部分的详细描述
+    关于 将 sudoers policy information 存储在 LDAP 的信息， 见 man 5 sudoers.ldap
+
+
+
+   Configuring sudo.conf for sudoers (sudoers 的 sudo.conf 配置)
+        sudo 查阅文件 sudo.conf(5) 来确定 所要 load 的 policy 和 I/O logging plugins. 如果 sudo.conf(5) 文件不存在，或 sudo.conf(5)文件中不包含 Plugin lines,
+        则 sudoers 将被用做为 policy decisions and I/O logging. 显示的配置 sudo.conf(5) 来使用 sudoers plugin, 则可以使用下面的配置:
+
+           plugin sudoers_policy sudoers.so
+           Plugin sudoers_io sudoers.so
+
+
+        从 sudo 1.8.5 开始, 在 sudo.conf(5) 文件中可以为 sudoers plugin 指定 可选的 arguments. 如果这些 arguments 存在,
+        则其 应该 列在 plugin 的 path 之后(如 sudoers.so 之后). 多个 arguments 可以通过 white space 分隔 来指定. 例如:
+
+           Plugin sudoers_policy sudoers.so sudoers_mode=0400
+
+
+     如下的 plugin arguments 是被支持的:
+       ldap_conf=pathname
+                 The ldap_conf argument can be used to override the default path to the ldap.conf file.
+
+       ldap_secret=pathname
+                 The ldap_secret argument can be used to override the default path to the ldap.secret file.
+
+       sudoers_file=pathname
+                 The sudoers_file argument can be used to override the default path to the sudoers file.
+
+       sudoers_uid=uid
+                 The sudoers_uid argument can be used to override the default owner of the sudoers file.  It should be specified as a numeric user ID.
+
+       sudoers_gid=gid
+                 The sudoers_gid argument can be used to override the default group of the sudoers file.  It must be specified as a numeric group ID (not a group name).
+
+       sudoers_mode=mode
+                 The sudoers_mode argument can be used to override the default file mode for the sudoers file.  It should be specified as an octal value.
+
+      更多配置 sudo.conf(5) 的信息，见 man 5 sudo.conf
+
+
+   User Authentication (用户认证)
+      sudoers security policy 大部分 用户在 其能 使用 sudo 之前 认证其自身. 如果 调用用户 为 root,或 target user 与
+      调用用户相同,或 policy 已经禁用了 user 或 command 的认证, 则密码不是必需的. 不同于 su(1), 当sudoers 要求 认证时,
+      其 验证(validate)的是 调用用户的 credentials, 而非 target user 或 root 用户 的 credentials. 这可以通过
+      rootpw, targetpw and runaspw flags 来修改.
+
+      如果 用户 没有 被 列在 policy 中，其在尝试 通过 sudo 执行 a command 的时候，mail 将被发送到 proper Authorities.
+      这样的邮件 使用 的 address 通过 mailto Defaults entry 和 defaults to root 来配置.
+      注意 如果 unauthorized user 尝试 通过 -l 或 -v 选项来 执行 sudo 命令, 则 不会发送邮件, 除非 发生 authentication error 和
+      mail_always 或 mail_badpass 被启用. 这允许 用户 确定 其自身 是否 被 允许 使用 sudo. 所有 执行 sudo 的尝试(成功或失败)
+      将 被 logged, 不管 mail 是否被发送.
+
+      如果 sudo 被 root 执行 且设置了 SUDO_USER 环境变量, sudoers policy 将 使用 该值 来确定 谁是 actual user.
+      这能被 用户 使用来 通过 sudo 来 log commands 即使 当 root shell 被调用。
+      It also allows the -e option to remain useful even when invoked via a sudo-run script or program.
+      Note, however, that the sudoers file lookup is still done for root, not the user specified by SUDO_USER.
+
+      sudoers 使用 per-user time stamp files 来 credential caching. 一旦 某用户 被 已被认证了, 一条包含 其 用于认证的 uid,
+      the terminal session ID, 和 a time stamp (using a monotonic clock if one is available) 会被记下.
+      该用户在短暂的一段时间内(5 minutes unless overridden by the timeout option)使用 sudo 时是 不需要 password 的.
+      默认， sudoers 针对 每个 tty 使用分别不同的 record, 这意味着 user's login sessions 会 各自分别 认证.
+      The tty_tickets option 可以被 disabled 以 强制 一个 user 的 所有的 user's sessions 使用单一的一个 time stamp.
+
+
+
+   Logging
+      sudoers 可以 log 成功和未成功的尝试(以及 errors) 到 syslog(3), a log file, 或 both.
+      默认, sudoers 将通过 syslog(3) 来 log, 但这可以通过 syslog 和 logfile Defaults settings 来修改.
+
+      关于 log file format 的 描述 见    LOG FORMAT
+
+      sudoers 同样 可以 在 pseudo-tty 执行 命令的时 同时 log 所有的 input and/or output.
+      The standard input, standard output and standard error 可以被 logged 即使 没有被 关联 到 terminal.
+      I/O logging 默认没有被开启 当时 可以 使用 log_input 和 log_output options 以及 the LOG_INPUT and LOG_OUTPUT command
+      来 启用.
+
+           关于 how I/O log files are stored 的详细信息 见 I/O LOG FILES.
+
+
+  Command environment (略, 见 man 5 sudoers)
+
+
+  SUDOERS FILE FORMAT
+     The sudoers file  有 2 种 types 的 entries 构成: aliases (basically variables) 和 user specifications (which specify who may run what).
+
+     When multiple entries match for a user, they are applied in order.  Where there are multiple matches,
+     the last match is used (which is not necessarily the most specific match).
+
+     The sudoers file grammar will be described below in Extended Backus-Naur Form (EBNF).
+     Don't despair if you are unfamiliar with EBNF; it is fairly simple, and the definitions below are annotated.
+
+
+
+
+   Quick guide to EBNF
+     EBNF is a concise and exact way of describing the grammar of a language.  Each EBNF definition is made up of production rules.  E.g.,
+
+     symbol ::= definition | alternate1 | alternate2 ...
+
+     Each production rule references others and thus makes up a grammar for the language.  EBNF also contains the following
+     operators, which many readers will recognize from regular expressions.  Do not, however, confuse them with “wildcard”
+     characters, which have different meanings.
+
+     ?     Means that the preceding symbol (or group of symbols) is optional.  That is, it may appear once or not at all.
+
+     *     Means that the preceding symbol (or group of symbols) may appear zero or more times.
+
+     +     Means that the preceding symbol (or group of symbols) may appear one or more times.
+
+
+     Parentheses may be used to group symbols together.  For clarity, we will use single quotes ('') to designate what is a
+     verbatim character string (as opposed to a symbol name).
+     括弧'()' 可 将 symbols 放到一起 作为一组. 为清楚起见, 我们将使用单引号('') 来 指明 字面字符的字符串(而非 a symbol name)
+
+   Aliases
+     存在 4 中类型的 aliases: User_Alias, Runas_Alias, Host_Alias and Cmnd_Alias.
+
+     Alias ::= 'User_Alias'  User_Alias (':' User_Alias)* |
+               'Runas_Alias' Runas_Alias (':' Runas_Alias)* |
+               'Host_Alias'  Host_Alias (':' Host_Alias)* |
+               'Cmnd_Alias'  Cmnd_Alias (':' Cmnd_Alias)*
+
+     User_Alias ::= NAME '=' User_List
+
+     Runas_Alias ::= NAME '=' Runas_List
+
+     Host_Alias ::= NAME '=' Host_List
+
+     Cmnd_Alias ::= NAME '=' Cmnd_List
+
+     NAME ::= [A-Z]([A-Z][0-9]_)*
+
+     每种 alias 的定义都具有如下的形式:
+
+     Alias_Type NAME = item1, item2, ...
+
+
+  对已经存在的 alias 重复定义 将导致 syntax error. 可以为不同 types 的 aliases 使用相同的 name, 但 不建议这么做.
+
+
+  构成 合法的 alias member 的定义 如下:
+
+     User_List ::= User |
+                   User ',' User_List
+
+     User ::= '!'* user name |
+              '!'* #uid |
+              '!'* %group |
+              '!'* %#gid |
+              '!'* +netgroup |
+              '!'* %:nonunix_group |
+              '!'* %:#nonunix_gid |
+              '!'* User_Alias
+
+
+     A User_List is made up of one or more user names, user IDs (prefixed with ‘#’), system group names and IDs (prefixed
+     with ‘%’ and ‘%#’ respectively), netgroups (prefixed with ‘+’), non-Unix group names and IDs (prefixed with ‘%:’ and
+     ‘%:#’ respectively) and User_Aliases. Each list item may be prefixed with zero or more ‘!’ operators.  An odd number of
+     ‘!’ operators negate the value of the item; an even number just cancel each other out.  User netgroups are matched using
+     the user and domain members only; the host member is not used when matching.
+
+          各个 list item 都可以伴随 0 个 或 多个 取反 '!' 操作符 作为前缀, 奇数个'!'表示取反, 偶数个 则 会相互抵消(类似负负得正或双非率).
+          User netgroups 只 与 the user and domain members 匹配，而 host member 不会被用于 匹配.
+
+
+     A user name, uid, group, gid, netgroup, nonunix_group or nonunix_gid may be enclosed in double quotes to avoid the need
+     for escaping special characters.  Alternately, special characters may be specified in escaped hex mode, e.g. \x20 for
+     space.  When using double quotes, any prefix characters must be included inside the quotes.
+
+          A user name, uid, group, gid, netgroup, nonunix_group or nonunix_gid 可以使用 双引号引起来 而避免 需要对一些特殊字符的转义.
+          或者, 特殊字符可以 用 escaped hex mode 来指定，如 \x20 表示 space. 当使用 双引号时, 任何 prefix 字符 必须 被包含在 引号 内部.
+
+
+     The actual nonunix_group and nonunix_gid syntax depends on the underlying group provider plugin.  For instance, the QAS AD plugin supports the following formats:
+
+     ·     Group in the same domain: "%:Group Name"
+
+     ·     Group in any domain: "%:Group Name@FULLY.QUALIFIED.DOMAIN"
+
+     ·     Group SID: "%:S-1-2-34-5678901234-5678901234-5678901234-567"
+
+     See GROUP PROVIDER PLUGINS for more information.
+
+
+     Note that quotes around group names are optional.  Unquoted strings must use a backslash (‘\’) to escape spaces and spe‐
+     cial characters.  See Other special characters and reserved words for a list of characters that need to be escaped.
+
+     Runas_List ::= Runas_Member |
+                    Runas_Member ',' Runas_List
+
+     Runas_Member ::= '!'* user name |
+                      '!'* #uid |
+                      '!'* %group |
+                      '!'* %#gid |
+                      '!'* %:nonunix_group |
+                      '!'* %:#nonunix_gid |
+                      '!'* +netgroup |
+                      '!'* Runas_Alias
+
+
+     A Runas_List is similar to a User_List except that instead of User_Aliases it can contain Runas_Aliases.  Note that user
+     names and groups are matched as strings.  In other words, two users (groups) with the same uid (gid) are considered to
+     be distinct.  If you wish to match all user names with the same uid (e.g. root and toor), you can use a uid instead (#0
+     in the example given).
+
+     Host_List ::= Host |
+                   Host ',' Host_List
+
+     Host ::= '!'* host name |
+              '!'* ip_addr |
+              '!'* network(/netmask)? |
+              '!'* +netgroup |
+              '!'* Host_Alias
+
+
+     A Host_List is made up of one or more host names, IP addresses, network numbers, netgroups (prefixed with ‘+’) and other
+     aliases.  Again, the value of an item may be negated with the ‘!’ operator.  Host netgroups are matched using the host
+     (both qualified and unqualified) and domain members only; the user member is not used when matching.  If you specify a
+     network number without a netmask, sudo will query each of the local host's network interfaces and, if the network number
+     corresponds to one of the hosts's network interfaces, will use the netmask of that interface.  The netmask may be speci‐
+     fied either in standard IP address notation (e.g. 255.255.255.0 or ffff:ffff:ffff:ffff::), or CIDR notation (number of
+     bits, e.g. 24 or 64).  A host name may include shell-style wildcards (see the Wildcards section below), but unless the
+     host name command on your machine returns the fully qualified host name, you'll need to use the fqdn option for wild‐
+     cards to be useful.  Note that sudo only inspects actual network interfaces; this means that IP address 127.0.0.1
+     (localhost) will never match.  Also, the host name “localhost” will only match if that is the actual host name, which is
+     usually only the case for non-networked systems.
+
+     digest ::= [A-Fa-f0-9]+ |
+                [[A-Za-z0-9+/=]+
+
+     Digest_Spec ::= "sha224" ':' digest |
+                     "sha256" ':' digest |
+                     "sha384" ':' digest |
+                     "sha512" ':' digest
+
+     Cmnd_List ::= Cmnd |
+                   Cmnd ',' Cmnd_List
+
+     command name ::= file name |
+                      file name args |
+                      file name '""'
+
+     Cmnd ::= Digest_Spec? '!'* command name |
+              '!'* directory |
+              '!'* "sudoedit" |
+              '!'* Cmnd_Alias
+
+     A Cmnd_List is a list of one or more command names, directories, and other aliases.  A command name is a fully qualified
+     file name which may include shell-style wildcards (see the Wildcards section below).  A simple file name allows the user
+     to run the command with any arguments he/she wishes.  However, you may also specify command line arguments (including
+     wildcards).  Alternately, you can specify "" to indicate that the command may only be run without command line argu‐
+     ments.  A directory is a fully qualified path name ending in a ‘/’.  When you specify a directory in a Cmnd_List, the
+     user will be able to run any file within that directory (but not in any sub-directories therein).
+
+     If a Cmnd has associated command line arguments, then the arguments in the Cmnd must match exactly those given by the
+     user on the command line (or match the wildcards if there are any).  Note that the following characters must be escaped
+     with a ‘\’ if they are used in command arguments: ‘,’, ‘:’, ‘=’, ‘\’.  The built-in command “sudoedit” is used to permit
+     a user to run sudo with the -e option (or as sudoedit).  It may take command line arguments just as a normal command
+     does.  Note that “sudoedit” is a command built into sudo itself and must be specified in the sudoers file without a
+     leading path.
+
+     If a command name is prefixed with a Digest_Spec, the command will only match successfully if it can be verified using
+     the specified SHA-2 digest.  The following digest formats are supported: sha224, sha256, sha384 and sha512.  The string
+     may be specified in either hex or base64 format (base64 is more compact).  There are several utilities capable of gener‐
+     ating SHA-2 digests in hex format such as openssl, shasum, sha224sum, sha256sum, sha384sum, sha512sum.
+
+     For example, using openssl:
+
+     $ openssl dgst -sha224 /bin/ls
+     SHA224(/bin/ls)= 118187da8364d490b4a7debbf483004e8f3e053ec954309de2c41a25
+
+     It is also possible to use openssl to generate base64 output:
+
+     $ openssl dgst -binary -sha224 /bin/ls | openssl base64
+     EYGH2oNk1JC0p9679IMATo8+BT7JVDCd4sQaJQ==
+
+     Warning, if the user has write access to the command itself (directly or via a sudo command), it may be possible for the
+     user to replace the command after the digest check has been performed but before the command is executed.  A similar
+     race condition exists on systems that lack the fexecve(2) system call when the directory in which the command is located
+     is writable by the user.
+
+     Command digests are only supported by version 1.8.7 or higher.
+
+   Defaults
+     Certain configuration options may be changed from their default values at run-time via one or more Default_Entry lines.
+     These may affect all users on any host, all users on a specific host, a specific user, a specific command, or commands
+     being run as a specific user.  Note that per-command entries may not include command line arguments.  If you need to
+     specify arguments, define a Cmnd_Alias and reference that instead.
+
+     Default_Type ::= 'Defaults' |
+                      'Defaults' '@' Host_List |
+                      'Defaults' ':' User_List |
+                      'Defaults' '!' Cmnd_List |
+                      'Defaults' '>' Runas_List
+
+     Default_Entry ::= Default_Type Parameter_List
+
+     Parameter_List ::= Parameter |
+                        Parameter ',' Parameter_List
+
+     Parameter ::= Parameter '=' Value |
+                   Parameter '+=' Value |
+                   Parameter '-=' Value |
+                   '!'* Parameter
+
+     Parameters may be flags, integer values, strings, or lists.  Flags are implicitly boolean and can be turned off via the
+     ‘!’ operator.  Some integer, string and list parameters may also be used in a boolean context to disable them.  Values
+     may be enclosed in double quotes ("") when they contain multiple words.  Special characters may be escaped with a back‐
+     slash (‘\’).
+
+     Lists have two additional assignment operators, += and -=.  These operators are used to add to and delete from a list
+     respectively.  It is not an error to use the -= operator to remove an element that does not exist in a list.
+
+     Defaults entries are parsed in the following order: generic, host, user and runas Defaults first, then command defaults.
+     If there are multiple Defaults settings of the same type, the last matching setting is used.  The following Defaults
+     settings are parsed before all others since they may affect subsequent entries: fqdn, group_plugin, runas_default,
+     sudoers_locale.
+
+     See SUDOERS OPTIONS for a list of supported Defaults parameters.
+
+   User specification
+     User_Spec ::= User_List Host_List '=' Cmnd_Spec_List \
+                   (':' Host_List '=' Cmnd_Spec_List)*
+
+     Cmnd_Spec_List ::= Cmnd_Spec |
+                        Cmnd_Spec ',' Cmnd_Spec_List
+
+     Cmnd_Spec ::= Runas_Spec? SELinux_Spec? Tag_Spec* Cmnd
+
+     Runas_Spec ::= '(' Runas_List? (':' Runas_List)? ')'
+
+     SELinux_Spec ::= ('ROLE=role' | 'TYPE=type')
+
+     Tag_Spec ::= ('EXEC:' | 'NOEXEC:' | 'FOLLOW:' | 'NOFOLLOW' |
+                   'LOG_INPUT:' | 'NOLOG_INPUT:' | 'LOG_OUTPUT:' |
+                   'NOLOG_OUTPUT:' | 'MAIL:' | 'NOMAIL:' | 'PASSWD:' |
+                   'NOPASSWD:' | 'SETENV:' | 'NOSETENV:')
+
+     A user specification determines which commands a user may run (and as what user) on specified hosts.  By default, com‐
+     mands are run as root, but this can be changed on a per-command basis.
+
+     The basic structure of a user specification is “who where = (as_whom) what”.  Let's break that down into its constituent
+     parts:
+
+
+   Runas_Spec
+     A Runas_Spec determines the user and/or the group that a command may be run as.  A fully-specified Runas_Spec consists
+     of two Runas_Lists (as defined above) separated by a colon (‘:’) and enclosed in a set of parentheses.  The first
+     Runas_List indicates which users the command may be run as via sudo's -u option.  The second defines a list of groups
+     that can be specified via sudo's -g option.  If both Runas_Lists are specified, the command may be run with any combina‐
+     tion of users and groups listed in their respective Runas_Lists. If only the first is specified, the command may be run
+     as any user in the list but no -g option may be specified.  If the first Runas_List is empty but the second is speci‐
+     fied, the command may be run as the invoking user with the group set to any listed in the Runas_List.  If both
+     Runas_Lists are empty, the command may only be run as the invoking user.  If no Runas_Spec is specified the command may
+     be run as root and no group may be specified.
+
+     A Runas_Spec sets the default for the commands that follow it.  What this means is that for the entry:
+
+     dgb     boulder = (operator) /bin/ls, /bin/kill, /usr/bin/lprm
+
+     The user dgb may run /bin/ls, /bin/kill, and /usr/bin/lprm—but only as operator.  E.g.,
+
+     $ sudo -u operator /bin/ls
+
+     It is also possible to override a Runas_Spec later on in an entry.  If we modify the entry like so:
+
+     dgb     boulder = (operator) /bin/ls, (root) /bin/kill, /usr/bin/lprm
+
+     Then user dgb is now allowed to run /bin/ls as operator, but /bin/kill and /usr/bin/lprm as root.
+
+     We can extend this to allow dgb to run /bin/ls with either the user or group set to operator:
+
+     dgb     boulder = (operator : operator) /bin/ls, (root) /bin/kill,\
+             /usr/bin/lprm
+
+
+     Note that while the group portion of the Runas_Spec permits the user to run as command with that group, it does not
+     force the user to do so.  If no group is specified on the command line, the command will run with the group listed in
+     the target user's password database entry.  The following would all be permitted by the sudoers entry above:
+
+     $ sudo -u operator /bin/ls
+     $ sudo -u operator -g operator /bin/ls
+     $ sudo -g operator /bin/ls
+
+     In the following example, user tcm may run commands that access a modem device file with the dialer group.
+
+     tcm     boulder = (:dialer) /usr/bin/tip, /usr/bin/cu,\
+             /usr/local/bin/minicom
+
+     Note that in this example only the group will be set, the command still runs as user tcm.  E.g.
+
+     $ sudo -g dialer /usr/bin/cu
+
+     Multiple users and groups may be present in a Runas_Spec, in which case the user may select any combination of users and
+     groups via the -u and -g options.  In this example:
+
+     alan    ALL = (root, bin : operator, system) ALL
+
+     user alan may run any command as either user root or bin, optionally setting the group to operator or system.
+
+
+   SELinux_Spec
+     On systems with SELinux support, sudoers file entries may optionally have an SELinux role and/or type associated with a
+     command.  If a role or type is specified with the command it will override any default values specified in sudoers.  A
+     role or type specified on the command line, however, will supersede the values in sudoers.
+
+
+
+
+
+
+
+   Tag_Spec
+     A command may have zero or more tags associated with it.  The following tag values are supported: EXEC, NOEXEC, FOLLOW,
+     NOFOLLOW, LOG_INPUT, NOLOG_INPUT, LOG_OUTPUT, NOLOG_OUTPUT, MAIL, NOMAIL, PASSWD, NOPASSWD, SETENV, and NOSETENV.  Once
+     a tag is set on a Cmnd, subsequent Cmnds in the Cmnd_Spec_List, inherit the tag unless it is overridden by the opposite
+     tag (in other words, PASSWD overrides NOPASSWD and NOEXEC overrides EXEC).
+
+    更多信息见 man 5 sudoers, 这里只包含了 PASSWD and NOPASSWD 的介绍:
+     PASSWD and NOPASSWD
+
+       By default, sudo requires that a user authenticate him or herself before running a command.  This behavior can be mod‐
+       ified via the NOPASSWD tag.  Like a Runas_Spec, the NOPASSWD tag sets a default for the commands that follow it in the
+       Cmnd_Spec_List.  Conversely, the PASSWD tag can be used to reverse things.  For example:
+
+       ray     rushmore = NOPASSWD: /bin/kill, /bin/ls, /usr/bin/lprm
+
+       would allow the user ray to run /bin/kill, /bin/ls, and /usr/bin/lprm as root on the machine rushmore without authen‐
+       ticating himself.  If we only want ray to be able to run /bin/kill without a password the entry would be:
+
+       ray     rushmore = NOPASSWD: /bin/kill, PASSWD: /bin/ls, /usr/bin/lprm
+
+       Note, however, that the PASSWD tag has no effect on users who are in the group specified by the exempt_group option.
+
+       By default, if the NOPASSWD tag is applied to any of the entries for a user on the current host, he or she will be
+       able to run “sudo -l” without a password.  Additionally, a user may only run “sudo -v” without a password if the
+       NOPASSWD tag is present for all a user's entries that pertain to the current host.  This behavior may be overridden
+       via the verifypw and listpw options.
+
+
+
+这里省略了很多信息，见 man 5 sudoers
+
+   Other special characters and reserved words
+     The pound sign (‘#’) is used to indicate a comment (unless it is part of a #include directive or unless it occurs in the
+     context of a user name and is followed by one or more digits, in which case it is treated as a uid).  Both the comment
+     character and any text after it, up to the end of the line, are ignored.
+
+     The reserved word ALL is a built-in alias that always causes a match to succeed.  It can be used wherever one might oth‐
+     erwise use a Cmnd_Alias, User_Alias, Runas_Alias, or Host_Alias.  You should not try to define your own alias called ALL
+     as the built-in alias will be used in preference to your own.  Please note that using ALL can be dangerous since in a
+     command context, it allows the user to run any command on the system.
+
+     An exclamation point (‘!’) can be used as a logical not operator in a list or alias as well as in front of a Cmnd.  This
+     allows one to exclude certain values.  For the ‘!’ operator to be effective, there must be something for it to exclude.
+     For example, to match all users except for root one would use:
+
+         ALL,!root
+
+     If the ALL, is omitted, as in:
+
+         !root
+
+     it would explicitly deny root but not match any other users.  This is different from a true “negation” operator.
+
+     Note, however, that using a ‘!’ in conjunction with the built-in ALL alias to allow a user to run “all but a few” com‐
+     mands rarely works as intended (see SECURITY NOTES below).
+
+     Long lines can be continued with a backslash (‘\’) as the last character on the line.
+
+     White space between elements in a list as well as special syntactic characters in a User Specification (‘=’, ‘:’, ‘(’,
+     ‘)’) is optional.
+
+     The following characters must be escaped with a backslash (‘\’) when used as part of a word (e.g. a user name or host
+     name): ‘!’, ‘=’, ‘:’, ‘,’, ‘(’, ‘)’, ‘\’.
+
+
+FILES
+     /etc/sudo.conf            Sudo front end configuration
+
+     /etc/sudoers              List of who can run what
+
+     /etc/group                Local groups file
+
+     /etc/netgroup             List of network groups
+
+     /var/log/sudo-io          I/O log files
+
+     /var/run/sudo/ts          Directory containing time stamps for the sudoers security policy
+
+     /var/db/sudo/lectured     Directory containing lecture status files for the sudoers security policy
+
+     /etc/environment          Initial environment for -i mode on AIX and Linux systems
+
+
+EXAMPLES
+SECURITY NOTES
+
+完整信息见 man 5 sudoers
+
