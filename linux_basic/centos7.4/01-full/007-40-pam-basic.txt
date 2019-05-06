@@ -1,0 +1,14 @@
+
+
+# keyword pam
+
+man pam
+
+作用: PAM, pam - Pluggable Authentication Modules for Linux
+
+
+https://beausanders.org/linux_shared_files/Linux-PAM_System_Administrators_Guide.pdf
+
+
+TODO
+
