@@ -1,0 +1,17 @@
+
+# keyword at.allow
+
+man 5 at.allow
+
+
+作用: at.allow, at.deny - determine who can submit jobs via at or batch
+
+说明:
+    /etc/at.allow and /etc/at.deny 文件确定了 哪些 user 可以通过命令 at(1) or batch(1) 来 submit commands 以待稍后执行.
+    这些文件的格式为 a list of usernames, 每个 user 一行, 不允许有 Whitespace.
+
+    如果文件 /etc/at.allow 存在, 则 只有 其中包含的 usernames 才被允许 使用 at.
+    如果文件 /etc/at.allow 不存在, 则 会检查文件 /etc/at.deny , 文件 /etc/at.deny 中没有被提及的 每个 username 都允许使用 at.
+    一个 empty 的文件 /etc/at.deny 意味着 每个 user 都可以使用.
+    如果文件 /etc/at.allow 和 文件/etc/at.deny 都不存在, 则只有 superuser 被允许使用 at.
+
