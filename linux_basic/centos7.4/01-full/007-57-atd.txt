@@ -1,0 +1,24 @@
+
+# keyword atd
+
+man atd
+
+
+作用: atd - run jobs queued for later execution
+
+语法: atd [-l load_avg] [-b batch_interval] [-d] [-f] [-n] [-s]
+
+说明: atd runs jobs queued by at(1).
+
+
+警告:
+       atd won't work if its spool directory is mounted via NFS even if no_root_squash is set.
+
+文件:
+       /var/spool/at The directory for storing jobs; this should be mode 700, owner root.
+
+       /var/spool/at/spool The directory for storing output; this should be mode 700, owner root.
+
+       /etc/at.allow, /etc/at.deny determine who can use the at system.
+
+
