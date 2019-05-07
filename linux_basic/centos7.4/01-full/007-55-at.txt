@@ -56,7 +56,13 @@ man at
 
 
 
-
+文件:
+       /var/spool/at
+       /var/spool/at/spool
+       /proc/loadavg
+       /var/run/utmp
+       /etc/at.allow
+       /etc/at.deny
 
 
 
@@ -69,6 +75,11 @@ man at
 [root@basic ~]# systemctl status atd
 [root@basic ~]# systemctl is-enabled atd
 enabled
+
+
+
+
+
 
 
 
