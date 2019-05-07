@@ -77,22 +77,137 @@ man at
 enabled
 
 
+[root@basic ~]# at now + 1 minutes
+at> /usr/bin/echo helloworld > /dev/pts/3
+at> cd /tmp
+at> /usr/bin/echo $(pwd) > /dev/pts/3
+at> <EOT>   <--- 注：此处按 Ctrl + d
+job 2 at Tue May  7 16:35:00 2019
+
+[root@basic ~]# batch
+at> cd /tmp
+at> /usr/bin/echo $(pwd) > /dev/pts/3
+at> <EOT>   <--- 注：此处按 Ctrl + d
+job 3 at Tue May  7 16:36:00 2019
+
+
+[root@basic ~]# mkdir scripts
+[root@basic ~]# vim scripts/myscript.sh
+#!/bin/bash
+/usr/bin/date  '+%F %T' &>>  /dev/pts/3
+
+
+[root@basic ~]# at -f /root/scripts/myscript.sh  now + 1 minutes   # 使用 at 提交 job
+
+[root@basic ~]# ls /var/spool/at/   # 使用 at 提交 job 后, 就会在 /var/spool/at/ 目录下生成相应的文件
+a00005018c05e7  spool
+
+
+[root@basic ~]# at -f /root/scripts/myscript.sh  midnight
+job 25 at Wed May  8 00:00:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh  noon
+job 26 at Wed May  8 12:00:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh  teatime   # teatime is 4pm
+job 27 at Wed May  8 16:00:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh  2019-06-29
+job 28 at Sat Jun 29 19:18:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh  18:30 2019-06-29
+job 29 at Sat Jun 29 18:30:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh  6:30am 2019-06-29
+job 30 at Sat Jun 29 06:30:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh  6:30pm 2019-06-29
+job 31 at Sat Jun 29 18:30:00 2019
+
+[root@basic ~]# at -f /root/scripts/myscript.sh  9am   today
+
+[root@basic ~]# at -f /root/scripts/myscript.sh  9pm   today
+job 32 at Tue May  7 21:00:00 2019
+
+[root@basic ~]# at -f /root/scripts/myscript.sh  9am   tomorrow
+job 33 at Wed May  8 09:00:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh  9pm   tomorrow
+job 34 at Wed May  8 21:00:00 2019
+
+[root@basic ~]# at -f /root/scripts/myscript.sh  now + 3 minutes
+job 35 at Tue May  7 19:27:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh  now + 3 hours
+job 36 at Tue May  7 22:24:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh  now + 3 days
+job 37 at Fri May 10 19:24:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh  now + 3 weeks
+job 38 at Tue May 28 19:24:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh  now + 2 months
+job 41 at Sun Jul  7 19:34:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh  now + 2 years
+job 42 at Fri May  7 19:34:00 2021
+[root@basic ~]# at -f /root/scripts/myscript.sh  18:30 + 2 days
+job 43 at Thu May  9 18:30:00 2019
 
 
 
 
 
+[root@basic ~]# at -f /root/scripts/myscript.sh  4pm + 3 days    #run a job at 4pm three days from now
+job 39 at Fri May 10 16:00:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh  10am Jul 31     #run a job at 10:00am on July 31     #cat /usr/share/doc/at-3.1.13/timespec
+job 40 at Wed Jul 31 10:00:00 2019
 
+[root@basic ~]# at -f /root/scripts/myscript.sh  next  minutes
+job 48 at Tue May  7 19:51:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh  next  hours
+job 51 at Tue May  7 20:50:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh  next  days
+job 52 at Wed May  8 19:51:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh  next  weeks
+job 53 at Tue May 14 19:52:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh  next  months
+job 54 at Fri Jun  7 19:53:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh  next  years
+job 55 at Thu May  7 19:54:00 2020
 
+[root@basic ~]# at -f /root/scripts/myscript.sh sun
+job 56 at Sun May 12 19:58:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh mon
+job 57 at Mon May 13 19:59:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh tue
+job 58 at Tue May 14 19:59:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh wed
+job 59 at Wed May  8 20:00:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh thu
+job 60 at Thu May  9 20:00:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh fri
+job 61 at Fri May 10 20:00:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh sat
+job 62 at Sat May 11 20:01:00 2019
 
+[root@basic ~]# at -f /root/scripts/myscript.sh next sun
+job 63 at Sun May 12 20:03:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh next mon
+job 64 at Mon May 13 20:03:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh next tue
+job 65 at Tue May 14 20:03:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh next wed
+job 66 at Wed May  8 20:03:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh next thu
+job 67 at Thu May  9 20:03:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh next fri
+job 68 at Fri May 10 20:03:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh next sat
+job 69 at Sat May 11 20:04:00 2019
 
+[root@basic ~]# at -f /root/scripts/myscript.sh  next  months - 2 days
+job 70 at Wed Jun  5 20:05:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh sat - 2 hours
+job 71 at Sat May 11 18:06:00 2019
 
+[root@basic ~]# at -f /root/scripts/myscript.sh 29 JAN 2020
+job 72 at Wed Jan 29 20:16:00 2020
 
+[root@basic ~]# at -f /root/scripts/myscript.sh DEC 29
+job 73 at Sun Dec 29 20:18:00 2019
 
-
-
-
-
-
-
+[root@basic ~]# at -f /root/scripts/myscript.sh DEC 29 + 2 days
+job 74 at Tue Dec 31 20:19:00 2019
+[root@basic ~]# at -f /root/scripts/myscript.sh DEC 29 - 2 days
+job 75 at Fri Dec 27 20:19:00 2019
 
