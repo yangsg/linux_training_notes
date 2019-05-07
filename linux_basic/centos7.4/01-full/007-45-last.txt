@@ -1,0 +1,146 @@
+
+# keyword lastlog
+
+man lastlog
+
+
+作用: lastlog - reports the most recent login of all users or of a given user
+
+语法: lastlog [options]
+
+说明:
+       lastlog formats and prints the contents of the last login log /var/log/lastlog file. The login-name, port, and last login time will be printed. The default (no flags) causes
+       lastlog entries to be printed, sorted by their order in /etc/passwd.
+
+提示:
+    文件 /var/log/lastlog 是一个包含 每个 user 最近登录(last login) 信息的数据库. 你不应该对其做 滚动(rotate) 操作. It is a sparse file,
+    so its size on the disk is usually much smaller than the one shown by "ls -l" (which
+    can indicate a really big file if you have in passwd users with a high UID). You can display its real size with "ls -s".
+
+
+文件: /var/log/lastlog: Database times of previous user logins.
+
+
+
+[root@basic ~]# file /var/log/lastlog
+/var/log/lastlog: data
+
+
+[root@basic ~]# lastlog
+Username         Port     From             Latest
+root             pts/0    192.168.175.1    Tue May  7 08:23:25 +0800 2019
+bin                                        **Never logged in**    <---注: 如果用户从未登录过系统, 则在显示 port and time 的地方显示的是 ** Never logged in** 字符串
+daemon                                     **Never logged in**
+adm                                        **Never logged in**
+lp                                         **Never logged in**
+sync                                       **Never logged in**
+shutdown                                   **Never logged in**
+halt                                       **Never logged in**
+mail                                       **Never logged in**
+operator                                   **Never logged in**
+games                                      **Never logged in**
+ftp                                        **Never logged in**
+nobody                                     **Never logged in**
+systemd-network                            **Never logged in**
+dbus                                       **Never logged in**
+polkitd                                    **Never logged in**
+postfix                                    **Never logged in**
+sshd                                       **Never logged in**
+vbird            pts/3                     Sun Dec 23 10:42:29 +0800 2018
+apache                                     **Never logged in**
+tss                                        **Never logged in**
+chrony                                     **Never logged in**
+Bob              pts/4                     Mon May  6 22:09:15 +0800 2019
+sysuser01                                  **Never logged in**
+user30                                     **Never logged in**
+
+[root@basic ~]# lastlog -t 2   # 显示最近 2 天的 lastlog records.  #  -t, --time DAYS: Print the lastlog records more recent than DAYS.
+Username         Port     From             Latest
+root             pts/0    192.168.175.1    Tue May  7 08:23:25 +0800 2019
+Bob              pts/4                     Mon May  6 22:09:15 +0800 2019
+
+root@basic ~]# lastlog -b 2    # 显示 2 天 之前的 lastlog records  # -b, --before DAYS: Print only lastlog records older than DAYS.
+
+
+
+
+
+     -u, --user LOGIN|RANGE
+          显示指定 user(s) 的 lastlog record. users 可以使用 a login name, a numerical user ID, or a RANGE of users 来指定.
+          RANGE 的形式有 a min and max values (UID_MIN-UID_MAX), a max value (-UID_MAX), or a min value (UID_MIN-).
+
+[root@basic ~]# lastlog -u Bob   # 显示 用户名为 'Bob' 的 lastlog record # -u, --user LOGIN|RANGE: 显示指定 user(s) 的 lastlog record.
+Username         Port     From             Latest
+Bob              pts/1    192.168.175.1    Tue May  7 06:45:00 +0800 2019
+
+[root@basic ~]# lastlog -u 0-999   # 显示uid 在 [0, 999] 范围内的 users 的 lastlog record  # -u, --user LOGIN|RANGE: 显示指定 user(s) 的 lastlog record.
+Username         Port     From             Latest
+root             pts/0    192.168.175.1    Tue May  7 08:23:25 +0800 2019
+bin                                        **Never logged in**
+daemon                                     **Never logged in**
+adm                                        **Never logged in**
+lp                                         **Never logged in**
+sync                                       **Never logged in**
+shutdown                                   **Never logged in**
+halt                                       **Never logged in**
+mail                                       **Never logged in**
+operator                                   **Never logged in**
+games                                      **Never logged in**
+ftp                                        **Never logged in**
+nobody                                     **Never logged in**
+systemd-network                            **Never logged in**
+dbus                                       **Never logged in**
+polkitd                                    **Never logged in**
+postfix                                    **Never logged in**
+sshd                                       **Never logged in**
+apache                                     **Never logged in**
+tss                                        **Never logged in**
+chrony                                     **Never logged in**
+sysuser01                                  **Never logged in**
+
+[root@basic ~]# lastlog -u 1000-    # 显示 uid 在 大于等于 1000 这段范围的 users 的 lastlog record. # -u, --user LOGIN|RANGE: 显示指定 user(s) 的 lastlog record.
+Username         Port     From             Latest
+vbird            pts/3                     Sun Dec 23 10:42:29 +0800 2018
+Bob              pts/4                     Mon May  6 22:09:15 +0800 2019
+user30                                     **Never logged in**
+
+[root@basic ~]# lastlog -u -999     # 显示 uid 在 小于等于 999 这段范围的 users 的 lastlog record. # -u, --user LOGIN|RANGE: 显示指定 user(s) 的 lastlog record.
+Username         Port     From             Latest
+root             pts/0    192.168.175.1    Tue May  7 08:23:25 +0800 2019
+bin                                        **Never logged in**
+daemon                                     **Never logged in**
+adm                                        **Never logged in**
+lp                                         **Never logged in**
+sync                                       **Never logged in**
+shutdown                                   **Never logged in**
+halt                                       **Never logged in**
+mail                                       **Never logged in**
+operator                                   **Never logged in**
+games                                      **Never logged in**
+ftp                                        **Never logged in**
+nobody                                     **Never logged in**
+systemd-network                            **Never logged in**
+dbus                                       **Never logged in**
+polkitd                                    **Never logged in**
+postfix                                    **Never logged in**
+sshd                                       **Never logged in**
+apache                                     **Never logged in**
+tss                                        **Never logged in**
+chrony                                     **Never logged in**
+sysuser01                                  **Never logged in**
+
+
+
+[root@basic ~]# lastlog -u Bob
+Username         Port     From             Latest
+Bob              pts/4                     Mon May  6 22:09:15 +0800 2019
+[root@basic ~]# lastlog -S -u Bob    # 将 Bob的lastlog record时间设置为当前时间 # -S, --set: Set lastlog record of an user to the current time. This option can be used only together with -u (--user)).
+[root@basic ~]# lastlog -u Bob
+Username         Port     From             Latest
+Bob              lastlog  localhost        Tue May  7 10:42:47 +0800 2019
+
+[root@basic ~]# lastlog -C -u Bob    # 清除 Bob 的 lastlog record.  # -C, --clear: Clear lastlog record of an user. This option can be used only together with -u (--user)).
+[root@basic ~]# lastlog -u Bob
+Username         Port     From             Latest
+Bob                                        **Never logged in**
+
