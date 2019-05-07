@@ -1,0 +1,87 @@
+
+# keyword at
+
+man at
+
+
+作用: at, batch, atq, atrm - queue, examine or delete jobs for later execution
+
+语法: at [-V] [-q queue] [-f file] [-mMlv] timespec...
+语法: at [-V] [-q queue] [-f file] [-mMkv] [-t time]
+语法: at -c job [job...]
+语法: atq [-V] [-q queue]
+语法: at [-rd] job [job...]
+语法: atrm [-V] job [job...]
+语法: batch
+语法: at -b
+
+说明:
+   at 和 batch 从 standard input 或 a specified file 中 读取命令 并在 后面的某个时间使用 /bin/sh 来 执行.
+
+   at      在指定的时间执行 command.
+
+   atq     列出user挂起(pending)的jobs,除非该用户是superuser;如果是那样的话(即是 superuser),所有用户的 jobs 都会被列出.输出行格式(每job一行):Job number, date, hour, queue, and username.
+
+   atrm    删除 jobs, 其由 job number 标志.
+
+   batch   在system load levels允许时执行命令; 换而言之, 当load average drops below 0.8, or the value specified in the invocation of atd.
+
+
+  at允许 相当复杂的 time specifications, 其扩展了 the POSIX.2 standard.
+  at接受 以 HH:MM 形式的时间来 在指定的 时间 运行一个 job(如果该时间已经过去了, 则 the next day is assumed).
+  你也可以指定 midnight, noon, 或 teatime (4pm) 且 你 可以在 time-of-day 后面加后缀 AM 或 PM 来使其在 早上 或 傍晚晚间 运行.
+  你也可以指定在 某一 天 来运行 job, 通过 给出 month-name day with an optional year, 或者 给出 形式如
+  MMDD[CC]YY, MM/DD/[CC]YY,  DD.MM.[CC]YY 或 [CC]YY-MM-DD  的 日期(date).
+  The specification of a date must follow the specification of the time of day.
+  你指定的时间还可以形如 now + count time-units, 其中time-units 可以为 minutes, hours, days, or weeks,
+  且 你还可以 通过 在 time 后面加后缀 today 来告诉 at 在 今天运行 job, 而通过在 time 后面加 后缀 tomorrow
+  告诉 at 在 明天 运行 job.
+  例如, 要在 3 天后的 4pm 运行一个 job, 你可以使用 at 4pm + 3 days , 要在 10:00am on July 31 是运行 一个 job,
+  你可以使用 at 10am Jul 31 , 要在明天 1am 运行一个命令, 你可以使用 at 1am tomorrow.
+
+      见时间规范的定义 见  /usr/share/doc/at-3.1.13/timespec
+
+
+  对于 at 和 batch, 命令 是从 standard input 中 或者 从 -f 选项指定的 file 中 读取 并执行.
+  The working directory, the environment (except for the variables BASH_VERSINFO, DISPLAY, EUID,
+  GROUPS, SHELLOPTS, TERM, UID, and _) and the umask are retained from the time of invocation.
+  因为 at 当前是被 作为 setuid program 来实现的, 其他的 environment variables (如 LD_LIBRARY_PATH 或 LD_PRELOAD)
+  也不会被 exported. 这在将来可能会得到改变. 可以在你的 job 中显示明确的指定这些  variables 来作为解决方案.
+
+  从 su(1) shell 中 调用 at 或 batch 命令 将保持 当前的 userid. 用户命令的 standard error and standard output 将被
+  mail 给用户,如果存在的话.  Mail 将使用 命令 /usr/sbin/sendmail 来发送.If at is executed from a su(1) shell, the owner of the login shell will receive the mail.
+
+  The superuser 在任何情况下都可以使用这些命令. 而对于其他 users, 能否使用 at 命令的权限 是由 /etc/at.allow 和 /etc/at.deny 来确定的.
+  详细 请见  at.allow(5)
+
+
+
+
+
+
+
+
+
+
+[root@basic ~]# yum -y install at
+[root@basic ~]# systemctl start atd
+[root@basic ~]# systemctl enable atd
+[root@basic ~]# systemctl status atd
+[root@basic ~]# systemctl is-enabled atd
+enabled
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
