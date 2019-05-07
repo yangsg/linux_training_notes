@@ -211,3 +211,24 @@ job 74 at Tue Dec 31 20:19:00 2019
 [root@basic ~]# at -f /root/scripts/myscript.sh DEC 29 - 2 days
 job 75 at Fri Dec 27 20:19:00 2019
 
+
+
+
+[root@basic ~]# atq     # 等价于 `at -l`,  显示 user 挂起的 jobs. 如果是 superuser, 则每个user 的 jobs 都会被显示罗列出来.
+25      Wed May  8 00:00:00 2019 a root
+26      Wed May  8 12:00:00 2019 a root
+27      Wed May  8 16:00:00 2019 a root
+28      Sat Jun 29 19:18:00 2019 a root
+29      Sat Jun 29 18:30:00 2019 a root
+30      Sat Jun 29 06:30:00 2019 a root
+31      Sat Jun 29 18:30:00 2019 a root
+33      Wed May  8 09:00:00 2019 a root
+
+
+
+[root@basic ~]# at -c 25 | less     # 显示 job number 对应的 job 的 脚本内容
+[root@basic ~]# at -c 25 26 | less  # 显示 job number 对应的 job 的 脚本内容
+
+[root@basic ~]# atrm 75             # 删除 job number 为 75 的 job     # atrm 等价于 `at -r`  和 `at -d`
+[root@basic ~]# atrm 73 74          # 删除 job number 为 73 和 74 的 jobs
+
