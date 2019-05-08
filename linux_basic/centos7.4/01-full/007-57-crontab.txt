@@ -58,3 +58,68 @@ man crontab
 
 
 
+[Bob@basic ~]$ crontab -e
+# 用法:
+#  更多信息见  https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/01-full/007-58-crontab-config.txt
+# 第一个非 non-whitespace 的 字符如果是 ‘#’, 则表示 注释。且 注释不能与command 放在同一行,否则其会被视为command 的一部分
+# 字符 % 有特殊含义: 表示 newline(除非使用‘\’对其转义), 所有在第一个 '%' 之后的 data 都会被当做 standard input 发送给该命令
+# 这些命令会以 crontab 的 owner 的身份执行
+# 作用的行包括环境变量设置 和 cron comands   # 见 man 5 crontab
+# 守护进程 cron(8) 每分钟 都会 检查一遍 cron entries
+# 格式:
+#    环境变量 赋值中 符号 '=' 两边的 white spaces 是可选的,
+#    且 value 中 任何后续 的 non-leading white spaces 会 作为 value 的一部分 赋给 name.
+#    可将 The value string 置于 引号中(单引 或 双引 都可以, 但必须要配对) 来 保留 leading or trailing white spaces.
+#     某些 environment variables 会被 cron(8) daemon 自动 设置(如 SHELL 自动被设置为 /bin/sh).
+# name = value
+# 分 时 日 月 周   命令
+#
+#       The time and date fields are:
+#
+#              field          allowed values
+#              -----          --------------
+#              minute         0-59
+#              hour           0-23
+#              day of month   1-31
+#              month          1-12 (or names, see below)
+#              day of week    0-7 (0 or 7 is Sunday, or use names)
+#
+#  字段说明:  * 表示 代表 'first-last'
+#             list, 即列表, 有逗号','分隔的数字或range   如: 1,2,5,9 或 0-4,8-12 或 1,3,6-10
+#             range (如 8-11 表示 8,9,10,11)
+#            步长值可以和 range 结合使用, 如 0-23/2  表示 0,2,4,6,8,10,12,14,16,18,20,22
+#            步长值还可以和星号 * 结合使用, 如 对于 hour而言,  */2 和 0-23/2 效果是一样的
+#        Names 可用于 'month' 和 'day of week' 字段, 使用 day 或 month 的 name 的前3个letter(大小写不重要)
+#        range 和 list 是不支持 names
+# month_name      : jan | feb | mar | apr | may | jun
+#                 | jul | aug | sep | oct | nov | dec
+# day_of_week     : sun | mon | tue | wed | thu | fri | sat
+#
+#  提示：
+#      The day of a command's execution 可通过两个 字段来指定: 'day of month', 和 'day of week'.
+#      如果这两个字段都严格指定了(即 两个字段都不包含星号 ‘*’ 字符), 这对应的command 在这两个字段中
+#      任意一个 能与 当前时间 匹配成功时 将会被执行(如: 对于 "30 4 1,15 * 5" 会是 command 在 每月的 1日 和 15日 以及
+#      每周五 的 4:30am 执行)
+#
+#
+# 一些 example
+# 默认 cron daemon 会自动设置环境变量 SHELL 为 /bin/sh, 即使用 /bin/sh 来 执行 crontab 中的 commands.
+# 不过可以手动修改环境变 SHELL 的值 为 /bin/bash, 即指定使用 /bin/bash 来执行 crontab 中的 commands.
+SHELL=/bin/bash
+#  每分钟都向 /tmp/crontab_data.log 输出一个当前时间(注意 crontab 文件中 '%'为特殊字符, 所以这里使用 '\' 对其进行了转义)
+* * * * *  /bin/date '+\%F \%T \%z' >> /tmp/crontab_data.log
+# 每分钟显示当前 使用的 shell 是什么(如是 /bin/sh 还是 /bin/bash)
+* * * * *  /bin/ps -p $$ -ocomm=  >> /tmp/crontab_data.log
+#  更多例子见 man 5 crontab  #/EXAMPLE CRON FILE
+
+
+[root@basic ~]# ls /var/spool/cron/
+Bob
+
+[Bob@basic ~]$ crontab -l   # -l     Displays the current crontab on standard output. # 将使用 'crontab -e' 编辑的内容都显示出来
+
+[Bob@basic ~]$ crontab -r   # -r     Removes the current crontab. #删除当前用户的 crontab(即将/var/spool/cron/目录下 Bob 文件删掉) 注：-r 是删除整个文件, 如果是删除某一行, 需使用`crontab -e` 然后编辑删除
+
+[Bob@basic ~]$ crontab -ri  # 删除当前用户的 crontab, 但会先询问确认 #使用 -i (interactive) 选项可以在实际删除当前用户的 crontab 前交互式的 询问 确认信息
+crontab: really delete Bob's crontab?
+
