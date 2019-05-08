@@ -1,0 +1,42 @@
+
+# keyword crontab
+
+man crontab
+
+
+作用: crontab - maintains crontab files for individual users
+
+语法: crontab [-u user] file
+语法: crontab [-u user] [-l | -r | -e] [-i] [-s]
+语法: crontab -n [ hostname ]
+语法: crontab -c
+
+说明:
+    crontab 是用于 install a crontab table file, remove or list the existing tables used to serve the cron(8) daemon 的程序.
+    每个 user 能够 拥有 他们自己的 crontab, 同时尽管 这些都是 /var/spool/ 下的 files, 但它们不能被直接编辑.
+    For SELinux in MLS mode, you can define more crontabs for each range.  For more information,
+
+
+    在该版本的 cron 能够使用 a network-mounted shared /var/spool/cron across a cluster of hosts 并 指定 仅有 其中 1 个 host
+    应该 运行 在任何时间的 特定目录下的 crontab jobs. 你 也可以 在其中任意 host 使用 crontab(1) 来编辑 the same shared set of crontab files,
+    并 set 和 query 哪个 host 应该 运行 the crontab jobs.
+
+    针对不同的 users 可以 允许(allowed) 或 禁止(disallowed) 其 运行 cron  jobs. 为达到此目的, 要使用 cron.allow and cron.deny 文件.
+    如果
+       文件 cron.allow 存在, 则只有 在 cron.allow 中被 列出(list) 的 user 才被允许 使用 cron.
+    如果
+      文件cron.allow 不存在 但是文件 cron.deny 存在, 则 user 要使用 cron 就 不应该 在文件 cron.deny 中被列出(listed).
+    如果
+      文件 cron.allow 和 文件 cron.deny 同时都不存在, 则只有 super user 被允许使用 cron.
+    另一种限制 对 cron 的 访问的方式是使用   /etc/security/access.conf 中的 PAM authentication 来 设置 users,
+    这些 users 被 允许(allowed) 或 禁止(disallowed) 使用 crontab 或 修改(modify) 目录 /etc/cron.d/ 下的 system cron jobs.
+
+    The temporary directory 可以被设置在 an environment variable 中. 如果其没有被 user 设置(set), 则使用 /tmp 目录.
+
+
+文件:
+       /etc/cron.allow
+       /etc/cron.deny
+
+
+
