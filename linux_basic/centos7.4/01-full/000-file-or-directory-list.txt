@@ -69,6 +69,17 @@ http://www.man7.org/
 /etc/skel/      'skel' 简写自单词 ‘skeleton’  骨架
 
 
+/etc/at.allow
+/etc/at.deny
+/var/spool/at
+/var/spool/at/spool  目录
+
+/etc/crontab
+/etc/cron.d/
+/var/spool/cron  目录
+
+
+
 
 
 
