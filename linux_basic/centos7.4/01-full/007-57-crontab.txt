@@ -40,3 +40,21 @@ man crontab
 
 
 
+其他信息见 man 5 crontab 和 man cron
+
+       /etc/crontab
+          system crontab. 现在该文件默认为 empty. 原本其 经常 被用于 运行 daily, weekly, monthly jobs. 而现在 默认 这些 jobs
+          是通过 anacron 读取 /etc/anacrontab 配置文件 来运行的. 更多详细信息见 anacrontab(5).
+
+       /etc/cron.d/
+          包含不同 users 的 system cronjobs 的目录
+
+       /var/spool/cron
+          包含 通过 crontab 命令创建的 user crontables 的目录
+
+       提示： crontab(1) 命令 会在每次修改 a crontab 是 更新 spool 目录 的  modtime.
+
+
+
+
+
