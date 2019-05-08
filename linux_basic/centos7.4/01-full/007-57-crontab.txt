@@ -38,6 +38,8 @@ man crontab
        /etc/cron.allow
        /etc/cron.deny
 
+一般来说，系统默认是保留使用 /etc/cron.deny 的, 所以为了提高安全性, 也许可以改为使用 /etc/cron.allow 来严格明确限制 能够使用 cron 的用户.
+
 
 
 其他信息见 man 5 crontab 和 man cron
