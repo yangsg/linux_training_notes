@@ -1,0 +1,35 @@
+
+# keyword mail
+
+man mail
+
+
+作用: mailx - send and receive Internet mail
+
+语法: mailx [-BDdEFintv~] [-s subject] [-a attachment ] [-c cc-addr] [-b bcc-addr] [-r from-addr] [-h hops] [-A account] [-S variable[=value]] to-addr . . .
+语法: mailx [-BDdeEHiInNRv~] [-T name] [-A account] [-S variable[=value]] -f [name]
+语法: mailx [-BDdeEinNRv~] [-A account] [-S variable[=value]] [-u user]
+
+
+
+[root@basic ~]# yum -y install mailx
+
+
+[Bob@basic ~]$ mail -s 'nice to meet you'  Alice@basic  # 向 Alice@basic 发送邮件. 因为此例 Bob 和 Alice 在同一台主机上，所以邮件地址中的'@basic'可以去掉，直接写‘Alice'也是可以的.
+Hello, Alice.
+Byebye!
+.
+EOT
+
+[Bob@basic ~]$ vim greeting_mail_content.txt
+[Bob@basic ~]$ cat greeting_mail_content.txt
+Hello, Alice.
+Can I make friends with you.
+
+[Bob@basic ~]$ mail -s 'Greeting'  Alice@basic < ./greeting_mail_content.txt   # 发送邮件时使用重定向指定邮件内容
+
+
+TODO
+
+
+
