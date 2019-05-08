@@ -226,8 +226,8 @@ job 75 at Fri Dec 27 20:19:00 2019
 
 
 
-[root@basic ~]# at -c 25 | less     # 显示 job number 对应的 job 的 脚本内容
-[root@basic ~]# at -c 25 26 | less  # 显示 job number 对应的 job 的 脚本内容
+[root@basic ~]# at -c 25 | less     # 显示 job number 对应的 job 的 实际脚本指令内容
+[root@basic ~]# at -c 25 26 | less  # 显示 job number 对应的 job 的 实际脚本指令内容
 
 [root@basic ~]# atrm 75             # 删除 job number 为 75 的 job     # atrm 等价于 `at -r`  和 `at -d`
 [root@basic ~]# atrm 73 74          # 删除 job number 为 73 和 74 的 jobs
