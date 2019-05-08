@@ -8,7 +8,7 @@ http://www.man7.org/
 /usr/share/doc/grub2-common-2.02/
 
 /etc/passwd  # man 5 passwd  #  /etc/shadow 使用 /etc/passwd 的 name 作为外键的原因：用户名能保证唯一，而 uid 无法保证(如系统可以同时存在多个具有root权限的用户),这一点与数据库表的id主键是不同
-/etc/shadow  # man 5 shadow  # 注: 要启用密码有效性(合法性)检查,首先要保证/etc/shadow的第5个字段不能为空(对应于 maximum password age 字段)
+/etc/shadow  # man 5 shadow  # 注: 要启用密码有效性(合法性)检查,首先要保证/etc/shadow的第5个字段不能为空(对应于 maximum password age 字段) (最好使用 chage 命令来观察效果是否符合预期)
 /etc/group   # man 5 group
 /etc/gshadow # man 5 gshadow
 
@@ -70,11 +70,13 @@ http://www.man7.org/
 
 
 /etc/at.allow
-/etc/at.deny
+/etc/at.deny   最小安装的centos7默认没有安装 at 及服务,安装后,其默认使用的是 /etc/at.deny, 为提高安全性, 可以改为使用/etc/at.allow(白名单),并对/etc/at.allow 文件进行保护
 /var/spool/at
 /var/spool/at/spool  目录
      如果要查看 at 的 jobs 中是否被植入了木马, 可以用 super user 来执行 atq 命令来查询列出所有用户的 at jobs 来观察一下.
 
+/etc/cron.allow
+/etc/cron.deny  现在系统默认一般使用的是 /etc/cron.deny(黑名单), 为提高安全性, 可以改为使用/etc/cron.allow (白名单), 并对/etc/cron.allow文件进行保护
 /etc/crontab
 /etc/cron.d/
 /var/spool/cron  目录
