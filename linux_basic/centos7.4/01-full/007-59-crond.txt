@@ -2,21 +2,80 @@
 
 # keyword crond
 
+man cron
 man crond
 
 
 
+作用: crond - daemon to execute scheduled commands
+
+语法: crond [-c | -h | -i | -n | -p | -P | -s | -m<mailcommand>]
+语法: crond -x [ext,sch,proc,pars,load,misc,test,bit]
+
+说明:
+当使用 经典的 sysvinit 脚本时, cron 是从 /etc/rc.d/init.d 或 /etc/init.d 被启动的.
+在启用 systemd 的情况， unit 文件安装在 /lib/systemd/system/crond.service 且 守护进程(daemon) 是通过命令
+`systemctl start crond.service` 启动的. 其会 立即直接 return, 因此, 不需要在 启动是 加 '&' 参数.
+
+cron 会搜索 /var/spool/cron 下的 以 /etc/passwd 中的 accounts 命名的 crontab files.
+被找到的 crontabs 会被 loaded into 到 内存中. cron 也会 搜索 /etc/anacrontab 和 /etc/cron.d 下的任何 files.
+这些文件具有不同的 format (see crontab(5)). cron 检查(examine) 所有 存储的 crontabs 并 检查(check) 每个 job
+看其 是否需要在当前 minute 运行. 当 执行 commands 时, 任何输出 会被 mailed 给 crontab 的 owner(或 mailed 给
+MAILTO environment 变量指定的user, 如果其存在的话). 任何 job output 也能通过使用 -s 选项 被 发送到 syslog.
+
+有两种方法来检查 crontables 中的 变化. 第 1 中 是 检查 file 的 modtime.
+第 2 中 是 使用 inotify 的支持. inotify 的使用 会在 该 daemon 被启动之后  被 logged 到 /var/log/cron中.
+inotify 支持 会 检查 所有  crontables 的 变化 并 只有当 变化 被监测 到时 才会 访问 hard disk.
+
+当使用 modtime 选项, cron 每 分钟(minute) 都会检查 其 crontables 的 modtimes 来 检查 任何变化
+并 重新加载 已被 修改 过的 crontables. 所以 没有必要在 crontables 修改之后 重新启动(restart) cron.
+The modtime option is also used when inotify can not be initialized.
+
+cron 会检查 这些文件 和 目录:
+
+       /etc/crontab
+          system crontab. 现在该文件默认为 empty. 原本其 经常 被用于 运行 daily, weekly, monthly jobs. 而现在 默认 这些 jobs
+          是通过 anacron 读取 /etc/anacrontab 配置文件 来运行的. 更多详细信息见 anacrontab(5).
+
+       /etc/cron.d/
+          包含不同 users 的 system cronjobs 的目录
+
+       /var/spool/cron
+          包含 通过 crontab 命令创建的 user crontables 的目录
+
+       提示： crontab(1) 命令 会在每次修改 a crontab 是 更新 spool 目录 的  modtime.
 
 
+   PAM Access Control
+       Cron  supports  access control with PAM if the system has PAM installed.  For more information, see pam(8).
+       A PAM configuration file for crond is installed in /etc/pam.d/crond.
+       The daemon loads the PAM environment from the pam_env module.  This can be overridden by defining specific settings in the appropriate crontab file.
 
+SIGNALS
+       When the SIGHUP is received, the Cron daemon will close and reopen its log file.  This proves to be useful in scripts which rotate and age log files.   Naturally,  this  is  not
+       relevant if Cron was built to use syslog(3).
 
+CLUSTERING SUPPORT
+       In  this  version  of Cron it is possible to use a network-mounted shared /var/spool/cron across a cluster of hosts and specify that only one of the hosts should run the crontab
+       jobs in this directory at any one time.  This is done by starting Cron with the -c option, and have the /var/spool/cron/.cron.hostname file contain just one line,  which  repre‐
+       sents the hostname of whichever host in the cluster should run the jobs.  If this file does not exist, or the hostname in it does not match that returned by gethostname(2), then
+       all crontab files in this directory are ignored.  This has no effect on cron jobs specified in the /etc/crontab file or on files in the /etc/cron.d directory.  These  files  are
+       always run and considered host-specific.
 
+       Rather than editing /var/spool/cron/.cron.hostname directly, use the -n option of crontab(1) to specify the host.
 
+       You  should  ensure  that  all hosts in a cluster, and the file server from which they mount the shared crontab directory, have closely synchronised clocks, e.g., using ntpd(8),
+       otherwise the results will be very unpredictable.
 
+       Using cluster sharing automatically disables inotify support, because inotify cannot be relied on with network-mounted shared file systems.
 
+CAVEATS
+       All crontab files have to be regular files or symlinks to regular files, they must not be executable or writable for anyone else but the owner.  This requirement can be overrid‐
+       den  by  using  the  -p option on the crond command line.  If inotify support is in use, changes in the symlinked crontabs are not automatically noticed by the cron daemon.  The
+       cron daemon must receive a SIGHUP signal to reload the crontabs.  This is a limitation of the inotify API.
 
+       The syslog output will be used instead of mail, when sendmail is not installed.
 
-
-
-
+SEE ALSO
+       crontab(1), crontab(5), inotify(7), pam(8)
 
