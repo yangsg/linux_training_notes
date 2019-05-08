@@ -103,7 +103,7 @@ job 3 at Tue May  7 16:36:00 2019
 a00005018c05e7  spool
 
 
-[root@basic ~]# at -f /root/scripts/myscript.sh  midnight
+[root@basic ~]# at -f /root/scripts/myscript.sh  midnight   # at 的详细 time 规范见  /usr/share/doc/at-3.1.13/timespec
 job 25 at Wed May  8 00:00:00 2019
 [root@basic ~]# at -f /root/scripts/myscript.sh  noon
 job 26 at Wed May  8 12:00:00 2019
