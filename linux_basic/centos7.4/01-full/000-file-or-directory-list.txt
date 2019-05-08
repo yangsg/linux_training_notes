@@ -73,12 +73,17 @@ http://www.man7.org/
 /etc/at.deny
 /var/spool/at
 /var/spool/at/spool  目录
+     如果要查看 at 的 jobs 中是否被植入了木马, 可以用 super user 来执行 atq 命令来查询列出所有用户的 at jobs 来观察一下.
 
 /etc/crontab
 /etc/cron.d/
 /var/spool/cron  目录
 
 /etc/anacrontab
+
+
+/var/log/cron   # cron 执行的每一项工作都会被纪录到 /var/log/cron 这个登录档中, 如果你的 Linux 不知道有否被植入木马时，也可以搜寻一下 /var/log/cron 这个登录档
+
 
 
 
