@@ -78,6 +78,7 @@ http://www.man7.org/
 /etc/cron.d/
 /var/spool/cron  目录
 
+/etc/anacrontab
 
 
 
