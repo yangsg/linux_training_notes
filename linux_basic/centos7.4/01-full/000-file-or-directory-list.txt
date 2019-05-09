@@ -81,11 +81,11 @@ http://www.man7.org/
 /etc/cron.d/
 /var/spool/cron  目录
 
-/etc/anacrontab
-
-
 /var/log/cron   # cron 执行的每一项工作都会被纪录到 /var/log/cron 这个登录档中, 如果你的 Linux 不知道有否被植入木马时，也可以搜寻一下 /var/log/cron 这个登录档
 
+
+/etc/anacrontab    # 包含了 jobs 的规范说明
+/var/spool/anacron # anacron 存储 timestamp files 的目录
 
 
 
