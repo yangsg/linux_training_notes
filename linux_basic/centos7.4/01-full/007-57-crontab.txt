@@ -125,3 +125,34 @@ Bob
 [Bob@basic ~]$ crontab -ri  # 删除当前用户的 crontab, 但会先询问确认 #使用 -i (interactive) 选项可以在实际删除当前用户的 crontab 前交互式的 询问 确认信息
 crontab: really delete Bob's crontab?
 
+
+   -u user :    -u 选项用于指定 将被修改的crontab的用户(即拥有者owner)的name. 如果没有使用 -u 选项, crontab命令将检查 "your" crontab: 如, 执行 crontab 命令的 person 的 crontab.
+                注意 su(8) 可能对 crontab 造成疑惑, 因此, 当在 su(8) 下执行 crontab 命令时 你应该 总是 使用上 -u 选项. 如果该用户(即 -u 选项指定的user) crontab 还不存在,
+                那么在首次执行 crontab -u 时会为该 user 创建与其同名的 crontab 文件
+
+[root@basic ~]# crontab -u Bob -l   # (注:当前登录用户为 root)显示用户 Bob 的 crontab #  -u user
+
+[root@basic ~]# crontab -u Bob -e   # (注:当前登录用户为 root) 编辑(edit)用户 Bob 的 crontab  # -u user
+
+
+[root@basic ~]# ls -l /var/spool/cron/Bob
+-rw------- 1 root root 105 May  9 07:29 /var/spool/cron/Bob
+[root@basic ~]# crontab -u Bob -r   # (注:当前登录用户为 root) 删除用户 Bob 的整个 crontab 文件 # -u user
+[root@basic ~]# ls -l /var/spool/cron/Bob
+ls: cannot access /var/spool/cron/Bob: No such file or directory
+[root@basic ~]# crontab -u Bob -l
+no crontab for Bob
+
+[root@basic ~]# crontab -u Bob /home/Bob/crontab  # 指定用户Bob使用其他的文件(此例指/home/Bob/crontab)作为 crontab文件而非默认的crontab文件(此例指/var/spool/cron/Bob),注:该命令不会删除既有的/var/spool/cron/Bob  # -u user
+[root@basic ~]# crontab -u Bob -l
+* * * * * /bin/echo $(date)  >> /tmp/crontab_data.log
+[root@basic ~]# ls -l /var/spool/cron/Bob
+-rw------- 1 root root 54 May  9 07:56 /var/spool/cron/Bob
+
+
+
+
+
+其他参考:
+  https://corenominal.org/2016/05/12/howto-setup-a-crontab-file/
+
