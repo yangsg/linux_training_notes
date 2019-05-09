@@ -1,0 +1,57 @@
+
+# keyword anacron
+
+man anacron
+
+
+作用: anacron - runs commands periodically
+
+语法: anacron [-s] [-f] [-n] [-d] [-q] [-t anacrontab] [-S spooldir] [job]
+语法: anacron [-S spooldir] -u [-t anacrontab] [job]
+语法: anacron [-V|-h]
+语法: anacron -T [-t anacrontab]
+
+说明:
+anacron 用于 周期性地 执行 commands, 且 按 天(days) 来指定 频率. 不像 cron(8), anacron 不会假设 machine 一直 连续不断的运行.
+因此, anacron 可以被用于 并非 一天 24 小时 都一直运行的 machines 上 来 控制 常规作业(regular jobs) 如 daily, weekly, 和 monthly jobs.
+
+anacron 从 文件 /etc/anacrontab (see anacrontab(5))读取 a list of jobs. 该文件包含 anacron 控制管理 的  list of jobs.
+每个 job entry 指定了 一个 周期 天数(a period in days), 一个延迟分钟数(a delay in minutes), 一个唯一的 job identifier 和 一个 shell command.
+
+针对每个 job, anacron 检查其 最近 n 天 (in the last n days) 是否已经被执行了, 这里的 n 是 对应 job 的 时间周期.
+如果 一个 job 没有在 最近 n 天 或 超过 n 天 被执行, anacron 会 在 等待 the delay parameter 指定的 分钟数 后 执行 该 job 的 shell command,
+
+在 command 退出(exits) 之后, anacron 会在 该 job 特定的 timestamp 文件中 records 该 date(excludes the hour), 因此 anacron 知道 什么时候该再次执行该job.
+
+当 没有更多的 jobs 需要被执行时, anacron 则会退出(exits).
+
+anacron 仅 考虑 (considers) 在 anacrontab(5) 中指定的,其标识符(identifier) 与 the job command-line arguments 任何一个 匹配的 job.
+The job command-line arguments 可以使用 shell wildcard patterns 来表示(be sure to protect them from your shell with adequate quoting).
+不指定 job command-line arguments 等价于 指定 "*" (也就是说，anacron 会考虑(consider) 所有的 jobs).
+
+
+除非 执行 anacron 是 使用了 -d 选项 (specified below), 否则 其 在 start 时 会 forks to the background, 任何 parent processes 会 立刻退出(exit).
+
+除非 执行 anacron 时 使用了 -s 后 -n 选项, 否则 anacron 会在  它们的 delay 超过时立刻 starts jobs. 不同 jobs 的执行 是完全独立的.
+
+
+如果 执行的 job 生成了 到 standard output 或 到 standard error 的输出(output),
+则该 output 将会被 mailed 给 以 其指定的身份 运行 anacron的那个 user(通常为root),
+或者 mailed 到 文件 /etc/anacrontab 中 MAILTO environment variable 指定的 address(如果其存在的话).
+如果 设置了 LOGNAME environment variable, 则其 会被 用在 mail 的 From: 字段中.
+
+
+在将 facility 设置为 cron 和 priority 设置为 notice 时, 任何由 anacron 生成的通知消息(informative messages) 会被 发送(sent) 到 syslogd(8) 或 rsyslogd(8),
+
+"Active" jobs (如 anacron 已经决定 运行 其 现在正在等待其 delay 过去的 jobs, 和 当前正在 被 anacron 执行的 jobs),
+会被 "locked", so that other copies of Anacron cannot run them at the same time.
+
+FILES
+       /etc/anacrontab
+              Contains specifications of jobs.  See anacrontab(5) for a complete description.
+
+       /var/spool/anacron
+              This directory is used by Anacron for storing timestamp files.
+
+
+
