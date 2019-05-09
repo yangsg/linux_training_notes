@@ -57,6 +57,7 @@ man crontab
        提示： crontab(1) 命令 会在每次修改 a crontab 是 更新 spool 目录 的  modtime.
 
 
+这个『 crontab -e 』是针对使用者的 cron 来设计的，如果是『系统的例行性任务』时, 可考虑使用其他的 system 的 job 排程文件
 
 
 
