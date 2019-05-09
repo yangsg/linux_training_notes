@@ -1,13 +1,90 @@
 
 # keyword /etc/crontab
 
+man 4 crontabs
 man 5 crontab
 
 
-其他资料:
+作用:
+       crontabs - configuration and scripts for running periodical jobs
+
+语法:
+       run-parts [--list|--test]<directory>
+
+说明:
+    Crontabs 是 run-parts 脚本 和 the system crontab 的 历史名称(historical name). The run-parts script 运行指定 目录 下的 所有可执行文件(all executables).
+    Run-parts runs all executables in the specified directory. 可以通过 创建jobs.allow 或 jobs.deny (其工作方式类似于其他的 allow/deny 配置文件)来允许或拒绝 这些 files 的执行.
+    该文件必须被创建在 指定的 目录下.
+
+    作业的随机化(Randomization of jobs) 可以被配置在 文件 /etc/sysconfig/run-parts 中. 要启用 randomization of jobs 功能,
+    需要设置参数 RANDOMIZE 为 1 且 设置 RANDOM 参数 为 一个 integer 用来确定 random seed. 另外, 你可以配置参数 RANDOMTIME(again, by specifying an  integer)
+    来提供一个额外的 level of randomization. 当参数 RANDOM 和 RANDOMTIME 被 设置为 0 时 Jobs 不会被 随机化(not randomized). 这两个参数的 值必须被设置为
+    大于等于1 使其 提供 足够好的 随机化(randomization).
+
+    Randomization of cron jobs 对于 shared networks 很有用, 因为在 shared networks 中 多个 cron jobs 立刻执行可能导致流量高峰(cause spikes in traffic),
+    特别是在 daily  jobs 之间. 而使用 randomized jobs, 则 工作量(workload) 可以在 一天之中 均匀分布(evenly distributed).
+
+
+EXAMPLE OF CONFIGURATION FILE
+       RANDOMIZE=1
+       RANDOM=4
+       RANDOMTIME=8
+
+历史上(Historically), 使用 files 调用 run-parts 的 包含 configuration 的 crontab  file 在 目录  cron.{daily,weekly,monthly} 下.
+这些 jobs 现在 间接(indirectly) 通过 anacron 来 运行 以 防止 cron 和 anacron 之间的冲突. 这意味着 如果 在这些目录下的 jobs 需要被运行, 则
+必须要安装 anacron package. 可以通过 anacron(8) 帮助手册来 来查看 how to limit the time of day of the job execution.
+
+EXAMPLE
+       /etc/cron.daily/jobs.deny could contain for example 0logwatch which forbid execution of this script.
+
+SEE ALSO
+       anacron(8), crontab(5)
+
+
+其他参考资料:
 https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/01-full/007-58-crontab-config.txt
 https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/01-full/007-59-crond.txt
 https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/01-full/007-57-crontab.txt
+
+
+Jobs in /etc/cron.d/
+    /etc/cron.d/ 目录下的 jobs 和 /etc/crontab 中的 jobs 都是 system jobs, 其通常会被多个 users 使用, 因此, 需要一个额外的 username 字段. MAILTO on the first line is optional.
+
+EXAMPLE OF A JOB IN /etc/cron.d/job
+       #login as root
+       #create job with preferred editor (e.g. vim)
+       MAILTO=root
+       * * * * * root touch /tmp/file
+
+cron 会检查 这些文件 和 目录:
+
+       /etc/crontab
+          system crontab. 现在该文件默认为 empty. 原本其 经常 被用于 运行 daily, weekly, monthly jobs. 而现在 默认 这些 jobs
+          是通过 anacron 读取 /etc/anacrontab 配置文件 来运行的. 更多详细信息见 anacrontab(5).
+
+       /etc/cron.d/
+          包含不同 users 的 system cronjobs 的目录
+
+       /var/spool/cron
+          包含 通过 crontab 命令创建的 user crontables 的目录
+
+       提示： crontab(1) 命令 会在每次修改 a crontab 是 更新 spool 目录 的  modtime.
+
+
+[root@basic ~]# less /usr/bin/run-parts  # 查看 run-parts 脚本, run-parts 脚本会在大约 5 分钟(即 300 秒)内随机选一个时间来执行 /etc/cron.hourly 目录内的所有执行文件！
+
+[root@basic ~]# run-parts --list /etc/cron.d   # --list print names of all files (not limited to executables), but don't run them. This option can't be used with test option.
+[root@basic ~]# run-parts --test /etc/cron.d/  # --test print names of files, which would be run.
+
+[root@basic ~]# ls -l /etc/sysconfig/run-parts
+-rw-r--r--. 1 root root 0 Jun 10  2014 /etc/sysconfig/run-parts
+
+
+以鸟哥来说，现在鸟哥有在开发一些虚拟化教室的软件，该软件需要定时清除一些垃圾防火墙规则，
+那鸟哥就是将要执行的时间与指令设计好，然后直接将设定写入到 /etc/cron.d/newfile 即可！未来如果这个软件要升级，
+直接将该档案覆盖成新档案即可！比起手动去分析 /etc/crontab 要单纯的多！
+
+
 
 
 [root@basic ~]# cat /etc/crontab
@@ -25,18 +102,52 @@ MAILTO=root
 # |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
 # |  |  |  |  |
 # *  *  *  *  * user-name  command to be executed
+# 分 时 日 月 周 身份 指令
+
+[root@basic ~]# ls /etc/ | grep cron
+anacrontab
+cron.d
+cron.daily   <--- daily
+cron.deny
+cron.hourly  <--- hourly
+cron.monthly <--- monthly
+crontab
+cron.weekly  <--- weekly
+
+[root@basic ~]# ls -l /etc/ | grep cron
+-rw-------.  1 root root    541 Aug  3  2017 anacrontab
+drwxr-xr-x.  2 root root     21 Dec 23 07:44 cron.d
+drwxr-xr-x.  2 root root     42 Dec 23 07:44 cron.daily    <---
+-rw-------.  1 root root      0 Aug  3  2017 cron.deny
+drwxr-xr-x.  2 root root     22 Dec 23 07:44 cron.hourly   <---
+drwxr-xr-x.  2 root root      6 Jun 10  2014 cron.monthly  <---
+-rw-r--r--.  1 root root    451 Jun 10  2014 crontab
+drwxr-xr-x.  2 root root      6 Jun 10  2014 cron.weekly   <---
+
+注: 与 cron.hourly使用 run-parts 运行不同, 现在 cron.{daily,weekly,monthly} 是由 anacron 来运行的.而 anacron 的执行方式则是放在 /etc/cron.hourly/0anacron 里
+
+[root@basic ~]# cat /etc/cron.d/0hourly
+# Run the hourly jobs
+SHELL=/bin/bash
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=root
+# 每个整点的一分会以 root 身份执行  run-parts /etc/cron.hourly 指令
+01 * * * * root run-parts /etc/cron.hourly
 
 
+总结: (来自《鸟哥的linux私房菜》)
 
+*  个人化的行为使用『 crontab -e 』：
+        如果你是依据个人需求来建立的例行工作排程，建议直接使用 crontab -e 来建立你的工作排程较佳！
+        这样也能保障你的指令行为不会被大家看到 (/etc/crontab 是大家都能读取的权限喔！)；
 
+*  系统维护管理使用『 vim /etc/crontab 』：
+        如果你这个例行工作排程是系统的重要工作，为了让自己管理方便，同时容易追踪，建议直接写入 /etc/crontab 较佳！
 
+*  自己开发软件使用『 vim /etc/cron.d/newfile 』：
+        如果你是想要自己开发软件，那当然最好就是使用全新的配置文件，并且放置于 /etc/cron.d/ 目录内即可。
 
-
-
-
-
-
-
-
-
+*  固定每小时、每日、每周、每天执行的特别工作：
+        如果与系统维护有关，还是建议放置到 /etc/crontab 中来集中管理较好。
+        如果想要偷懒，或者是一定要再某个周期内进行的任务，也可以放置到上面谈到的几个目录中，直接写入指令即可！
 
