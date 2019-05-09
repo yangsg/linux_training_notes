@@ -1,0 +1,62 @@
+
+# keyword anacrontab
+
+man 5 anacrontab
+
+
+作用: /etc/anacrontab - configuration file for Anacron
+
+
+说明:
+
+配置文件 /etc/anacrontab 描述了 被 anacron(8) 控制管理的 jobs. 它可以包含 3 中类型的 lines: job-description lines, environment assignments, 或者 empty lines.
+
+
+       Job-description lines 可以具有如下的格式:
+
+          period in days   delay in minutes   job-identifier   command
+
+       The period in days 变量 按天 指定了 a job 执行的频率. 该 变量 可以用 an integer 或 a macro(@daily, @weekly, @monthly) 来表示.
+       其中 @daily  表示 与 the integer 1 相同的值, @weekly 和 7 具有相同的值, 且 @monthly 指定 the job 每月运行一次, 与 月份(month) 的长度无关.
+
+       The  delay  in minutes 变量 指定了 在执行 a job 之前  anacron 等待的 分钟数(if necessary), 该变量 用 an integer 来表示, 如果为 0, 则意味着没有延迟(delay).
+
+       The job-identifier variable 指定了 a job 的 在 the log files 中 使用的 唯一的 name(a unique name).
+
+       The command variable 指定了 要被执行的 command. 该 command 即可以是如 ls /proc >> /tmp/proc 这样的命令 也 可以是 执行 自定义脚本(custom script) 的命令.
+
+       Environment assignment lines 可以具有如下格式:
+
+          VAR=VALUE
+
+       VAR 周围的 任何 spaces 会被删除. VALUE 周围 不允许有 spaces(除非你希望这些 spaces 被作为 value 的一部分). 指定的赋值(The specified assignment) 将从 下一行 生效
+       直到 file 的 end 或 到 该变量的 下一个赋值.
+
+       The  START_HOURS_RANGE  variable 定义了 jobs 什么时候 可以运行的 时间间隔(in hours). 如果错过了(missed) 该时间间隔,例如 断电, 则当天不会执行预定的jobs.
+
+       The RANDOM_DELAY variable 表示 每个 job 指定的 会被 added 到 delay in minutes 变量的最大的 分钟数. 因此 把 RANDOM_DELAY 设置为 12 将为 对应的 anacrontab 中的
+       每个 job 的 the delay in minutes 加上一个 1 到 12 之间的随机分钟数. 当位置为 0 时, no random delay is added.
+
+       Empty lines 即可以是 blank lines, line containing white spaces only, 或者 lines with white spaces followed by a '#' followed by an arbitrary comment.
+
+       You can continue a line onto the next line by adding a '\' at the end of it.
+
+       如果你想禁掉 anacron, add the 0anacron cron job (which is a part of crontab(1)) into the /etc/cron.hourly/jobs.deny directory.
+
+
+EXAMPLE
+       This  example  shows how to set up an Anacron job similar in functionality to /etc/crontab which starts all regular jobs between 6:00 and 8:00 only.  A RANDOM_DELAY which can be
+       30 minutes at the most is specified.  Jobs will run serialized in a queue where each job is started only after the previous one is finished.
+
+       # environment variables
+       SHELL=/bin/sh
+       PATH=/sbin:/bin:/usr/sbin:/usr/bin
+       MAILTO=root
+       RANDOM_DELAY=30
+       # Anacron jobs will start between 6am and 8am.
+       START_HOURS_RANGE=6-8
+       # delay will be 5 minutes + RANDOM_DELAY for cron.daily
+       1         5    cron.daily          nice run-parts /etc/cron.daily
+       7         0    cron.weekly         nice run-parts /etc/cron.weekly
+       @monthly  0    cron.monthly        nice run-parts /etc/cron.monthly
+
