@@ -105,39 +105,56 @@ drwxr-xr-x. 2 root root  224 Dec 23 07:44 basic.target.wants
 -rw-r--r--. 1 root root  284 Aug  3  2017 crond.service
 
 
+文件 /etc/systemd/system.conf 是 systemd 默认的配置文件, 文件本身其实是在 编译时被定义, 可以使用该文件来 全局的修改 相关的 默认值.
+比如讲 DefaultTimeoutStartSec 默认的 90 seconds 改为 100 seconds, 如下
+[root@basic ~]# vim /etc/systemd/system.conf    # 在文件 /etc/systemd/system.conf 中修改 可修改 systemd 全局的默认值
+[Manager]
+DefaultTimeoutStartSec=100s
 
 
 
 
+10.1.1. Main Features 主要特性
+在redhat7 中, the systemd system and service manager 提供了如下主要特性:
+
+Socket-based activation(基于套接字的激活):
+        在 boot time, systemd 会为所有支持 Socket-based activation 的 system services 创建 监听套接字(listening sockets),
+        并在这些 services 被 started 时 立即 将 sockets 传(pass)给 这些 services. 这不仅仅是允许 systemd 并行(in parallel)地 start services,
+        而且还使其能够 在 restart a service 时 在该 service 为 unavailable 的时候 不会 losing any message sent to it,
+        对应的 socket 仍可保持访问(remains accessible) 同时所有的 messages 都会 排队.
+
+            Systemd uses socket units for socket-based activation.
+
+
+Bus-based activation(基于总线的激活):
+        使用 D-Bus 进行 进程间通信(inter-process communication) 的 system services 可以 在 a client application 第一次尝试 与其 通信的时候 按需(on-demand) 启动.
+            Systemd uses D-Bus service files for bus-based activation.
+
+Device-based activation(基于设备的激活):
+        支持 device-based activation 的 system services 能在 特定 类型的 hardware 被 插入(plugged in) 或 可用(becomes available) 时 按需(on-demand) 启动(started).
+            Systemd uses device units for device-based activation.
+
+Path-based activation(基于路径的激活):
+       支持 path-based activation 的 system services 能在 特定的 file 或 directory 改变状态时 按需(on-demand) 启动(started).
+            Systemd uses path units for path-based activation.
+
+Mount and automount point management(挂载和自动挂载点的管理):
+       systemd 监视(monitors) 和 管理(manages) 挂载 和 自动挂载点.
+            Systemd uses mount units for mount points and automount units for automount points.
+
+Aggressive parallelization(快速的并行):
+      因为 socket-based activation 的使用, systemd 能够在 所有的 listening sockets 就位(准备好)时立刻 并行的 启动(start) system services.
+      结合支持 on-demand activation 的 system services, parallel activation 显著地 减少了 启动(boot) system 的时间.
+
+Transactional unit activation logic(事务的单元激活逻辑)
+      在激活(activating)和取消激活(deactivating) 单元(unit) 之前, systemd 会计算其依赖(dependencies), 创建临时的事务(transaction), 并验证该事务的一致性.
+      如果事务不一致, systemd 在 reporting an error 之前会自动的尝试 改正(correct) 它 并 删除(remove) 其中不重要的 jobs.
+
+Backwards compatibility with SysV init(与SysV init 的向后兼容):
+      systemd 支持 the Linux Standard Base Core Specification 中 描述的 SysV init scripts, 这使得 升级到 systemd service units 的路线 更轻松.
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+10.1.2. Compatibility Changes
+兼容性的变化 见  https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/chap-managing_services_with_systemd
 
