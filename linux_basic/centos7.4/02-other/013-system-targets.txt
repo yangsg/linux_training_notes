@@ -1,0 +1,117 @@
+
+
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/sect-managing_services_with_systemd-targets
+
+10.3. working with systemd targets
+
+  以前版本的 redhat 使用 SysV init or Upstart, 其实现了 预定义的一套 runlevels 用于表示 特定的 操作模式(modes of operation).
+  这些 runlevels 被用 从 0 到 6 的数字编号 并 被 当 特定的 runlevel 被 系统管理员 enabled 时，要运行的一系列 system services 所定义.
+  在 redhat7 中, runlevels 的概念 被 替换为了 systemd targets.
+
+  systemd targets 用 target units 来表示. target units 以 文件扩展名 .target 结尾 且 它们唯一的目的就是 通过 一连串 依赖关系(a chain of dependencies)
+  将 其他 systemd units 组合在一起. 例如, the graphical.target unit 就被用于 start a graphical session,
+  starts system services such as the GNOME Display Manager (gdm.service) or Accounts Service (accounts-daemon.service) and also activates the multi-user.target unit.
+  类似地, the multi-user.target unit starts other essential system services such as NetworkManager (NetworkManager.service) or
+  D-Bus (dbus.service) and activates another target unit named basic.target.
+
+
+  redhat7 发布时伴随着 许多预定义的 与 redhat 以前发行版中标准的一系列 或多或少与runlevels 类似的 targets. 因为兼容的原因,
+  它也提供了这些  targets 的能 直接 映射(map) 到 SysV runlevels 的 别名(aliases).
+
+
+Table 10.6. Comparison of SysV Runlevels with systemd Targets (SysV Runlevels 与 systemd Targets 的比较)
+------------|-----------------------------------------|-----------------------------------------------------
+  Runlevel  |          Target Units                   |          Description
+------------|-----------------------------------------|-----------------------------------------------------
+0           | runlevel0.target, poweroff.target       |      Shut down and power off the system.
+------------|-----------------------------------------|-----------------------------------------------------
+1           | runlevel1.target, rescue.target         |      Set up a rescue shell.
+------------|-----------------------------------------|-----------------------------------------------------
+2           | runlevel2.target, multi-user.target     |      Set up a non-graphical multi-user system.
+------------|-----------------------------------------|-----------------------------------------------------
+3           | runlevel3.target, multi-user.target     |      Set up a non-graphical multi-user system.
+------------|-----------------------------------------|-----------------------------------------------------
+4           | runlevel4.target, multi-user.target     |      Set up a non-graphical multi-user system.
+------------|-----------------------------------------|-----------------------------------------------------
+5           | runlevel5.target, graphical.target      |      Set up a graphical multi-user system.
+------------|-----------------------------------------|-----------------------------------------------------
+6           | runlevel6.target, reboot.target         |      Shut down and reboot the system.
+------------|-----------------------------------------|-----------------------------------------------------
+
+
+    要 view, change, or configure systemd targets, 需要使用 systemctl 工具,
+    命令 runlevel 和 telinit 仍然 可用 且 按预期 工作, 当包含它们只是为了兼容性 且 应避免使用.
+
+Table 10.7. Comparison of SysV init Commands with systemctl ()
+-------------------|------------------------------------------|------------------------------------------
+    Old Command    |             New Command                  |          Description
+-------------------|------------------------------------------|------------------------------------------
+runlevel           |    systemctl list-units --type target    |   Lists currently loaded target units.
+-------------------|------------------------------------------|------------------------------------------
+telinit runlevel   |    systemctl isolate name.target         |   Changes the current target.
+-------------------|------------------------------------------|------------------------------------------
+
+
+
+
+[root@basic ~]# systemctl get-default   # 查看默认的 target, 该命令会解析 /etc/systemd/system/default.target 符号链接并显示结果(result)
+multi-user.target
+
+[root@basic ~]# systemctl list-units --type target     #  列出所有当前被 loaded 的 且状态为 active 的 target units
+UNIT                  LOAD   ACTIVE SUB    DESCRIPTION
+basic.target          loaded active active Basic System
+bluetooth.target      loaded active active Bluetooth
+cryptsetup.target     loaded active active Encrypted Volumes
+略 略 略 略 略 略 略 略 略 略 略 略
+
+[root@basic ~]# systemctl list-units --type target --all       # 使用 --all 选项 来列出 所有被 loaded 的 units 而不管 其状态(state)如何
+  UNIT                   LOAD      ACTIVE   SUB    DESCRIPTION
+  basic.target           loaded    active   active Basic System
+  bluetooth.target       loaded    active   active Bluetooth
+  cryptsetup.target      loaded    active   active Encrypted Volumes
+  emergency.target       loaded    inactive dead   Emergency Mode
+  final.target           loaded    inactive dead   Final Step
+  getty.target           loaded    active   active Login Prompts
+  graphical.target       loaded    inactive dead   Graphical Interface
+略 略 略 略 略 略 略 略 略 略 略 略
+
+
+[root@basic ~]# systemctl set-default multi-user.target   # 配置 system 默认使用 不同的 target unit
+Removed symlink /etc/systemd/system/default.target.
+Created symlink from /etc/systemd/system/default.target to /usr/lib/systemd/system/multi-user.target.
+
+  命令 systemctl set-default name.target 使用 /usr/lib/systemd/system/name.target 的 符号链接 来替换 /etc/systemd/system/default.target, 其中name为你想要使用的 target 名
+
+
+[root@basic ~]# systemctl isolate multi-user.target    # 改变当前 session 的 target
+
+    命令 systemctl isolate name.target 启动(start) 名为 name 的 target unit 及 所有 dependent units, 并且 立刻 stops all others.
+
+
+10.3.5. Changing to Rescue Mode
+
+[root@basic ~]# systemctl rescue    # 改变当前的 target 并 进入当前会话的 rescue mode
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
