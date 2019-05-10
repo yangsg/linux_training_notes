@@ -89,29 +89,29 @@ Created symlink from /etc/systemd/system/default.target to /usr/lib/systemd/syst
 
 
 10.3.5. Changing to Rescue Mode
+  Rescue mode 提供了 方便地 单用户环境(single-user environment) 且 允许你 在 系统无法完成常规启动流程(a regular booting process) 的情况下修改系统.
+  在 rescue mode 中, 系统会尝试 mount all local file systems 和 start some important system services, 当不会激活 network interfaces，也不会允许
+  更多的 users 同时登录(login in)系统. 在 redhat7 中, rescue mode 等价于 single user mode 且 需要 root 密码(password)
 
 [root@basic ~]# systemctl rescue    # 改变当前的 target 并 进入当前会话的 rescue mode
 
+命令 systemctl rescue 类似于 systemctl isolate rescue.target, 但是它 想所有当前登录到 系统的 users 发送通知消息. 要想阻止 systemd
+发送消息(message), 使用 --no-wall 选项来执行下面的语句:
+[root@basic ~]# systemctl --no-wall rescue   # 改变当前的 target 并 进入当前会话的 rescue mode, 但不会向 所有用户发送消息(send message)
 
 
 
 
+10.3.6. Changing to Emergency Mode
 
+    Emergency mode 提供了 可用的最小化环境 且 允许你 在当 系统无法 进入 rescue mode 时 修复你的 系统.
+    在 emergency mode 中, the system mounts the root file system only for reading, does not attempt to mount any other local file systems,
+    does not activate network interfaces, and only starts a few essential services. 在 redhat7 中, emergency mode 需要 root 密码(password)
 
+[root@basic ~]# systemctl emergency    # 改变当前的 target 并 进入 emergency mode
 
+命令 systemctl emergency 类似于 systemctl isolate emergency.target, 但是它也会 向所有 当前 登入系统的 uses 发送 消息.
+要阻止系统发送该消息(message), 使用 --no-wall 选项执行如下命令:
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+[root@basic ~]# systemctl --no-wall emergency  # 改变当前的 target 并 进入当前会话的 emergency mode, 但不会向 所有用户发送消息(send message)
 
