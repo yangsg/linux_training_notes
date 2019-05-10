@@ -1,0 +1,143 @@
+
+# keyword systemd
+
+man systemd
+man systemctl
+man 5 systemd.unit
+man 5 systemd-system.conf
+man 5 systemd.service
+
+
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/chap-managing_services_with_systemd
+
+
+systemd 好处:
+  平行处理所有服务，加速开机流程             parallel startup of system services at boot time
+  一经要求就响应的 on-demand 启动方式        on-demand activation of daemons
+  服务相依性的自我检查                       dependency-based service control logic
+  依 daemon 功能分类      unit  type
+  将多个 daemons 集合成为一个群组   target
+  向下兼容旧有的 init 服务脚本               It is designed to be backwards compatible with SysV init scripts,  In Red Hat Enterprise Linux 7, systemd replaces Upstart as the default init system
+
+
+
+man 5 systemd.unit
+
+Table 10.2. Systemd Unit Files Locations (如下目录的优先级 从上到下为 从低到高)
+------------------------------------------------------------------------------------------
+/usr/lib/systemd/system/  Systemd unit files distributed with installed RPM packages. 有点类似以前的 /etc/init.d 底下的档案
+/run/systemd/system/      Systemd unit files created at run time. This directory takes precedence over the directory with installed service unit files.
+/etc/systemd/system/      Systemd unit files created by systemctl enable as well as unit files added for extending a service. This directory takes precedence over the directory with runtime unit files. 实这个目录有点像以前 /etc/rc.d/rc5.d/Sxx 之类的功能
+------------------------------------------------------------------------------------------
+
+
+man systemd
+
+Table 10.1. Available systemd Unit Types
+
+Unit Type           File Extension    Description
+------------------------------------------------------------------------------------------
+Service   unit         .service         A system service.
+Target    unit         .target          A group of systemd units.
+Automount unit         .automount       A file system automount point.
+Device    unit         .device          A device file recognized by the kernel.
+Mount     unit         .mount           A file system mount point.
+Path      unit         .path            A file or directory in a file system.
+Scope     unit         .scope           An externally created process.
+Slice     unit         .slice           A group of hierarchically organized units that manage system processes.
+Snapshot  unit         .snapshot        A saved state of the systemd manager.
+Socket    unit         .socket          An inter-process communication socket.
+Swap      unit         .swap            A swap device or a swap file.
+Timer     unit         .timer           A systemd timer.
+------------------------------------------------------------------------------------------
+
+
+
+[root@basic ~]# ls -l /etc/systemd/system/  # 观察 systemctl enable xxxd 所操作的目录, 该目录下基本为 link files 和 包含 link files 的子目录(大多为target目录)
+total 4
+drwxr-xr-x. 2 root root   31 Dec 23 07:44 basic.target.wants
+lrwxrwxrwx. 1 root root   46 Dec 23 07:44 dbus-org.freedesktop.NetworkManager.service -> /usr/lib/systemd/system/NetworkManager.service
+lrwxrwxrwx. 1 root root   57 Dec 23 07:44 dbus-org.freedesktop.nm-dispatcher.service -> /usr/lib/systemd/system/NetworkManager-dispatcher.service
+lrwxrwxrwx. 1 root root   37 Dec 23 07:47 default.target -> /lib/systemd/system/multi-user.target
+drwxr-xr-x. 2 root root   87 Dec 23 07:44 default.target.wants
+drwxr-xr-x. 2 root root   32 Dec 23 07:44 getty.target.wants
+drwxr-xr-x. 2 root root 4096 May  7 12:55 multi-user.target.wants
+drwxr-xr-x. 2 root root   29 Dec 23 07:44 sockets.target.wants
+drwxr-xr-x. 2 root root   89 Dec 23 07:44 sysinit.target.wants
+drwxr-xr-x. 2 root root   44 Dec 23 07:44 system-update.target.wants
+drwxr-xr-x. 2 root root   29 Dec 23 07:44 vmtoolsd.service.requires
+
+[root@basic ~]# ls -l  /etc/systemd/system/multi-user.target.wants/  # 观察 /etc/systemd/system/multi-user.target.wants/ 目录
+total 0
+lrwxrwxrwx  1 root root 35 May  7 12:55 atd.service -> /usr/lib/systemd/system/atd.service
+lrwxrwxrwx. 1 root root 38 Dec 23 07:44 auditd.service -> /usr/lib/systemd/system/auditd.service
+lrwxrwxrwx  1 root root 39 Nov 21  2015 chronyd.service -> /usr/lib/systemd/system/chronyd.service
+lrwxrwxrwx. 1 root root 37 Dec 23 07:44 crond.service -> /usr/lib/systemd/system/crond.service
+lrwxrwxrwx. 1 root root 42 Dec 23 07:44 irqbalance.service -> /usr/lib/systemd/system/irqbalance.service
+lrwxrwxrwx. 1 root root 46 Dec 23 07:44 NetworkManager.service -> /usr/lib/systemd/system/NetworkManager.service
+lrwxrwxrwx. 1 root root 39 Dec 23 07:44 postfix.service -> /usr/lib/systemd/system/postfix.service
+lrwxrwxrwx. 1 root root 40 Dec 23 07:44 remote-fs.target -> /usr/lib/systemd/system/remote-fs.target
+lrwxrwxrwx. 1 root root 39 Dec 23 07:44 rsyslog.service -> /usr/lib/systemd/system/rsyslog.service
+lrwxrwxrwx. 1 root root 36 Dec 23 07:44 sshd.service -> /usr/lib/systemd/system/sshd.service
+lrwxrwxrwx. 1 root root 37 Dec 23 07:44 tuned.service -> /usr/lib/systemd/system/tuned.service
+lrwxrwxrwx. 1 root root 40 Dec 23 07:44 vmtoolsd.service -> /usr/lib/systemd/system/vmtoolsd.service
+
+[root@basic ~]# ls -l /usr/lib/systemd/system | head -n 20    # 观察随 安装的 rpm 包 分发的 Systemd unit files
+total 864
+-rw-r--r--. 1 root root  275 Aug  3  2017 arp-ethers.service
+-rw-r--r--  1 root root  222 Oct 31  2018 atd.service
+-rw-r--r--. 1 root root 1204 Aug  5  2017 auditd.service
+lrwxrwxrwx. 1 root root   14 Dec 23 07:44 autovt@.service -> getty@.service
+-rw-r--r--. 1 root root  517 Aug  5  2017 basic.target
+drwxr-xr-x. 2 root root  224 Dec 23 07:44 basic.target.wants
+-r--r--r--. 1 root root  383 Aug  5  2017 blk-availability.service
+-rw-r--r--. 1 root root  379 Aug  5  2017 bluetooth.target
+-rw-r--r--. 1 root root  160 May  3  2017 brandbot.path
+-rw-r--r--. 1 root root  116 May  3  2017 brandbot.service
+-rw-r--r--  1 root root  209 Apr 11  2018 chrony-dnssrv@.service
+-rw-r--r--  1 root root  138 Apr 11  2018 chrony-dnssrv@.timer
+-rw-r--r--  1 root root  488 Apr 13  2018 chronyd.service
+-rw-r--r--  1 root root  472 Sep 15  2017 chrony-wait.service
+-rw-r--r--. 1 root root  770 Aug  5  2017 console-getty.service
+-rw-r--r--. 1 root root  749 Aug  5  2017 console-shell.service
+-rw-r--r--. 1 root root  791 Aug  5  2017 container-getty@.service
+-rw-r--r--. 1 root root  294 Aug 23  2017 cpupower.service
+-rw-r--r--. 1 root root  284 Aug  3  2017 crond.service
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
