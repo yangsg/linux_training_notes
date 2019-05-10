@@ -57,34 +57,189 @@ chkconfig --list           |     systemctl list-dependencies --before        |  
 
 
 
+[root@basic ~]# systemctl start nfs-server.service
+[root@basic ~]# systemctl stop nfs-server.service   # 等价于 `systemctl stop nfs-server` # 因当省略  file extension时, systemctl 假设参数 是 a service unit
+[root@basic ~]# systemctl stop nfs-server
+
+
+[root@basic ~]# systemctl show nfs-server.service -p Names    # 有些 units 还有 别名(alias names). 可以使用该命令来显示 对应 unit 的所有别名
+Names=nfs-server.service
 
 
 
 
 
+Behavior of systemctl in a chroot Environment (systemctl 在 chroot 环境中的行为)
+    如果你使用 chroot 命令改变 root 目录, 大多数systemctl 命令 会拒绝 执行任何动作.
+    其原因是 systemd process 和 使用 chroot 命令的 user 具有 不同的 filesystem 的视图(view).
+    如 从 kickstart 文件中 调用 systemctl 时就会发生这种情况.
+
+    例外的情况是 像 systemctl enable 和 systemctl disable 这样的 unit file commands.
+    这些命令不需要 a running system 且 do not affect running processes,但 they do affect unit files.
+    因此，即使在 chroot 环境中 也能 执行 这些命令.
+
+
+
+[root@basic ~]# systemctl list-units --type service   # 列出所有 当前已 loaded 的 service units (默认systemctl list-units 只显示 active 状态的 units)
+[root@basic ~]# systemctl list-units --type service | head -n 3
+UNIT                               LOAD   ACTIVE SUB     DESCRIPTION
+atd.service                        loaded active running Job spooling tools
+auditd.service                     loaded active running Security Auditing Service
+
+[root@basic ~]# systemctl list-units --type service --all   # 列出所有 loaded 的 units 而不管其 state 如何
+
+[root@basic ~]# systemctl list-unit-files --type service  | head -n 5   # 显示 all available service units 来看其是否 可以被 enabled.
+UNIT FILE                                     STATE
+arp-ethers.service                            disabled
+atd.service                                   enabled
+auditd.service                                enabled
+auth-rpcgss-module.service                    static
+
+[root@basic ~]# systemctl status atd.service    # 显示对应 system service 的 service unit 的详细信息
+● atd.service - Job spooling tools
+   Loaded: loaded (/usr/lib/systemd/system/atd.service; enabled; vendor preset: enabled)
+   Active: active (running) since Fri 2019-05-10 13:35:32 CST; 1h 50min ago
+ Main PID: 655 (atd)
+   CGroup: /system.slice/atd.service
+           └─655 /usr/sbin/atd -f
+
+May 10 13:35:32 basic systemd[1]: Started Job spooling tools.
+May 10 13:35:32 basic systemd[1]: Starting Job spooling tools...
+
+
+
+
+Table 10.5. Available Service Unit Information
+---------------------------------------------------------------------------------------------------
+Field           Description
+---------------------------------------------------------------------------------------------------
+Loaded         Information whether the service unit has been loaded, the absolute path to the unit file, and a note whether the unit is enabled.
+---------------------------------------------------------------------------------------------------
+Active         Information whether the service unit is running followed by a time stamp.
+---------------------------------------------------------------------------------------------------
+Main PID       The PID of the corresponding system service followed by its name.
+---------------------------------------------------------------------------------------------------
+Status         Additional information about the corresponding system service.
+---------------------------------------------------------------------------------------------------
+Process        Additional information about related processes.
+---------------------------------------------------------------------------------------------------
+CGroup         Additional information about related Control Groups (cgroups).
+---------------------------------------------------------------------------------------------------
+
+
+
+
+[root@basic ~]# systemctl is-active atd.service    # 检查 特定的 service unit 是否正在 running
+active
+
+[root@basic ~]# systemctl is-enabled atd.service   # 确定 特定的 service unit 是否被 enabled 了
+enabled
+
+
+如下几个例子中与图形化相关的服务使在桌面版的 centos7 演示的
+[root@basic ~]# systemctl status gdm.service       # 显示 gdm.service unit 的状态
+● gdm.service - GNOME Display Manager
+   Loaded: loaded (/usr/lib/systemd/system/gdm.service; enabled; vendor preset: enabled)
+   Active: active (running) since Fri 2019-05-10 15:42:51 CST; 8min ago
+  Process: 1135 ExecStartPost=/bin/bash -c TERM=linux /usr/bin/clear > /dev/tty1 (code=exited, status=0/SUCCESS)
+ Main PID: 1105 (gdm)
+   CGroup: /system.slice/gdm.service
+           ├─1105 /usr/sbin/gdm
+           └─1250 /usr/bin/X :0 -background none -noreset -audit 4 -verbose -auth /run/gdm/auth-for-gdm-Vty1Hl/database -seat seat0 -nolisten tcp vt1
+
+May 10 15:42:49 localhost.localdomain systemd[1]: Starting GNOME Display Manager...
+May 10 15:42:51 localhost systemd[1]: Started GNOME Display Manager.
+May 10 15:47:41 localhost gdm-password][1574]: pam_unix(gdm-password:auth): authentication failure; logname= uid=0 euid=0 tty=/dev/tty1 ruser= rhost=  user=vbird
+May 10 15:47:57 localhost gdm-password][1593]: pam_unix(gdm-password:auth): authentication failure; logname= uid=0 euid=0 tty=/dev/tty1 ruser= rhost=  user=vbird
+
+
+
+[root@basic ~]# systemctl list-dependencies --after gdm.service | less  # 显示在指定的 service 之前 要求 启动(start) 的 services #Displaying Services Ordered to Start Before a Service
+gdm.service
+● ├─getty@tty1.service
+● ├─plymouth-quit.service
+● ├─plymouth-start.service
+● ├─rc-local.service
+● ├─system.slice
+● ├─systemd-journald.socket
+● ├─systemd-user-sessions.service
+● └─basic.target
+●   ├─rhel-import-state.service
+●   ├─systemd-ask-password-plymouth.path
+●   ├─paths.target
+●   │ ├─brandbot.path
+●   │ ├─cups.path
+略 略 略 略 略 略 略 略 略 略 略 略
+
+
+
+[root@basic ~]# systemctl list-dependencies --before gdm.service   # 显示哪些 services 要求在 指定的 service 之后启动  # Displaying Services Ordered to Start Before a Service
+gdm.service
+● ├─dracut-shutdown.service
+● ├─graphical.target
+● │ ├─systemd-readahead-done.service
+● │ ├─systemd-readahead-done.timer
+● │ └─systemd-update-utmp-runlevel.service
+● └─shutdown.target
+●   ├─systemd-reboot.service
+●   └─final.target
+●     └─systemd-reboot.service
+
+
+
+[root@basic ~]# systemctl start httpd.service    # 以 root 身份 启动 httpd.service  # 激活该 service unit 和 启动 httpd 守护进程(daemon)
+
+[root@basic ~]# systemctl stop httpd.service     # 以 root 身份 停止 对应的 service 的 service unit #  To deactivate this service unit and stop the httpd  daemon in the current session,
+
+[root@basic ~]# systemctl restart httpd.service  # 注意: 如果 指定的 service unit 即使处于非 running 状态, 该命令仍然会启动start 该指定的 service
+[root@basic ~]# systemctl try-restart httpd.service  # 重启(restart)指定的 service unit 仅当 对应的 service 已经处于 running 状态
+
+[root@basic ~]# systemctl reload httpd.service   # 某些 system services 允许reload其配置文件而不会中断其执行, 而不支持该特性的 system services 会完全忽略该命令
+
+[root@basic ~]# systemctl reload-or-restart httpd.service  # 如果units 支持 reload 则 reload. 如果不支持, 则 restart该unit.如果units尚未running,则其将会被 started.
+
+[root@basic ~]# systemctl reload-or-try-restart httpd.service  #如果units支持reload则reload. 如果不支持,则restart it.如果该units为非running状态,则什么也不做. 注:为了与SysV init scripts兼容, force-reload 等价于该命令
+
+[root@basic ~]# systemctl enable httpd.service  # 配置system service 对应的 service unit在启动(boot time)时被自动started.
+Created symlink from /etc/systemd/system/multi-user.target.wants/httpd.service to /usr/lib/systemd/system/httpd.service.
+
+该命令(即 systemctl enable name.service ) 读取指定的 service unit 中的 [Install] section 并 在 /etc/systemd/system/
+目录 即 其子目录 中创建到 /usr/lib/systemd/system/name.service 的相应的符号链接. 但是, 该命令不会重写(rewrite) 已经存在的links.
+如果你想确保该 symbolic links 被重新创建(re-created), 可以以 root 身份 执行如下 命令:
+     systemctl reenable name.service
+如:
+[root@basic ~]# systemctl reenable httpd.service   #该命令会 disables 指定的 service unit 并 立刻 再对其 enables.
+该命令会 disables 指定的 service unit 并 立刻 再对其 enables.
+
+
+[root@basic ~]# systemctl disable httpd.service    # 禁止 system service 对应的 service unit 在 boot time 时自动的被 started.
+Removed symlink /etc/systemd/system/multi-user.target.wants/httpd.service.
+
+该命令(systemctl disable name.service) 读取 指定的 service unit 中的 [Install] section 并
+删除 /etc/systemd/system/ 目录 和 其子目录 到 /usr/lib/systemd/system/name.service 文件的相应的符号链接(软连接 symbolic links).
+
+
+另外, 你还可以 mask 任何 service unit 来 防止其 被手动 或 其他的 service 启动(started), 为达到此目的, 以 root 身份 执行如下命令:
+[root@basic ~]# systemctl mask httpd.service   # mask 指定的 service unit 防止其被 手动 或 其他的 service 启动
+Created symlink from /etc/systemd/system/httpd.service to /dev/null.
+
+该命令(即 systemctl mask name.service) 使用 到 /dev/null 的符号链接 来替换 /etc/systemd/system/name.service,
+呈现一个 实际上不可访问(inaccessible) 的unit file 给systemd. 为了还原此操作(To revert this action) 和 unmask a service unit,
+使用类似如下的命令:
+[root@basic ~]# systemctl unmask httpd.service
+Removed symlink /etc/systemd/system/httpd.service.
 
 
 
 
 
+10.2.8. Starting a Conflicting Service (启动冲突的 service)
+      在 systemd 中, 在 services 中 positive and negative dependencies, 启动(start) 特定的service 可能
+      要求 启动 一个 或 多个 其他的 services (positive dependency) 或 停止 一个 或 多个 其他的 services (negative dependency).
 
+      当你尝试 启动(start) 一个 新的 service 时, systemd 自动解决 所有的 dependencies. 注意 该过程中 不会显示的通知 user.
+      如果你 已经 有一个 service 处于 running 状态, 且 你 尝试 start another service with a negative dependency, 则 第一个 service 会被自动停止(stopped).
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      例如, 如果你 运行了 postfix service(即该服务处于 running 状态), 同时你尝试 启动(start) sendmail service, 则 systemd 首先 自动停止(stops) postfix,
+      因为这两个 services 存在冲突 且 不能 运行在 相同的端口(port) 上.
 
