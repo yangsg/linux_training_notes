@@ -1,0 +1,90 @@
+
+
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/sect-managing_services_with_systemd-services
+
+
+10.2. managing system services
+
+以前版本redhat 用的是 SysV init 或 Upstart, 其 init scripts 放置在目录 /etc/rc.d/init.d/ 下,
+这些  init scripts 是典型的 bash 脚本. 并允许 系统管理员 控制 services 和 daemons 的 状态.
+在 redhat7 中,  init scripts 被替换成了 service units.
+
+service units 使用 文件扩展名 .service, 提供与 init scripts 类似的功能.
+
+
+
+Table 10.3. Comparison of the service Utility with systemctl  (service 工具 与  systemctl 的比较)
+---------------------------|--------------------------------------------------|-----------------------------------------
+        service                           systemctl                                    Description
+---------------------------|--------------------------------------------------|-----------------------------------------
+service name start         |      systemctl start name.service                | Starts a service.
+---------------------------|--------------------------------------------------|-----------------------------------------
+service name stop          |      systemctl stop name.service                 | Stops a service.
+---------------------------|--------------------------------------------------|-----------------------------------------
+service name restart       |      systemctl restart name.service              | Restarts a service.
+---------------------------|--------------------------------------------------|-----------------------------------------
+service name condrestart   |      systemctl try-restart name.service          | Restarts a service only if it is running.
+---------------------------|--------------------------------------------------|-----------------------------------------
+service name reload        |      systemctl reload name.service               | Reloads configuration.
+---------------------------|--------------------------------------------------|-----------------------------------------
+service name status        |      systemctl status name.service               | Checks if a service is running.
+                           |      systemctl is-active name.service            |
+---------------------------|--------------------------------------------------|-----------------------------------------
+service --status-all       |      systemctl list-units --type service --all   | Displays the status of all services.
+---------------------------|--------------------------------------------------|-----------------------------------------
+
+
+
+
+Table 10.4. Comparison of the chkconfig Utility with systemctl (chkconfig 工具 与 systemctl 的比较)
+---------------------------|-------------------------------------------------|------------------------------
+        chkconfig          |          systemctl                              |      Description
+---------------------------|-------------------------------------------------|------------------------------
+chkconfig name on          |     systemctl enable name.service               |   Enables a service.
+---------------------------|-------------------------------------------------|------------------------------
+chkconfig name off         |     systemctl disable name.service              |   Disables a service.
+---------------------------|-------------------------------------------------|------------------------------
+chkconfig --list name      |     systemctl status name.service               |   Checks if a service is enabled.
+                           |     systemctl is-enabled name.service           |
+---------------------------|-------------------------------------------------|------------------------------
+chkconfig --list           |     systemctl list-unit-files --type service    |   Lists all services and checks if they are enabled.
+---------------------------|-------------------------------------------------|------------------------------
+chkconfig --list           |     systemctl list-dependencies --after         |   Lists services that are ordered to start before the specified unit.
+---------------------------|-------------------------------------------------|------------------------------
+chkconfig --list           |     systemctl list-dependencies --before        |   Lists services that are ordered to start after the specified unit.
+---------------------------|-------------------------------------------------|------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
