@@ -1,0 +1,50 @@
+
+
+daemon   service
+
+
+atd     'at daemon'     atd.service
+crond   'cron daemon'   crond.service
+
+早期
+system V   init
+
+基本上 init 的管理机制有几个特色如下:
+
+服务启动、关闭与观察的方式:
+  /etc/init.d/
+
+  /etc/init.d/daemon start
+  /etc/init.d/daemon stop
+  /etc/init.d/daemon restart
+  /etc/init.d/daemon status
+
+
+服务启动的分类:
+  stand alone
+  super daemon   xinetd (Extended Internet Service Daemon)
+
+服务的相依性问题:
+  init 服务协助相依服务的唤醒
+
+执行等级的分类:
+
+0
+1
+2
+3
+4
+5
+6
+
+  各个执行等级的启动脚本是透过 /etc/rc.d/rc[0-6]/SXXdaemon 连结到 /etc/init.d/daemon
+
+制定执行等级默认要启动的服务:
+    chkconfig daemon on
+    chkconfig daemon off
+    chkconfig --list daemon
+
+执行等级的切换行为:
+  init 5
+
+
