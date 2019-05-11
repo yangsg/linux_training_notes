@@ -1,0 +1,151 @@
+
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/sect-managing_services_with_systemd-unit_files
+
+10.6. creating and modifying systemd unit files
+
+unit file 包含 描述 该 unit 和 定义 其 行为(behavior)的 配置指令. 有多个 systemctl 命令在后台是通过 unit files 来工作的.
+要进行更精细的调整, 系统管理员必须手动的编辑或创建 unit files.
+
+
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/chap-Managing_Services_with_systemd#tabl-Managing_Services_with_systemd-Introduction-Units-Locations
+
+Table 10.2. Systemd Unit Files Locations (如下目录的优先级 从上到下为 从低到高)
+------------------------------------------------------------------------------------------
+/usr/lib/systemd/system/  Systemd unit files distributed with installed RPM packages. 有点类似以前的 /etc/init.d 底下的档案
+/run/systemd/system/      Systemd unit files created at run time. This directory takes precedence over the directory with installed service unit files.
+/etc/systemd/system/      Systemd unit files created by systemctl enable as well as unit files added for extending a service. This directory takes precedence over the directory with run time unit files. 实这个目录有点像以前 /etc/rc.d/rc5.d/Sxx 之类的功能
+------------------------------------------------------------------------------------------
+
+目录 /etc/systemd/system/ 可以给 系统管理员 用来 创建 和 定制 unit files.
+
+Unit file names 具有如下形式:
+    unit_name.type_extension
+
+此处, unit_name 表示 unit 的名字 和 type_extension 标志了其 unit type. 如 sshd.service
+
+
+Table 10.1. Available systemd Unit Types
+------------------------------------------------------------------------------------------
+Unit Type           File Extension    Description
+------------------------------------------------------------------------------------------
+Service   unit         .service         A system service.
+Target    unit         .target          A group of systemd units.
+Automount unit         .automount       A file system automount point.
+Device    unit         .device          A device file recognized by the kernel.
+Mount     unit         .mount           A file system mount point.
+Path      unit         .path            A file or directory in a file system.
+Scope     unit         .scope           An externally created process.
+Slice     unit         .slice           A group of hierarchically organized units that manage system processes.
+Snapshot  unit         .snapshot        A saved state of the systemd manager.
+Socket    unit         .socket          An inter-process communication socket.
+Swap      unit         .swap            A swap device or a swap file.
+Timer     unit         .timer           A systemd timer.
+------------------------------------------------------------------------------------------
+
+unit files 可以 使用 额外的 configuration files 的 目录(directory) 来补充.
+
+例如, 为了给 sshd.service 添加 自定义的 configuration options, 可以创建 sshd.service.d/custom.conf 文件 并在其中插入额外的指令(directives).
+
+同时, 还可以创建 目录 sshd.service.wants/ 和 sshd.service.requires/. 这些目录包含了 到 作为 sshd service 的 依赖的 unit files 的 符号链接(symbolic links).
+这些符号链接 可以是在 安装阶段(during installation) 根据 unit file 中的 [Install] options 自动被创建, 或在 运行时(at runtime) 基于 [Unit] options 在自动创建.
+也可以手动来创建 这些 directories 和 symbolic links.
+
+
+许多 unit file options 可以使用被称为 unit specifiers 的 wildcard strings 来设置,
+该 wildcard strings 会在 该 unit file 被 loaded 是动态地被 unit parameters 替换.
+这可以用于创建通用的 unit files 作为 生成 实例 units 的 模板(templates).
+
+
+10.6.1. Understanding the Unit File Structure
+
+unit files 典型地 由 3 部分构成:
+[Unit]
+    包含不依赖于 unit 类型的 通用选项(generic options). 这些 options 提供了 unit 的描述, 指定了 unit 的行为, 设置了对 其他 units 的依赖.
+    常用的 [Unit] options 见 see Table 10.9, “Important [Unit] Section Options”.
+
+[unit type]
+    如果 unit 具有 类型特定的 directives, 则这些选项被组织在 以 unit type 命名的 section 下面.
+    例如,  service unit files 包含 [Service] section, 更多常用的 [Service] options 见 Table 10.10, “Important [Service] Section Options”
+
+[Install]
+    包含了 systemctl enable 和 disable 命令使用的与 unit installation 相关的信息. 更多 [Install] options 的信息见 see Table 10.11, “Important [Install] Section Options”.
+
+
+---------------------------------------------------------------------------------------
+[root@basic ~]# cat /usr/lib/systemd/system/sshd.service
+[Unit]
+Description=OpenSSH server daemon
+Documentation=man:sshd(8) man:sshd_config(5)
+After=network.target sshd-keygen.service
+Wants=sshd-keygen.service
+
+[Service]
+Type=notify
+EnvironmentFile=/etc/sysconfig/sshd
+ExecStart=/usr/sbin/sshd -D $OPTIONS
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=on-failure
+RestartSec=42s
+
+[Install]
+WantedBy=multi-user.target
+[root@basic ~]#
+
+---------------------------------------------------------------------------------------
+
+Table 10.9. Important [Unit] Section Options (重要的 [Unit] Section 选项, 完整的 [Unit] section 选项见 man 5 systemd.unit )
+------------------|--------------------------------------------------------------------------------------------------------
+Option            |       Description
+------------------|--------------------------------------------------------------------------------------------------------
+Description       |       该unit的有意义的描述, 该 文本 会 显示在 如 systemctl status  的输出中
+------------------|--------------------------------------------------------------------------------------------------------
+Documentation     |       提供了 该 引用 该 unit 的 documentation 的 URIs 列表
+------------------|--------------------------------------------------------------------------------------------------------
+After             |       定义了 units 的启动顺序. 该 unit 只 在 After 中指定的 units 被激活(active) 之后启动(start).
+                  |       不像 Requires, After 不会 显示的 去激活(activate) 指定的 units.
+                  |       而 Before 选项则 具有与 After 相反的功能.
+------------------|--------------------------------------------------------------------------------------------------------
+Requires          |       配置 基于 其他 units 的依赖(dependencies). 在 Requires 中列出的 这些 units 会和 该 unit 一起被 激活(activated).
+                  |       如果其中 任何 required units在start时失败, 则该 unit 也不会被激活(activated)
+------------------|--------------------------------------------------------------------------------------------------------
+Wants             |       配置 相比 Requires 更弱的依赖(weaker dependencies). 如果 Wants 列出的 units 中任何 unit 未成功启动(start),
+                  |       其对该 unit 的激活(activation)没有影响. 这是推荐的 创建 自定义(custom) unit dependencies 的方式.
+------------------|--------------------------------------------------------------------------------------------------------
+Conflicts         |       配置 negative dependencies, 与 Requires 相反
+------------------|--------------------------------------------------------------------------------------------------------
+
+注：
+    在大多数情况下, 仅通过 After 和 Before 这两个 unit file options 来设置 the ordering dependencies 就足够了. 如果你还通过
+    Wants (recommended) 或 Requires 设置了 a requirement dependency, the ordering dependency 仍然需要被 指定. 那是因为
+    ordering 和 requirement dependencies 是彼此 独立工作的.
+
+
+
+Table 10.10. Important [Service] Section Options (重要的 [Service] Section 选项)
+---------------------------------------------------------------------------------------------------------------------------
+Option                   Description
+---------------------------------------------------------------------------------------------------------------------------
+Type                     配置 unit process 的 startup type, 该 startup type 会 影响 ExecStart 的功能 和 相关的 options. One of:
+
+                         simple - 默认值, 由 ExecStart 启动(started)的 进程(process) 为该 service 的 主进程(main process)
+
+
+---------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
