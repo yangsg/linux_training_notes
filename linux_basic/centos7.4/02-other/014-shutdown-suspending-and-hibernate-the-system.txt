@@ -1,0 +1,79 @@
+
+
+
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/sect-managing_services_with_systemd-power
+
+10.4. shutting down, suspending, and hibernating the system
+
+在 redhat7 中, systemctl 工具 替代了 redhat 以前版本中使用的 许多 电源管理(power management) 的命令.
+虽然就的命令因为兼容的原因仍然可用,但建议你还是尽可能使用 systemctl 工具.
+
+
+Table 10.8. Comparison of Power Management Commands with systemctl (比较 电源管理命令 和 systemctl 工具 )
+---------------------|-------------------------------|-----------------------------------------------
+   Old Command       |       New Command             |     Description
+---------------------|-------------------------------|-----------------------------------------------
+halt                 |      systemctl halt           |    Halts the system.
+---------------------|-------------------------------|-----------------------------------------------
+poweroff             |      systemctl poweroff       |    Powers off the system.
+---------------------|-------------------------------|-----------------------------------------------
+reboot               |      systemctl reboot         |    Restarts the system.
+---------------------|-------------------------------|-----------------------------------------------
+pm-suspend           |      systemctl suspend        |    Suspends the system.
+---------------------|-------------------------------|-----------------------------------------------
+pm-hibernate         |      systemctl hibernate      |    Hibernates the system.
+---------------------|-------------------------------|-----------------------------------------------
+pm-suspend-hybrid    |      systemctl hybrid-sleep   |    Hibernates and suspends the system.
+---------------------|-------------------------------|-----------------------------------------------
+
+
+
+10.4.1. Shutting Down the System
+
+[root@basic ~]# systemctl poweroff  # 关机且断电(默认会向所有当前登入用户发送通知消息) # To shut down the system and power off the machine
+[root@basic ~]# systemctl halt      # 关机及停止系统,但不断电(默认会向所有当前登入用户发送通知消息)# To shut down and halt the system without powering off the machine
+
+[root@basic ~]# systemctl --no-wall poweroff  # 关机且断电 (选项 --no-wall 用户阻止 systemd 发送通知消息)
+[root@basic ~]# systemctl --no-wall halt      # 关机及停止系统(选项 --no-wall 用户阻止 systemd 发送通知消息)
+
+
+还可以指定在某个时间关闭 和 断电机器, 可以以 root 身份键入如下命令:
+shutdown --poweroff hh:mm
+其中 hh:mm 是24小时时钟格式的时间. 文件 /run/nologin 会在 system shutdown 之前的 5 minutes 被创建 用于 阻止 新的 logins.
+当使用了 time 参数的时候,  an optional message, the wall message, can be appended to the command.
+[root@basic ~]# shutdown --poweroff 09:32     # 计划在 09:32 时 关机且断电 (如果后悔了, 可以执行命令 `shutdown -c` 来取消该关机计划)
+Shutdown scheduled for Sat 2019-05-11 09:32:00 CST, use 'shutdown -c' to cancel.
+
+[root@basic ~]# shutdown --poweroff 09:40    '该系统将在 09:40 被关闭,请及时做好资料保存工作'
+
+[root@basic ~]# shutdown --poweroff +5    # 计划在 5 minutes 之后 关闭和断电
+
+[root@basic ~]# shutdown -c    # 取消(cancel)预订的关机计划
+
+[root@basic ~]# shutdown --halt +5   # 计算在 5 minutes 后 halt 主机 (即关闭系统但不断电, 可以执行命令 `shutdown -c` 来取消该计划)
+Shutdown scheduled for Sat 2019-05-11 09:55:13 CST, use 'shutdown -c' to cancel.
+
+[root@basic ~]# shutdown --halt 09:59  # 计划在 09:59 时 halt(关机及停止系统,但不断电) 主机 (如果后悔了, 可以执行命令 `shutdown -c` 来取消该关机计划)
+Shutdown scheduled for Sat 2019-05-11 09:59:00 CST, use 'shutdown -c' to cancel.
+
+[root@basic ~]# shutdown --poweroff now  # 立刻关闭且断电, 等价于 `shutdown --poweroff  +0`
+
+
+[root@basic ~]# systemctl reboot    # 重启系统
+[root@basic ~]# systemctl --no-wall reboot   # 重启系统但不发送通知消息
+
+[root@basic ~]# systemctl suspend   # 挂起、暂停主机, 即将 系统状态保存在内存中, 并断电大部分主机设备. 不过这种方式容易受断电的影响
+
+  命令 `systemctl suspend` 会将 system state 保存在内存(RAM) 中但 RAM module 除外, 断电大部分 主机 设备(devices).
+  当你 turn the machine back on 时, 系统会 还原(restore) 其 RAM 中的 state 而无需 boot again. 因为系统状态(system state)
+  是被保存在 RAM 中 而非 hard disk 上, 所以 从 suspend mode 还原系统 明显要快于 从 hibernation 中还原. 但是相应的,
+  a suspended system state 也更容易受 断电的影响.
+
+[root@basic ~]# systemctl hibernate  # 休眠系统, 将system state 持久化保存到hard disk drive上且断电 machine. 因此无需在RAM module中维持电量, 但restore时要比从suspend还原要慢一些
+  命令 `systemctl hibernate` 将 system state 保存到 hard disk drive 上 并 断电 machine. 当你 turn the machine back on时,
+  系统 将从 保存的状态数据中还原(restores) 而无需boot again. 因为 system state 被保存在 hard disk 上而非 RAM 中, 所以 machine
+  无需在 RAM module 中维持 电量. 但其结果是, 从 hibernation 中还原(restore)系统 会明显的慢于 从 suspend mode 中还原(restore)
+
+
+[root@basic ~]# systemctl hybrid-sleep   # To hibernate and suspend the system
+
