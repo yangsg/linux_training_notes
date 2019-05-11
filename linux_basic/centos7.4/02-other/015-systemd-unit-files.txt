@@ -130,9 +130,23 @@ Type                     配置 unit process 的 startup type, 该 startup type 
 
                          simple - 默认值, 由 ExecStart 启动(started)的 进程(process) 为该 service 的 主进程(main process)
 
+                         forking – 由 ExecStart 启动(started) 的进程 产生(spawns) 一个子进程(a child process)
+                                   作为 service 的 主进程. 其父进程在startup完成时退出(exit)
+
+                         oneshot – 该type类似于 simple, 但是该 进程 在启动(start) 随后的 units 之前就 退出(exit)了.
+
+                         dbus – 该type类似于 simple, 但是随后的 units 只有在 主进程 获取(gains)了 D-Bus name 之后 才会被 启动(started)
+
+                         notify – 该type类似于 simple, 但随后的 units 只有在 a notification message 通过 sd_notify() 函数 发送(sent) 之后 才被 启动(started)
+
+                         idle – 类似于 simple, 该 service binary 的实际执行 会延迟(delayed) 直到 all jobs 结束,
+                                这避免了 将 the status output 与 shell output of services 混淆(mix).
+---------------------------------------------------------------------------------------------------------------------------
+
+
 
 ---------------------------------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------------------------------
+
 
 
 
