@@ -125,38 +125,147 @@ Conflicts         |       配置 negative dependencies, 与 Requires 相反
 
 
 Table 10.10. Important [Service] Section Options (重要的 [Service] Section 选项) (要查看完整的 options 列表见 man 5 systemd.service)
----------------------------------------------------------------------------------------------------------------------------
-Option                    Description
----------------------------------------------------------------------------------------------------------------------------
-Type                      配置 unit process 的 startup type, 该 startup type 会 影响 ExecStart 的功能 和 相关的 options. One of:
+-----------------|---------------------------------------------------------------------------------------------------------
+Option           |        Description
+-----------------|---------------------------------------------------------------------------------------------------------
+Type             |        配置 unit process 的 startup type, 该 startup type 会 影响 ExecStart 的功能 和 相关的 options. One of:
+                 |
+                 |        simple - 默认值, 由 ExecStart 启动(started)的 进程(process) 为该 service 的 主进程(main process)
+                 |
+                 |        forking – 由 ExecStart 启动(started) 的进程 产生(spawns) 一个子进程(a child process)
+                 |                  作为 service 的 主进程. 其父进程在startup完成时退出(exit)
+                 |
+                 |        oneshot – 该type类似于 simple, 但是该 进程 在启动(start) 随后的 units 之前就 退出(exit)了.
+                 |
+                 |        dbus – 该type类似于 simple, 但是随后的 units 只有在 主进程 获取(gains)了 D-Bus name 之后 才会被 启动(started)
+                 |
+                 |        notify – 该type类似于 simple, 但随后的 units 只有在 a notification message 通过 sd_notify() 函数 发送(sent) 之后 才被 启动(started)
+                 |
+                 |        idle – 类似于 simple, 该 service binary 的实际执行 会延迟(delayed) 直到 all jobs 结束,
+                 |               这避免了 将 the status output 与 shell output of services 混淆(mix).
+-----------------|---------------------------------------------------------------------------------------------------------
+ExecStart        |        指定在 unit 被启动(started) 时 被执行的 commands 或 scripts.
+                 |        ExecStartPre 和 ExecStartPost 指定 自定义的 在 ExecStart 之前(before) 或 之后(after) 执行的 commands.
+                 |        Type=oneshot 使其能够 指定 多个 按顺序执行的 自定义的 commands.
+-----------------|---------------------------------------------------------------------------------------------------------
+ExecStop         |        指定 当 该 unit 被 stopped 时 被执行的 commands 或 scripts.
+-----------------|---------------------------------------------------------------------------------------------------------
+ExecReload       |        指定 当 该 unit 被 reloaded 时 被执行的 commands 或 scripts
+-----------------|---------------------------------------------------------------------------------------------------------
+Restart          |        如果该 option 被启用(enabled), 该 service 将在其 process 退出(exits) 时 被重新启动(restarted)
+                 |        除非 a clean stop by the systemctl command.
+-----------------|---------------------------------------------------------------------------------------------------------
+RemainAfterExit  |        如果设置为 True, 该 service 被视为 active 即使 其 所有的 processes 都退出了. 默认值为 False.
+                 |        该 option 在 配置了 Type=oneshot 时 特别有用.
+-----------------|---------------------------------------------------------------------------------------------------------
 
-                          simple - 默认值, 由 ExecStart 启动(started)的 进程(process) 为该 service 的 主进程(main process)
 
-                          forking – 由 ExecStart 启动(started) 的进程 产生(spawns) 一个子进程(a child process)
-                                    作为 service 的 主进程. 其父进程在startup完成时退出(exit)
 
-                          oneshot – 该type类似于 simple, 但是该 进程 在启动(start) 随后的 units 之前就 退出(exit)了.
 
-                          dbus – 该type类似于 simple, 但是随后的 units 只有在 主进程 获取(gains)了 D-Bus name 之后 才会被 启动(started)
 
-                          notify – 该type类似于 simple, 但随后的 units 只有在 a notification message 通过 sd_notify() 函数 发送(sent) 之后 才被 启动(started)
+Table 10.11. Important [Install] Section Options (完整的选项信息见  man 5 systemd.unit)
+-----------------|---------------------------------------------------------------------------------------------------------
+Option           |               Description
+-----------------|---------------------------------------------------------------------------------------------------------
+Alias            |      提供 该 unit 的 额外的 由 space 分隔的 names. 大多数 systemctl 命令, 除 systemctl enable, 都能使用 aliases 来替代 其实际的 unit name.
+-----------------|---------------------------------------------------------------------------------------------------------
+RequiredBy       |      一个 要 依赖 该 unit 的 units 的列表. 如果该 unit 被 启用(enabled), 则 RequiredBy 中列出的 units 获取了 在 该 unit 上的 Require dependency.
+-----------------|---------------------------------------------------------------------------------------------------------
+WantedBy         |      弱依赖(weakly depend)该 unit 的 units 的列表. 当该 unit 被启用(enabled) 时, 则 WantedBy 中列出的 units 获取了 该 unit 上的 Want dependency.
+-----------------|---------------------------------------------------------------------------------------------------------
+Also             |      指定 要 伴随该 unit 一起 被 installed or uninstalled 的 units 的列表.
+-----------------|---------------------------------------------------------------------------------------------------------
+DefaultInstance  |      instantiated units 的 限制(Limited), 该 option 指定了 该 unit 对其 enabled 的 default instance. 见See Section 10.6.5, “Working with Instantiated Units”
+-----------------|---------------------------------------------------------------------------------------------------------
 
-                          idle – 类似于 simple, 该 service binary 的实际执行 会延迟(delayed) 直到 all jobs 结束,
-                                 这避免了 将 the status output 与 shell output of services 混淆(mix).
+
+
+
+
+
 ---------------------------------------------------------------------------------------------------------------------------
-ExecStart                 指定在 unit 被启动(started) 时 被执行的 commands 或 scripts.
-                          ExecStartPre 和 ExecStartPost 指定 自定义的 在 ExecStart 之前(before) 或 之后(after) 执行的 commands.
-                          Type=oneshot 使其能够 指定 多个 按顺序执行的 自定义的 commands.
+Example 10.17. postfix.service Unit File
+
+[root@basic ~]# systemctl status postfix.service
+● postfix.service - Postfix Mail Transport Agent
+   Loaded: loaded (/usr/lib/systemd/system/postfix.service; enabled; vendor preset: disabled)
+   Active: active (running) since Sat 2019-05-11 19:02:04 CST; 39min ago
+  Process: 930 ExecStart=/usr/sbin/postfix start (code=exited, status=0/SUCCESS)
+  Process: 927 ExecStartPre=/usr/libexec/postfix/chroot-update (code=exited, status=0/SUCCESS)
+  Process: 917 ExecStartPre=/usr/libexec/postfix/aliasesdb (code=exited, status=0/SUCCESS)
+ Main PID: 1002 (master)
+   CGroup: /system.slice/postfix.service
+           ├─1002 /usr/libexec/postfix/master -w
+           ├─1003 pickup -l -t unix -u
+           └─1004 qmgr -l -t unix -u
+
+
+[root@basic ~]# cat /usr/lib/systemd/system/postfix.service    # 观察 the postfix.service unit file
+[Unit]
+Description=Postfix Mail Transport Agent
+# 指定 了顺序依赖, 即 只有 syslog.target network.target 被激活之后, 该 unit  才能被启动
+After=syslog.target network.target
+# 指定的 negative dependencies, 即 该 unit 与 sendmail.service exim.service 冲突
+Conflicts=sendmail.service exim.service
+
+[Service]
+Type=forking
+# 指定 该 service 的主进程 (main process) 的 a stable PID
+PIDFile=/var/spool/postfix/pid/master.pid
+# 指定了 该 service 的 环境变量(environment variables) 被定义的位置
+EnvironmentFile=-/etc/sysconfig/network
+ExecStartPre=-/usr/libexec/postfix/aliasesdb
+ExecStartPre=-/usr/libexec/postfix/chroot-update
+# 指定该 unit 被 启动(start) 时 执行的 commands 或 scripts
+ExecStart=/usr/sbin/postfix start
+ExecReload=/usr/sbin/postfix reload
+ExecStop=/usr/sbin/postfix stop
+
+[Install]
+# 列出弱依赖 该unit 的 units
+WantedBy=multi-user.target
+
 ---------------------------------------------------------------------------------------------------------------------------
-ExecStop                  指定 当 该 unit 被 stopped 时 被执行的 commands 或 scripts.
+
 ---------------------------------------------------------------------------------------------------------------------------
-ExecReload                指定 当 该 unit 被 reloaded 时 被执行的 commands 或 scripts
----------------------------------------------------------------------------------------------------------------------------
-Restart                   如果该 option 被启用(enabled), 该 service 将在其 process 退出(exits) 时 被重新启动(restarted)
-                          除非 a clean stop by the systemctl command.
----------------------------------------------------------------------------------------------------------------------------
-RemainAfterExit           如果设置为 True, 该 service 被视为 active 即使 其 所有的 processes 都退出了. 默认值为 False.
-                          该 option 在 配置了 Type=oneshot 时 特别有用.
+10.6.2. Creating Custom Unit Files (创建自定义的 unit files)
+
+有几种 从头开始 创建 unit files 的用例(use cases):
+
+你 可以 运行 自定义的 守护进程(daemon), 创建 一些已存在的 service 的 第二个 实例(instance)(如 as in Example 10.19, “Creating a second instance of the sshd service”),
+或者 导入 a SysV init script (more in Section 10.6.3, “Converting SysV Init Scripts to Unit Files”). 另一方面, 如果你仅想 修改(modify) 或 扩展(extend) 已存在的unit
+的行为(behavior), 使用 Section 10.6.4, “Modifying Existing Unit Files” 中的 instructions.
+下面的 过程(procedure) 描述了 创建 自定义的 service 的 通用 步骤(process):
+
+1. 准备 自定义 service 的 executable file. 这可以是 自定义创建的 script, 或 由 软件提供者 实现的 可执行 文件.
+   如果必要, 准备一个 PID file 来 保持(hold) 该自定义 service 的 主进程的 constant PID.  也可以包含 environment files
+   用于存储该 service 的 shell variables.  Make sure the source script is executable (by executing the chmod a+x) and is not interactive.
+
+2. 在 /etc/systemd/system/ 目录中创建 unit file 并 确保 其 拥有 正确的 file permissions. 以 root 身份执行:
+      touch /etc/systemd/system/name.service
+      chmod 664 /etc/systemd/system/name.service
+   用创建的 service 的 name 替换如上命令中的 name. Note that file does not need to be executable.
+
+3. open 前一步 创建的 name.service file, 并 添加 该 service 的 configuration options. 存在各种 依赖于你希望创建的 service 的type 的 options 可被使用.
+   see Section 10.6.1, “Understanding the Unit File Structure”. The following is an example unit configuration for a network-related service:
+
+[Unit]
+# 该 service_description 是显示在 journal log files中 或 systemctl status 命令的输出(output)中的 通知描述
+Description=service_description
+# 该 After 设置保证 该 service 仅在 the network is running 之后才被 started. 添加以 space 分隔的其他相关的 services 或 targets 的 列表
+After=network.target
+
+[Service]
+# path_to_executable 代表 实际的 service executable 的 path
+ExecStart=path_to_executable
+#
+Type=forking
+PIDFile=path_to_pidfile
+
+[Install]
+WantedBy=default.target
+
+
 ---------------------------------------------------------------------------------------------------------------------------
 
 
