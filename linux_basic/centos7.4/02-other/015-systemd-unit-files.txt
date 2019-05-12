@@ -354,6 +354,132 @@ Created symlink from /etc/systemd/system/default.target.wants/emacs.service to /
 ---------------------------------------------------------------------------------------------------------------------------
 
 
+---------------------------------------------------------------------------------------------------------------------------
+Example 10.19. Creating a second instance of the sshd service (创建 sshd service 的 第二个 实例(instance))
+
+系统管理员 通常 需要 配置 和 执行 一个 service 的 多个实例(multiple instances).
+这是通过 创建 original service configuration files 的 copies 和 修改 certain parameters 来避免 与 该 service
+的 primary instance 的冲突 来实现的.
+
+如下的 procedure 演示了 如何 创建 sshd service 的 第 2 个 实例(a second instance):
+
+1. 创建 将被用于 the second daemon 的 the sshd_config file 的 副本(copy):
+
+[root@basic ~]# cp /etc/ssh/sshd{,-second}_config
+
+2. 编辑 前一个步骤中 创建的 sshd-second_config file 来 为 该 second daemon 赋予一个 不同的 port number and PID file.
+[root@basic ~]# vim /etc/ssh/sshd-second_config   # 修改 /etc/ssh/sshd-second_config 中的 Port 和 PidFile
+Port 22220
+PidFile /var/run/sshd-second.pid
+
+
+通过 `man 5 sshd_config` 可查看 关于 Port 和 PidFile 选项更多的信息.
+务必确保 你选择的 该 port 没有被 别的 任何 service 使用.
+该 PID file 在 running the service 不是必须要存在的, 它是在 service 启动(start) 时 自动生成的.
+
+3. 创建 该 sshd service 的 systemd unit file 的 一份 副本(copy):
+
+[root@basic ~]# cp /usr/lib/systemd/system/sshd.service /etc/systemd/system/sshd-second.service
+
+4. 按如下方式 修改 有 前一个步骤 创建的 sshd-second.service:
+[root@basic ~]# vim /etc/systemd/system/sshd-second.service
+[Unit]
+# a. 修改 Description 选项:
+Description=OpenSSH server second instance daemon
+Documentation=man:sshd(8) man:sshd_config(5)
+# b. 在 After 选项中 指定的 services中 添加 sshd.service. 因此 该 第二个实例(the second instance) 仅在第一个实例 已经启动(started) 之后 才启动(starts)
+After=network.target sshd-keygen.service sshd.service
+Wants=sshd-keygen.service
+
+[Service]
+Type=notify
+EnvironmentFile=/etc/sysconfig/sshd
+# c. The first instance of sshd includes key generation, therefore remove the ExecStartPre=/usr/sbin/sshd-keygen line.
+# d. 给 sshd 添加 -f /etc/ssh/sshd-second_config 参数, 因此将使用 另外一个 configuration file.
+ExecStart=/usr/sbin/sshd -D -f /etc/ssh/sshd-second_config  $OPTIONS
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=on-failure
+RestartSec=42s
+
+[Install]
+WantedBy=multi-user.target
+
+5. 如果使用了 SELinux, 需要将 该 second instance 的 port 添加到 SSH ports 中, 否则, 该 sshd 的 second instance 将被拒绝 bind 到 该 port 上:
+semanage port -a -t ssh_port_t -p tcp 22220
+
+6. enable sshd-second.service, 使其在 系统 boot 时 能自动 启动(starts):
+
+[root@basic ~]# systemctl enable sshd-second.service
+Created symlink from /etc/systemd/system/multi-user.target.wants/sshd-second.service to /etc/systemd/system/sshd-second.service.
+
+
+
+[root@basic ~]# systemctl start sshd-second.service
+
+[root@basic ~]# systemctl status sshd-second.service  # 验证 sshd-second.service 是否 is running
+● sshd-second.service - OpenSSH server second instance daemon
+   Loaded: loaded (/etc/systemd/system/sshd-second.service; enabled; vendor preset: disabled)
+   Active: active (running) since Sun 2019-05-12 10:28:40 CST; 3s ago
+     Docs: man:sshd(8)
+           man:sshd_config(5)
+ Main PID: 2648 (sshd)
+   CGroup: /system.slice/sshd-second.service
+           └─2648 /usr/sbin/sshd -D -f /etc/ssh/sshd-second_config
+
+May 12 10:28:40 basic systemd[1]: Starting OpenSSH server second instance daemon...
+May 12 10:28:40 basic sshd[2648]: Server listening on 0.0.0.0 port 22220.
+May 12 10:28:40 basic sshd[2648]: Server listening on :: port 22220.
+May 12 10:28:40 basic systemd[1]: Started OpenSSH server second instance daemon.
+
+[root@basic ~]# ssh -p 22220 root@192.168.175.141     # 验证 是否能 通过该 port 正确的 连接 到 该 service
+
+  如果使用了 防火墙(firewall), 请务必确保 其被恰当的配置 使 connections 能被允许 连接 到 sshd 的 the second instance 上.
+
+
+---------------------------------------------------------------------------------------------------------------------------
+其他资源:
+
+To learn how to properly choose a target for ordering and dependencies of your custom unit files, see the following articles::
+
+    How to write a service unit file which enforces that particular services have to be started
+    How to decide what dependencies a systemd service unit definition should have
+
+Additional information with some real-world examples of cases triggered by the ordering and dependencies in a unit file is available in the following article:
+
+      Is there any useful information about writing unit files?
+
+If you want to set limits for services started by systemd, see the Red Hat Knowledgebase article
+
+        How to set limits for services in RHEL 7 and systemd.
+
+These limits need to be set in the service's unit file.
+Note that systemd ignores limits set in the /etc/security/limits.conf and /etc/security/limits.d/*.conf configuration files.
+The limits defined in these files are set by PAM when starting a login session, but daemons started by systemd do not use PAM login sessions.
+
+---------------------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------------------
+10.6.3. Converting SysV Init Scripts to Unit Files (示例: 将 SysV Init Scripts 转换 为 Unit Files)
+
+在 花时间 将 a SysV init script 转换为 a unit file 之前, 务必确保 还没有在 任何其他地方 做过该 转换操作.
+所有 redhat7 的 core services 都 自带 默认的 unit files, 且 许多 的 third-party software packages 也是如此.
+
+  将 an init script 转换为 a unit file 需要 分析 the script 和 extracting the necessary information from it.
+  Based on this data you can create a unit file as described in Section 10.6.2, “Creating Custom Unit Files”.
+  As init scripts can vary greatly depending on the type of the service, you might need to employ more configuration options for translation than outlined in this chapter.
+  Note that some levels of customization that were available with init scripts are no longer supported by systemd units, see Section 10.1.2, “Compatibility Changes”.
+
+
+这部分内容太多, 见官网原始文档:
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/sect-managing_services_with_systemd-unit_files#sect-Managing_Services_with_systemd-Unit_File_Convert
+
+
+---------------------------------------------------------------------------------------------------------------------------
+
+
+---------------------------------------------------------------------------------------------------------------------------
+10.6.4. Modifying Existing Unit Files (示例: 修改 已存在 的 Unit Files)
 
 
 
@@ -361,13 +487,7 @@ Created symlink from /etc/systemd/system/default.target.wants/emacs.service to /
 
 
 
-
-
-
-
-
-
-
+---------------------------------------------------------------------------------------------------------------------------
 
 
 
