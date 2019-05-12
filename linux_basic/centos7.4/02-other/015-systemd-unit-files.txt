@@ -670,17 +670,118 @@ WantedBy=multi-user.target
 
 
 3. 重新加载(reload) the systemd daemon:
-
 [root@basic ~]# systemctl daemon-reload
 
-4. (Optional) 验证 the new timeout value:
 
+4. (Optional) 验证 the new timeout value:
 [root@basic ~]# systemctl show httpd -p TimeoutStartUSec
 TimeoutStartUSec=10s
 
 
 提示:
    要全局地 修改 the timeout limit, 修改 文件 /etc/systemd/system.conf 中的 DefaultTimeoutStartSec. See Section 10.1, “Introduction to systemd”.
+
+
+---------------------------------------------------------------------------------------------------------------------------
+Monitoring Overriden Units (监视被覆盖的 units)
+
+[root@basic ~]# systemd-delta   # 实现 被 覆盖 或 修改过的 unit files 的概要信息
+[EXTENDED]   /run/systemd/system/session-37.scope → /run/systemd/system/session-37.scope.d/50-After-systemd-user-sessions\x2eservice.conf
+[EXTENDED]   /run/systemd/system/session-37.scope → /run/systemd/system/session-37.scope.d/50-TasksMax.conf
+[EXTENDED]   /run/systemd/system/session-37.scope → /run/systemd/system/session-37.scope.d/50-SendSIGHUP.conf
+[EXTENDED]   /run/systemd/system/session-37.scope → /run/systemd/system/session-37.scope.d/50-After-systemd-logind\x2eservice.conf
+[EXTENDED]   /run/systemd/system/session-37.scope → /run/systemd/system/session-37.scope.d/50-Description.conf
+[EXTENDED]   /run/systemd/system/session-37.scope → /run/systemd/system/session-37.scope.d/50-Slice.conf
+[EXTENDED]   /run/systemd/system/user-0.slice → /run/systemd/system/user-0.slice.d/50-After-systemd-user-sessions\x2eservice.conf
+[EXTENDED]   /run/systemd/system/user-0.slice → /run/systemd/system/user-0.slice.d/50-Description.conf
+[EXTENDED]   /run/systemd/system/user-0.slice → /run/systemd/system/user-0.slice.d/50-After-systemd-logind\x2eservice.conf
+[EXTENDED]   /run/systemd/system/user-0.slice → /run/systemd/system/user-0.slice.d/50-TasksMax.conf
+[EXTENDED]   /run/systemd/system/session-36.scope → /run/systemd/system/session-36.scope.d/50-After-systemd-user-sessions\x2eservice.conf
+[EXTENDED]   /run/systemd/system/session-36.scope → /run/systemd/system/session-36.scope.d/50-TasksMax.conf
+[EXTENDED]   /run/systemd/system/session-36.scope → /run/systemd/system/session-36.scope.d/50-SendSIGHUP.conf
+[EXTENDED]   /run/systemd/system/session-36.scope → /run/systemd/system/session-36.scope.d/50-After-systemd-logind\x2eservice.conf
+[EXTENDED]   /run/systemd/system/session-36.scope → /run/systemd/system/session-36.scope.d/50-Description.conf
+[EXTENDED]   /run/systemd/system/session-36.scope → /run/systemd/system/session-36.scope.d/50-Slice.conf
+[EXTENDED]   /run/systemd/system/session-312.scope → /run/systemd/system/session-312.scope.d/50-SendSIGHUP.conf
+[EXTENDED]   /run/systemd/system/session-312.scope → /run/systemd/system/session-312.scope.d/50-Description.conf
+[EXTENDED]   /run/systemd/system/session-312.scope → /run/systemd/system/session-312.scope.d/50-Slice.conf
+[EXTENDED]   /run/systemd/system/session-312.scope → /run/systemd/system/session-312.scope.d/50-After-systemd-user-sessions\x2eservice.conf
+[EXTENDED]   /run/systemd/system/session-312.scope → /run/systemd/system/session-312.scope.d/50-After-systemd-logind\x2eservice.conf
+[EXTENDED]   /run/systemd/system/session-312.scope → /run/systemd/system/session-312.scope.d/50-TasksMax.conf
+[OVERRIDDEN] /etc/systemd/system/httpd.service → /usr/lib/systemd/system/httpd.service
+
+--- /usr/lib/systemd/system/httpd.service       2018-10-30 23:00:25.000000000 +0800
++++ /etc/systemd/system/httpd.service   2019-05-12 15:36:07.979536825 +0800
+@@ -17,6 +17,8 @@
+ # httpd time to finish.
+ KillSignal=SIGCONT
+ PrivateTmp=true
++# 指定 TimeoutStartSec 值
++TimeoutStartSec=10
+
+ [Install]
+ WantedBy=multi-user.target
+
+[EXTENDED]   /etc/systemd/system/httpd.service → /etc/systemd/system/httpd.service.d/custom_script.conf
+[REDIRECTED] /etc/systemd/system/default.target → /usr/lib/systemd/system/default.target
+
+25 overridden configuration files found.
+[root@basic ~]#
+
+
+Table 10.13, “systemd-delta Difference Types” lists override types that can appear in the output of systemd-delta.
+Note that if a file is overridden, systemd-delta by default displays a summary of changes similar to the output of the diff command.
+
+Table 10.13. systemd-delta Difference Types
+----------------|---------------------------------------------------------------------------
+   Type         |          Description
+----------------|---------------------------------------------------------------------------
+[MASKED]        |       Masked unit files, see Section 10.2.7, “Disabling a Service” for description of unit masking.
+----------------|---------------------------------------------------------------------------
+[EQUIVALENT]    |       Unmodified copies that override the original files but do not differ in content, typically symbolic links.
+----------------|---------------------------------------------------------------------------
+[REDIRECTED]    |       Files that are redirected to another file.
+----------------|---------------------------------------------------------------------------
+[OVERRIDEN]     |       Overridden and changed files.
+----------------|---------------------------------------------------------------------------
+[EXTENDED]      |       Files that are extended with .conf files in the /etc/systemd/system/unit.d/ directory.
+----------------|---------------------------------------------------------------------------
+[UNCHANGED]     |       Unmodified files are displayed only when the --type=unchanged option is used.
+----------------|---------------------------------------------------------------------------
+
+
+在 system update 之后 使用 systemd-delta 来 检查 是否存在 任何 对 the default units 的更新(且该 default units 同时被当前 custom configuration 所 覆盖).
+还可以 限制 仅显示 特定的 difference type. 例如, 仅查看 the overridden units, 执行:
+
+[root@basic ~]# systemd-delta --type=overridden   # 仅查看 the overridden units
+[OVERRIDDEN] /etc/systemd/system/httpd.service → /usr/lib/systemd/system/httpd.service
+
+--- /usr/lib/systemd/system/httpd.service       2018-10-30 23:00:25.000000000 +0800
++++ /etc/systemd/system/httpd.service   2019-05-12 15:36:07.979536825 +0800
+@@ -17,6 +17,8 @@
+ # httpd time to finish.
+ KillSignal=SIGCONT
+ PrivateTmp=true
++# 指定 TimeoutStartSec 值
++TimeoutStartSec=10
+
+ [Install]
+ WantedBy=multi-user.target
+
+
+1 overridden configuration files found.
+[root@basic ~]#
+---------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+---------------------------------------------------------------------------------------------------------------------------
+
+10.6.5. Working with Instantiated Units
+
+
+
 
 
 
