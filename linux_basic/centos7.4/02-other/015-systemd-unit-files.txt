@@ -780,23 +780,65 @@ Table 10.13. systemd-delta Difference Types
 
 10.6.5. Working with Instantiated Units
 
+可以在 运行时(at runtime) 从 a single template configuration file 实例化 多个 units. 符号 '@' 被用于 mark the template and to associate units with it.
+实例化 units 可以 开始于 其他 unit file(using Requires or Wants options), 或者 使用 systemctl start 命令. 被 实例化的 service 按如下方式 命名:
+
+template_name@instance_name.service
+
+其中 template_name 代表 the template configuration file 的 name. 用 the unit instance 的 name 替换 instance_name.
+多个 instances 可以 指向(point) 相同的 其 configuration options 可被 该 unit 的 所有 instances 共用的 template file.
+template unit 的 name 具有如下形式:
+
+unit_name@.service
+
+例如，在 如下的  一个 unit file 中的 的 Wants 设置:
+
+Wants=getty@ttyA.service,getty@ttyB.service
+
+首先 会让 systemd 去 搜索 给定 的 service units. 如果 这样的 units 没有被找到,
+则 在 "@" 和 the type suffix 之间的部分 会被忽略 且 systemd 会 搜索 getty@.service 文件,从
+其中读取配置，并 启动服务(starts the services)
+
+通配符(Wildcard characters), 被称为 unit specifiers, 可以被用于 任何 unit configuration file 中.
+unit specifiers 替换 特定的 unit parameters 并在 运行时(at runtime) 被解释.
+Table 10.14, “Important Unit Specifiers” lists unit specifiers that are particularly useful for template units.
 
 
+Table 10.14. Important Unit Specifiers 重要的 unit specifiers)
+-------|-----------------------|--------------------------------------------------------------------------------------------
+Unit   |   Specifier           |     Meaning Description
+-------|-----------------------|--------------------------------------------------------------------------------------------
+%n     |   Full unit name      |     Stands for the full unit name including the type suffix.
+       |                       |     %N has the same meaning but also replaces the forbidden characters with ASCII codes.
+-------|-----------------------|--------------------------------------------------------------------------------------------
+%p     |   Prefix name         |     Stands for a unit name with type suffix removed.
+       |                       |     For instantiated units %p stands for the part of the unit name before the "@" character.
+-------|-----------------------|--------------------------------------------------------------------------------------------
+%i     |   Instance name       |     Is the part of the instantiated unit name between the "@" character and the type suffix.
+       |                       |     %I has the same meaning but also replaces the forbidden characters for ASCII codes.
+-------|-----------------------|--------------------------------------------------------------------------------------------
+%H     |   Host name           |     Stands for the hostname of the running system at the point in time the unit configuration is loaded.
+-------|-----------------------|--------------------------------------------------------------------------------------------
+%t     |   Runtime directory   |     Represents the runtime directory, which is either /run for the root user,
+       |                       |     or the value of the XDG_RUNTIME_DIR variable for unprivileged users.
+-------|-----------------------|--------------------------------------------------------------------------------------------
+
+完整的 unit specifiers 列表见   man 5 systemd.unit
+
+例如, getty@.service 模板(template) 包含了 如下 指令(directives):
+
+[Unit]
+Description=Getty on %I
+...
+[Service]
+ExecStart=-/sbin/agetty --noclear %I $TERM
+...
+
+当 getty@ttyA.service 和 getty@ttyB.service 从 如上的 template 被 实例化(instantiated)时,  Description= 会被解析为 Getty on ttyA 和 Getty on ttyB.
 
 
+---------------------------------------------------------------------------------------------------------------------------
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+其他资料：
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/sect-managing_services_with_systemd-resources
 
