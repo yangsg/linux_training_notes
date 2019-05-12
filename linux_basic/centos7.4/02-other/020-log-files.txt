@@ -1,0 +1,154 @@
+
+https://www.rsyslog.com/doc/master/index.html
+man rsyslogd
+
+
+
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/ch-Viewing_and_Managing_Log_Files
+
+《鸟哥的linux私房菜》
+
+
+日志(log)就是 记录系统活动信息的几个文件. 例如
+何时、何地 (来源 IP)、何人 (什么服务名称)、做了什么动作 (讯息登录啰)。
+
+Log files 包含了 关于 system 的 messages, 包括 kernel, services 和 applications.
+
+
+日志文件的重要性
+
+troubleshoot a problem
+  解决系统方面的错误
+  解决网络服务的问题
+
+analyze system status
+
+  过往事件记录簿
+
+
+
+/var/log/maillog
+
+
+linux 常见的日志文件
+
+登录文件可以帮助我们了解很多系统重要的事件，包括登入者的部分信息，因此登录文件的权限通常是设定为仅有 root 能够读取而已。
+
+/var/log/boot.log*
+      开机的时候系统核心会去侦测与启动硬件，接下来开始各种核心支持的功能启动等。这些流程都会记录在 /var/log/boot.log 里面哩！
+      不过这个档案只会存在这次开机启动的信息，前次开机的信息并不会被保留下来！
+
+
+/var/log/cron
+      你的 /etc/crontab 是否撰写正确？在这个登录档内查询看看。
+
+
+/var/log/dmesg
+      记录系统在开机的时候核心侦测过程所产生的各项信息。
+      由于 CentOS 默认将开机时核心的硬件侦测过程取消显示，因此额外将数据记录一份在这个档案中；
+
+/var/log/lastlog
+      可以记录系统上面所有的账号最近一次登入系统时的相关信息
+
+/var/log/maillog* 或 /var/log/mail/*:
+      记录邮件的往来信息，其实主要是记录 postfix (SMTP 协议提供者) 与 dovecot (POP3 协议提供者) 所产生的讯息啦。
+
+
+/var/log/messages*
+      这个档案相当的重要，几乎系统发生的错误讯息 (或者是重要的信息) 都会记录在这个档案中；
+      如果系统发生莫名的错误时，这个档案是一定要查阅的登录档之一。
+
+/var/log/secure*
+      基本上，只要牵涉到『需要输入账号密码』的软件，那么当登入时 (不管登入正确或错误) 都会被记录在此档案中。
+      包括系统的 login 程序、图形接口登入所使用的 gdm 程序、 su, sudo 等程序、还有网络联机的 ssh, telnet 等程序， 登入信息都会被记载在这里；
+
+/var/log/wtmp, /var/log/faillog ( 注: 我的centos7 没找到 /var/log/faillog )
+/var/log/btmp
+      这两个档案可以记录正确登入系统者的帐户信息 (wtmp) 与错误登入时所使用的帐户信息 (faillog) ！
+
+/var/log/httpd/*, /var/log/samba/*
+      不同的网络服务会使用它们自己的登录档案来记载它们自己产生的各项讯息！上述的目录内则是个别服务所制订的登录档。
+
+  常见的登录档就是这几个，但是不同的 Linux distributions ，通常登录档的档名不会相同 (除了 /var/log/messages 之外 )。
+  所以说，你还是得要查阅你 Linux 主机上面的登录文件设定数据， 才能知道你的登录档主要档名喔！
+
+
+
+登录档所需相关服务 (daemon) 与程序
+
+日志文件产生的两种方式:
+     * 软件开发商自行定义写入的登录档与相关格式， 例如 WWW 软件 apache 就是这样处理的
+     * 由 Linux distribution 提供的登录档管理服务来统一管理。 你只要将讯息丢给这个服务后，
+       他就会自己分门别类的将各种讯息放置到相关的登录档去！CentOS 提供 rsyslog.service 这个服务来统一管理登录档喔！
+
+   logrotate 日志滚动
+
+
+总结一下，针对登录文件所需的功能，我们需要的服务与程序有：
+
+* systemd-journald.service：最主要的讯息收受者，由 systemd 提供的；
+* rsyslog.service：主要登录系统与网络等服务的讯息；
+* logrotate：主要在进行登录文件的轮替功能。
+
+
+由于我们着眼点在于想要了解系统上面软件所产生的各项信息，因此本章主要针对 rsyslog.service 与 logrotate 来介绍。
+
+[root@basic ~]# systemctl status rsyslog.service
+● rsyslog.service - System Logging Service
+   Loaded: loaded (/usr/lib/systemd/system/rsyslog.service; enabled; vendor preset: enabled)
+   Active: active (running) since Sun 2019-05-12 19:28:05 CST; 32min ago
+     Docs: man:rsyslogd(8)
+           http://www.rsyslog.com/doc/
+ Main PID: 642 (rsyslogd)
+   CGroup: /system.slice/rsyslog.service
+           └─642 /usr/sbin/rsyslogd -n
+
+May 12 19:28:05 basic systemd[1]: Starting System Logging Service...
+May 12 19:28:05 basic rsyslogd[642]:  [origin software="rsyslogd" swVersion="8.24.0" x-pid="642" x-info="http://www.rsyslog.com"] start
+May 12 19:28:05 basic systemd[1]: Started System Logging Service.
+
+
+[root@basic ~]# cat /usr/lib/systemd/system/rsyslog.service
+[Unit]
+Description=System Logging Service
+;Requires=syslog.socket
+Documentation=man:rsyslogd(8)
+Documentation=http://www.rsyslog.com/doc/
+
+[Service]
+Type=notify
+EnvironmentFile=-/etc/sysconfig/rsyslog
+ExecStart=/usr/sbin/rsyslogd -n $SYSLOGD_OPTIONS
+Restart=on-failure
+UMask=0066
+StandardOutput=null
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+;Alias=syslog.service
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
