@@ -527,6 +527,7 @@ Important  重要!!!!!!!!!!!!!!!
 
 
 
+---------------------------------------------------------------------------------------------------------------------------
 
 Extending the Default Unit Configuration ( 扩展 默认的 Unit 配置文件 )
 
@@ -545,11 +546,71 @@ touch /etc/systemd/system/name.service.d/config_name.conf
 因此所有的 directives 必须被指定在 合适的 sections 下. see Section 10.6.1, “Understanding the Unit File Structure”.
 
 
+例如: 要 add a custom dependency, 使用如下内容 创建 a configuration file:
+[Unit]
+Requires=new_dependency
+After=new_dependency
+
+其中 new_dependency 代表 被 标记(marked) 为 a dependency 的 unit.
+另一个 例子 是 一个 restarts the service after its main process exited with a delay of 30 seconds 的配置文件:
+[Service]
+Restart=always
+RestartSec=30
+
+
+建议创建 仅聚焦于 one task 的 small configuration files. 这样的 files 能够很容易 被 移动(moved) 或 链接(linked) 到 其他 services 的 配置文件目录(configuration directories).
+
+要应用所做的修改 到 该 unit, 以 root 身份执行:
+
+systemctl daemon-reload
+systemctl restart name.service
 
 
 
 
+Example 10.20. Extending the httpd.service Configuration  (示例：扩展 httpd.service 配置文件)
+
+要修改(modify)  httpd.service unit 是 a custom shell script 能在 Apache service 启动(starting) 时 自动被执行,
+首先，创建 a directory and a custom configuration file:
+
+[root@basic ~]# mkdir /etc/systemd/system/httpd.service.d/
+[root@basic ~]# touch /etc/systemd/system/httpd.service.d/custom_script.conf
+
+
+提供 你想要和 Apache 一起 被自动 start 的 文件 /usr/local/bin/custom.sh,
+[root@basic ~]# vim /usr/local/bin/custom.sh
+#!/bin/bash
+echo "/usr/local/bin/custom.sh $(date '+%F %T')"
+
+[root@basic ~]# chmod ug+x /usr/local/bin/custom.sh
+
+
+在 custom_script.conf 文件中插入如下 text:
+
+[root@basic ~]# vim /etc/systemd/system/httpd.service.d/custom_script.conf
+[Service]
+ExecStartPost=/usr/local/bin/custom.sh
+
+
+要应用 该 unit changes, 执行:
+
+[root@basic ~]# systemctl daemon-reload
+[root@basic ~]# systemctl restart httpd.service
+
+[root@basic ~]# grep -in 'custom.sh'  /var/log/messages
+
+
+
+
+注意:
+    目录  /etc/systemd/system/ 下 configuration directories 中 的 configuration files 的优先级 高于 目录 /usr/lib/systemd/system/ 下的 unit files.
+    如果 configuration files 包含 仅能被 指定 一次(once) 的 选项, 例如 Description 或 ExecStart, 则 其 默认值(default value) 将会被覆盖.
+    Note that in the output of the systemd-delta command, described in the section called “Monitoring Overriden Units”,
+    such units are always marked as [EXTENDED], even though in sum, certain options are actually overridden.
 ---------------------------------------------------------------------------------------------------------------------------
+
+
+
 
 
 
