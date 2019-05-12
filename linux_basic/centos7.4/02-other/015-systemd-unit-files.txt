@@ -242,8 +242,10 @@ WantedBy=multi-user.target
    用于存储该 service 的 shell variables.  Make sure the source script is executable (by executing the chmod a+x) and is not interactive.
 
 2. 在 /etc/systemd/system/ 目录中创建 unit file 并 确保 其 拥有 正确的 file permissions. 以 root 身份执行:
+
       touch /etc/systemd/system/name.service
       chmod 664 /etc/systemd/system/name.service
+
    用创建的 service 的 name 替换如上命令中的 name. Note that file does not need to be executable.
 
 3. open 前一步 创建的 name.service file, 并 添加 该 service 的 configuration options. 存在各种 依赖于你希望创建的 service 的type 的 options 可被使用.
@@ -258,15 +260,109 @@ After=network.target
 [Service]
 # path_to_executable 代表 实际的 service executable 的 path
 ExecStart=path_to_executable
-#
+# 配置Type=forking 被守护进程(daemons) 用于发起 fork 系统调用(system call). 该 service 的 主进程(main process) 的 PID 在 path_to_pidfile 中保存着.
 Type=forking
 PIDFile=path_to_pidfile
+
+[Install]
+# 配置 WantedBy 用于声明 该 service 应该在 其下 被启动(started) 的 target 或 targets. 可把 targets 理解为是 旧的 runlevels 的概念的替代
+WantedBy=default.target
+---------------------------------
+4. 通过执行以root身份执行如下命令来 通知 systemd 一个新的 name.service 存在了:
+
+          systemctl daemon-reload
+          systemctl start name.service
+
+       systemctl daemon-reload 命令的作用:
+           Reload systemd manager configuration. This will rerun all generators (see systemd.generator(7)), reload all unit files,
+           and recreate the entire dependency tree. While the daemon is being reloaded, all sockets systemd
+           listens on behalf of user configuration will stay accessible.
+
+
+Warning 警告!!!!!!!!!!!
+    总是应该 在创建了 新的 unit files 或者 修改了 已存在的 unit files 之后 执行 systemctl daemon-reload 命令.
+    否则, 命令 systemctl start 或 systemctl enable 可能因为 systemd 的状态(state) 与 磁盘上 实际的 service unit files 不匹配 而 失败.
+
+现在 name.service unit 就能够像 任何其他 system service 那样被管理(managed)了.
+---------------------------------------------------------------------------------------------------------------------------
+
+
+
+---------------------------------------------------------------------------------------------------------------------------
+Example 10.18. Creating the emacs.service File (示例:创建 emacs.service 文件)
+
+当 使用 Emacs 文本编辑器(editor) 时, 通常 将其 运行在 后台 而非 在每当 编辑一个 file 时启动 该编辑器程序的一个实例 会更加 faster 和 convenient.
+如下的步骤 演示了 如何为 Emacs 创建 一个 unit file, 因此其 就可以被 当做 a service 来处理了.
+
+1. 在 目录 /etc/systemd/system/ 创建 a unit file 并 确保 其 具有 正确的 file permissions. 以 root 身份 执行:
+
+[root@basic ~]# touch /etc/systemd/system/emacs.service
+[root@basic ~]# chmod 664 /etc/systemd/system/emacs.service
+
+[root@basic ~]# which emacs
+/usr/bin/emacs
+
+2. 在文件 /etc/systemd/system/emacs.service 中 添加如下内容:
+[root@basic ~]# vim /etc/systemd/system/emacs.service
+[Unit]
+Description=Emacs: the extensible, self-documenting text editor
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/emacs --daemon
+ExecStop=/usr/bin/emacsclient --eval "(kill-emacs)"
+Environment=SSH_AUTH_SOCK=%t/keyring/ssh
+Restart=always
 
 [Install]
 WantedBy=default.target
 
 
+  通过 如上的 配置, /usr/bin/emacs 可执行程序 将在 该 service start 时 以 daemon mode 模式被 启动(started).
+  其中的环境变量 SSH_AUTH_SOCK 的设置中 使用了 "%t" unit specifier (其表示 运行时目录).
+  如果意外退出(exits), 该 服务还会 重新启动(restarts) 该 emacs 的进程(process)
+
+
+3. 执行 如下 的命令 来 reload the configuration and start the custom service:
+
+[root@basic ~]# systemctl daemon-reload
+[root@basic ~]# systemctl start emacs.service
+
+  因为 现在 emacs editor 已经被注册(registered)为 了一个 systemd service, 所以你能够使用所有的 systemctl 命令.
+  例如, 执行 systemctl status emacs 来显示(display) 该 editor 的 状态(status)
+  或 执行    systemctl enable emacs  来使 该 editor 在 system boot 时 自动启动(start).
+
+[root@basic ~]# systemctl status emacs   # 创建 emacs service unit 的状态
+● emacs.service - Emacs: the extensible, self-documenting text editor
+   Loaded: loaded (/etc/systemd/system/emacs.service; disabled; vendor preset: disabled)
+   Active: active (running) since Sun 2019-05-12 09:12:49 CST; 28s ago
+  Process: 1951 ExecStart=/usr/bin/emacs --daemon (code=exited, status=0/SUCCESS)
+ Main PID: 1952 (emacs)
+   CGroup: /system.slice/emacs.service
+           └─1952 /usr/bin/emacs --daemon
+
+May 12 09:12:49 basic systemd[1]: Starting Emacs: the extensible, self-documenting text editor...
+May 12 09:12:49 basic emacs[1951]: ("/usr/bin/emacs")
+May 12 09:12:49 basic emacs[1951]: Loading /usr/share/emacs/site-lisp/site-start.d/git-init.el (source)...
+May 12 09:12:49 basic emacs[1951]: Loading /usr/share/emacs/site-lisp/site-start.d/git-init.el (source)...done
+May 12 09:12:49 basic emacs[1951]: Starting Emacs daemon.
+May 12 09:12:49 basic systemd[1]: Started Emacs: the extensible, self-documenting text editor.
+
+[root@basic ~]# systemctl enable emacs  # 设置 emacs service unit 开机自启
+Created symlink from /etc/systemd/system/default.target.wants/emacs.service to /etc/systemd/system/emacs.service.
+
 ---------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
 
 
 
