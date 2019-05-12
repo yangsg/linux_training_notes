@@ -613,6 +613,83 @@ ExecStartPost=/usr/local/bin/custom.sh
 
 
 
+---------------------------------------------------------------------------------------------------------------------------
+Overriding the Default Unit Configuration (覆盖 默认的 Unit Configuration)
+
+要使 changes 保持 持久不变(persist)(即使在更新 提供该 unit file 的 package 之后),
+首先将该 unit file 拷贝(copy) 到 目录 /etc/systemd/system/. 要做这件事,以 root 身份 执行如下 命令:
+
+cp /usr/lib/systemd/system/name.service /etc/systemd/system/name.service
+
+其中 name 代表 你 希望 修改的 service unit 的 name. 如上的语法 可应用于 所有 unit types.
+ 
+使用 text editor 打开 文件 /etc/systemd/system/name.service 并做 期望的修改. 要 应用 the unit changes, 以 root 身份执行:
+
+systemctl daemon-reload
+systemctl restart name.service
+
+
+Example 10.21. Changing the timeout limit(示例: 修改 the timeout limit)
+
+你 可以 为 每个 service 指定一个 timeout value 来 防止 发生故障 的 service 冻结(freeze) the system.
+否则, timeout 默认 对于 normal services 会 设置 为 90 seconds 且 对于 SysV-compatible services 会 设置为 300 seconds.
+
+
+例如, 要扩展 httpd service 的 timeout limit:
+
+1. 拷贝(copy) httpd unit file 到 目录 /etc/systemd/system/ :
+[root@basic ~]# cp /usr/lib/systemd/system/httpd.service /etc/systemd/system/httpd.service
+
+2. 打开(open) 文件 /etc/systemd/system/httpd.service 并在 [Service] section 中 指定 TimeoutStartUSec 值
+[root@basic ~]# vim /etc/systemd/system/httpd.service
+[root@basic ~]# cat /etc/systemd/system/httpd.service
+[Unit]
+Description=The Apache HTTP Server
+After=network.target remote-fs.target nss-lookup.target
+Documentation=man:httpd(8)
+Documentation=man:apachectl(8)
+
+[Service]
+Type=notify
+EnvironmentFile=/etc/sysconfig/httpd
+ExecStart=/usr/sbin/httpd $OPTIONS -DFOREGROUND
+ExecReload=/usr/sbin/httpd $OPTIONS -k graceful
+ExecStop=/bin/kill -WINCH ${MAINPID}
+# We want systemd to give httpd some time to finish gracefully, but still want
+# it to kill httpd after TimeoutStopSec if something went wrong during the
+# graceful stop. Normally, Systemd sends SIGTERM signal right after the
+# ExecStop, which would kill httpd. We are sending useless SIGCONT here to give
+# httpd time to finish.
+KillSignal=SIGCONT
+PrivateTmp=true
+# 指定 TimeoutStartSec 值
+TimeoutStartSec=10
+
+[Install]
+WantedBy=multi-user.target
+
+
+3. 重新加载(reload) the systemd daemon:
+
+[root@basic ~]# systemctl daemon-reload
+
+4. (Optional) 验证 the new timeout value:
+
+[root@basic ~]# systemctl show httpd -p TimeoutStartUSec
+TimeoutStartUSec=10s
+
+
+提示:
+   要全局地 修改 the timeout limit, 修改 文件 /etc/systemd/system.conf 中的 DefaultTimeoutStartSec. See Section 10.1, “Introduction to systemd”.
+
+
+
+
+
+
+
+
+
 
 
 
