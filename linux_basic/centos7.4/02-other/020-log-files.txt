@@ -1,6 +1,12 @@
 
 https://www.rsyslog.com/doc/master/index.html
 man rsyslogd
+man 5 rsyslog.conf
+
+man systemd-journald.service
+man 5 journald.conf
+
+man journalctl
 
 
 
@@ -93,7 +99,7 @@ linux 常见的日志文件
 
 由于我们着眼点在于想要了解系统上面软件所产生的各项信息，因此本章主要针对 rsyslog.service 与 logrotate 来介绍。
 
-[root@basic ~]# systemctl status rsyslog.service
+[root@basic ~]# systemctl status rsyslog.service   # 查看 rsyslog.service unit 状态信息
 ● rsyslog.service - System Logging Service
    Loaded: loaded (/usr/lib/systemd/system/rsyslog.service; enabled; vendor preset: enabled)
    Active: active (running) since Sun 2019-05-12 19:28:05 CST; 32min ago
@@ -108,7 +114,7 @@ May 12 19:28:05 basic rsyslogd[642]:  [origin software="rsyslogd" swVersion="8.2
 May 12 19:28:05 basic systemd[1]: Started System Logging Service.
 
 
-[root@basic ~]# cat /usr/lib/systemd/system/rsyslog.service
+[root@basic ~]# cat /usr/lib/systemd/system/rsyslog.service  # 查看 rsyslog.service unit file 内容
 [Unit]
 Description=System Logging Service
 ;Requires=syslog.socket
@@ -127,6 +133,57 @@ Restart=on-failure
 [Install]
 WantedBy=multi-user.target
 ;Alias=syslog.service
+
+
+[root@basic ~]# systemctl status systemd-journald.service   # 查看 systemd-journald.service unit 状态信息
+● systemd-journald.service - Journal Service
+   Loaded: loaded (/usr/lib/systemd/system/systemd-journald.service; static; vendor preset: disabled)
+   Active: active (running) since Sun 2019-05-12 19:28:03 CST; 51min ago
+     Docs: man:systemd-journald.service(8)
+           man:journald.conf(5)
+ Main PID: 468 (systemd-journal)
+   Status: "Processing requests..."
+   CGroup: /system.slice/systemd-journald.service
+           └─468 /usr/lib/systemd/systemd-journald
+
+May 12 19:28:03 basic systemd-journal[468]: Runtime journal is using 6.1M (max allowed 48.8M, trying to leave 73.2M free of 481.9M available → current limit 48.8M).
+May 12 19:28:03 basic systemd-journal[468]: Runtime journal is using 6.1M (max allowed 48.8M, trying to leave 73.2M free of 481.9M available → current limit 48.8M).
+May 12 19:28:03 basic systemd-journal[468]: Journal started
+May 12 19:28:03 basic systemd-journal[468]: Runtime journal is using 6.1M (max allowed 48.8M, trying to leave 73.2M free of 481.9M available → current limit 48.8M).
+
+
+[root@basic ~]# cat /usr/lib/systemd/system/systemd-journald.service  # 查看 systemd-journald.service unit file 内容
+#  This file is part of systemd.
+#
+#  systemd is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU Lesser General Public License as published by
+#  the Free Software Foundation; either version 2.1 of the License, or
+#  (at your option) any later version.
+
+[Unit]
+Description=Journal Service
+Documentation=man:systemd-journald.service(8) man:journald.conf(5)
+DefaultDependencies=no
+Requires=systemd-journald.socket
+After=systemd-journald.socket syslog.socket
+Before=sysinit.target
+
+[Service]
+Type=notify
+Sockets=systemd-journald.socket
+ExecStart=/usr/lib/systemd/systemd-journald
+Restart=always
+RestartSec=0
+StandardOutput=null
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_DAC_OVERRIDE CAP_SYS_PTRACE CAP_SYSLOG CAP_AUDIT_CONTROL CAP_AUDIT_READ CAP_CHOWN CAP_DAC_READ_SEARCH CAP_FOWNER CAP_SETUID CAP_SETGID CAP_MAC_OVERRIDE
+WatchdogSec=3min
+
+# Increase the default a bit in order to allow many simultaneous
+# services being run since we keep one fd open per service. Also, when
+# flushing journal files to disk, we might need a lot of fds when many
+# journal files are combined.
+LimitNOFILE=16384
+[root@basic ~]#
 
 
 
