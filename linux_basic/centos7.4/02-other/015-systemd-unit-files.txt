@@ -481,6 +481,68 @@ https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/sy
 ---------------------------------------------------------------------------------------------------------------------------
 10.6.4. Modifying Existing Unit Files (示例: 修改 已存在 的 Unit Files)
 
+系统(system) 安装的 services 的 默认的 unit files 被存储在 目录 /usr/lib/systemd/system/ 中.
+系统管理员 不应该 直接去 修改  这些 files, 因此任何 自定义 都必须 限制在 目录 /etc/systemd/system/
+下的 configuration files 中. 根据所需的变更的程度, 可以采用 如下的 方式之一:
+
+
+* 在目录 /etc/systemd/system/unit.d/ 下 创建 用于存放 补充的 configuration files 的 a directory.
+  该方式是多数情况下所推荐的(recommended). 其(该方式) 使用 额外的功能 扩展了 the default configuration,
+  同时仍然引用 the original unit file. 因此 通过 升级 package 而 引入的 default unit 的变化(changes) 会 自动的 得到应用(applied).
+  See the section called “Extending the Default Unit Configuration” for more information.
+
+
+* 在 目录 /etc/systemd/system/ 下 创建 目录 /usr/lib/systemd/system/ 中 的 original unit file 的副本(copy) 并在 副本中做修改.
+  因此 通过 更新 package 引入的 变化(changes) 不会被 应用(applied). 该方式对于 要 忽略 package 的更新 的 需要 持久化(persist) 的
+  重要的 unit changes 很有用. See the section called “Overriding the Default Unit Configuration” for details.
+
+
+为了 返回 到 unit 的 default configuration, 仅需要 删除 目录 /etc/systemd/system/ 下 自定义创建 的 configuration files.
+为了 在 不 rebooting the system 的情况下 应用 unit files 的 变更(changes), 执行:
+
+systemctl daemon-reload
+
+daemon-reload 会 reloads all unit files and recreates the entire dependency tree, 这是 立刻 应用 a unit file 中任何变更所需要做的.
+作为 替代方案, 你可以使用如下的命令 来 达到 相同的结果:
+
+init q
+
+同时, 如果 修改的 unit file 属于 a running service, 则该 service 必须被 重启(restarted) 来 接受 新的设置(accept new settings).
+
+systemctl restart name.service
+
+
+
+Important  重要!!!!!!!!!!!!!!!
+
+  要 修改 properties, 例如 被 a SysV initscript 处理的 service 的 dependencies 或 timeouts, 不要 修改(modify) 该 initscript 本身.
+  而应为该 service 创建 插入式(drop-in) 的 systemd configuration file(就如果 “Extending the Default Unit Configuration” 部分 和 “Overriding the Default Unit Configuration”
+  部分所描述的那样), 然后 按 与 常规的 systemd service 相同的方式来 管理(manage) 该 service.
+
+
+  例如: 要 扩展(extend) network service 的 配置, 不要修改(modify) /etc/rc.d/init.d/network initscript file.
+  而应该 新创建 /etc/systemd/system/network.service.d/ 目录 和 一个 drop-in 文件 /etc/systemd/system/network.service.d/my_config.conf.
+  然后, 将 修改的值(modified values) 放到 该 drop-in 文件 中.
+  注意: systemd 把 network service 当做 network.service, 这也是为什么 被创建的 目录 必须 被 called network.service.d.
+
+
+
+
+Extending the Default Unit Configuration ( 扩展 默认的 Unit 配置文件 )
+
+要 使用 额外的 configuration options 扩展 default unit file, 首先 在目录 /etc/systemd/system/ 下 创建 配置文件 目录,
+如果是 扩展 a service unit, 以 root 身份 执行如下命令:
+
+mkdir /etc/systemd/system/name.service.d/
+
+使用 你想 扩展的 service 的 name 替换掉 如上命令中的 name. 如上的语法 应用于 所有的 unit types.
+
+在前一个步骤中创建的 目录下创建 a configuration file, 注意 the file name 必须以 后缀 .conf 结尾. 键入:
+
+touch /etc/systemd/system/name.service.d/config_name.conf
+
+使用 the configuration file 的 name 替换掉 如上命令中的 config_name. 该文件 遵守(adheres) 常规 unit file 的 结构(structure),
+因此所有的 directives 必须被指定在 合适的 sections 下. see Section 10.6.1, “Understanding the Unit File Structure”.
 
 
 
