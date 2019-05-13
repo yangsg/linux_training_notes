@@ -43,34 +43,149 @@ linux 常见的日志文件
 /var/log/boot.log*
       开机的时候系统核心会去侦测与启动硬件，接下来开始各种核心支持的功能启动等。这些流程都会记录在 /var/log/boot.log 里面哩！
       不过这个档案只会存在这次开机启动的信息，前次开机的信息并不会被保留下来！
+      -----------------
+        [root@basic ~]# head /var/log/boot.log
+        [  OK  ] Started Show Plymouth Boot Screen.
+        [  OK  ] Reached target Paths.
+        [  OK  ] Reached target Basic System.
+        [  OK  ] Found device /dev/mapper/centos-root.
+                 Starting File System Check on /dev/mapper/centos-root...
+        [  OK  ] Started File System Check on /dev/mapper/centos-root.
+        [  OK  ] Started dracut initqueue hook.
+        [  OK  ] Reached target Remote File Systems (Pre).
+        [  OK  ] Reached target Remote File Systems.
+                 Mounting /sysroot...
+      -----------------
 
 
 /var/log/cron
       你的 /etc/crontab 是否撰写正确？在这个登录档内查询看看。
+      -----------------
+        [root@basic ~]# less /var/log/cron
+        May  5 09:10:02 basic run-parts(/etc/cron.daily)[1372]: finished logrotate
+        May  5 09:10:02 basic run-parts(/etc/cron.daily)[1360]: starting man-db.cron
+        May  5 09:10:04 basic run-parts(/etc/cron.daily)[1383]: finished man-db.cron
+        May  5 09:10:04 basic anacron[1335]: Job `cron.daily' terminated
+                    略 略 略 略 略 略
+        May  5 12:01:01 basic CROND[2049]: (root) CMD (run-parts /etc/cron.hourly)
+        May  5 12:01:01 basic run-parts(/etc/cron.hourly)[2049]: starting 0anacron
+        May  5 12:01:01 basic run-parts(/etc/cron.hourly)[2058]: finished 0anacron
+                    略 略 略 略 略 略
+        May  9 11:26:01 basic CROND[5071]: (Bob) CMD (/bin/echo $(date)  >> /tmp/crontab_data.log)
+        May  9 11:26:01 basic CROND[5075]: (Alice) CMD (/bin/echo > /tmp/b.txt)
+        May  9 11:26:17 basic crontab[5079]: (Bob) DELETE (Bob)
+        May  9 11:26:21 basic crontab[5080]: (Bob) LIST (Bob)
+        May  9 11:27:01 basic CROND[5083]: (Alice) CMD (/bin/echo > /tmp/b.txt)
+      -----------------
 
 
 /var/log/dmesg
       记录系统在开机的时候核心侦测过程所产生的各项信息。
       由于 CentOS 默认将开机时核心的硬件侦测过程取消显示，因此额外将数据记录一份在这个档案中；
+      -----------------
+      [root@basic ~]# less /var/log/dmesg
+      [    0.000000] Initializing cgroup subsys cpuset
+      [    0.000000] Initializing cgroup subsys cpu
+      [    0.000000] Initializing cgroup subsys cpuacct
+      [    0.000000] Linux version 3.10.0-693.el7.x86_64 (builder@kbuilder.dev.centos.org) (gcc version 4.8.5 20150623 (Red Hat 4.8.5-16) (GCC) ) #1 SMP Tue Aug 22 21:09:27 UTC 2017
+      [    0.000000] Command line: BOOT_IMAGE=/vmlinuz-3.10.0-693.el7.x86_64 root=/dev/mapper/centos-root ro rd.lvm.lv=centos/root rd.lvm.lv=centos/swap rhgb quiet LANG=en_US.UTF-8
+      [    0.000000] Disabled fast string operations
+      [    0.000000] e820: BIOS-provided physical RAM map:
+      [    0.000000] BIOS-e820: [mem 0x0000000000000000-0x000000000009ebff] usable
+      [    0.000000] BIOS-e820: [mem 0x000000000009ec00-0x000000000009ffff] reserved
+      -----------------
 
 /var/log/lastlog
       可以记录系统上面所有的账号最近一次登入系统时的相关信息
+      -----------------
+      [root@basic ~]# file /var/log/lastlog
+      /var/log/lastlog: data
+
+      [root@basic ~]# lastlog -t 10
+      Username         Port     From             Latest
+      root             pts/0    192.168.175.1    Mon May 13 11:09:24 +0800 2019
+      user01           pts/4                     Sat May  4 10:46:11 +0800 2019
+      user02           pts/1                     Sat May  4 12:01:27 +0800 2019
+      Bob              pts/5                     Thu May  9 07:50:22 +0800 2019
+      Alice            pts/11                    Wed May  8 22:39:11 +0800 2019
+      -----------------
+
 
 /var/log/maillog* 或 /var/log/mail/*:
       记录邮件的往来信息，其实主要是记录 postfix (SMTP 协议提供者) 与 dovecot (POP3 协议提供者) 所产生的讯息啦。
+      -----------------
+[root@basic ~]# less /var/log/maillog
+May  7 09:02:02 basic postfix/postfix-script[964]: starting the Postfix mail system
+May  7 09:02:02 basic postfix/master[966]: daemon started -- version 2.10.1, configuration /etc/postfix
+May  7 18:24:23 basic postfix/pickup[2375]: 8DFE33041D05: uid=0 from=<root>
+May  7 18:24:23 basic postfix/cleanup[2995]: 8DFE33041D05: message-id=<20190507102423.8DFE33041D05@basic.localdomain>
+May  7 18:24:23 basic postfix/qmgr[968]: 8DFE33041D05: from=<root@basic.localdomain>, size=481, nrcpt=1 (queue active)
+May  7 18:24:24 basic postfix/local[2997]: 8DFE33041D05: to=<root@basic.localdomain>, orig_to=<root>, relay=local, delay=0.67, delays=0.19/0.47/0/0.01, dsn=2.0.0, status=sent (delivered to mailbox)
+May  7 18:24:24 basic postfix/qmgr[968]: 8DFE33041D05: removed
+May  7 21:47:05 basic postfix/postfix-script[986]: starting the Postfix mail system
+May  7 21:47:05 basic postfix/master[988]: daemon started -- version 2.10.1, configuration /etc/postfix
+May  7 21:47:05 basic postfix/pickup[989]: B176D3041D0E: uid=0 from=<root>
+May  7 21:47:05 basic postfix/cleanup[991]: B176D3041D0E: message-id=<20190507134705.B176D3041D0E@basic.localdomain>
+May  7 21:47:05 basic postfix/qmgr[990]: B176D3041D0E: from=<root@basic.localdomain>, size=377, nrcpt=1 (queue active)
+      -----------------
 
 
 /var/log/messages*
       这个档案相当的重要，几乎系统发生的错误讯息 (或者是重要的信息) 都会记录在这个档案中；
       如果系统发生莫名的错误时，这个档案是一定要查阅的登录档之一。
+      -----------------
+      [root@basic ~]# less /var/log/messages
+      May  5 09:23:04 basic NetworkManager[651]: <info>  [1557019384.4919] dhcp4 (ens33): state changed bound -> bound
+      May  5 09:23:04 basic dbus[638]: [system] Activating via systemd: service name='org.freedesktop.nm_dispatcher' unit='dbus-org.freedesktop.nm-dispatcher.service'
+      May  5 09:23:04 basic systemd: Starting Network Manager Script Dispatcher Service...
+      May  5 09:23:04 basic dhclient[705]: bound to 192.168.175.141 -- renewal in 881 seconds.
+      May  5 09:23:04 basic dbus[638]: [system] Successfully activated service 'org.freedesktop.nm_dispatcher'
+      May  5 09:23:04 basic systemd: Started Network Manager Script Dispatcher Service.
+      May  5 09:23:04 basic nm-dispatcher: req:1 'dhcp4-change' [ens33]: new request (2 scripts)
+      May  5 09:23:04 basic nm-dispatcher: req:1 'dhcp4-change' [ens33]: start running ordered scripts...
+      May  5 09:37:45 basic dhclient[705]: DHCPREQUEST on ens33 to 192.168.175.254 port 67 (xid=0x2cd3d37)
+      May  5 09:37:45 basic dhclient[705]: DHCPACK from 192.168.175.254 (xid=0x2cd3d37)
+      -----------------
 
 /var/log/secure*
       基本上，只要牵涉到『需要输入账号密码』的软件，那么当登入时 (不管登入正确或错误) 都会被记录在此档案中。
       包括系统的 login 程序、图形接口登入所使用的 gdm 程序、 su, sudo 等程序、还有网络联机的 ssh, telnet 等程序， 登入信息都会被记载在这里；
+      -----------------
+      [root@basic ~]# less /var/log/secure
+      May  5 12:34:19 basic sshd[2172]: Accepted password for root from 192.168.175.1 port 13606 ssh2
+      May  5 12:34:19 basic sshd[2172]: pam_unix(sshd:session): session opened for user root by (uid=0)
+      May  5 12:49:49 basic sshd[1016]: pam_unix(sshd:session): session closed for user root
+      May  5 12:50:12 basic useradd[2283]: new group: name=Paul, GID=1024
+      May  5 12:50:12 basic useradd[2283]: new user: name=Paul, UID=1023, GID=1024, home=/home/Paul, shell=/bin/bash
+      May  5 14:13:26 basic su: pam_unix(su-l:session): session opened for user Bob by root(uid=0)
+      May  5 14:13:26 basic su: pam_unix(su-l:session): session closed for user Bob
+      May  5 14:53:46 basic su: pam_unix(su-l:session): session closed for user Bob
+      May  5 17:06:46 basic sudo:     Bob : command not allowed ; TTY=pts/1 ; PWD=/home/Bob ; USER=root ; COMMAND=validate
+      May  5 18:05:13 basic su: pam_unix(su-l:session): session closed for user Bob
+      -----------------
 
 /var/log/wtmp, /var/log/faillog ( 注: 我的centos7 没找到 /var/log/faillog )
 /var/log/btmp
       这两个档案可以记录正确登入系统者的帐户信息 (wtmp) 与错误登入时所使用的帐户信息 (faillog) ！
+      -----------------
+      [root@basic ~]# last | head -n 10
+      root     pts/0        192.168.175.1    Mon May 13 11:09   still logged in
+      root     tty1                          Mon May 13 11:09   still logged in
+      reboot   system boot  3.10.0-693.el7.x Mon May 13 11:06 - 11:27  (00:20)
+      root     tty1                          Sun May 12 20:40 - 20:40  (00:00)
+      reboot   system boot  3.10.0-693.el7.x Sun May 12 20:06 - 20:40  (00:34)
+      root     pts/0        192.168.175.1    Sun May 12 12:40 - 18:35  (05:54)
+      root     pts/4        192.168.175.140  Sun May 12 10:31 - 10:32  (00:00)
+      root     pts/0        192.168.175.1    Sun May 12 08:02 - 12:40  (04:38)
+      root     tty1                          Sun May 12 08:02 - 18:36  (10:33)
+      reboot   system boot  3.10.0-693.el7.x Sun May 12 07:28 - 18:36  (11:07)
+
+      [root@basic ~]# lastb
+      rot      ssh:notty    192.168.175.1    Wed May  8 20:12 - 20:12  (00:00)
+
+      btmp begins Wed May  8 20:12:30 2019
+      [root@basic ~]#
+      -----------------
 
 /var/log/httpd/*, /var/log/samba/*
       不同的网络服务会使用它们自己的登录档案来记载它们自己产生的各项讯息！上述的目录内则是个别服务所制订的登录档。
