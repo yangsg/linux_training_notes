@@ -1,0 +1,62 @@
+
+man rsyslogd
+
+
+作用:
+       rsyslogd - reliable and extended syslogd
+
+语法: rsyslogd [ -d ] [ -D ] [ -f config file ] [ -i pid file ] [ -n ] [ -N level ] [ -C ] [ -v ]
+
+说明:
+      Rsyslogd 是 一个提供 message logging 的 系统工具. 支持 internet 和 unix domain sockets 使得该 工具 可以支持 local and remote logging.
+
+      注意 该版本的 rsyslog 携带了 大量的 html 格式的文档. 这些都放在 子目录 ./doc 中 或 如果你通过 packaging system 安装的 rsyslog, 则 很可能 在 一个单独的包中.
+      如果要使用 rsyslog's advanced features, 你需要查阅 html 文档, 因为该 man pages 仅覆盖了 从操作的 基本的方面. 更多详细 和 配置的 例子，
+      见 rsyslog.conf (5) man page 和 在线文档 http://www.rsyslog.com/doc
+
+      Rsyslogd(8) 派生与 sysklogd package 而 sysklogd package 又是来自于 the stock BSD sources。
+
+      Rsyslogd 提供了 一种 许多 流行的 programs 都在使用的 logging. 每个 logged message 至少包含了  a time and a hostname field, normally a program name field,  too,  but
+      that  depends on how trusty the logging program is. rsyslog package 支持 通过模板(templates) 对 output formats 的 自由定义(free definition). 它还支持精确的
+      时间戳 和 到 databases 的直接写入. 如果使用了 database, 可以使用类似像 phpLogCon 这样的工具 来 查看 log data.
+
+      虽然 rsyslogd sources 已被大量的修改当还是有 几点要注意的地方. 首先存在 系统的尝试(systematic attempt) 来确保 rsyslogd 遵循 其 默认的, 标准的 BSD behavior.
+      当然, 为了支持 template system 某些修改是必要的。 但是, rsyslogd 应该 能 使用 标准的 syslog.conf 和 行为如 original syslogd 一样. 但是， 使用
+      a rsyslog-enhanced configuration filei 则 an original syslogd 将不会正确 工作. 最多 它 会生成 有趣的 file names. 第 2 个 需要注意的重要的概念是
+      该版本的 rsyslogd 透明地 与 standard libraries 中找到的版本的 syslog 交互. 如果 链接 到 standard shared libraries 的 binary 无法 正确 运行, 则
+      我们将得到 一个异常行为的示例.
+
+      主要的配置文件 /etc/rsyslog.conf 或 使用 -f 选项 给出的 替换文件(an alternative file), 会在 启动时(startup) 被读取.
+      任何 以 hash mark(``#'') 开头 或 empty lines 会被忽略. 如果在 解析时 发生错误, 则该错误元素 会被忽略. 它会努力地解析 剩余的行.
+
+
+SECURITY THREATS(安全威胁):
+    rsyslogd daemon 有可能被用来作为拒绝服务攻击的 管道(a conduit). 一个 流氓 程序(或程序员) 可以很容易地 淹没(flood) rsyslogd daemon 从而使 log files 中的  syslog messages
+    消耗完 filesystem 中 所有的 剩余空间. 在 the inet domain sockets 上 激活日志(Activating logging) 当然会 将 system 暴露到 本地 程序 或 个人 之外的 危险中.
+
+    有许多 保护 主机(machine) 的方式:
+
+       1.     实现 kernel 防火墙 以 限制 对 514/UDP socket 具有 访问权限的 主机(hosts)或网络(networks)
+       2.     Logging 可以被 定向到 隔离的(isolated) 或 非根(non-root) 的文件系统(filesystem), 如果 filesystem 被填满, 则不会损害的 主机(machine).
+       3.     ext2 文件系统 可以被 配置为 限制 filesystem 的 一个特定 百分比 的使用量(仅root能使用), 注意 如果那样的话 需要rsyslogd 以 非root 的进程被运行.
+              还要注意 这将 阻止 remote logging 在 the default port 的使用 因为 rsyslogd 将 不能被 绑定到 514/UDP socket.
+
+       4.     禁止 inet domain sockets 向 限制减少对 the local machine 的风险.
+
+
+   Message replay and spoofing(消息重播与欺骗)
+      如果启用了 remote logging, 消息(messages) 可以很容易地被 欺骗(spoofed)和重播(replayed). 因为 messages 以 明文(clear-text)的方式被传送(transmitted),
+      攻击者(attacker) 可以从 packets 中 获取信息 来干 坏事. 攻击者(attacker) 还可以 重播(replay) recorded messages 或 欺骗伪造 一个 sender's IP address,
+      which could lead to a wrong perception of system activity.
+      这些可以通过使用 GSS-API authentication 或  encryption 来防止. Be sure to think about syslog network security before enabling it.
+
+FILES(文件)
+       /etc/rsyslog.conf
+              Configuration file for rsyslogd.  See rsyslog.conf(5) for exact information.
+       /dev/log
+              The Unix domain socket to from where local syslog messages are read.
+       /var/run/rsyslogd.pid
+              The file containing the process id of rsyslogd.
+       prefix/lib/rsyslog
+              Default directory for rsyslogd modules. The prefix is specified during compilation (e.g. /usr/local).
+
