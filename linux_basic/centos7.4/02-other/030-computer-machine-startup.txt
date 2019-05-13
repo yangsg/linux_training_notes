@@ -1,0 +1,253 @@
+
+machine
+  hardware
+  software
+    os   kernel driver service other
+
+
+cpu
+cache
+ROM RAM
+disk
+other
+
+
+
+power on ->  BIOS(INT 13) -> boot loader -> kernel (or other boot loader) -> driver -> service ->
+
+
+[root@basic ~]# ls -1 -F /boot/
+config-3.10.0-693.el7.x86_64
+efi/
+grub/
+grub2/
+initramfs-0-rescue-cbf8b71be72d4602b4809bf8f00a636d.img
+initramfs-3.10.0-693.el7.x86_64.img
+initrd-plymouth.img
+symvers-3.10.0-693.el7.x86_64.gz
+System.map-3.10.0-693.el7.x86_64
+vmlinuz-0-rescue-cbf8b71be72d4602b4809bf8f00a636d*
+vmlinuz-3.10.0-693.el7.x86_64*
+
+
+[root@basic ~]# ls /lib/modules
+3.10.0-693.el7.x86_64
+[root@basic ~]# ls -l /lib/modules/$(uname -r)
+total 3104
+lrwxrwxrwx.  1 root root     38 Dec 23 07:44 build -> /usr/src/kernels/3.10.0-693.el7.x86_64
+drwxr-xr-x.  2 root root      6 Aug 23  2017 extra
+drwxr-xr-x. 12 root root    128 Dec 23 07:44 kernel
+-rw-r--r--.  1 root root 790292 Dec 23 07:47 modules.alias
+-rw-r--r--.  1 root root 758807 Dec 23 07:47 modules.alias.bin
+-rw-r--r--.  1 root root   1334 Aug 23  2017 modules.block
+-rw-r--r--.  1 root root   6457 Aug 23  2017 modules.builtin
+-rw-r--r--.  1 root root   8263 Dec 23 07:47 modules.builtin.bin
+-rw-r--r--.  1 root root 268794 Dec 23 07:47 modules.dep
+-rw-r--r--.  1 root root 373800 Dec 23 07:47 modules.dep.bin
+-rw-r--r--.  1 root root    361 Dec 23 07:47 modules.devname
+-rw-r--r--.  1 root root    132 Aug 23  2017 modules.drm
+-rw-r--r--.  1 root root    110 Aug 23  2017 modules.modesetting
+-rw-r--r--.  1 root root   1689 Aug 23  2017 modules.networking
+-rw-r--r--.  1 root root  93026 Aug 23  2017 modules.order
+-rw-r--r--.  1 root root    218 Dec 23 07:47 modules.softdep
+-rw-r--r--.  1 root root 374488 Dec 23 07:47 modules.symbols
+-rw-r--r--.  1 root root 459123 Dec 23 07:47 modules.symbols.bin
+lrwxrwxrwx.  1 root root      5 Dec 23 07:44 source -> build
+drwxr-xr-x.  2 root root      6 Aug 23  2017 updates
+drwxr-xr-x.  2 root root     95 Dec 23 07:44 vdso
+drwxr-xr-x.  2 root root      6 Aug 23  2017 weak-updates
+[root@basic ~]#
+
+
+虚拟文件系统 (Initial RAM Disk 或 Initial RAM Filesystem) 一般使用的档名为 /boot/initrd 或 /boot/initramfs
+
+man initrd
+
+[root@basic ~]# lsinitrd /boot/initramfs-3.10.0-693.el7.x86_64.img
+
+
+常见的操作环境 target 与兼容于 runlevel 的等级
+[root@basic ~]# ll -d /usr/lib/systemd/system/runlevel*.target
+lrwxrwxrwx. 1 root root 15 Dec 23 07:44 /usr/lib/systemd/system/runlevel0.target -> poweroff.target
+lrwxrwxrwx. 1 root root 13 Dec 23 07:44 /usr/lib/systemd/system/runlevel1.target -> rescue.target
+lrwxrwxrwx. 1 root root 17 Dec 23 07:44 /usr/lib/systemd/system/runlevel2.target -> multi-user.target
+lrwxrwxrwx. 1 root root 17 Dec 23 07:44 /usr/lib/systemd/system/runlevel3.target -> multi-user.target
+lrwxrwxrwx. 1 root root 17 Dec 23 07:44 /usr/lib/systemd/system/runlevel4.target -> multi-user.target
+lrwxrwxrwx. 1 root root 16 Dec 23 07:44 /usr/lib/systemd/system/runlevel5.target -> graphical.target
+lrwxrwxrwx. 1 root root 13 Dec 23 07:44 /usr/lib/systemd/system/runlevel6.target -> reboot.target
+
+-------------|-----------------------------------------
+SystemV      |     systemd
+-------------|-----------------------------------------
+init 0       |  systemctl poweroff
+-------------|-----------------------------------------
+init 1       |  systemctl rescue
+-------------|-----------------------------------------
+init [234]   |  systemctl isolate multi-user.target
+-------------|-----------------------------------------
+init 5       |  systemctl isolate graphical.target
+-------------|-----------------------------------------
+init 6       |  systemctl reboot
+-------------|-----------------------------------------
+
+
+[root@basic ~]# systemctl list-dependencies graphical.target
+graphical.target
+● ├─display-manager.service
+● ├─network.service
+● ├─systemd-update-utmp-runlevel.service
+● └─multi-user.target
+●   ├─atd.service
+   略 略 略 略
+
+
+基本上我们 CentOS 7.x 的 systemd 开机流程大约是这样：
+1. local-fs.target + swap.target：这两个 target 主要在挂载本机 /etc/fstab 里面所规范的文件系统与相关的内存置换空间。
+2. sysinit.target：这个 target 主要在侦测硬件，加载所需要的核心模块等动作。
+3. basic.target：加载主要的外围硬件驱动程序与防火墙相关任务
+4. multi-user.target 底下的其它一般系统或网络服务的加载
+5. 图形界面相关服务如 gdm.service 等其他服务的加载
+
+systemd 执行 sysinit.target 初始化系统、basic.target 准备系统
+
+
+
+
+[root@basic ~]# systemctl list-dependencies graphical.target
+graphical.target
+● ├─display-manager.service
+● ├─network.service
+● ├─systemd-update-utmp-runlevel.service
+● └─multi-user.target
+●   ├─atd.service
+●   ├─auditd.service
+●   ├─brandbot.path
+●   ├─chronyd.service
+●   ├─crond.service
+●   ├─dbus.service
+●   ├─httpd.service
+●   ├─irqbalance.service
+●   ├─network.service
+●   ├─NetworkManager.service
+●   ├─plymouth-quit-wait.service
+●   ├─plymouth-quit.service
+●   ├─postfix.service
+
+// **相容 systemV 的 rc-local.service
+// 另外，过去用过 Linux 的朋友大概都知道，当系统完成开机后，还想要让系统额外执行某些程序的话，
+// 可以将该程序指令或脚本的绝对路径名称写入到 /etc/rc.d/rc.local 这个档案去！新的 systemd 机制中，
+// 它建议直接写一个 systemd 的启动脚本配置文件到 /etc/systemd/system 底下，
+// 然后使用 systemctl enable 的方式来设定启用它，而不要直接使用 rc.local 这个档案啦！
+
+// 但是像鸟哥这种老人家就是喜欢将开机后要立刻执行的许多管理员自己的脚本，将它写入到 /etc/rc.d/rc.local 去嘛！
+// 新版的 systemd 有没有支援呢？ 当然有！那就是 rc-local.service 这个服务的功能了！这个服务不需要启动，
+// 它会自己判断 /etc/rc.d/rc.local 是否具有可执行的权限来判断要不要启动这个服务！
+// (所以通常要执行 chmod a+x /etc/rc.d/rc.local 给 rc.local 添加可执行权限)
+●   ├─rc-local.service
+●   ├─rsyslog.service
+●   ├─sshd.service
+●   ├─systemd-ask-password-wall.path
+●   ├─systemd-logind.service
+●   ├─systemd-readahead-collect.service
+●   ├─systemd-readahead-replay.service
+●   ├─systemd-update-utmp-runlevel.service
+●   ├─systemd-user-sessions.service
+●   ├─tuned.service
+●   ├─vmtoolsd.service
+●   ├─basic.target      <------------------
+// 加载 CPU 的微指令功能
+●   │ ├─microcode.service
+●   │ ├─rhel-autorelabel-mark.service
+●   │ ├─rhel-autorelabel.service
+●   │ ├─rhel-configure.service
+// 将目前的开机过程所产生的开机信息写入到 /var/log/dmesg 当中
+●   │ ├─rhel-dmesg.service
+// 由 /etc/sysconfig/modules/*.modules 及 /etc/rc.modules 加载管理员指定的模块！
+●   │ ├─rhel-loadmodules.service
+●   │ ├─selinux-policy-migrate-local-changes@targeted.service
+●   │ ├─paths.target
+●   │ ├─slices.target
+●   │ │ ├─-.slice
+●   │ │ └─system.slice
+●   │ ├─sockets.target
+●   │ │ ├─dbus.socket
+●   │ │ ├─dm-event.socket
+●   │ │ ├─systemd-initctl.socket
+●   │ │ ├─systemd-journald.socket
+●   │ │ ├─systemd-shutdownd.socket
+●   │ │ ├─systemd-udevd-control.socket
+●   │ │ └─systemd-udevd-kernel.socket
+●   │ ├─sysinit.target <------------------
+// 特殊文件系统装置的挂载, 主要在挂载跟巨量内存分页使用与消息队列的功能。
+// 挂载成功后，会在 /dev 底下建立 /dev/hugepages/, /dev/mqueue/ 等目录
+●   │ │ ├─dev-hugepages.mount
+●   │ │ ├─dev-mqueue.mount
+●   │ │ ├─kmod-static-nodes.service
+// 特殊文件系统的启用：包括磁盘阵列、网络驱动器 (iscsi)、LVM 文件系统、
+// 文件系统对照服务 (multipath) 等等，也会在这里被侦测与使用到！
+●   │ │ ├─lvm2-lvmetad.socket
+●   │ │ ├─lvm2-lvmpolld.socket
+●   │ │ ├─lvm2-monitor.service
+// 开机过程的讯息传递与动画执行：使用 plymouthd 服务搭配 plymouth 指令来传递动画与讯息
+●   │ │ ├─plymouth-read-write.service
+●   │ │ ├─plymouth-start.service
+●   │ │ ├─proc-sys-fs-binfmt_misc.automount
+●   │ │ ├─sys-fs-fuse-connections.mount
+●   │ │ ├─sys-kernel-config.mount
+●   │ │ ├─sys-kernel-debug.mount
+●   │ │ ├─systemd-ask-password-console.path
+●   │ │ ├─systemd-binfmt.service
+●   │ │ ├─systemd-firstboot.service
+●   │ │ ├─systemd-hwdb-update.service
+●   │ │ ├─systemd-journal-catalog-update.service
+●   │ │ ├─systemd-journal-flush.service
+// 日志式登录文件的使用：就是 systemd-journald 这个服务的启用啊！
+●   │ │ ├─systemd-journald.service
+●   │ │ ├─systemd-machine-id-commit.service
+// 加载额外的核心模块：透过 /etc/modules-load.d/*.conf 档案的设定，让核心额外加载管理员所需要的核心模块！
+●   │ │ ├─systemd-modules-load.service
+// 启动系统的随机数生成器：随机数生成器可以帮助系统进行一些密码加密演算的功能
+●   │ │ ├─systemd-random-seed.service
+// 加载额外的核心参数设定：包括 /etc/sysctl.conf 以及 /etc/sysctl.d/*.conf 内部设定！
+●   │ │ ├─systemd-sysctl.service
+●   │ │ ├─systemd-tmpfiles-setup-dev.service
+●   │ │ ├─systemd-tmpfiles-setup.service
+// 启动动态设备管理器：就是 udevd 这个家伙！用在动态对应实际装置存取与装置文件名对应的一个服务！相当重要喔！也是在这里启动的！
+●   │ │ ├─systemd-udev-trigger.service
+●   │ │ ├─systemd-udevd.service
+●   │ │ ├─systemd-update-done.service
+●   │ │ ├─systemd-update-utmp.service
+// 设定终端机 (console) 字形
+●   │ │ ├─systemd-vconsole-setup.service
+●   │ │ ├─cryptsetup.target
+●   │ │ ├─local-fs.target
+●   │ │ │ ├─-.mount
+●   │ │ │ ├─boot.mount
+●   │ │ │ ├─rhel-import-state.service
+●   │ │ │ ├─rhel-readonly.service
+●   │ │ │ └─systemd-remount-fs.service
+●   │ │ └─swap.target
+●   │ │   └─dev-mapper-centos\x2dswap.swap
+●   │ └─timers.target
+●   │   └─systemd-tmpfiles-clean.timer
+// 提供 tty 界面与登入的服务
+// 在 multi-user.target 底下还有个 getty.target 的操作界面项目喔！
+●   ├─getty.target
+●   │ └─getty@tty1.service
+●   └─remote-fs.target
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
