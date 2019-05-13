@@ -307,6 +307,13 @@ LimitNOFILE=16384
 
 
 
+注：sshd 服务中即使用到了 rsyslog 服务, 其配置文件 /etc/ssh/sshd_config 中 就有如下配置:
+      [root@basic ~]# less /etc/ssh/sshd_config
+      # Logging
+      #SyslogFacility AUTH
+      SyslogFacility AUTHPRIV
+      #LogLevel INFO
+
 
 
 
