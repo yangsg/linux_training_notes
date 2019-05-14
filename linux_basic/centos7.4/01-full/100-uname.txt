@@ -1,0 +1,46 @@
+
+# keyword uname
+
+man uname
+
+
+作用: uname - print system information
+
+语法: uname [OPTION]...
+
+说明: Print certain system information.  With no OPTION, same as -s.
+
+
+
+[root@basic ~]# uname     # 没有指定 option 时, 等价于 `uname -s`
+Linux
+
+[root@basic ~]# uname -s   # -s, --kernel-name: print the kernel name
+Linux
+
+[root@basic ~]# uname -a   # -a, --all:  print all information, in the following order, except omit -p and -i if unknown:
+Linux basic 3.10.0-693.el7.x86_64 #1 SMP Tue Aug 22 21:09:27 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
+
+[root@basic ~]# uname -n   # -n, --nodename: print the network node hostname
+basic
+
+
+[root@basic ~]# uname -r   # -r, --kernel-release: print the kernel release
+3.10.0-693.el7.x86_64
+
+[root@basic ~]# uname -v   # -v, --kernel-version: print the kernel version
+#1 SMP Tue Aug 22 21:09:27 UTC 2017
+
+[root@basic ~]# uname -m   # -m, --machine: print the machine hardware name
+x86_64
+
+[root@basic ~]# uname -p   # -p, --processor: print the processor type or "unknown"
+x86_64
+
+[root@basic ~]# uname -i   # -i, --hardware-platform: print the hardware platform or "unknown"
+x86_64
+
+
+[root@basic ~]# uname -o   # -o, --operating-system: print the operating system
+GNU/Linux
+
