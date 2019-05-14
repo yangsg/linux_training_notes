@@ -242,12 +242,119 @@ graphical.target
 
 
 
+19.1.7 开机过程会用到的主要配置文件
+基本上， systemd 有自己的配置文件处理方式，不过为了兼容于 systemV ，
+其实很多的服务脚本设定还是会读取位于 /etc/sysconfig/ 底下的环境配置文件！
+底下我们就来谈谈几个常见的比较重要的配置文件啰！
+
+关于模块： /etc/modprobe.d/*.conf 及 /etc/modules-load.d/*.conf
+
+还记得我们在 sysinit.target 系统初始化 当中谈到的加载用户自定义模块的地方吗？
+其实有两个地方可以处理模块加载的问题，包括：
+  ** /etc/modules-load.d/*.conf：单纯要核心加载模块的位置；
+  ** /etc/modprobe.d/*.conf：可以加上模块参数的位置
+
+[root@study ~]# vim /etc/modules-load.d/vbird.conf   # /etc/modules-load.d/*.conf 为 单纯要核心加载模块的位置
+# 一个模块 (驱动程序) 写一行
+nf_conntrack_ftp
+
+[root@study ~]# vim /etc/modprobe.d/vbird.conf    # /etc/modprobe.d/*.conf：可以加上模块参数的位置
+options nf_conntrack_ftp ports=555
+
+# 之后重新启动就能够顺利的载入并且处理好这个模块了。不过，如果你不想要开机测试，想现在处理呢？有个方式可以来进行看看：
+[root@study ~]# systemctl restart systemd-modules-load.service
+
+
+man lsmod
+man 5 modules-load.d
+man systemd-modules-load.service
 
 
 
 
 
 
+/etc/sysconfig/*
+还有哪些常见的环境配置文件呢？我们找几个比较重要的来谈谈：
+[root@basic ~]# cat /etc/sysconfig/authconfig
+CACHECREDENTIALS=yes
+FAILLOCKARGS="deny=4 unlock_time=1200"
+FORCELEGACY=no
+FORCESMARTCARD=no
+IPADOMAINJOINED=no
+IPAV2NONTP=no
+PASSWDALGORITHM=sha512
+USEDB=no
+USEECRYPTFS=no
+USEFAILLOCK=no
+USEFPRINTD=no
+USEHESIOD=no
+USEIPAV2=no
+USEKERBEROS=no
+USELDAP=no
+USELDAPAUTH=no
+USELOCAUTHORIZE=yes
+USEMKHOMEDIR=no
+USENIS=no
+USEPAMACCESS=no
+USEPASSWDQC=no
+USEPWQUALITY=yes
+USESHADOW=yes
+USESMARTCARD=no
+USESSSD=yes
+USESSSDAUTH=no
+USESYSNETAUTH=no
+USEWINBIND=no
+USEWINBINDAUTH=no
+WINBINDKRB5=no
 
 
+[root@basic ~]# cat /etc/sysconfig/cpupower
+# See 'cpupower help' and cpupower(1) for more info
+CPUPOWER_START_OPTS="frequency-set -g performance"
+CPUPOWER_STOP_OPTS="frequency-set -g ondemand"
+
+[root@basic ~]# cat /etc/sysconfig/firewalld
+# firewalld command line args
+# possible values: --debug
+FIREWALLD_ARGS=
+
+
+/etc/sysconfig/iptables-config
+/etc/sysconfig/ebtables-config
+/etc/sysconfig/network-scripts/
+
+19.2 核心与核心模块
+
+那么核心与核心模块放在哪？
+    核心： /boot/vmlinuz 或 /boot/vmlinuz-version；
+    核心解压缩所需 RAM Disk： /boot/initramfs (/boot/initramfs-version)；
+    核心模块： /lib/modules/version/kernel 或 /lib/modules/$(uname -r)/kernel；
+    核心原始码： /usr/src/linux 或 /usr/src/kernels/ (要安装才会有，预设不安装)
+
+如果该核心被顺利的加载系统当中了，那么就会有几个信息纪录下来：
+    核心版本： /proc/version
+    系统核心功能： /proc/sys/kernel/
+
+问题来啦，如果我有个新的硬件，偏偏我的操作系统不支持，该怎么办？很简单啊！
+    重新编译核心，并加入最新的硬件驱动程序原始码；
+    将该硬件的驱动程序编译成为模块，在开机时加载该模块
+
+
+19.2.1 核心模块与相依性
+[root@basic ~]# ls -1F /lib/modules/$(uname -r)/kernel/
+arch/       与硬件平台有关的项目，例如 CPU 的等级等等；
+crypto/     核心所支持的加密的技术，例如 md5 或者是 des 等等；
+drivers/    一些硬件的驱动程序，例如显示适配器、网络卡、PCI 相关硬件等等；
+fs/         核心所支持的 filesystems ，例如 vfat, reiserfs, nfs 等等；
+kernel/
+lib/        一些函式库
+mm/
+net/        与网络有关的各项协议数据，还有防火墙模块 (net/ipv4/netfilter/*) 等等；
+sound/      与音效有关的各项模块；
+virt/
+
+[root@basic ~]# head -n 2 /lib/modules/$(uname -r)/modules.dep   # 帮助见 depmod(1), depmod.d(5), modprobe(8), modules.dep(5)
+kernel/arch/x86/kernel/cpu/mcheck/mce-inject.ko.xz:
+kernel/arch/x86/kernel/test_nx.ko.xz:
 
