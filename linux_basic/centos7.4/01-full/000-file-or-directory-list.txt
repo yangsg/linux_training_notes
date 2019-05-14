@@ -60,7 +60,48 @@ http://www.man7.org/
 
 /etc/init.d/netconsole
 
+/etc/sysconfig/modules/*.modules   # 见 /usr/lib/systemd/system/rhel-loadmodules.service  和 /lib/systemd/rhel-loadmodules
+/etc/rc.modules
 
+/etc/modules-load.d/*.conf     #见 man 5 modules-load.d   和 man systemd-modules-load.service  # 格式:各个模块name占一行,空行和以non-whitespace的 '#' 或 ';'开始的行会被忽略, 可视为注释.
+/run/modules-load.d/*.conf
+/usr/lib/modules-load.d/*.conf
+
+
+/etc/modprobe.d/*.conf     #见 man modprobe 和 man 5 modprobe.d (注：模块名中的 _ and - 没有区别,因为自动执行 _ 的转换,空行和 以non-whitespace的 '#' 或 ';'开始的行会被忽略, 可视为注释.)
+/run/modprobe.d/*.conf
+/lib/modprobe.d/*.conf
+
+/etc/sysconfig/authconfig  # man authconfig
+/etc/sysconfig/cpupower    # man cpupower
+/etc/sysconfig/firewalld   # man firewalld
+/etc/sysconfig/iptables-config
+/etc/sysconfig/ebtables-config
+/etc/sysconfig/network-scripts/
+
+那么核心与核心模块放在哪？
+    核心： /boot/vmlinuz 或 /boot/vmlinuz-version；
+    核心解压缩所需 RAM Disk： /boot/initramfs (/boot/initramfs-version)；
+    核心模块： /lib/modules/version/kernel 或 /lib/modules/$(uname -r)/kernel；
+    核心原始码： /usr/src/linux 或 /usr/src/kernels/ (要安装才会有，预设不安装)
+
+如果该核心被顺利的加载系统当中了，那么就会有几个信息纪录下来：
+核心版本： /proc/version
+系统核心功能： /proc/sys/kernel/
+
+[root@basic ~]# ls -1F /lib/modules/$(uname -r)/kernel/
+arch/       与硬件平台有关的项目，例如 CPU 的等级等等；
+crypto/     核心所支持的加密的技术，例如 md5 或者是 des 等等；
+drivers/    一些硬件的驱动程序，例如显示适配器、网络卡、PCI 相关硬件等等；
+fs/         核心所支持的 filesystems ，例如 vfat, reiserfs, nfs 等等；
+kernel/
+lib/        一些函式库
+mm/
+net/        与网络有关的各项协议数据，还有防火墙模块 (net/ipv4/netfilter/*) 等等；
+sound/      与音效有关的各项模块；
+virt/
+
+/lib/modules/$(uname -r)/modules.dep    # 帮助见 depmod(1), depmod.d(5), modprobe(8), modules.dep(5)
 
 
 /boot/vmlinuz-3.10.0-693.el7.x86_64    'vmlinuz' 的 'vm' 表示 'virtual memory', 支持虚拟内存, 'z' 表示 'zip', 表压缩过的格式
@@ -86,6 +127,8 @@ http://www.man7.org/
 
 /etc/anacrontab    # 包含了 jobs 的规范说明
 /var/spool/anacron # anacron 存储 timestamp files 的目录
+
+
 
 
 
