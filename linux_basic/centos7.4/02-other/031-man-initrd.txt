@@ -1,0 +1,54 @@
+
+ man initrd
+
+作用:
+       initrd - boot loader initialized RAM disk
+
+配置:
+      /dev/initrd 是 一个 read-only 的 block device 且 major number 为 1 和  minor number 为 250.典型地,
+      /dev/initrd 被 root:disk 拥有 且  mode 为 0400 (read access by root only).
+      如果 Linux system 还没有 /dev/initrd 被创建, 则其可用 使用如下命令来被创建:
+
+               mknod -m 400 /dev/initrd b 1 250
+               chown root:disk /dev/initrd
+
+       同时,  对 "RAM disk" 和 "Initial RAM disk" 的支持 (如, CONFIG_BLK_DEV_RAM=y and CONFIG_BLK_DEV_INITRD=y)
+       必须 被 直接编译 进 Linux  kernel 中 来 使用 /dev/initrd. 当使用 /dev/initrd 时, the RAM disk driver 不能被 作为 module 那样来 加载.
+
+说明:
+      特殊文件 /dev/initrd 是一个 read-only block device. 该 device 是 一个 在 kernel 被 started 之前 被 boot loader 初始化(initialized) RAM disk.
+      The kernel 然后 能够将 /dev/initrd 中的 内容(contents) 用于 system boot-up 的 两个阶段(two-phase).
+
+      In the first boot-up phase, the kernel 启动(starts up) 和 从 /dev/initrd 的 contents 挂载(mounts)
+      一个an initial root file-system(e.g., RAM disk initialized by the boot loader). 
+      In the second  phase, 更多(additional)的  drivers or other modules 从 the initial root device's contents 被 加载(loaded).
+      在 这些 additional modules 被加载(load)之后, 一个新的 root file system (i.e., the normal root file system) 会从 一个不同的 device 被 mounted.
+
+   Boot-up operation (引导操作)
+       When booting up with initrd, the system boots as follows:
+
+       1. The boot loader 加载 the kernel program 和 /dev/initrd's contents into 内存.
+
+       2. On kernel startup, the kernel uncompresses and copies the contents of the device /dev/initrd onto device /dev/ram0 并  释放(free) /dev/initrd 使用的内存.
+
+       3. The kernel 然后 read-write mounts the device /dev/ram0 as the initial root file system.
+
+       4. If the indicated normal root file system is also the initial root file-system (e.g., /dev/ram0) then the kernel skips to the last step for the usual boot sequence.
+
+       5. If the executable file /linuxrc is present in the initial root file-system, /linuxrc is executed with UID 0.  (The file /linuxrc must have executable  permission.   The  file
+          /linuxrc can be any valid executable, including a shell script.)
+
+       6. If  /linuxrc  is not executed or when /linuxrc terminates, the normal root file system is mounted.  (If /linuxrc exits with any file-systems mounted on the initial root file-
+          system, then the behavior of the kernel is UNSPECIFIED.  See the NOTES section for the current kernel behavior.)
+
+       7. If the normal root file system has a directory /initrd, the device /dev/ram0 is moved from / to /initrd.  Otherwise if the  directory  /initrd  does  not  exist,  the  device
+          /dev/ram0  is  unmounted.  (When moved from / to /initrd, /dev/ram0 is not unmounted and therefore processes can remain running from /dev/ram0.  If directory /initrd does not
+          exist on the normal root file system and any processes remain running from /dev/ram0 when /linuxrc exits, the behavior of the kernel is UNSPECIFIED.  See  the  NOTES  section
+          for the current kernel behavior.)
+
+       8. The usual boot sequence (e.g., invocation of /sbin/init) is performed on the normal root file system.
+
+
+
+更多信息见  man initrd
+
