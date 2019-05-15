@@ -1,0 +1,19 @@
+
+
+
+[root@localhost ~]# hostname   # 插件当前主机名
+localhost
+
+[root@localhost ~]# vim /etc/sysconfig/network   # 修改 /etc/sysconfig/network 中 HOSTNAME
+NETWORKING=yes
+HOSTNAME=basic
+
+[root@localhost ~]# hostname basic               # 临时修改 hostname
+[root@localhost ~]# hostname
+basic
+
+[root@localhost ~]# vim /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+127.0.0.1   basic
+
