@@ -1,0 +1,9 @@
+
+
+centos6 默认 使用 git clone 协议为 https 会失败, 解决办法:
+
+yum update -y nss curl
+
+参考:
+https://fshilver.github.io/tip/2018/01/21/github-ssl-connection-error.html
+
