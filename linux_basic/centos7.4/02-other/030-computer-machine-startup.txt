@@ -22,16 +22,22 @@ efi/
 grub/
 grub2/
 initramfs-0-rescue-cbf8b71be72d4602b4809bf8f00a636d.img
-initramfs-3.10.0-693.el7.x86_64.img
+initramfs-3.10.0-693.el7.x86_64.img   <-- 有 boot loader 初始化的 内存文件系统, 如果是centos5, 可能叫 initrd-version-release.img
 initrd-plymouth.img
 symvers-3.10.0-693.el7.x86_64.gz
 System.map-3.10.0-693.el7.x86_64
 vmlinuz-0-rescue-cbf8b71be72d4602b4809bf8f00a636d*
-vmlinuz-3.10.0-693.el7.x86_64*
+vmlinuz-3.10.0-693.el7.x86_64*   <--  linux 内核
+
+[root@basic ~]# ls -lh /boot/vmlinuz-3.10.0-693.el7.x86_64   # 查看 vmlinuz-3.10.0-693.el7.x86_64 文件大小
+-rwxr-xr-x. 1 root root 5.7M Aug 23  2017 /boot/vmlinuz-3.10.0-693.el7.x86_64
+
+[root@basic 02-other]# file /boot/vmlinuz-3.10.0-693.el7.x86_64   # 查看  vmlinuz-3.10.0-693.el7.x86_64 文件格式
+/boot/vmlinuz-3.10.0-693.el7.x86_64: Linux kernel x86 boot executable bzImage, version 3.10.0-693.el7.x86_64 (builder@kbuilder.dev.centos.org) #1 SMP , RO-rootFS, swap_dev 0x5, Normal VGA
 
 
 [root@basic ~]# ls /lib/modules
-3.10.0-693.el7.x86_64
+3.10.0-693.el7.x86_64   # <---注 这里 的目录名 与 vmlinuz-3.10.0-693.el7.x86_64  中的版本信息部分 是 相同的
 [root@basic ~]# ls -l /lib/modules/$(uname -r)
 total 3104
 lrwxrwxrwx.  1 root root     38 Dec 23 07:44 build -> /usr/src/kernels/3.10.0-693.el7.x86_64
@@ -57,6 +63,22 @@ drwxr-xr-x.  2 root root      6 Aug 23  2017 updates
 drwxr-xr-x.  2 root root     95 Dec 23 07:44 vdso
 drwxr-xr-x.  2 root root      6 Aug 23  2017 weak-updates
 [root@basic ~]#
+
+[root@basic ~]# ls /lib/modules/3.10.0-693.el7.x86_64/kernel/    # 查看内核相关模块
+arch  crypto  drivers  fs  kernel  lib  mm  net  sound  virt
+
+[root@basic ~]# ls /lib/modules/3.10.0-693.el7.x86_64/kernel/drivers/  # 查看驱动
+acpi        base   bluetooth  cpufreq  dca   firewire  gpu  hwmon  infiniband  isdn  media     mfd   mtd  nvdimm   pci      platform  pps  rtc   staging  tty  uwb    video     xen
+ata         bcma   cdrom      crypto   dma   firmware  hid  i2c    input       leds  memstick  misc  net  nvme     pcmcia   power     ptp  scsi  target   uio  vfio   virtio
+auxdisplay  block  char       dax      edac  gpio      hv   idle   iommu       md    message   mmc   ntb  parport  pinctrl  powercap  pwm  ssb   thermal  usb  vhost  watchdog
+
+[root@basic ~]# ls /lib/modules/3.10.0-693.el7.x86_64/kernel/drivers/net/  # 查看网络驱动模块
+bonding      ethernet      hyperv      macsec.ko.xz   mdio.ko.xz        nlmon.ko.xz       ppp   tun.ko.xz   virtio_net.ko.xz  wan
+can          fjes          ieee802154  macvlan.ko.xz  mii.ko.xz         ntb_netdev.ko.xz  slip  usb         vmxnet3           wireless
+dummy.ko.xz  geneve.ko.xz  ifb.ko.xz   macvtap.ko.xz  netconsole.ko.xz  phy               team  veth.ko.xz  vxlan.ko.xz       xen-netfront.ko.xz
+
+[root@basic ~]# du -sh /lib/modules/3.10.0-693.el7.x86_64/
+38M     /lib/modules/3.10.0-693.el7.x86_64/
 
 
 虚拟文件系统 (Initial RAM Disk 或 Initial RAM Filesystem) 一般使用的档名为 /boot/initrd 或 /boot/initramfs
