@@ -91,7 +91,7 @@ https://gitee.com/yangsggithub/linux_training_notes/blob/master/linux_basic/orig
 ---------------------------------------------------------------------------------------------------
 文件 /etc/rc.d/rc 中的部分片段 如下
 # First, run the KILL scripts.
-for i in /etc/rc$runlevel.d/K* ; do
+for i in /etc/rc$runlevel.d/K* ; do     # 注意 这里的 K* 应用了 pathname expansion
 
         # Check if the subsystem is already up.
         subsys=${i#/etc/rc$runlevel.d/K??}
@@ -105,7 +105,7 @@ for i in /etc/rc$runlevel.d/K* ; do
 done
 
 # Now run the START scripts.
-for i in /etc/rc$runlevel.d/S* ; do
+for i in /etc/rc$runlevel.d/S* ; do     # 注意 这里的 S* 应用了 pathname expansion
 
         # Check if the subsystem is already up.
         subsys=${i#/etc/rc$runlevel.d/S??}
