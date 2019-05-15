@@ -3,7 +3,7 @@
 
 man init
 man 5 init
-
+man initctl
 
 
 
@@ -145,7 +145,7 @@ lrwxrwxrwx. 1 root root 21 Feb 20 18:31 K87restorecond -> ../init.d/restorecond
 lrwxrwxrwx. 1 root root 15 Feb 20 18:31 K89rdisc -> ../init.d/rdisc
 lrwxrwxrwx. 1 root root 18 Feb 20 18:52 K92iptables -> ../init.d/iptables
 lrwxrwxrwx. 1 root root 19 Feb 20 18:32 S08ip6tables -> ../init.d/ip6tables
-lrwxrwxrwx. 1 root root 17 Feb 20 18:31 S10network -> ../init.d/network
+lrwxrwxrwx. 1 root root 17 Feb 20 18:31 S10network -> ../init.d/network      <-------------
 lrwxrwxrwx. 1 root root 16 Feb 20 18:32 S11auditd -> ../init.d/auditd
 lrwxrwxrwx. 1 root root 17 Feb 20 18:31 S12rsyslog -> ../init.d/rsyslog
 lrwxrwxrwx. 1 root root 19 Feb 20 18:31 S15mdmonitor -> ../init.d/mdmonitor
