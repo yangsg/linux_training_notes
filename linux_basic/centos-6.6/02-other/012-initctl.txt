@@ -1,0 +1,37 @@
+
+# keyword initctl
+
+man initctl
+
+作用: initctl - init daemon control tool
+
+语法: initctl [OPTION]...  COMMAND [OPTION]...  ARG...
+
+说明:
+       initctl allows a system administrator to communicate and interact with the Upstart init(8) daemon.
+
+       When run as initctl, the first non-option argument is the COMMAND.  Global options may be specified before or after the command.
+
+       You  may  also  create  symbolic  or  hard links to initctl named after commands.  When invoked through these links the tool will behave only as that command, with
+       global and command-specific options intermixed.  The default installation supplies such links for the start, stop, restart, reload and status commands.
+
+
+COMMANDS
+       emit   EVENT [KEY=VALUE]...
+
+              Requests that the named EVENT be emitted, potentially causing jobs to be started and stopped depending on their use of the start on and stop on  stanzas  in
+              their configuration.
+
+              The  optional KEY=VALUE arguments specify environment variables to be included with the event and thus exported into the environment of any jobs started and
+              stopped by the event.
+
+              The environment may also serve to specify which instance of multi-instance jobs should be started or stopped.  See start for a discussion on instances.
+
+              There is no limitation on the event names that may be emitted with this command, you are free to invent new events and use them in your job  configurations.
+
+              The  most  well  known event used by the default Upstart configuration is the runlevel(7) event.  This is normally emitted by the telinit(8) and shutdown(8)
+              tools.
+
+
+更多详细信息见 man initctl
+
