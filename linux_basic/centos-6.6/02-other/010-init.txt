@@ -4,6 +4,9 @@
 man init
 man 5 init
 
+
+
+
 作用: init - Upstart process management daemon
 
 语法: init [OPTION]...
@@ -83,8 +86,101 @@ exec /etc/rc.d/rc $RUNLEVEL   # 此处执行 /etc/rc.d/rc 文件
 [root@basic ~]#
 
 
+/etc/rc.d/rc 的内容见:
+https://gitee.com/yangsggithub/linux_training_notes/blob/master/linux_basic/original-files-centos-6.6/etc/rc.d/rc
+---------------------------------------------------------------------------------------------------
+文件 /etc/rc.d/rc 中的部分片段 如下
+# First, run the KILL scripts.
+for i in /etc/rc$runlevel.d/K* ; do
+
+        # Check if the subsystem is already up.
+        subsys=${i#/etc/rc$runlevel.d/K??}
+        [ -f /var/lock/subsys/$subsys -o -f /var/lock/subsys/$subsys.init ] || continue
+        check_runlevel "$i" || continue
+
+        # Bring the subsystem down.
+        [ -n "$UPSTART" ] && initctl emit --quiet stopping JOB=$subsys
+        $i stop
+        [ -n "$UPSTART" ] && initctl emit --quiet stopped JOB=$subsys
+done
+
+# Now run the START scripts.
+for i in /etc/rc$runlevel.d/S* ; do
+
+        # Check if the subsystem is already up.
+        subsys=${i#/etc/rc$runlevel.d/S??}
+        [ -f /var/lock/subsys/$subsys ] && continue
+        [ -f /var/lock/subsys/$subsys.init ] && continue
+        check_runlevel "$i" || continue
+
+        # If we're in confirmation mode, get user confirmation
+        if [ "$do_confirm" = "yes" ]; then
+                confirm $subsys
+                rc=$?
+                if [ "$rc" = "1" ]; then
+                        continue
+                elif [ "$rc" = "2" ]; then
+                        do_confirm="no"
+                fi
+        fi
+
+        update_boot_stage "$subsys"
+        # Bring the subsystem up.
+        [ -n "$UPSTART" ] && initctl emit --quiet starting JOB=$subsys
+        if [ "$subsys" = "halt" -o "$subsys" = "reboot" ]; then
+                export LC_ALL=C
+                exec $i start
+        fi
+        $i start
+        [ -n "$UPSTART" ] && initctl emit --quiet started JOB=$subsys
+done
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# ls -l /etc/rc3.d/     # 查看 /etc/rc3.d/ 的文件(可发现这些文件符号链接文件, 且基本都指向 /etc/init.d/ 下的文件, 但 S99local 指向的是 rc.local文件)
+total 0
+lrwxrwxrwx. 1 root root 19 Feb 20 18:31 K10saslauthd -> ../init.d/saslauthd
+lrwxrwxrwx  1 root root 16 Mar 29 13:36 K36mysqld -> ../init.d/mysqld
+lrwxrwxrwx. 1 root root 20 Feb 20 18:31 K50netconsole -> ../init.d/netconsole
+lrwxrwxrwx. 1 root root 21 Feb 20 18:31 K87restorecond -> ../init.d/restorecond
+lrwxrwxrwx. 1 root root 15 Feb 20 18:31 K89rdisc -> ../init.d/rdisc
+lrwxrwxrwx. 1 root root 18 Feb 20 18:52 K92iptables -> ../init.d/iptables
+lrwxrwxrwx. 1 root root 19 Feb 20 18:32 S08ip6tables -> ../init.d/ip6tables
+lrwxrwxrwx. 1 root root 17 Feb 20 18:31 S10network -> ../init.d/network
+lrwxrwxrwx. 1 root root 16 Feb 20 18:32 S11auditd -> ../init.d/auditd
+lrwxrwxrwx. 1 root root 17 Feb 20 18:31 S12rsyslog -> ../init.d/rsyslog
+lrwxrwxrwx. 1 root root 19 Feb 20 18:31 S15mdmonitor -> ../init.d/mdmonitor
+lrwxrwxrwx. 1 root root 15 Feb 20 18:32 S20kdump -> ../init.d/kdump
+lrwxrwxrwx. 1 root root 15 Feb 20 18:31 S25netfs -> ../init.d/netfs
+lrwxrwxrwx. 1 root root 19 Feb 20 18:31 S26udev-post -> ../init.d/udev-post
+lrwxrwxrwx  1 root root 14 May 15 08:21 S55sshd -> ../init.d/sshd
+lrwxrwxrwx. 1 root root 17 Feb 20 18:31 S80postfix -> ../init.d/postfix
+lrwxrwxrwx. 1 root root 15 Feb 20 18:31 S90crond -> ../init.d/crond
+lrwxrwxrwx. 1 root root 11 Feb 20 18:31 S99local -> ../rc.local          # 可知道 /etc/rc3.d/S99local -> /etc/rc.local, 其实 /etc/rc.local -> /etc/rc.d/rc.local
+[root@basic ~]# ls -l /etc/ | grep rc.d    # 查看 /etc/ 下与 rc.d 相关的一些文件
+lrwxrwxrwx.  1 root root     11 Feb 20 18:30 init.d -> rc.d/init.d          # 可知 /etc/init.d -> /etc/rc.d/init.d
+lrwxrwxrwx.  1 root root      7 Feb 20 18:31 rc -> rc.d/rc                  # 可知 /etc/rc     -> /etc/rc.d/rc
+lrwxrwxrwx.  1 root root     10 Feb 20 18:31 rc0.d -> rc.d/rc0.d            # 可知 /etc/rc0.d  -> /etc/rc.d/rc0.d
+lrwxrwxrwx.  1 root root     10 Feb 20 18:31 rc1.d -> rc.d/rc1.d            # 可知 /etc/rc1.d  -> /etc/rc.d/rc1.d
+lrwxrwxrwx.  1 root root     10 Feb 20 18:31 rc2.d -> rc.d/rc2.d            # 可知 /etc/rc2.d  -> /etc/rc.d/rc2.d
+lrwxrwxrwx.  1 root root     10 Feb 20 18:31 rc3.d -> rc.d/rc3.d            # 可知 /etc/rc3.d  -> /etc/rc.d/rc3.d
+lrwxrwxrwx.  1 root root     10 Feb 20 18:31 rc4.d -> rc.d/rc4.d            # 可知 /etc/rc4.d  -> /etc/rc.d/rc4.d
+lrwxrwxrwx.  1 root root     10 Feb 20 18:31 rc5.d -> rc.d/rc5.d            # 可知 /etc/rc5.d  -> /etc/rc.d/rc5.d
+lrwxrwxrwx.  1 root root     10 Feb 20 18:31 rc6.d -> rc.d/rc6.d            # 可知 /etc/rc6.d  -> /etc/rc.d/rc6.d
+drwxr-xr-x. 10 root root   4096 May 15 12:58 rc.d
+lrwxrwxrwx.  1 root root     13 Feb 20 18:31 rc.local -> rc.d/rc.local      # 可知 /etc/rc.local -> /etc/rc.d/rc.local
+lrwxrwxrwx.  1 root root     15 Feb 20 18:31 rc.sysinit -> rc.d/rc.sysinit  # 可知 /etc/rc.sysinit -> /etc/rc.d/rc.sysinit
 
 
+[root@basic ~]# cat /etc/rc.d/rc.local   # 查看文件 /etc/rc.d/rc.local 中的内容
+#!/bin/sh
+#
+# This script will be executed *after* all the other init scripts.
+# You can put your own initialization stuff in here if you don't
+# want to do the full Sys V style init stuff.
 
+touch /var/lock/subsys/local
 
+其他参考:
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/installation_guide/s2-boot-init-shutdown-init
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/5/html/installation_guide/s1-boot-init-shutdown-process#s2-boot-init-shutdown-init
 
