@@ -86,3 +86,5 @@ exec /etc/rc.d/rc $RUNLEVEL   # 此处执行 /etc/rc.d/rc 文件
 
 
 
+
+
