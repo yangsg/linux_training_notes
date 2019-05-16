@@ -1,0 +1,35 @@
+
+# keyword /etc/inittab
+
+# 具体见 《鸟哥的linux私房菜 第三版》 第二十章、开机流程、模组管理与 Loader
+
+[root@www ~]# vim /etc/inittab
+id:5:initdefault:                 <==预设的 runlevel 设定, 此 runlevel 为 5 
+
+si::sysinit:/etc/rc.d/rc.sysinit  <==准备系统软体执行的环境的脚本执行档
+
+# 7 个不同 run level 的，需要启动的服务的 scripts 放置路径：
+l0:0:wait:/etc/rc.d/rc 0    <==runlevel 0 在 /etc/rc.d/rc0.d/
+l1:1:wait:/etc/rc.d/rc 1    <==runlevel 1 在 /etc/rc.d/rc1.d/
+l2:2:wait:/etc/rc.d/rc 2    <==runlevel 2 在 /etc/rc.d/rc2.d/
+l3:3:wait:/etc/rc.d/rc 3    <==runlevel 3 在 /etc/rc.d/rc3.d/
+l4:4:wait:/etc/rc.d/rc 4    <==runlevel 4 在 /etc/rc.d/rc4.d/
+l5:5:wait:/etc/rc.d/rc 5    <==runlevel 5 在 /etc/rc.d/rc5.d/
+l6:6:wait:/etc/rc.d/rc 6    <==runlevel 6 在 /etc/rc.d/rc6.d/
+
+# 是否允许按下 [ctrl]+[alt]+[del] 就重新开机的设定项目：
+ca::ctrlaltdel:/sbin/shutdown -t3 -r now
+
+# 底下两个设定则是关于不断电系统的 (UPS)，一个是没电力时的关机，一个是复电的处理
+pf::powerfail:/sbin/shutdown -f -h +2 "Power Failure; System Shutting Down"
+pr:12345:powerokwait:/sbin/shutdown -c "Power Restored; Shutdown Cancelled"
+
+1:2345:respawn:/sbin/mingetty tty1  <==其实 tty1~tty6 是由底下这六行决定的。
+2:2345:respawn:/sbin/mingetty tty2
+3:2345:respawn:/sbin/mingetty tty3
+4:2345:respawn:/sbin/mingetty tty4
+5:2345:respawn:/sbin/mingetty tty5
+6:2345:respawn:/sbin/mingetty tty6
+
+x:5:respawn:/etc/X11/prefdm -nodaemon <==X window 则是这行决定的！
+
