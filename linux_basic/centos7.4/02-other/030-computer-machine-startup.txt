@@ -1,4 +1,20 @@
 
+
+linux boot startup 文档:
+
+centos7:
+https://www.thegeekdiary.com/centos-rhel-7-booting-process/
+http://www.yoinsights.com/step-by-step-red-hat-enterprise-linux-7-booting-process/
+
+
+centos6:
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/installation_guide/ch-boot-init-shutdown
+
+centos5:
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/5/html/installation_guide/ch-boot-init-shutdown
+
+
+
 machine
   hardware
   software
