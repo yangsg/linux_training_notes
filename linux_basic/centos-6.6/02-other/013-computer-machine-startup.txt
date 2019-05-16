@@ -1,0 +1,227 @@
+
+
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/installation_guide/ch-boot-init-shutdown
+
+centos6
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+总结: (更多细节见相关其他参考资料)
+1. 开机后, 处理器(processor) 找到(在ROM中) BIOS , 将其 load 并运行.
+2. BIOS 检测 外围设备, 并 搜索定位 bootable device.
+3. BIOS 载入 bootable device 的 第一个 sector(即MBR, 即 446bytes(第一阶段的boot loader) + 64bytes(partition table) + 2bytes(magic number)) 中的程序 到 内存.
+4. BIOS 转让 boot proccess 的控制 给 boot loader.
+5. 第一阶段的boot loader 定位 第二阶段的 boot loader(GRUB) 并将其 第一部分(the first part) 加载到内存中(这也是第一阶段的boot loader唯一的工作).
+6. grub 定位到 对应的 kernel binary(/boot/vmlinuz-version-release) 并加载到内存
+7. grub 定位加载 initramfs images 这个 压缩镜像文件(其中包含基本的drivers和modules)
+8. grub 将 boot process 的控制 转交给 kernel
+9. kernel 被加载后, 其立刻初始化 和 配置 计算机内存 和 附加在 system 上的各种硬件(包括处理器、I/O子系统和存储设备).
+10.kernel 定位到 前面 boot loader 加载的 initramfs image(s) 并将其直接解压到 /sysroot/ 目录, 并加载其中包含的所有必要的 drivers 和 modules.
+11. kernel 初始化 与 文件系统 相关的 虚拟设备, 如 LVM 或 software RAID.
+12. kernel 创建一个根设备(a root device), 以只读方式挂载 root partition, 并释放 不再使用的 内存.
+13. 执行 /sbin/init(也被称为 init) 程序完成剩下的 boot process.
+       01: init 执行 /etc/rc.d/rc.sysinit 脚本
+       02: 运行 runlevel 对应的 jobs
+       03: 为 对应runlevel 分配的 每个 virtual consoles 产生(fork) 出一个 /sbin/mingetty 进程
+       04: /sbin/mingetty 进程 打开 到 tty 设备(devices) 的通信路径, 设置其 mode,显示 login 提示, 接收 用户的username 和 password, 并初始化 login 进程.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+F.1. The Boot Process
+
+boot 过程的基本阶段:
+
+1. system 加载(load) 和 运行(run) boot loader.(具体的细节依赖于系统架构 system architecture.)
+    BIOS-based x86 systems  先运行 primary hard disk 的 MBR 中的 a first-stage boot loader.
+    然后  loads an additional boot loader, GRUB.
+
+2. boot loader 加载(load) 内核 到 内存, 随后 内核 加载 必要的 modules 和 以 read-only 方式挂载 root partition.
+
+3. kernel 转让 boot process 的 control 给 程序 /sbin/init.
+
+4. /sbin/init 加载所有的 services 和 user-space tools, 并 挂载(mounts) /etc/fstab 列出的 所有分区(partitions)
+
+5. 将刚启动的 linux system 的 登录屏幕(login screen) 呈现给 用户.
+
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/installation_guide/s1-boot-init-shutdown-process#sect-firmware_interface
+F.2. a detailed look at the boot process
+
+boot process 的 初始阶段 因 使用的硬件平台的不同而不同, 但是, 一旦 kernel 被 boot loader 找到 和 加载, 则 默认的 boot process 在 所有的 架构 下 都是相同的. 
+
+F.2.1. The Firmware Interface
+F.2.1.1. BIOS-based x86 Systems
+  BIOS 是 一个 firmware interface, 它不仅控制 boot process 的 第一步(first step), 同时还提供 外围设备(peripheral devices) 的 低层次的 接口.
+  在 x86 systems 的 BIOS 中, 该程序(指BIOS) 被写入 read-only, permanent memory 且 总是可用(意思就是BIOS被烧入 ROM 中). 当 system 启动(boot)时,
+  处理器(processor) 在 系统内存(system memory) 末端 查找 BIOS program 并 将其 运行.
+
+  一旦BIOS被 loaded, BIOS 将 test 系统, 查找并检查 外围设备, 然后 定位(locates) 可用于 引导系统(boot the system) 的 可用设备.
+  通常,  BISO 检查(check) 任何 存在的 光驱 或 usb 存储设备 用作 启动介质(bootable media), 如果该阶段失败, 退而 查找 系统的 硬盘(hard drives).
+  在大多情况下, 可用 BIOS 中的设置 控制 boot 时 drivers 的 搜索(search) 顺序,
+  BIOS 可用设置 a boot flag来 查找 primary IDE bus 上的 master IDE 或 a SATA device.
+  BIOS 然后 加载 该 device 的 第一个 sector 中的 程序(不论该程序是什么) 到 内存中.
+  该 sector 被 称为 Master Boot Record (MBR).  MBR 只有 512 bytes 大小 并 包含了 boot the machine 的 机器码指定(machine code instructions),
+  名叫 boot loader,  还有 分区表(partition table).  一旦 BIOS 找到 和 加载 boot loader 到 内存中, 它就会将 boot process 的 控制 让给 boot loader.
+
+  第一阶段(first-stage)的 boot loaderr 是在 MBR 中的 一个小的 机器码二进制(machine code binary).
+  它唯一的工作(job) 就是 定位 第二阶段的 boot loader(GRUB) 并将其 第一部分(the first part) 加载到内存中.
+
+
+F.2.1.2. UEFI-based x86 Systems (略，见官网)
+
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/installation_guide/s2-boot-init-shutdown-loader
+F.2.2. THE BOOT LOADER
+F.2.2.1. The GRUB boot loader for x86 systems
+
+GRUB 的优点是 可以读取 ext2, ext3, and ext4 分区 和 加载它的 配置文件, 
+/boot/grub/grub.conf (for BIOS) or /boot/efi/EFI/redhat/grub.conf (for UEFI) — at boot time.
+
+  注意： redhat6.9 中 GRUB bootloader 支持 ext2, ext3, ext4 file system. 但不支持其他文件系统(如 VFAT, Btrfs 或 xfs, 此外, GRUB 不支持 LVM)
+
+一旦 第二阶段的 boot loader 进入 内存, 它会呈现 用于 一个 图形化的屏幕, 显示了 其中 被配置的 用于 boot 的 不同 operating systems 或 kernels(
+当你更新 kernel 时, the boot loader 配置文件会被 自动更新). 在 屏幕上 用户可以 使用 arrow keys 来选择 他们 希望用于 boot 的 operating system or kernel
+并按 Enter 键. 如果没有按下任何键, the boot loader 会在 其配置的 时间 过去后 加载 默认的选择.
+
+一旦 第二阶段的 boot loader 确定了 用于 boot 的 kernel, 它就会 定位到 目录 /boot 下 的 对应的 kernel binary.
+该 kernel binary 使用如下的格式命令: /boot/vmlinuz-<kernel-version> file.
+
+boot loader 然后 会将 one or more appropriate initramfs images 置于 内存中, initramfs 被 kernel 用于 加载(load) boot the system 必要的 驱动(drivers) 和 模块(modules).
+如果 存在 SCSI hard drives 或 the systems 使用了 ext3 或 ext4 文件系统，这一点特别重要.
+
+一旦 the kernel 和 the initramfs image(s) 被 加载进 内存中, 则 boot loader 将 boot process 的 控制 交给 该 kernel.
+
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/installation_guide/s2-boot-init-shutdown-kernel
+F.2.3. THE KERNEL
+当 the kernel 被加载后, 它会立刻 初始化 和 配置 计算机(computer) 的 内存 和 附加在 system 上的 各种硬件(various hardware),
+包括所有的处理器(all processors), I/O 子系统(I/O subsystems) 和 存储设备(storage devices). 然后 kernel 会在 内存中的预订位置
+查找 压缩(compressed)的 initramfs image(s), 将其直接 解压(decompresses)到 /sysroot/, 并 加载(load) 所有必要的 驱动(drivers).
+接下来, 在完成 initramfs processes 和 释放(free up) disk image 占用的 所有 memory 之前, kernel 会初始化 文件系统 相关的 虚拟设备(virtual devices), 例如 LVM 或 software RAID.
+
+kernel 然后 会 创建 一个根设备(a root device), 以只读 方式 挂载 根分区(root partition), 并释放 任何不再使用的内存.
+
+此刻, kernel 被加载 进了内存中 并 运行. 但是, 因为 不存在 user applications 来允许 到 system 的有意义的 输入, 所以能使用system做的事情不多.
+
+要设置 用户环境 (user environment), the kernel 会执行 /sbin/init 程序.
+
+
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/installation_guide/s2-boot-init-shutdown-init
+F.2.4. THE /SBIN/INIT PROGRAM
+
+/sbin/init 程序 (也被称为 init) 协调(coordinates) 剩下的  boot process 和 配置 用户环境(user environment)
+
+当 init 命令 启动时, 它 会成为 system 上 自动启动的 所有 进程(processes) 的 parent or grandparent.
+首先, init 会 执行 /etc/rc.d/rc.sysinit 脚本, 该脚本会设置 the environment path, starts swap, 
+checks the file systems, and executes all other steps required for system initialization.
+例如, 大多数 system 都使用 a clock, 因此 rc.sysinit 会读取 /etc/sysconfig/clock 配置文件来初始化 hardware clock.
+Another example is if there are special serial port processes which must be initialized, rc.sysinit executes the /etc/rc.serial file.
+
+
+然后 init 命令 处理(processes) 目录 /etc/event.d 下的 jobs, 这些 jobs 描述了 在 每种 SysV init runlevel 中 system 如何被 建立(set up)的方式.
+Runlevels 是 a state, 或 mode, 且被 SysV /etc/rc.d/rc<x>.d/ 目录下列出的 services 所 定义.
+其中 <x> 是 runlevel 的 number.
+
+下一步, init 命令 会为 system 设置 the source function library,/etc/rc.d/init.d/functions,其 配置了 how to start, kill, and determine the PID of a program.
+
+init 程序 通过查找 /etc/inittab 中 被指定的 默认的 runlevel 对应的 rc 目录  来 启动所有的 后台进程(background processes).
+The rc directories are numbered to correspond to the runlevel they represent. For instance, /etc/rc.d/rc5.d/ is the directory for runlevel 5.
+
+当 booting to runlevel 5, the init program looks in the /etc/rc.d/rc5.d/ directory to determine which processes to start and stop.
+ 
+Below is an example listing of the /etc/rc.d/rc5.d/ directory:
+      K05innd -> ../init.d/innd
+      K05saslauthd -> ../init.d/saslauthd
+      K10dc_server -> ../init.d/dc_server
+      K10psacct -> ../init.d/psacct
+      K10radiusd -> ../init.d/radiusd
+      K12dc_client -> ../init.d/dc_client
+      K12FreeWnn -> ../init.d/FreeWnn
+      K12mailman -> ../init.d/mailman
+      K12mysqld -> ../init.d/mysqld
+      K15httpd -> ../init.d/httpd
+      K20netdump-server -> ../init.d/netdump-server
+      K20rstatd -> ../init.d/rstatd
+      K20rusersd -> ../init.d/rusersd
+      K20rwhod -> ../init.d/rwhod
+      K24irda -> ../init.d/irda
+      K25squid -> ../init.d/squid
+      K28amd -> ../init.d/amd
+      K30spamassassin -> ../init.d/spamassassin
+      K34dhcrelay -> ../init.d/dhcrelay
+      K34yppasswdd -> ../init.d/yppasswdd
+      K35dhcpd -> ../init.d/dhcpd
+      K35smb -> ../init.d/smb
+      K35vncserver -> ../init.d/vncserver
+      K36lisa -> ../init.d/lisa
+      K45arpwatch -> ../init.d/arpwatch
+      K45named -> ../init.d/named
+      K46radvd -> ../init.d/radvd
+      K50netdump -> ../init.d/netdump
+      K50snmpd -> ../init.d/snmpd
+      K50snmptrapd -> ../init.d/snmptrapd
+      K50tux -> ../init.d/tux
+      K50vsftpd -> ../init.d/vsftpd
+      K54dovecot -> ../init.d/dovecot
+      K61ldap -> ../init.d/ldap
+      K65kadmin -> ../init.d/kadmin
+      K65kprop -> ../init.d/kprop
+      K65krb524 -> ../init.d/krb524
+      K65krb5kdc -> ../init.d/krb5kdc
+      K70aep1000 -> ../init.d/aep1000
+      K70bcm5820 -> ../init.d/bcm5820
+      K74ypserv -> ../init.d/ypserv
+      K74ypxfrd -> ../init.d/ypxfrd
+      K85mdmpd -> ../init.d/mdmpd
+      K89netplugd -> ../init.d/netplugd
+      K99microcode_ctl -> ../init.d/microcode_ctl
+      S04readahead_early -> ../init.d/readahead_early
+      S05kudzu -> ../init.d/kudzu
+      S06cpuspeed -> ../init.d/cpuspeed
+      S08ip6tables -> ../init.d/ip6tables
+      S08iptables -> ../init.d/iptables
+      S09isdn -> ../init.d/isdn
+      S10network -> ../init.d/network
+      S12syslog -> ../init.d/syslog
+      S13irqbalance -> ../init.d/irqbalance
+      S13portmap -> ../init.d/portmap
+      S15mdmonitor -> ../init.d/mdmonitor
+      S15zebra -> ../init.d/zebra
+      S16bgpd -> ../init.d/bgpd
+      S16ospf6d -> ../init.d/ospf6d
+      S16ospfd -> ../init.d/ospfd
+      S16ripd -> ../init.d/ripd
+      S16ripngd -> ../init.d/ripngd
+      S20random -> ../init.d/random
+      S24pcmcia -> ../init.d/pcmcia
+      S25netfs -> ../init.d/netfs
+      S26apmd -> ../init.d/apmd
+      S27ypbind -> ../init.d/ypbind
+      S28autofs -> ../init.d/autofs
+      S40smartd -> ../init.d/smartd
+      S44acpid -> ../init.d/acpid
+      S54hpoj -> ../init.d/hpoj
+      S55cups -> ../init.d/cups
+      S55sshd -> ../init.d/sshd
+      S56rawdevices -> ../init.d/rawdevices
+      S56xinetd -> ../init.d/xinetd
+      S58ntpd -> ../init.d/ntpd
+      S75postgresql -> ../init.d/postgresql
+      S80sendmail -> ../init.d/sendmail
+      S85gpm -> ../init.d/gpm
+      S87iiim -> ../init.d/iiim
+      S90canna -> ../init.d/canna
+      S90crond -> ../init.d/crond
+      S90xfs -> ../init.d/xfs
+      S95atd -> ../init.d/atd
+      S96readahead -> ../init.d/readahead
+      S97messagebus -> ../init.d/messagebus
+      S97rhnsd -> ../init.d/rhnsd
+      S99local -> ../rc.local
+
+
+在 init 命令 进入  runlevel 对应的 rc 目录之后, Upstart 会为 对应/etc/event.d目录下 job 定义的 runlevel 分配的
+每个 virtual console (login prompt) 产生(forks) 一个 /sbin/mingetty 进程
+Runlevels 2 到 5 都有 6 个 virtual consoles, 而 runlevel 1 (single user mode) 有 1 个, 而 runlevels 0 and 6 没有 virtual consoles.
+The /sbin/mingetty process opens communication pathways to tty devices,
+sets their modes, prints the login prompt, accepts the user's username and password, and initiates the login process.
+
+In runlevel 5, Upstart runs a script called /etc/X11/prefdm. The prefdm script executes the
+preferred X display manager — gdm, kdm, or xdm, depending on the contents of the /etc/sysconfig/desktop file.
+
+Once finished, the system operates on runlevel 5 and displays a login screen.
+
