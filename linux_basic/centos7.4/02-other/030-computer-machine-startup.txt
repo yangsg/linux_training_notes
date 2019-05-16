@@ -29,7 +29,7 @@ other
 
 
 
-power on ->  BIOS(INT 13) -> boot loader -> kernel (or other boot loader) -> driver -> service ->
+power on ->  BIOS(INT 13) -> boot loader -> kernel and initramfs -> driver -> service ->
 
 
 [root@basic ~]# ls -1 -F /boot/
