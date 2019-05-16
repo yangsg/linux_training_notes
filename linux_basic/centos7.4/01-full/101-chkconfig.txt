@@ -1,0 +1,105 @@
+
+
+# keyword chkconfig
+
+man chkconfig
+
+
+作用: chkconfig - updates and queries runlevel information for system services
+
+语法: chkconfig [--list] [--type type] [name]
+语法: chkconfig --add name
+语法: chkconfig --del name
+语法: chkconfig --override name
+语法: chkconfig [--level levels] [--type type] [--no-redirect] name <on|off|reset|resetpriorities>
+语法: chkconfig [--level levels] [--type type] [--no-redirect] name
+
+
+说明:
+    chkconfig 提供了 一个简单的命令行 工具, 通过减轻 系统管理员 直接 操作 这些目录下带有 数字的
+    符号链接(numerous symbolic links) 的 任务 来维护 /etc/rc[0-6].d 目录的 层级结构(hierarchy).
+
+    chkconfig 实现灵感 来自于  IRIX 操作系统 中的 chkconfig 命令. 但是, 该版本的 chkconfig 直接管理 目录 /etc/rc[0-6].d 下的 symlinks,
+    而不是 维持 /etc/rc[0-6].d hierarchy 之外 的 配置信息.  这将保留有关 init 在单个位置启动的服务的所有配置信息。
+
+    chkconfig 具有 5 个不同的功能:
+        adding new services for management,
+        removing services from management,
+        listing the current startup information for services,
+        changing  the startup information for services,
+        and checking the startup state of a particular service.
+
+    当 chkconfig 只 以 a service name 运行时, 它会检查 该 service 是否 被配置为 在 当前 runlevel 被 启动(started).
+    如果是, chkconfig 返回 true; 否则其返回 false. 可以使用 --level 选项 来使 chkconfig 查询 指定的 runlevel 而非 当前的 runlevel.
+
+    当 使用 --list 参数 或 没有 参数 来 运行 chkconfig 时, 将显示 所有 service 和 其 当前配置的 列表.
+
+    如果在 service name 后 指定了 on, off, reset, 或 resetpriorities 中的任何一个, 则 chkconfig 会 修改 该执行 service 的 启动信息(startup information).
+    标志 on 和 off 会是 该 service 被  started 或 stopped. respectively, in the runlevels being changed.
+    The reset flag resets the on/off state for all runlevels for the service to whatever is specified in the init script in question,
+    while the resetpriorities flag resets the start/stop priorities for the service to whatever is specified in the init script.
+
+    默认, 选项 on 和 off 仅 影响 的 2, 3, 4, 和 5 的 runlevels, 当 reset 和 resetpriorities 会 影响所有的 runlevels.
+    选项 --level 可被用来指定 受影响的 runlevels.
+
+
+    注意: 对于每个 service, 每个 runlevel 既有 a start script 或 a stop script. 当切换 runlevels 时, init 将 不会 re-start 已经 被 started 的 service,
+    且 将 不会 re-stop 没有正在 running 的 service.
+
+
+    chkconfig also can manage xinetd scripts via the means of xinetd.d configuration files. Note that only the on, off, and --list commands are supported for xinetd.d services.
+
+
+    chkconfig supports a --type argument to limit actions to only a specific type of services, in the case where services of either type may share a name. Possible values  for  type
+    are sysv and xinetd.
+
+
+
+[root@basic ~]# chkconfig    # 等价于 'chkconfig --list'
+
+Note: This output shows SysV services only and does not include native
+      systemd services. SysV configuration data might be overridden by native
+      systemd configuration.
+
+      If you want to list systemd services use 'systemctl list-unit-files'.
+      To see services enabled on particular target use
+      'systemctl list-dependencies [target]'.
+
+netconsole      0:off   1:off   2:off   3:off   4:off   5:off   6:off
+network         0:off   1:off   2:on    3:on    4:on    5:on    6:off
+
+[root@basic ~]# chkconfig --list  # 等价于 `chkconfig` # 显示所有 SysV services 的信息(注意: 这一点centos7 和 centos6 是有区别的)
+
+Note: This output shows SysV services only and does not include native
+      systemd services. SysV configuration data might be overridden by native
+      systemd configuration.
+
+      If you want to list systemd services use 'systemctl list-unit-files'.
+      To see services enabled on particular target use
+      'systemctl list-dependencies [target]'.
+
+netconsole      0:off   1:off   2:off   3:off   4:off   5:off   6:off
+network         0:off   1:off   2:on    3:on    4:on    5:on    6:off
+
+[root@basic ~]# chkconfig --list network   # 只显示 name 为  'network' 的 service 的信息
+
+Note: This output shows SysV services only and does not include native
+      systemd services. SysV configuration data might be overridden by native
+      systemd configuration.
+
+      If you want to list systemd services use 'systemctl list-unit-files'.
+      To see services enabled on particular target use
+      'systemctl list-dependencies [target]'.
+
+network         0:off   1:off   2:on    3:on    4:on    5:on    6:off
+
+
+[root@dbserver ~]# cp /app/mysql/support-files/mysql.server  /etc/init.d/mysqld
+[root@dbserver ~]# chmod a+x /etc/init.d/mysqld
+[root@dbserver ~]# chkconfig --add mysqld
+[root@dbserver ~]# chkconfig mysqld on
+[root@dbserver ~]# chkconfig --list mysqld
+
+
+关于 service 相应文件的格式 可以参考 `cat /etc/init.d/network` 或  man chkconfig
+
