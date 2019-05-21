@@ -21,6 +21,12 @@ http://calc.50x.eu/
 http://www.youkud.com/tool/jinzhi.php
 
 
+
+The TCP/IP Guide
+http://www.redbooks.ibm.com/redbooks/pdfs/gg243376.pdf
+http://www.tcpipguide.com/free/t_toc.htm
+
+
 centos7 上的一些快捷键:
 
 [Ctrl] + [Alt] + [F2] ~ [F6] ：文字接口登入 tty2 ~ tty6 终端机；
