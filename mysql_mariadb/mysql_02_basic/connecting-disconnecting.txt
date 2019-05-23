@@ -17,7 +17,7 @@ https://dev.mysql.com/doc/refman/5.7/en/mysql-command-options.html
 
 // 远程登录
 // 本地服务器准备好远程客户端访问的database 和 用户账号
-mysql> create database db01 charset utf8;
+mysql> create database db01 charset utf8;     # 注: 在实际生产环境中, 最好不要再使用mysql自己的utf8了, 而应该使用 utf8mb4
 mysql> show databases;
 
 mysql> show grants;
