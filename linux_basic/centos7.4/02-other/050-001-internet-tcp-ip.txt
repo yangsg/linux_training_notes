@@ -4,6 +4,7 @@
 参考:
 http://www.tcpipguide.com/free/t_toc.htm
 http://www.redbooks.ibm.com/redbooks/pdfs/gg243376.pdf
+
 https://blog.csdn.net/xk7298/article/details/80558297
 https://docs.oracle.com/cd/E23823_01/html/816-4554/ipov-6.html
 https://www.cnblogs.com/qiaoconglovelife/p/5349486.html
@@ -78,6 +79,15 @@ ip 地址： 192.168.175.127/24
 点到点网络的子网掩码最好是 252, 即 网络ID 为 30 位
 
 
+---------------------------------------------------------------------------------------------------
+tcp 和 udp 概要比较:
+http://www.tcpipguide.com/free/t_SummaryComparisonofTCPIPTransportLayerProtocolsUDP.htm
+
+tcp 连接建立是的三次握手及状态变化过程:
+http://www.tcpipguide.com/free/t_TCPConnectionEstablishmentProcessTheThreeWayHandsh-3.htm
+
+tcp 连接关闭流程及状态变化过程:
+http://www.tcpipguide.com/free/t_TCPConnectionTermination-2.htm
 ---------------------------------------------------------------------------------------------------
 
 端口号Port:
