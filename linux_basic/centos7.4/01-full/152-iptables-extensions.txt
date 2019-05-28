@@ -1,0 +1,35 @@
+
+
+作用: iptables-extensions — list of extensions in the standard iptables distribution
+
+
+语法:       ip6tables [-m name [module-options...]]  [-j target-name [target-options...]
+语法:       iptables  [-m name [module-options...]]  [-j target-name [target-options...]
+
+MATCH EXTENSIONS
+    iptables 能够 通过 跟随着模块名(matching module name) 的选项  -m 或 --match 来使用扩展的 包匹配模块(extended packet matching modules),
+    在这之后, 各种额外的 的 命令行选项 将变为可用, 这要依赖于具体指定的模块(depending on the specific module).
+    你可以在一行上指定多个 extended match modules, 同时 你可以 在 指定的 module 后 使用 -h 或 --help 选项 来获取 该 module 的 帮助说明.
+    The extended match modules are evaluated in the order they are specified in the rule.
+
+    如果 指定了 -p 或 --protocol 且 当且仅当 未知的选项被遇到时, iptables 将尝试加载与 该 protocol 同名的 匹配模块, 来让 该 未知的选项 可用或有效.
+      原文:
+          If  the -p or --protocol was specified and if and only if an unknown option is encountered,
+          iptables will try load a match module of the same name as the protocol, to try making the option available.
+
+
+[root@basic ~]# man iptables-extensions | grep -E '^   [[:alnum:]]'  | less  # 列出模块
+
+[root@basic ~]# iptables -m multiport -h         # 查看 匹配模块 multiport 的简要帮助信息 (较详细一点的信息最好还是使用 man iptables-extensions  #/^   multiport 来查看)
+[root@basic ~]# iptables -m tcp -m multiport -h  # 查看 匹配模块 tcp 和 multiport 的简要帮助信息
+
+
+
+
+
+
+
+
+
+
+
