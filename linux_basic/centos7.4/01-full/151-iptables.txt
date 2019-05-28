@@ -1,0 +1,329 @@
+
+
+# keyword iptables
+
+man iptables
+man iptables-extensions
+
+man iptables-save
+man iptables-restore
+
+
+
+参考:
+https://help.ubuntu.com/community/IptablesHowTo
+https://www.frozentux.net/iptables-tutorial/iptables-tutorial.html
+https://netfilter.org/documentation/
+
+http://www.zsythink.net/archives/1199/
+
+http://www.linuxhomenetworking.com/wiki/index.php/Quick_HOWTO_:_Ch14_:_Linux_Firewalls_Using_iptables#.XOkvXFwzZPY
+
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/security_guide/sect-security_guide-iptables
+https://fatmin.com/2011/10/20/rhel6-simple-iptables-how-to/
+
+
+
+
+https://www.frozentux.net/iptables-tutorial/iptables-tutorial.html
+很重要的一点需要记住:
+iptables 主要工作于 网络层 和 运输层 的 headers 上, 尽管它也可以在 应用层 或 网络访问层上执行一些基本的过滤,
+但这并不是其设计目的, 其也不太适合这些应用场景.(例如：字符串匹配, iptables 可以做, 但最好别这么干, 因为iptables 是work on a per packet basis,
+如果字符串被分片到了多个不同的packets中, iptables将无法看到该完整的字符串, 所以 这样的任务放在应用层的某些应用(如一些proxy中, 如 Squid, nginx等)中处理比较好一些)
+
+学习iptables 时 可以将主要的注意力集中在 ip, icmp, tcp, udp 协议上。
+
+ip
+port
+socket = ip:port
+
+Linux kernel 2.4 版本以前, 链路层的 mtu (最大传输单元) 太小时 会对 iptables 读取 packets 中的 headers 和 data 造成问题,
+但从 Linux kernel 2.4 版本开始, 对大多数 linux 防火墙来说 这都已经不再是问题了, 因为 The connection tracking system(连接跟踪系统)
+used by iptables for state matching and NAT'ing etc must be able to read the packet defragmented.
+Because of this, conntrack automatically defragments all packets before they reach the netfilter/iptables structure in the kernel.
+
+
+https://www.rfc-editor.org/
+
+---------------------------------------------------------------------------------------------------
+http://www.tcpipguide.com/free/t_IPDatagramGeneralFormat.htm
+https://www.frozentux.net/iptables-tutorial/iptables-tutorial.html#IPHEADERS
+https://www.frozentux.net/iptables-tutorial/other/rfc791.txt
+ip header format:
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |Version|  IHL  |Type of Service|          Total Length         |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |         Identification        |Flags|      Fragment Offset    |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |  Time to Live |    Protocol   |         Header Checksum       |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                       Source Address                          |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                    Destination Address                        |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                    Options                    |    Padding    |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+                    Example Internet Datagram Header
+
+                               Figure 4.
+---------------------------------------------------------------------------------------------------
+hooks 的位置:
+https://www.netfilter.org/documentation/HOWTO//netfilter-hacking-HOWTO-3.html#ss3.2
+https://www.frozentux.net/iptables-tutorial/iptables-tutorial.html#TRAVERSINGOFTABLES
+
+ --网络-网卡->PRE------->[ROUTE]--------->FWD------------------------------------->POST-----网卡---网络->
+              Raw          |              Mangle                    ^             Mangle
+              Conntrack    |              Filter                    |             NAT (Src)
+              Mangle       |                                     [ROUTE]          Conntrack
+              Nat (Dst)    v                                        |
+              (QDisc)      IN Mangle                               OUT Raw
+                           |  Filter                                |  Conntrack
+                           |                                        ^  Mangle
+                           v                                        |  NAT (Dst)
+                           |                                        |  Filter
+                           |                                        |
+
+---------------------------------------------------------------------------------------------------
+
+icmp 类型:
+https://www.frozentux.net/iptables-tutorial/iptables-tutorial.html#ICMPTYPES
+
+---------------------------------------------------------------------------------------------------
+[root@basic ~]# man iptables   # 注: iptables 涉及的知识点很多, 有些参数 还需要查看 man iptables-extensions
+
+作用: iptables/ip6tables — administration tool for IPv4/IPv6 packet filtering and NAT
+
+语法:       iptables [-t table] {-A|-C|-D} chain rule-specification
+语法:       ip6tables [-t table] {-A|-C|-D} chain rule-specification
+语法:       iptables [-t table] -I chain [rulenum] rule-specification
+语法:       iptables [-t table] -R chain rulenum rule-specification
+语法:       iptables [-t table] -D chain rulenum
+语法:       iptables [-t table] -S [chain [rulenum]]
+语法:       iptables [-t table] {-F|-L|-Z} [chain [rulenum]] [options...]
+语法:       iptables [-t table] -N chain
+语法:       iptables [-t table] -X [chain]
+语法:       iptables [-t table] -P chain target
+语法:       iptables [-t table] -E old-chain-name new-chain-name
+语法:       rule-specification = [matches...] [target]
+语法:       match = -m matchname [per-match-options]
+语法:       target = -j targetname [per-target-options]
+
+
+说明:
+    iptables  和  ip6tables 用户 设置, 维护 和 观察 linux 内核中 IPv4 and IPv6 packet filter rules 的 tables. 可以定义 多个 不同的 tables.
+    每个 table 可以包含 许多 内置的 chains 和 可以包含 用户定义的 chains.
+
+    每个 chain 是 一个 rules 的 列表, 可以与 一组 packets 匹配. 每个 rule 指定了 对其匹配的 packet 的动作.
+    这被称为 a `target', which may be a jump to  a user-defined chain in the same table.
+
+
+TARGETS
+    A  firewall  rule 指定了 针对 a packet 和 a target 的 条件(criteria).
+    如果 the packet 不匹配, 则 the next rule in the chain is examined;
+    如果匹配, 则 the next rule is specified by the value of the target,
+    which can be the name of a user-defined chain, one of the targets described in iptables-extensions(8),
+    or one of the special values ACCEPT, DROP or RETURN.
+
+      ACCEPT 表示 允许 packet 通过
+      DROP 表示 将 packet 丢弃
+      RETURN 表示 停止 遍历(traversing) chain 并 resume at the next rule in the previous (calling) chain.
+      如果 the end of a built-in chain is reached or a rule in a built-in chain with target RETURN is matched,
+      the target specified by the chain policy determines the  fate of the packet.
+
+TABLES
+      当前存在 5 个独立的 tables (那些 tables 存在 依赖于 内核的配置选项 和 那些 modules 存在)
+       -t, --table table :  指定 command 应作用于 的 与 packet 匹配的 tables. 如果内核 配置为 automatic module loading, 如果该 table 的 module 尚不存在, 则会自动加载相应的 module.
+
+            支持的表有: raw mangle nat filter security
+
+            关于 table 和 chain 的 作用和匹配流程 最好结合其他资料 或 图片 来 参考着学习.
+
+OPTIONS
+       iptables 和 ip6tables 识别的选项可被分为不同的组: command, parameters 和 other options.
+
+
+
+
+
+// 禁用 firewalld
+[root@basic ~]# systemctl stop firewalld
+[root@basic ~]# systemctl disable firewalld
+[root@basic ~]# systemctl mask firewalld
+
+[root@basic ~]# systemctl status firewalld
+● firewalld.service
+   Loaded: masked (/dev/null; bad)
+   Active: inactive (dead)
+
+
+
+
+
+
+[root@basic ~]# iptables -h | less   # -h     : Help. 查看简要的帮助信息
+
+
+[root@basic ~]# iptables --version
+iptables v1.4.21
+
+[root@basic ~]# ls /etc/sysconfig/iptables-config
+/etc/sysconfig/iptables-config
+
+
+查看 iptables 规则的常用选项:
+
+     -L, --list [chain] : 命令选项, 列出 指定 chain 的所有规则, 如果没有指定 chain, 则会列出所有 chains.
+                          类似所有 其他的 iptables 命令(command), 其会应用于指定的 table(filter 为默认表),
+                          因此 获取 NAT 表的 rule list 可以使用:
+                          iptables -t nat -n -L
+                          注意通过会结合使用 -n 选项, 为的是 防止 长时间的 DNS 的反向查找(reverse DNS lookups).
+                          It is legal to specify the -Z (zero) option as well, in which case  the chain(s) will be atomically listed and zeroed.
+                          精确的output 受 给定的 其他 arguments 的影响, The exact rules 会被 suppressed 直到你使用
+                          iptables -L -v
+
+     -n, --numeric : Numeric  output. IP addresses 和 port numbers 会以 number 格式显示. 默认 该 program 会尝试将其显示 host names, network names, or services (whenever applicable).
+     --line-numbers : When listing rules, add line numbers to the beginning of each rule, corresponding to that rule's position in the chain.
+     -v, --verbose
+            Verbose output. 该选项 会使 the list command 显示 the interface name, the rule options (if any), and the TOS masks. The packet and byte counters are also  listed,
+            with  the  suffix 'K', 'M' or 'G' for 1000, 1,000,000 and 1,000,000,000 multipliers respectively (but see the -x flag to change this).  For appending, insertion, deletion
+            and replacement, this causes detailed information on the rule or rules to be printed. -v may be specified multiple times to possibly emit more detailed debug statements.
+     -x, --exact
+            Expand numbers.  Display the exact value of the packet and byte counters, instead of only the rounded number in K's (multiples of 1000) M's (multiples of  1000K)  or  G's
+            (multiples of 1000M).  This option is only relevant for the -L command.
+
+
+[root@basic ~]# iptables -t nat -nL --line-numbers
+[root@basic ~]# iptables -t nat -nL --line-numbers -v
+[root@basic ~]# iptables -t nat -nL --line-numbers -v -x
+
+[root@basic ~]# alias ipts='iptables -nL --line-numbers'    # 命令 iptables 查看的选项实在太长了, 可以使用 alias 为其定义 命令别名.
+[root@basic ~]# ipts -t nat
+[root@basic ~]# ipts -t nat -v -x
+
+
+
+     -A, --append chain rule-specification
+            Append  one or more rules to the end of the selected chain.  When the source and/or destination names resolve to more than one address,
+            a rule will be added for each possible address combination.
+
+[root@basic ~]# man iptables-extensions
+[root@basic ~]# iptables -A INPUT  -p tcp -s 192.168.175.1   -d 192.168.175.10 --dport 22 -j ACCEPT
+[root@basic ~]# iptables -A OUTPUT -p tcp -s 192.168.175.10  -d 192.168.175.1  --sport 22 -j ACCEPT
+
+[root@basic ~]# iptables -A INPUT  -p tcp -s 192.168.175.20  -d 192.168.175.10 --dport 22 -j ACCEPT
+[root@basic ~]# iptables -A OUTPUT -p tcp -s 192.168.175.10  -d 192.168.175.20 --sport 22 -j ACCEPT
+
+[root@basic ~]# iptables -nL --line-numbers
+Chain INPUT (policy ACCEPT)
+num  target     prot opt source               destination
+1    ACCEPT     tcp  --  192.168.175.1        192.168.175.10       tcp dpt:22
+2    ACCEPT     tcp  --  192.168.175.20       192.168.175.10       tcp dpt:22
+
+Chain FORWARD (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+num  target     prot opt source               destination
+1    ACCEPT     tcp  --  192.168.175.10       192.168.175.1        tcp spt:22
+2    ACCEPT     tcp  --  192.168.175.10       192.168.175.20       tcp spt:22
+
+
+
+     -P, --policy chain target
+            Set the policy for the chain to the given target.  See the section TARGETS for the legal targets.
+            Only built-in (non-user-defined) chains can have policies, and  neither built-in nor user-defined chains can be policy targets.
+
+设置默认策略语法: iptables [-t nat] -P [INPUT,OUTPUT,FORWARD] [ACCEPT,DROP]
+    参数：
+    -P ：定义政策( Policy )。注意，这个 P 为大写啊！
+    ACCEPT ：该封包可接受
+    DROP   ：该封包直接丢弃，不会让 client 端知道为何被丢弃。
+
+  一般生产服务器上 最好将默认的安全策略设置为 DROP, 然后仅针对 开放的 service(包括管理员的远程登录服务sshd,注意不要将自己"锁在门外") 放行其 packet
+[root@basic ~]# iptables -P INPUT DROP
+[root@basic ~]# iptables -P OUTPUT DROP
+[root@basic ~]# iptables -P FORWARD DROP
+[root@basic ~]# iptables -nL --line-numbers    # 查看 filter 表中的规则
+Chain INPUT (policy DROP)
+num  target     prot opt source               destination
+1    ACCEPT     tcp  --  192.168.175.1        192.168.175.10       tcp dpt:22
+2    ACCEPT     tcp  --  192.168.175.20       192.168.175.10       tcp dpt:22
+
+Chain FORWARD (policy DROP)
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy DROP)
+num  target     prot opt source               destination
+1    ACCEPT     tcp  --  192.168.175.10       192.168.175.1        tcp spt:22
+2    ACCEPT     tcp  --  192.168.175.10       192.168.175.20       tcp spt:22
+
+[root@basic ~]# iptables -nL --line-numbers -v    # 查看 详细的 filter 表中的规则
+      Chain INPUT (policy DROP 6 packets, 468 bytes)
+      num   pkts bytes target     prot opt in     out     source               destination
+      1      952 77824 ACCEPT     tcp  --  *      *       192.168.175.1        192.168.175.10       tcp dpt:22
+      2        0     0 ACCEPT     tcp  --  *      *       192.168.175.20       192.168.175.10       tcp dpt:22
+
+      Chain FORWARD (policy DROP 0 packets, 0 bytes)
+      num   pkts bytes target     prot opt in     out     source               destination
+
+      Chain OUTPUT (policy DROP 0 packets, 0 bytes)
+      num   pkts bytes target     prot opt in     out     source               destination
+      1      458  256K ACCEPT     tcp  --  *      *       192.168.175.10       192.168.175.1        tcp spt:22
+      2        0     0 ACCEPT     tcp  --  *      *       192.168.175.10       192.168.175.20       tcp spt:22
+[root@basic ~]# iptables -nL --line-numbers -v -x  # 查看 详细的 filter 表中的规则, pkts 和 bytes 显示精确的数字, 而不是带 round 后的单位.
+      Chain INPUT (policy DROP 6 packets, 468 bytes)
+      num      pkts      bytes target     prot opt in     out     source               destination
+      1         962    78544 ACCEPT     tcp  --  *      *       192.168.175.1        192.168.175.10       tcp dpt:22
+      2           0        0 ACCEPT     tcp  --  *      *       192.168.175.20       192.168.175.10       tcp dpt:22
+
+      Chain FORWARD (policy DROP 0 packets, 0 bytes)
+      num      pkts      bytes target     prot opt in     out     source               destination
+
+      Chain OUTPUT (policy DROP 0 packets, 0 bytes)
+      num      pkts      bytes target     prot opt in     out     source               destination
+      1         464   257888 ACCEPT     tcp  --  *      *       192.168.175.10       192.168.175.1        tcp spt:22
+      2           0        0 ACCEPT     tcp  --  *      *       192.168.175.10       192.168.175.20       tcp spt:22
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------
+其他与安全有关的文档或软件:
+
+DDoS Protection With IPtables: The Ultimate Guide (使用 iptables 防止 DDoS 攻击 的终极指南)
+  https://javapipe.com/blog/iptables-ddos-protection/
+
+How to Use Linux Iptables To Block Different Attacks
+  https://linoxide.com/firewall/block-common-attacks-iptables/
+
+浅谈iptables防SYN Flood攻击和CC攻击
+  https://www.cnblogs.com/flying1819/articles/8795912.html
+
+
+https://blog.myssl.com/
+  HTTPS 安全最佳实践（一）之SSL/TLS部署    https://blog.myssl.com/ssl-and-tls-deployment-best-practices/
+  HTTPS 安全最佳实践（二）之安全加固       https://blog.myssl.com/https-security-best-practices/
+  HTTPS 安全最佳实践（三）之服务器软件     https://blog.myssl.com/https-security-best-practices-2/
+
+
+在CentOS 7上使用Tripwire监控和检测修改的文件
+  https://www.howtoing.com/monitoring-and-detecting-modified-files-using-tripwire-on-centos-7
+威胁快报｜首爆新型TLS 1.2协议漏洞，数千网站面临数据泄露风险
+  https://www.freebuf.com/company-information/195800.html
+
+https://www.snort.org/
+http://www.squid-cache.org/
+https://www.tripwire.com/
+
+
+
+
+
+
+
