@@ -210,8 +210,8 @@ iptables v1.4.21
             a rule will be added for each possible address combination.
 
 [root@basic ~]# man iptables-extensions
-[root@basic ~]# iptables -A INPUT  -p tcp -s 192.168.175.1   -d 192.168.175.10 --dport 22 -j ACCEPT
-[root@basic ~]# iptables -A OUTPUT -p tcp -s 192.168.175.10  -d 192.168.175.1  --sport 22 -j ACCEPT
+[root@basic ~]# iptables -A INPUT  -p tcp -s 192.168.175.1   -d 192.168.175.10 --dport 22 -j ACCEPT   # 放行 进入 sshd 服务(默认tcp:22) 的 packet
+[root@basic ~]# iptables -A OUTPUT -p tcp -s 192.168.175.10  -d 192.168.175.1  --sport 22 -j ACCEPT   # 放行 流出 sshd 服务(默认tcp:22) 的 packet
 
 [root@basic ~]# iptables -A INPUT  -p tcp -s 192.168.175.20  -d 192.168.175.10 --dport 22 -j ACCEPT
 [root@basic ~]# iptables -A OUTPUT -p tcp -s 192.168.175.10  -d 192.168.175.20 --sport 22 -j ACCEPT
@@ -287,6 +287,386 @@ num  target     prot opt source               destination
       1         464   257888 ACCEPT     tcp  --  *      *       192.168.175.10       192.168.175.1        tcp spt:22
       2           0        0 ACCEPT     tcp  --  *      *       192.168.175.10       192.168.175.20       tcp spt:22
 
+
+
+   -I, --insert chain [rulenum] rule-specification
+          Insert one or more rules in the selected chain as the given rule number.
+          So, if the rule number is 1, the rule or rules are inserted at the head of the chain.   This  is also the default if no rule number is specified.
+
+[root@basic ~]# iptables -m tcp -h  # 查看 tcp 扩展匹配模块的 帮助说明，较详细一点的说明见  man iptables-extensions   #/^   tcp
+
+// 放行 http 协议(即tcp:80, 此处没包含https协议, 即tcp:443)的 web 服务的 packet
+[root@basic ~]# iptables -I INPUT -p tcp -d 192.168.175.10 --dport 80 -j ACCEPT      # 放行 http 协议(默认tcp:80)的 进入的 数据包
+[root@basic ~]# iptables -I OUTPUT -p tcp -s 192.168.175.10 --sport 80 -j ACCEPT     # 放行 http 协议(默认tcp:80)的 出去的 数据包
+
+[root@basic ~]# iptables -nL --line-numbers
+      Chain INPUT (policy DROP)
+      num  target     prot opt source               destination
+      1    ACCEPT     tcp  --  0.0.0.0/0            192.168.175.10       tcp dpt:80
+      2    ACCEPT     tcp  --  192.168.175.1        192.168.175.10       tcp dpt:22
+      3    ACCEPT     tcp  --  192.168.175.20       192.168.175.10       tcp dpt:22
+
+      Chain FORWARD (policy DROP)
+      num  target     prot opt source               destination
+
+      Chain OUTPUT (policy DROP)
+      num  target     prot opt source               destination
+      1    ACCEPT     tcp  --  192.168.175.10       0.0.0.0/0            tcp spt:80
+      2    ACCEPT     tcp  --  192.168.175.10       192.168.175.1        tcp spt:22
+      3    ACCEPT     tcp  --  192.168.175.10       192.168.175.20       tcp spt:22
+
+
+// 放行 https 协议(默认 tcp:443) 的 web 服务的 packet
+[root@basic ~]# iptables -I INPUT  2 -p tcp -d 192.168.175.10 --dport 443 -j ACCEPT   # 放行 https 协议(默认tcp:443) 的 进入的 数据包
+[root@basic ~]# iptables -I OUTPUT 2 -p tcp -s 192.168.175.10 --sport 443 -j ACCEPT   # 放行 https 协议(默认tcp:443) 的 出去的 数据包
+[root@basic ~]# iptables -nL --line-numbers
+      Chain INPUT (policy DROP)
+      num  target     prot opt source               destination
+      1    ACCEPT     tcp  --  0.0.0.0/0            192.168.175.10       tcp dpt:80
+      2    ACCEPT     tcp  --  0.0.0.0/0            192.168.175.10       tcp dpt:443
+      3    ACCEPT     tcp  --  192.168.175.1        192.168.175.10       tcp dpt:22
+      4    ACCEPT     tcp  --  192.168.175.20       192.168.175.10       tcp dpt:22
+
+      Chain FORWARD (policy DROP)
+      num  target     prot opt source               destination
+
+      Chain OUTPUT (policy DROP)
+      num  target     prot opt source               destination
+      1    ACCEPT     tcp  --  192.168.175.10       0.0.0.0/0            tcp spt:80
+      2    ACCEPT     tcp  --  192.168.175.10       0.0.0.0/0            tcp spt:443
+      3    ACCEPT     tcp  --  192.168.175.10       192.168.175.1        tcp spt:22
+      4    ACCEPT     tcp  --  192.168.175.10       192.168.175.20       tcp spt:22
+
+
+
+关于 icmp type 的列表见:
+    https://www.frozentux.net/iptables-tutorial/iptables-tutorial.html#ICMPTYPES
+    https://baike.baidu.com/item/ICMP/572452?fr=aladdin
+
+[root@basic ~]# iptables -m icmp -h  # 查看 icmp 扩展匹配模块的 帮助说明, 较详细说明见 man iptables-extensions   #/^   icmp
+
+// 放行 client 主动对 server 的 ping 操作的 packet
+[root@basic ~]# iptables -A INPUT  -s 192.168.175.1  -d 192.168.175.10 -p icmp --icmp-type 8 -j ACCEPT   # 放行 client 给 server 的 echo-request 的 packet
+[root@basic ~]# iptables -A OUTPUT -s 192.168.175.10 -d 192.168.175.1  -p icmp --icmp-type 0 -j ACCEPT   # 放行 server 给 client 的 echo-reply 的 packet
+
+[root@basic ~]# iptables -nL --line-numbers
+      Chain INPUT (policy DROP)
+      num  target     prot opt source               destination
+      1    ACCEPT     tcp  --  0.0.0.0/0            192.168.175.10       tcp dpt:80
+      2    ACCEPT     tcp  --  0.0.0.0/0            192.168.175.10       tcp dpt:443
+      3    ACCEPT     tcp  --  192.168.175.1        192.168.175.10       tcp dpt:22
+      4    ACCEPT     tcp  --  192.168.175.20       192.168.175.10       tcp dpt:22
+      5    ACCEPT     icmp --  192.168.175.1        192.168.175.10       icmptype 8
+
+      Chain FORWARD (policy DROP)
+      num  target     prot opt source               destination
+
+      Chain OUTPUT (policy DROP)
+      num  target     prot opt source               destination
+      1    ACCEPT     tcp  --  192.168.175.10       0.0.0.0/0            tcp spt:80
+      2    ACCEPT     tcp  --  192.168.175.10       0.0.0.0/0            tcp spt:443
+      3    ACCEPT     tcp  --  192.168.175.10       192.168.175.1        tcp spt:22
+      4    ACCEPT     tcp  --  192.168.175.10       192.168.175.20       tcp spt:22
+      5    ACCEPT     icmp --  192.168.175.10       192.168.175.1        icmptype 0
+
+// 放行 server 主动 ping 其他 remote host 的 packet
+[root@basic ~]# iptables -A OUTPUT -s 192.168.175.10 -p icmp --icmp-type 8 -j ACCEPT   # 放行 server 给 其他 remote host 发送的 icmp type 的 echo-request 的 packet
+[root@basic ~]# iptables -A INPUT  -d 192.168.175.10 -p icmp --icmp-type 0 -j ACCEPT   # 放行 其他 remote host 给 server 发送的 icmp type 的 echo-reply 的 packet
+
+
+
+   [!] -i, --in-interface name
+          Name of an interface via which a packet was received (only for packets entering the INPUT, FORWARD and PREROUTING chains).  When the  "!"  argument  is  used  before  the
+          interface  name,  the  sense is inverted.  If the interface name ends in a "+", then any interface which begins with this name will match.  If this option is omitted, any
+          interface name will match.
+
+   [!] -o, --out-interface name
+          Name of an interface via which a packet is going to be sent (for packets entering the FORWARD, OUTPUT and POSTROUTING chains).  When the "!" argument is used  before  the
+          interface  name,  the  sense is inverted.  If the interface name ends in a "+", then any interface which begins with this name will match.  If this option is omitted, any
+          interface name will match.
+
+
+// 允许 server 访问 自身的所有服务 (因为此时数据 走的是虚拟的 回环网卡(loopback , 名为'lo'), 而非实际的 物理网卡, 所以需要通过 iptables 的 -i 或 -o 选项指定 网卡 来实现 packet 的匹配)
+// 此时 也就可以 自己 ping 自己了
+[root@basic ~]# iptables -A INPUT  -i lo -j ACCEPT
+[root@basic ~]# iptables -A OUTPUT -o lo -j ACCEPT
+
+[root@basic ~]# iptables -nL --line-numbers -v
+      Chain INPUT (policy DROP 0 packets, 0 bytes)
+      num   pkts bytes target     prot opt in     out     source               destination
+      1        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            192.168.175.10       tcp dpt:80
+      2        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            192.168.175.10       tcp dpt:443
+      3     4088  324K ACCEPT     tcp  --  *      *       192.168.175.1        192.168.175.10       tcp dpt:22
+      4        0     0 ACCEPT     tcp  --  *      *       192.168.175.20       192.168.175.10       tcp dpt:22
+      5        4   240 ACCEPT     icmp --  *      *       192.168.175.1        192.168.175.10       icmptype 8
+      6        8   672 ACCEPT     icmp --  *      *       0.0.0.0/0            192.168.175.10       icmptype 0
+      7       15  1260 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0
+
+      Chain FORWARD (policy DROP 0 packets, 0 bytes)
+      num   pkts bytes target     prot opt in     out     source               destination
+
+      Chain OUTPUT (policy DROP 0 packets, 0 bytes)
+      num   pkts bytes target     prot opt in     out     source               destination
+      1        0     0 ACCEPT     tcp  --  *      *       192.168.175.10       0.0.0.0/0            tcp spt:80
+      2        0     0 ACCEPT     tcp  --  *      *       192.168.175.10       0.0.0.0/0            tcp spt:443
+      3     2696  827K ACCEPT     tcp  --  *      *       192.168.175.10       192.168.175.1        tcp spt:22
+      4        0     0 ACCEPT     tcp  --  *      *       192.168.175.10       192.168.175.20       tcp spt:22
+      5        4   240 ACCEPT     icmp --  *      *       192.168.175.10       192.168.175.1        icmptype 0
+      6       20  1680 ACCEPT     icmp --  *      *       192.168.175.10       0.0.0.0/0            icmptype 8
+      7       15  1260 ACCEPT     all  --  *      lo      0.0.0.0/0            0.0.0.0/0
+
+
+[root@basic ~]# iptables-save  > /etc/iptables-save.rules
+[root@basic ~]# iptables-restore < /etc/iptables-save.rules  #iptables-restore默认会 flush (delete) all previous contents of the respective table.当然可以使用 -n, --noflush 修改这一行为
+
+
+
+       -F, --flush [chain]
+              Flush the selected chain (all the chains in the table if none is given).  This is equivalent to deleting all the rules one by one.
+
+[root@basic ~]# iptables -F        # 清空, 删除所有 chains 中的规则
+[root@basic ~]# iptables -F INPUT  # 清空, 删除 指定的 INPUT chain 中的 规则
+
+[root@basic ~]# iptables -F && iptables-restore < /etc/iptables-save.rules   # 清空 并 还原 iptables 的规则, 注意一定要作为 一条(复合)命令来执行, 避免将自己'锁在门外'
+
+[root@basic ~]# iptables -nL --line-numbers -v
+      Chain INPUT (policy DROP 0 packets, 0 bytes)
+      num   pkts bytes target     prot opt in     out     source               destination
+      1        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            192.168.175.10       tcp dpt:80
+      2        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            192.168.175.10       tcp dpt:443
+      3       86  5792 ACCEPT     tcp  --  *      *       192.168.175.1        192.168.175.10       tcp dpt:22
+      4        0     0 ACCEPT     tcp  --  *      *       192.168.175.20       192.168.175.10       tcp dpt:22
+      5        0     0 ACCEPT     icmp --  *      *       192.168.175.1        192.168.175.10       icmptype 8
+      6        0     0 ACCEPT     icmp --  *      *       0.0.0.0/0            192.168.175.10       icmptype 0
+      7        0     0 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0
+
+      Chain FORWARD (policy DROP 0 packets, 0 bytes)
+      num   pkts bytes target     prot opt in     out     source               destination
+
+      Chain OUTPUT (policy DROP 0 packets, 0 bytes)
+      num   pkts bytes target     prot opt in     out     source               destination
+      1        0     0 ACCEPT     tcp  --  *      *       192.168.175.10       0.0.0.0/0            tcp spt:80
+      2        0     0 ACCEPT     tcp  --  *      *       192.168.175.10       0.0.0.0/0            tcp spt:443
+      3       60 19824 ACCEPT     tcp  --  *      *       192.168.175.10       192.168.175.1        tcp spt:22
+      4        0     0 ACCEPT     tcp  --  *      *       192.168.175.10       192.168.175.20       tcp spt:22
+      5        0     0 ACCEPT     icmp --  *      *       192.168.175.10       192.168.175.1        icmptype 0
+      6        0     0 ACCEPT     icmp --  *      *       192.168.175.10       0.0.0.0/0            icmptype 8
+      7        0     0 ACCEPT     all  --  *      lo      0.0.0.0/0            0.0.0.0/0
+
+
+
+     -D, --delete chain rule-specification
+     -D, --delete chain rulenum
+            Delete one or more rules from the selected chain.  There are two versions of this command:
+            the rule can be specified as a number in the chain (starting at 1 for the first rule) or a rule to match.
+
+// 删除指定的 规则
+[root@basic ~]# iptables -D INPUT  4   # 删除 filter 表中 INPUT  chain 中当前 line-number (序号, 从1开始) 为 4 的 rule
+[root@basic ~]# iptables -D OUTPUT 4   # 删除 filter 表中 OUTPUT chain 中当前 line-number (序号, 从1开始) 为 4 的 rule
+[root@basic ~]# iptables -nL --line-numbers
+      Chain INPUT (policy DROP)
+      num  target     prot opt source               destination
+      1    ACCEPT     tcp  --  0.0.0.0/0            192.168.175.10       tcp dpt:80
+      2    ACCEPT     tcp  --  0.0.0.0/0            192.168.175.10       tcp dpt:443
+      3    ACCEPT     tcp  --  192.168.175.1        192.168.175.10       tcp dpt:22
+      4    ACCEPT     icmp --  192.168.175.1        192.168.175.10       icmptype 8
+      5    ACCEPT     icmp --  0.0.0.0/0            192.168.175.10       icmptype 0
+      6    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+
+      Chain FORWARD (policy DROP)
+      num  target     prot opt source               destination
+
+      Chain OUTPUT (policy DROP)
+      num  target     prot opt source               destination
+      1    ACCEPT     tcp  --  192.168.175.10       0.0.0.0/0            tcp spt:80
+      2    ACCEPT     tcp  --  192.168.175.10       0.0.0.0/0            tcp spt:443
+      3    ACCEPT     tcp  --  192.168.175.10       192.168.175.1        tcp spt:22
+      4    ACCEPT     icmp --  192.168.175.10       192.168.175.1        icmptype 0
+      5    ACCEPT     icmp --  192.168.175.10       0.0.0.0/0            icmptype 8
+      6    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+
+
+
+
+     -R, --replace chain rulenum rule-specification
+            Replace a rule in the selected chain.  If the source and/or destination names resolve to multiple addresses, the command will fail.  Rules are numbered starting at 1.
+
+// 替换(修改) 规则
+// 允许 所有的 client 端访问 tcp:22 端口
+[root@basic ~]# iptables -R INPUT  3 -d 192.168.175.10 -p tcp --dport 22 -j ACCEPT   # 替换 filter 表的 INPUT  chain 中的 当前 line-number 为 3 的 rule
+[root@basic ~]# iptables -R OUTPUT 3 -s 192.168.175.10 -p tcp --sport 22 -j ACCEPT   # 替换 filter 表的 OUTPUT chain 中的 当前 line-number 为 3 的 rule
+
+[root@basic ~]# iptables -nL --line-numbers
+    Chain INPUT (policy DROP)
+    num  target     prot opt source               destination
+    1    ACCEPT     tcp  --  0.0.0.0/0            192.168.175.10       tcp dpt:80
+    2    ACCEPT     tcp  --  0.0.0.0/0            192.168.175.10       tcp dpt:443
+    3    ACCEPT     tcp  --  0.0.0.0/0            192.168.175.10       tcp dpt:22
+    4    ACCEPT     icmp --  192.168.175.1        192.168.175.10       icmptype 8
+    5    ACCEPT     icmp --  0.0.0.0/0            192.168.175.10       icmptype 0
+    6    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+
+    Chain FORWARD (policy DROP)
+    num  target     prot opt source               destination
+
+    Chain OUTPUT (policy DROP)
+    num  target     prot opt source               destination
+    1    ACCEPT     tcp  --  192.168.175.10       0.0.0.0/0            tcp spt:80
+    2    ACCEPT     tcp  --  192.168.175.10       0.0.0.0/0            tcp spt:443
+    3    ACCEPT     tcp  --  192.168.175.10       0.0.0.0/0            tcp spt:22
+    4    ACCEPT     icmp --  192.168.175.10       192.168.175.1        icmptype 0
+    5    ACCEPT     icmp --  192.168.175.10       0.0.0.0/0            icmptype 8
+    6    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+
+
+
+
+
+
+   -m, --match match
+          Specifies a match to use, that is, an extension module that tests for a specific property. The set of matches make up the condition  under  which  a  target  is  invoked.
+          Matches are evaluated first to last as specified on the command line and work in short-circuit fashion, i.e. if one extension yields false, evaluation will stop.
+
+模块(module):  -m multiport  离散多端口
+[root@basic ~]# iptables -m multiport -h
+                  multiport match options:
+                  [!] --source-ports port[,port:port,port...]
+                   --sports ...
+                                                  match source port(s)
+                  [!] --destination-ports port[,port:port,port...]
+                   --dports ...
+                                                  match destination port(s)
+                  [!] --ports port[,port:port,port]
+                                                  match both source and destination port(s)
+
+
+
+// 利用 multiport 可以减少某些规则的 数量, 好处是 优化了 iptables 匹配的 性能, 也 增强了 规则定义 的 可读性
+[root@basic ~]# iptables -I INPUT  -d 192.168.175.10 -p tcp -m multiport --dports 80,443,22 -j ACCEPT
+[root@basic ~]# iptables -I OUTPUT -s 192.168.175.10 -p tcp -m multiport --sports 80,443,22 -j ACCEPT
+
+[root@basic ~]# iptables -nL --line-numbers -v
+      Chain INPUT (policy DROP 0 packets, 0 bytes)
+      num   pkts bytes target     prot opt in     out     source               destination
+      1      224 19696 ACCEPT     tcp  --  *      *       0.0.0.0/0            192.168.175.10       multiport dports 80,443,22
+      2        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            192.168.175.10       tcp dpt:80
+      3        0     0 ACCEPT     tcp  --  *      *       0.0.0.0/0            192.168.175.10       tcp dpt:443
+      4      739 58536 ACCEPT     tcp  --  *      *       0.0.0.0/0            192.168.175.10       tcp dpt:22
+      5        0     0 ACCEPT     icmp --  *      *       192.168.175.1        192.168.175.10       icmptype 8
+      6        0     0 ACCEPT     icmp --  *      *       0.0.0.0/0            192.168.175.10       icmptype 0
+      7        0     0 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0
+
+      Chain FORWARD (policy DROP 0 packets, 0 bytes)
+      num   pkts bytes target     prot opt in     out     source               destination
+
+      Chain OUTPUT (policy DROP 0 packets, 0 bytes)
+      num   pkts bytes target     prot opt in     out     source               destination
+      1       40 22000 ACCEPT     tcp  --  *      *       192.168.175.10       0.0.0.0/0            multiport sports 80,443,22
+      2        0     0 ACCEPT     tcp  --  *      *       192.168.175.10       0.0.0.0/0            tcp spt:80
+      3        0     0 ACCEPT     tcp  --  *      *       192.168.175.10       0.0.0.0/0            tcp spt:443
+      4      504  120K ACCEPT     tcp  --  *      *       192.168.175.10       0.0.0.0/0            tcp spt:22
+      5        0     0 ACCEPT     icmp --  *      *       192.168.175.10       192.168.175.1        icmptype 0
+      6        0     0 ACCEPT     icmp --  *      *       192.168.175.10       0.0.0.0/0            icmptype 8
+      7        0     0 ACCEPT     all  --  *      lo      0.0.0.0/0            0.0.0.0/0
+
+[root@basic ~]# iptables -D INPUT  2
+[root@basic ~]# iptables -D INPUT  2
+[root@basic ~]# iptables -D INPUT  2
+[root@basic ~]# iptables -D OUTPUT 2
+[root@basic ~]# iptables -D OUTPUT 2
+[root@basic ~]# iptables -D OUTPUT 2
+
+[root@basic ~]# iptables -nL --line-numbers
+      Chain INPUT (policy DROP)
+      num  target     prot opt source               destination
+      1    ACCEPT     tcp  --  0.0.0.0/0            192.168.175.10       multiport dports 80,443,22
+      2    ACCEPT     icmp --  192.168.175.1        192.168.175.10       icmptype 8
+      3    ACCEPT     icmp --  0.0.0.0/0            192.168.175.10       icmptype 0
+      4    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+
+      Chain FORWARD (policy DROP)
+      num  target     prot opt source               destination
+
+      Chain OUTPUT (policy DROP)
+      num  target     prot opt source               destination
+      1    ACCEPT     tcp  --  192.168.175.10       0.0.0.0/0            multiport sports 80,443,22
+      2    ACCEPT     icmp --  192.168.175.10       192.168.175.1        icmptype 0
+      3    ACCEPT     icmp --  192.168.175.10       0.0.0.0/0            icmptype 8
+      4    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+
+
+
+
+模块(module): -m iprange
+
+[root@basic ~]# iptables -m iprange -h    # 查看模块 iprange 帮助说明, 还可见  man iptables-extensions  #/^   iprange
+        iprange match options:
+        [!] --src-range ip[-ip]    Match source IP in the specified range
+        [!] --dst-range ip[-ip]    Match destination IP in the specified range
+
+
+
+[root@basic ~]# iptables -I INPUT -m iprange --src-range 192.168.175.200-192.168.175.210 -d 192.168.175.10 -p tcp --dport 80 -j DROP
+[root@basic ~]# iptables -nL --line-numbers
+Chain INPUT (policy DROP)
+num  target     prot opt source               destination
+1    DROP       tcp  --  0.0.0.0/0            192.168.175.10       source IP range 192.168.175.200-192.168.175.210 tcp dpt:80
+2    ACCEPT     tcp  --  0.0.0.0/0            192.168.175.10       multiport dports 80,443,22
+3    ACCEPT     icmp --  192.168.175.1        192.168.175.10       icmptype 8
+4    ACCEPT     icmp --  0.0.0.0/0            192.168.175.10       icmptype 0
+5    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+
+Chain FORWARD (policy DROP)
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy DROP)
+num  target     prot opt source               destination
+1    ACCEPT     tcp  --  192.168.175.10       0.0.0.0/0            multiport sports 80,443,22
+2    ACCEPT     icmp --  192.168.175.10       192.168.175.1        icmptype 0
+3    ACCEPT     icmp --  192.168.175.10       0.0.0.0/0            icmptype 8
+4    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+
+
+
+
+
+模块(module): -m state
+
+[root@basic ~]# iptables -m state -h    # man iptables-extensions    #/^   state    #/^   conntrack
+
+          state match options:
+           [!] --state [INVALID|ESTABLISHED|NEW|RELATED|UNTRACKED][,...]
+                                          State(s) to match
+
+[root@basic ~]# man iptables-extensions   #/^   state    #/^   conntrack
+   state
+       The "state" extension is a subset of the "conntrack" module.  "state" allows access to the connection tracking state for this packet.
+
+       [!] --state state
+              Where  state is a comma separated list of the connection states to match. Only a subset of the states unterstood by "conntrack" are recognized: INVALID, ESTABLISHED, NEW,
+              RELATED or UNTRACKED. For their description, see the "conntrack" heading in this manpage.
+
+  状态介绍:  man iptables-extensions    #/^   conntrack
+       INVALID
+              The packet is associated with no known connection.
+
+       NEW    The packet has started a new connection or otherwise associated with a connection which has not seen packets in both directions.
+
+       ESTABLISHED
+              The packet is associated with a connection which has seen packets in both directions.
+
+       RELATED
+              The packet is starting a new connection, but is associated with an existing connection, such as an FTP data transfer or an ICMP error.
+
+       UNTRACKED
+              The packet is not tracked at all, which happens if you explicitly untrack it by using -j CT --notrack in the raw table.
+
+
+模块 state 与 conntrack 的关系：
+    https://superuser.com/questions/1071656/whats-the-difference-between-iptables-state-and-ctstate
+    https://serverfault.com/questions/358996/iptables-whats-the-difference-between-m-state-and-m-conntrack
+    https://unix.stackexchange.com/questions/108169/what-is-the-difference-between-m-conntrack-ctstate-and-m-state-state
+    http://inai.de/documents/Perfect_Ruleset.pdf
 
 
 
