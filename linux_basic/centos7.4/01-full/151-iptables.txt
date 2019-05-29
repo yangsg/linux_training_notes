@@ -937,6 +937,8 @@ https://blog.csdn.net/pestd/article/details/13628849
 
 
 
+
+
 模块(module): -m time
 
 [root@basic ~]# iptables -m time -h
@@ -1058,6 +1060,195 @@ Chain OUTPUT (policy DROP)
 num  target     prot opt source               destination
 1    DROP       tcp  --  192.168.175.10       192.168.175.1        tcp spt:22 tos match0x08/0xff
 2    ACCEPT     all  --  192.168.175.10       0.0.0.0/0            state ESTABLISHED
+
+
+
+
+
+
+模块(module):  -m comment
+
+[root@basic ~]# man iptables-extensions   #/^   comment
+   comment
+       Allows you to add comments (up to 256 characters) to any rule.
+
+       --comment comment
+
+       Example:
+              iptables -A INPUT -i eth1 -m comment --comment "my local LAN"
+
+[root@basic ~]# iptables -m comment -h
+      comment match options:
+      --comment COMMENT             Attach a comment to a rule
+
+
+[root@basic ~]# iptables -I INPUT -s 1.1.1.1 -d 1.1.1.2  -m comment --comment 'test test test test'   # 之间简单的演示如何为规则添加注释
+[root@basic ~]# iptables -nL --line-numbers
+Chain INPUT (policy DROP)
+num  target     prot opt source               destination
+1               all  --  1.1.1.1              1.1.1.2              /* test test test test */
+2    ACCEPT     tcp  --  192.168.175.1        192.168.175.10       tcp dpt:22 state NEW,ESTABLISHED
+
+Chain FORWARD (policy DROP)
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy DROP)
+num  target     prot opt source               destination
+1    ACCEPT     all  --  192.168.175.10       0.0.0.0/0            state ESTABLISHED
+
+
+
+模块(module): -m mark
+[root@basic ~]# man iptables-extensions   #/^   mark
+   mark
+       This module matches the netfilter mark field associated with a packet (which can be set using the MARK target below).
+
+       [!] --mark value[/mask]
+              Matches packets with the given unsigned mark value (if a mask is specified, this is logically ANDed with the mask before the comparison).
+
+
+[root@basic ~]# iptables -m mark -h
+    mark match options:
+    [!] --mark value[/mask]    Match nfmark value with optional mask
+
+
+
+目标(TARGET):  -j MARK
+   MARK
+       This target is used to set the Netfilter mark value associated with the packet.  It can, for example, be used in conjunction with routing based on fwmark  (needs  iproute2).  If
+       you plan on doing so, note that the mark needs to be set in the PREROUTING chain of the mangle table to affect routing.  The mark field is 32 bits wide.
+
+       --set-xmark value[/mask]
+              Zeroes out the bits given by mask and XORs value into the packet mark ("nfmark"). If mask is omitted, 0xFFFFFFFF is assumed.
+              注: 关于 'Zeroes out the bits given by mask and XORs value into the packet mark ("nfmark").' 的解释参考:
+                  https://stackoverflow.com/questions/22003409/some-questions-about-set-xmark-in-iptables
+                              nfmark = (nfmark AND NOT mask) XOR value
+
+
+       --set-mark value[/mask]
+              Zeroes out the bits given by mask and ORs value into the packet mark. If mask is omitted, 0xFFFFFFFF is assumed.
+
+       The following mnemonics are available:
+
+       --and-mark bits
+              Binary AND the nfmark with bits. (Mnemonic for --set-xmark 0/invbits, where invbits is the binary negation of bits.)
+
+       --or-mark bits
+              Binary OR the nfmark with bits. (Mnemonic for --set-xmark bits/bits.)
+
+       --xor-mark bits
+              Binary XOR the nfmark with bits. (Mnemonic for --set-xmark bits/0.)
+
+       注意:
+           https://www.frozentux.net/iptables-tutorial/iptables-tutorial.html#MARKTARGET
+              Note that the mark value is not set within the actual packet, but is a value that is associated within the kernel with the packet.
+              In other words, you can not set a MARK for a packet and then expect the MARK still to be there on another host.
+              If this is what you want, you will be better off with the TOS target which will mangle the TOS value in the IP header.
+
+
+[root@basic ~]# iptables -t mangle -A PREROUTING -s 192.168.175.236 -d 192.168.175.10 -p icmp -j MARK --set-mark 10   # 打标记
+[root@basic ~]# iptables -t mangle -nL --line-numbers
+    Chain PREROUTING (policy ACCEPT)
+    num  target     prot opt source               destination
+    1    MARK       icmp --  192.168.175.236      192.168.175.10       MARK set 0xa   <---观察此处
+
+    Chain INPUT (policy ACCEPT)
+    num  target     prot opt source               destination
+
+    Chain FORWARD (policy ACCEPT)
+    num  target     prot opt source               destination
+
+    Chain OUTPUT (policy ACCEPT)
+    num  target     prot opt source               destination
+
+    Chain POSTROUTING (policy ACCEPT)
+    num  target     prot opt source               destination
+
+
+[root@basic ~]# iptables -I INPUT 2 -m mark --mark 10 -j DROP  # 匹配标记 来 执行相应操作
+[root@basic ~]# iptables -nL --line-numbers
+Chain INPUT (policy DROP)
+num  target     prot opt source               destination
+1    ACCEPT     tcp  --  192.168.175.1        192.168.175.10       tcp dpt:22 state NEW,ESTABLISHED
+2    DROP       all  --  0.0.0.0/0            0.0.0.0/0            mark match 0xa   <---观察此处
+3    ACCEPT     icmp --  0.0.0.0/0            192.168.175.10       icmptype 8
+
+Chain FORWARD (policy DROP)
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy DROP)
+num  target     prot opt source               destination
+1    ACCEPT     all  --  192.168.175.10       0.0.0.0/0            state ESTABLISHED
+
+
+
+
+
+
+===============-j LOG 记录日志================= (注；需要启用 kernel 日志功能)
+    https://www.frozentux.net/iptables-tutorial/iptables-tutorial.html#LOGTARGET
+
+目标(TARGET): -j LOG    的作用主要是用来 帮助 进行 bug 追踪 或 错误查找、分析
+
+[root@basic ~]# man iptables-extensions  #/^   LOG
+
+   LOG
+       Turn  on  kernel logging of matching packets.  When this option is set for a rule, the Linux kernel will print some information on all matching packets (like most IP/IPv6 header
+       fields) via the kernel log (where it can be read with dmesg(1) or read in the syslog).
+
+       This is a "non-terminating target", i.e. rule traversal continues at the next rule.  So if you want to LOG the packets you refuse, use two separate rules with the same  matching
+       criteria, first using target LOG then DROP (or REJECT).
+
+       --log-level level
+              Level  of  logging,  which  can  be  (system-specific)  numeric or a mnemonic.  Possible values are (in decreasing order of priority): emerg, alert, crit, error, warning,
+              notice, info or debug.
+
+       --log-prefix prefix
+              Prefix log messages with the specified prefix; up to 29 letters long, and useful for distinguishing messages in the logs.
+
+       --log-tcp-sequence
+              Log TCP sequence numbers. This is a security risk if the log is readable by users.
+
+       --log-tcp-options
+              Log options from the TCP packet header.
+
+       --log-ip-options
+              Log options from the IP/IPv6 packet header.
+
+       --log-uid
+              Log the userid of the process which generated the packet.
+
+
+
+[root@basic ~]# iptables -I INPUT -s 192.168.175.236 -d 192.168.175.10 -p icmp -j LOG --log-prefix "192.168.175.236_ping"
+[root@basic ~]# iptables -nL --line-numbers
+Chain INPUT (policy DROP)
+num  target     prot opt source               destination
+1    LOG        icmp --  192.168.175.236      192.168.175.10       LOG flags 0 level 4 prefix "192.168.175.236_ping"  <--观察这里(一般会将 LOG 放在前面且匹配规则与调制规则相同)
+2    ACCEPT     tcp  --  192.168.175.1        192.168.175.10       tcp dpt:22 state NEW,ESTABLISHED
+3    DROP       all  --  0.0.0.0/0            0.0.0.0/0            mark match 0xa
+4    ACCEPT     icmp --  0.0.0.0/0            192.168.175.10       icmptype 8
+
+Chain FORWARD (policy DROP)
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy DROP)
+num  target     prot opt source               destination
+1    ACCEPT     all  --  192.168.175.10       0.0.0.0/0            state ESTABLISHED
+
+
+启动kernel日志
+[root@basic ~]# vim /etc/rsyslog.conf
+    #kern.*                                                 /dev/console
+    kern.*                                                /var/log/kernel.log
+
+[root@basic ~]# systemctl restart rsyslog.service
+
+
+验证结果:
+[root@basic ~]# tail -f /var/log/kernel.log
+May 29 19:48:08 basic kernel: 192.168.175.236_pingIN=ens33 OUT= MAC=00:0c:29:82:ac:0f:00:0c:29:b9:5f:25:08:00 SRC=192.168.175.236 DST=192.168.175.10 LEN=84 TOS=0x00 PREC=0x00 TTL=64 ID=56841 DF PROTO=ICMP TYPE=8 CODE=0 ID=3860 SEQ=1 MARK=0xa
+
 
 
 
