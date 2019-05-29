@@ -13,7 +13,9 @@ man iptables-restore
 参考:
 https://help.ubuntu.com/community/IptablesHowTo
 https://www.frozentux.net/iptables-tutorial/iptables-tutorial.html
+https://blog.csdn.net/sdytlm/article/details/6544913   (中文翻译版)
 https://netfilter.org/documentation/
+https://netfilter.org/documentation/HOWTO/packet-filtering-HOWTO-7.html
 
 http://www.zsythink.net/archives/1199/
 
@@ -21,6 +23,8 @@ http://www.linuxhomenetworking.com/wiki/index.php/Quick_HOWTO_:_Ch14_:_Linux_Fir
 
 https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/security_guide/sect-security_guide-iptables
 https://fatmin.com/2011/10/20/rhel6-simple-iptables-how-to/
+
+https://www.cyberciti.biz/tips/linux-iptables-examples.html
 
 
 
@@ -669,7 +673,391 @@ num  target     prot opt source               destination
     http://inai.de/documents/Perfect_Ruleset.pdf
 
 
+[root@basic ~]# iptables-restore  < /etc/iptables-save.rules
+[root@basic ~]# iptables -nL --line-numbers
+      Chain INPUT (policy DROP)
+      num  target     prot opt source               destination
+      1    ACCEPT     tcp  --  0.0.0.0/0            192.168.175.10       tcp dpt:80
+      2    ACCEPT     tcp  --  0.0.0.0/0            192.168.175.10       tcp dpt:443
+      3    ACCEPT     tcp  --  192.168.175.1        192.168.175.10       tcp dpt:22
+      4    ACCEPT     tcp  --  192.168.175.20       192.168.175.10       tcp dpt:22
+      5    ACCEPT     icmp --  192.168.175.1        192.168.175.10       icmptype 8
+      6    ACCEPT     icmp --  0.0.0.0/0            192.168.175.10       icmptype 0
+      7    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
 
+      Chain FORWARD (policy DROP)
+      num  target     prot opt source               destination
+
+      Chain OUTPUT (policy DROP)
+      num  target     prot opt source               destination
+      1    ACCEPT     tcp  --  192.168.175.10       0.0.0.0/0            tcp spt:80
+      2    ACCEPT     tcp  --  192.168.175.10       0.0.0.0/0            tcp spt:443
+      3    ACCEPT     tcp  --  192.168.175.10       192.168.175.1        tcp spt:22
+      4    ACCEPT     tcp  --  192.168.175.10       192.168.175.20       tcp spt:22
+      5    ACCEPT     icmp --  192.168.175.10       192.168.175.1        icmptype 0
+      6    ACCEPT     icmp --  192.168.175.10       0.0.0.0/0            icmptype 8
+      7    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+
+// 清空 iptables 中 ruleset 的方法步骤(同时保持当前及后续的远程登录正常)
+[root@basic ~]# iptables -I INPUT -s 192.168.175.1 -d 192.168.175.10 -p tcp --dport 22 -m state --state NEW,ESTABLISHED -j ACCEPT   # 先执行一下,保证其没有语法错误能正确执行
+[root@basic ~]# iptables -F INPUT && iptables -I INPUT -s 192.168.175.1 -d 192.168.175.10 -p tcp --dport 22 -m state --state NEW,ESTABLISHED -j ACCEPT # 清空filter表的INPUT chain
+
+[root@basic ~]# iptables -I OUTPUT -s 192.168.175.10 -m state --state ESTABLISHED -j ACCEPT   # 先执行一下,保证其没有语法错误能正确执行
+[root@basic ~]# iptables -F OUTPUT && iptables -I OUTPUT -s 192.168.175.10 -m state --state ESTABLISHED -j ACCEPT  # 清空 filter 表的 OUTPUT chain
+
+[root@basic ~]# iptables -nL --line-numbers
+      Chain INPUT (policy DROP)
+      num  target     prot opt source               destination
+      1    ACCEPT     tcp  --  192.168.175.1        192.168.175.10       tcp dpt:22 state NEW,ESTABLISHED
+
+      Chain FORWARD (policy DROP)
+      num  target     prot opt source               destination
+
+      Chain OUTPUT (policy DROP)
+      num  target     prot opt source               destination
+      1    ACCEPT     all  --  192.168.175.10       0.0.0.0/0            state ESTABLISHED
+
+
+// TODO: 对于 ftp, 还应该设置  ip_nat_ftp 和 ip_conntrack_ftp 模块
+[root@basic ~]# iptables -I INPUT -d 192.168.175.10 -p tcp --dport 21 -m state --state NEW,ESTABLISHED -j ACCEPT
+[root@basic ~]# iptables -I INPUT 2 -d 192.168.175.10 -p tcp -m state --state RELATED,ESTABLISHED -j ACCEPT   # 生产环境中如果是ftp服务器, 最好是明确规范一下数据连接的端口范围
+
+[root@basic ~]# iptables -nL --line-numbers
+    Chain INPUT (policy DROP)
+    num  target     prot opt source               destination
+    1    ACCEPT     tcp  --  0.0.0.0/0            192.168.175.10       tcp dpt:21 state NEW,ESTABLISHED
+    2    ACCEPT     tcp  --  0.0.0.0/0            192.168.175.10       state RELATED,ESTABLISHED
+    3    ACCEPT     tcp  --  192.168.175.1        192.168.175.10       tcp dpt:22 state NEW,ESTABLISHED
+
+    Chain FORWARD (policy DROP)
+    num  target     prot opt source               destination
+
+    Chain OUTPUT (policy DROP)
+    num  target     prot opt source               destination
+    1    ACCEPT     all  --  192.168.175.10       0.0.0.0/0            state ESTABLISHED
+
+
+[root@basic ~]# iptables -I INPUT -d 192.168.175.10 -p tcp -m multiport --dports 80,443 -m state --state NEW,ESTABLISHED -j ACCEPT
+[root@basic ~]# iptables -nL --line-numbers
+    Chain INPUT (policy DROP)
+    num  target     prot opt source               destination
+    1    ACCEPT     tcp  --  0.0.0.0/0            192.168.175.10       multiport dports 80,443 state NEW,ESTABLISHED
+    2    ACCEPT     tcp  --  0.0.0.0/0            192.168.175.10       tcp dpt:21 state NEW,ESTABLISHED
+    3    ACCEPT     tcp  --  0.0.0.0/0            192.168.175.10       state RELATED,ESTABLISHED
+    4    ACCEPT     tcp  --  192.168.175.1        192.168.175.10       tcp dpt:22 state NEW,ESTABLISHED
+
+    Chain FORWARD (policy DROP)
+    num  target     prot opt source               destination
+
+    Chain OUTPUT (policy DROP)
+    num  target     prot opt source               destination
+    1    ACCEPT     all  --  192.168.175.10       0.0.0.0/0            state ESTABLISHED
+
+
+
+
+
+模块(tos):
+
+[root@basic ~]# man iptables-extensions    #/^   tos
+   tos
+       This module matches the 8-bit Type of Service field in the IPv4 header (i.e.  including the "Precedence" bits) or the (also 8-bit) Priority field in the IPv6 header.
+
+       [!] --tos value[/mask]
+              Matches packets with the given TOS mark value. If a mask is specified, it is logically ANDed with the TOS mark before the comparison.
+
+       [!] --tos symbol
+              You can specify a symbolic name when using the tos match for IPv4. The list of recognized TOS names can be obtained by calling iptables with -m tos -h.   Note  that  this
+              implies a mask of 0x3F, i.e. all but the ECN bits.
+
+[root@basic ~]# iptables -m tos -h
+      tos match options:
+      [!] --tos value[/mask]    Match Type of Service/Priority field value
+      [!] --tos symbol          Match TOS field (IPv4 only) by symbol
+                                Accepted symbolic names for value are:
+                                (0x10) 16 Minimize-Delay
+                                (0x08)  8 Maximize-Throughput
+                                (0x04)  4 Maximize-Reliability
+                                (0x02)  2 Minimize-Cost
+                                (0x00)  0 Normal-Service
+
+
+常见 服务 与 ip tos 字段的对应表 参考： https://blog.51cto.com/mangguostudy/2107799        <每天五分钟入门TCP/IP协议栈：：IP协议之TOS字段说明>
+
+// 使用 tcpdump 抓包观察 (抓包的工具还有图形化的 wireshark)
+[root@basic ~]# tcpdump -i ens33 -nn -vvv port 22    # man tcpdump  # man 7 pcap-filter  # https://hackertarget.com/tcpdump-examples/
+
+允许ssh 远程连接, 但不允许 rsync 或 scp 拷贝数据(注: 仅有下面一条规则无法防止 xftp 利用 sftp 传输, 还需要在 OUTPUT 添加规则):
+[root@basic ~]# iptables -I INPUT -s 192.168.175.1 -d 192.168.175.10 -p tcp --dport 22 -m tos ! --tos 0x8 -j ACCEPT
+[root@basic ~]# iptables -I OUTPUT -s 192.168.175.10 -d 192.168.175.1 -p tcp --sport 22 -m tos --tos 0x8 -j DROP
+
+
+
+模块(module): -m limit
+
+[root@basic ~]# man iptables-extensions  #/^   limit
+   limit
+       This  module  matches at a limited rate using a token bucket filter.  A rule using this extension will match until this limit is reached.  It can be used in combination with the
+       LOG target to give limited logging, for example.
+
+       xt_limit has no negation support - you will have to use -m hashlimit !  --hashlimit rate in this case whilst omitting --hashlimit-mode.
+
+       --limit rate[/second|/minute|/hour|/day]
+              Maximum average matching rate: specified as a number, with an optional `/second', `/minute', `/hour', or `/day' suffix; the default is 3/hour.
+
+       --limit-burst number
+              Maximum initial number of packets to match: this number gets recharged by one every time the limit specified above is not reached, up to this number; the default is 5.
+
+
+[root@basic ~]# iptables -m limit -h
+        limit match options:
+        --limit avg                     max average match rate: default 3/hour
+                                        [Packets per second unless followed by
+                                        /sec /minute /hour /day postfixes]
+        --limit-burst number            number to match in a burst, default 5
+
+[root@basic ~]# iptables -A INPUT -d 192.168.175.10 -p icmp --icmp-type 8 -m limit --limit 5/minute -j ACCEPT   # 算术题: 60/5=12 秒, 平均12秒接受一次ping请求
+[root@basic ~]# iptables -nL --line-numbers
+Chain INPUT (policy DROP)
+num  target     prot opt source               destination
+1    ACCEPT     tcp  --  192.168.175.1        192.168.175.10       tcp dpt:22 tos match!0x08/0xff
+2    ACCEPT     icmp --  0.0.0.0/0            192.168.175.10       icmptype 8 limit: avg 5/min burst 5
+
+Chain FORWARD (policy DROP)
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy DROP)
+num  target     prot opt source               destination
+1    DROP       tcp  --  192.168.175.10       192.168.175.1        tcp spt:22 tos match0x08/0xff
+2    ACCEPT     all  --  192.168.175.10       0.0.0.0/0            state ESTABLISHED
+
+
+https://askubuntu.com/questions/137233/how-to-command-ping-display-time-and-date-of-ping
+[root@client ~]# ping 192.168.175.10 | while read pong; do echo "$(date '+%F %T'): $pong"; done
+2019-05-29 13:56:18: PING 192.168.175.10 (192.168.175.10) 56(84) bytes of data.
+2019-05-29 13:56:18: 64 bytes from 192.168.175.10: icmp_seq=1 ttl=64 time=0.408 ms   算术题: 18 + 12 = 30
+2019-05-29 13:56:19: 64 bytes from 192.168.175.10: icmp_seq=2 ttl=64 time=0.353 ms
+2019-05-29 13:56:20: 64 bytes from 192.168.175.10: icmp_seq=3 ttl=64 time=0.551 ms
+2019-05-29 13:56:21: 64 bytes from 192.168.175.10: icmp_seq=4 ttl=64 time=0.468 ms
+2019-05-29 13:56:22: 64 bytes from 192.168.175.10: icmp_seq=5 ttl=64 time=0.486 ms
+2019-05-29 13:56:30: 64 bytes from 192.168.175.10: icmp_seq=13 ttl=64 time=0.509 ms   算术题: 30 - 18 = 12
+2019-05-29 13:56:42: 64 bytes from 192.168.175.10: icmp_seq=25 ttl=64 time=0.515 ms
+2019-05-29 13:56:54: 64 bytes from 192.168.175.10: icmp_seq=37 ttl=64 time=0.641 ms
+2019-05-29 13:57:06: 64 bytes from 192.168.175.10: icmp_seq=49 ttl=64 time=0.200 ms
+2019-05-29 13:57:18: 64 bytes from 192.168.175.10: icmp_seq=61 ttl=64 time=0.489 ms
+2019-05-29 13:57:30: 64 bytes from 192.168.175.10: icmp_seq=73 ttl=64 time=0.254 ms
+2019-05-29 13:57:42: 64 bytes from 192.168.175.10: icmp_seq=85 ttl=64 time=0.497 ms
+2019-05-29 13:57:54: 64 bytes from 192.168.175.10: icmp_seq=97 ttl=64 time=0.293 ms
+2019-05-29 13:58:06: 64 bytes from 192.168.175.10: icmp_seq=109 ttl=64 time=0.427 ms
+2019-05-29 13:58:18: 64 bytes from 192.168.175.10: icmp_seq=121 ttl=64 time=0.251 ms
+
+
+https://serverfault.com/questions/485400/what-exactly-do-limit-1-s-and-limit-burst-mean-in-iptables-rules
+https://netfilter.org/documentation/HOWTO/packet-filtering-HOWTO-7.html
+
+[root@basic ~]# iptables -A INPUT -d 192.168.175.10 -p icmp --icmp-type 8 -m limit --limit 10/minute --limit-burst 10 -j ACCEPT
+[root@client ~]# ping 192.168.175.10 | while read pong; do echo "$(date '+%F %T'): $pong"; done
+2019-05-29 14:56:12: PING 192.168.175.10 (192.168.175.10) 56(84) bytes of data.
+2019-05-29 14:56:12: 64 bytes from 192.168.175.10: icmp_seq=1 ttl=64 time=0.290 ms
+2019-05-29 14:56:13: 64 bytes from 192.168.175.10: icmp_seq=2 ttl=64 time=0.412 ms
+2019-05-29 14:56:14: 64 bytes from 192.168.175.10: icmp_seq=3 ttl=64 time=0.265 ms
+2019-05-29 14:56:15: 64 bytes from 192.168.175.10: icmp_seq=4 ttl=64 time=0.399 ms
+2019-05-29 14:56:16: 64 bytes from 192.168.175.10: icmp_seq=5 ttl=64 time=0.615 ms
+2019-05-29 14:56:17: 64 bytes from 192.168.175.10: icmp_seq=6 ttl=64 time=0.511 ms
+2019-05-29 14:56:18: 64 bytes from 192.168.175.10: icmp_seq=7 ttl=64 time=0.351 ms
+2019-05-29 14:56:19: 64 bytes from 192.168.175.10: icmp_seq=8 ttl=64 time=0.303 ms
+2019-05-29 14:56:20: 64 bytes from 192.168.175.10: icmp_seq=9 ttl=64 time=0.554 ms
+2019-05-29 14:56:21: 64 bytes from 192.168.175.10: icmp_seq=10 ttl=64 time=0.682 ms
+2019-05-29 14:56:22: 64 bytes from 192.168.175.10: icmp_seq=11 ttl=64 time=0.591 ms
+2019-05-29 14:56:24: 64 bytes from 192.168.175.10: icmp_seq=13 ttl=64 time=0.545 ms
+2019-05-29 14:56:30: 64 bytes from 192.168.175.10: icmp_seq=19 ttl=64 time=0.613 ms
+2019-05-29 14:56:36: 64 bytes from 192.168.175.10: icmp_seq=25 ttl=64 time=0.338 ms
+2019-05-29 14:56:42: 64 bytes from 192.168.175.10: icmp_seq=31 ttl=64 time=1.93 ms
+2019-05-29 14:56:48: 64 bytes from 192.168.175.10: icmp_seq=37 ttl=64 time=0.557 ms
+2019-05-29 14:56:54: 64 bytes from 192.168.175.10: icmp_seq=43 ttl=64 time=1.04 ms
+2019-05-29 14:57:00: 64 bytes from 192.168.175.10: icmp_seq=49 ttl=64 time=0.825 ms
+2019-05-29 14:57:06: 64 bytes from 192.168.175.10: icmp_seq=55 ttl=64 time=0.689 ms
+2019-05-29 14:57:12: 64 bytes from 192.168.175.10: icmp_seq=61 ttl=64 time=0.593 ms
+2019-05-29 14:57:18: 64 bytes from 192.168.175.10: icmp_seq=67 ttl=64 time=0.472 ms
+
+
+
+
+
+模块(module): -m connlimit
+
+[root@basic ~]# iptables -m connlimit -h
+    connlimit match options:
+      --connlimit-upto n     match if the number of existing connections is 0..n
+      --connlimit-above n    match if the number of existing connections is >n
+      --connlimit-mask n     group hosts using prefix length (default: max len)
+      --connlimit-saddr      select source address for grouping
+      --connlimit-daddr      select destination addresses for grouping
+
+[root@basic ~]# man iptables-extensions   #/^   connlimit
+   connlimit
+       Allows you to restrict the number of parallel connections to a server per client IP address (or client address block).
+
+       --connlimit-upto n
+              Match if the number of existing connections is below or equal n.
+
+       --connlimit-above n
+              Match if the number of existing connections is above n.
+
+       --connlimit-mask prefix_length
+              Group hosts using the prefix length. For IPv4, this must be a number between (including) 0 and 32. For IPv6, between 0 and 128.  If  not  specified,  the  maximum  prefix
+              length for the applicable protocol is used.
+
+       --connlimit-saddr
+              Apply the limit onto the source group. This is the default if --connlimit-daddr is not specified.
+
+       --connlimit-daddr
+              Apply the limit onto the destination group.
+
+       Examples:
+
+       # allow 2 telnet connections per client host
+              iptables -A INPUT -p tcp --syn --dport 23 -m connlimit --connlimit-above 2 -j REJECT
+
+       # you can also match the other way around:
+              iptables -A INPUT -p tcp --syn --dport 23 -m connlimit --connlimit-upto 2 -j ACCEPT
+
+       # limit the number of parallel HTTP requests to 16 per class C sized source network (24 bit netmask)
+              iptables -p tcp --syn --dport 80 -m connlimit --connlimit-above 16 --connlimit-mask 24 -j REJECT
+
+       # limit the number of parallel HTTP requests to 16 for the link local network
+              (ipv6) ip6tables -p tcp --syn --dport 80 -s fe80::/64 -m connlimit --connlimit-above 16 --connlimit-mask 64 -j REJECT
+
+       # Limit the number of connections to a particular host:
+              ip6tables -p tcp --syn --dport 49152:65535 -d 2001:db8::1 -m connlimit --connlimit-above 100 -j REJECT
+
+
+https://www.cyberciti.biz/faq/iptables-connection-limits-howto/
+https://blog.csdn.net/pestd/article/details/13628849
+
+
+
+模块(module): -m time
+
+[root@basic ~]# iptables -m time -h
+      time match options:
+          --datestart time     Start and stop time, to be given in ISO 8601
+          --datestop time      (YYYY[-MM[-DD[Thh[:mm[:ss]]]]])
+          --timestart time     Start and stop daytime (hh:mm[:ss])
+          --timestop time      (between 00:00:00 and 23:59:59)
+      [!] --monthdays value    List of days on which to match, separated by comma
+                               (Possible days: 1 to 31; defaults to all)
+      [!] --weekdays value     List of weekdays on which to match, sep. by comma
+                               (Possible days: Mon,Tue,Wed,Thu,Fri,Sat,Sun or 1 to 7
+                               Defaults to all weekdays.)
+          --kerneltz           Work with the kernel timezone instead of UTC   <----  该选项不推荐使用, 避免时间转换错误, 推荐直接使用 默认的 utc 时间
+
+[root@basic ~]# man iptables-extensions    #/^   time
+
+   time
+       This matches if the packet arrival time/date is within a given range. All options are optional, but are ANDed when specified. All times are interpreted as UTC by default.
+
+       --datestart YYYY[-MM[-DD[Thh[:mm[:ss]]]]]
+
+       --datestop YYYY[-MM[-DD[Thh[:mm[:ss]]]]]
+              Only match during the given time, which must be in ISO 8601 "T" notation.  The possible time range is 1970-01-01T00:00:00 to 2038-01-19T04:17:07.
+
+              If --datestart or --datestop are not specified, it will default to 1970-01-01 and 2038-01-19, respectively.
+
+       --timestart hh:mm[:ss]
+
+       --timestop hh:mm[:ss]
+              Only match during the given daytime. The possible time range is 00:00:00 to 23:59:59. Leading zeroes are allowed (e.g. "06:03") and correctly interpreted as base-10.
+
+       [!] --monthdays day[,day...]
+              Only  match on the given days of the month. Possible values are 1 to 31. Note that specifying 31 will of course not match on months which do not have a 31st day; the same
+              goes for 28- or 29-day February.
+
+       [!] --weekdays day[,day...]
+              Only match on the given weekdays. Possible values are Mon, Tue, Wed, Thu, Fri, Sat, Sun, or values from 1 to 7, respectively. You may also use two-character variants (Mo,
+              Tu, etc.).
+
+       --contiguous
+              When --timestop is smaller than --timestart value, match this as a single time period instead distinct intervals.  See EXAMPLES.
+
+       --kerneltz
+              Use the kernel timezone instead of UTC to determine whether a packet meets the time regulations.
+
+       About  kernel  timezones: Linux keeps the system time in UTC, and always does so.  On boot, system time is initialized from a referential time source. Where this time source has
+       no timezone information, such as the x86 CMOS RTC, UTC will be assumed. If the time source is however not in UTC, userspace should provide the correct system time  and  timezone
+       to the kernel once it has the information.
+
+       Local time is a feature on top of the (timezone independent) system time. Each process has its own idea of local time, specified via the TZ environment variable. The kernel also
+       has its own timezone offset variable. The TZ userspace environment variable specifies how the UTC-based system time is displayed, e.g. when you run date(1), or what you  see  on
+       your desktop clock.  The TZ string may resolve to different offsets at different dates, which is what enables the automatic time-jumping in userspace. when DST changes. The ker‐
+       nel's timezone offset variable is used when it has to convert between non-UTC sources, such as FAT filesystems, to UTC (since the latter is what the rest of the system uses).
+
+       The caveat with the kernel timezone is that Linux distributions may ignore to set the kernel timezone, and instead only set the system time. Even if  a  particular  distribution
+       does  set  the timezone at boot, it is usually does not keep the kernel timezone offset - which is what changes on DST - up to date.  ntpd will not touch the kernel timezone, so
+       running it will not resolve the issue. As such, one may encounter a timezone that is always +0000, or one that is wrong half of the time of the year. As such,  using  --kerneltz
+       is highly discouraged.
+
+       EXAMPLES. To match on weekends, use:
+
+              -m time --weekdays Sa,Su
+
+       Or, to match (once) on a national holiday block:
+
+              -m time --datestart 2007-12-24 --datestop 2007-12-27
+
+       Since the stop time is actually inclusive, you would need the following stop time to not match the first second of the new day:
+
+              -m time --datestart 2007-01-01T17:00 --datestop 2007-01-01T23:59:59
+
+       During lunch hour:
+
+              -m time --timestart 12:30 --timestop 13:30
+
+       The fourth Friday in the month:
+
+              -m time --weekdays Fr --monthdays 22,23,24,25,26,27,28
+
+       (Note that this exploits a certain mathematical property. It is not possible to say "fourth Thursday OR fourth Friday" in one rule. It is possible with multiple rules, though.)
+
+       Matching across days might not do what is expected.  For instance,
+
+              -m time --weekdays Mo --timestart 23:00  --timestop 01:00 Will match Monday, for one hour from midnight to 1 a.m., and then again for another hour from 23:00 onwards.  If
+              this is unwanted, e.g. if you would like 'match for two hours from Montay 23:00 onwards' you need to also specify the --contiguous option in the example above.
+
+
+
+// 复习一下时间的知识, 更多信息见 https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/01-full/001-date.txt
+[root@basic ~]# date '+%F %T %z'      # 显示当前本地时间
+2019-05-29 16:35:26 +0800
+[root@basic ~]# date -u '+%F %T %z'   # 显示当前本地时间对应的 utc 时间
+2019-05-29 08:35:32 +0000
+
+
+[root@basic ~]# date -u --date='2015-05-04 08:00:00 +0800'  '+%F %T %z'   # 将指定的时间转换为 utc 时间
+2015-05-04 00:00:00 +0000
+
+[root@basic ~]# date -u --date='2019-05-29 16:00:00 +0800' '+%F %T %z'
+2019-05-29 08:00:00 +0000
+[root@basic ~]# date -u --date='2019-05-29 17:00:00 +0800' '+%F %T %z'
+2019-05-29 09:00:00 +0000
+
+
+// 在utc时间 08:00:00 至 09:00:00 这段时间 (即东8区的 16:00:00 至  17:00:00), 禁止对 server 的 ping 操作
+[root@basic ~]# iptables -I INPUT -d 192.168.175.10 -p icmp -m time --timestart 08:00:00 --timestop 09:00:00 -j DROP  #注：这里时间是默认的 utc 时间, 避免的时区转换可能导致的错误
+[root@basic ~]# iptables -nL --line-numbers
+Chain INPUT (policy DROP)
+num  target     prot opt source               destination
+1    DROP       icmp --  0.0.0.0/0            192.168.175.10       TIME from 08:00:00 to 09:00:00 UTC    <----注：这里是 utc 时间
+2    ACCEPT     tcp  --  192.168.175.1        192.168.175.10       tcp dpt:22 tos match!0x08/0xff
+3    ACCEPT     icmp --  0.0.0.0/0            192.168.175.10       icmptype 8 limit: avg 10/min burst 10
+
+Chain FORWARD (policy DROP)
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy DROP)
+num  target     prot opt source               destination
+1    DROP       tcp  --  192.168.175.10       192.168.175.1        tcp spt:22 tos match0x08/0xff
+2    ACCEPT     all  --  192.168.175.10       0.0.0.0/0            state ESTABLISHED
 
 
 
@@ -701,6 +1089,8 @@ https://www.snort.org/
 http://www.squid-cache.org/
 https://www.tripwire.com/
 
+
+https://www.tecmint.com/linux-server-hardening-security-tips/
 
 
 
