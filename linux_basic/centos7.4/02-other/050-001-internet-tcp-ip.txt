@@ -101,7 +101,7 @@ http://www.tcpipguide.com/free/t_TCPConnectionTermination-2.htm
     https   tcp/443
     ssh     tcp/22
     telnet    tcp/23
-    ftp     tcp/21(命令连接), 数据连接(tcp/20)
+    ftp     tcp/21(命令连接), 数据连接(tcp/20)     关于 ftp 的主动模式 和 被动模式 概念 见  http://slacksite.com/other/ftp.html
     tftp    udp/69
     mysql   tcp/3306
     smtp    tcp/25
