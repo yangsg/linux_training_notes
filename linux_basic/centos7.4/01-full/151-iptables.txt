@@ -1336,7 +1336,13 @@ PING 192.168.20.10 (192.168.20.10) 56(84) bytes of data.
 
 =================================================================================
 
+注: 别浪费时间 去纠结术语 "端口映射" "端口转发"(即 port forwarding  or  port mapping)
+  网上很多文章 说 "端口映射"和"端口转发" 是 同义词, 也有些文章 说有区别. 所以最好 别去理会 这种文字游戏, 学习时 直接理解 nat(包括 snat 和 dnat) 的工作原理就可以了
+
+
 目标 SNAT 和 MASQUERADE 区别:  SNAT 用于 static ip, MASQUERADE 用于 dynamic ip(即自动分配的ip)
+
+SNAT 与 DNAT:  只从方向的角度看, SNAT 类似于 正向代理, 而 DNAT 类似于 反向代理.
 
 目标(TARGET):  -j SNAT
 
@@ -1422,6 +1428,52 @@ PING 192.168.20.10 (192.168.20.10) 56(84) bytes of data.
       num  target     prot opt source               destination
       1    MASQUERADE  all  --  192.168.10.0/24      0.0.0.0/0          <---观察 针对 网段 192.168.10.0/24 开启 snat 功能
 
+
+
+=================================================================================
+目标(TARGET):  -j DNAT
+
+[root@basic ~]# man iptables-extensions   #/^   DNAT
+
+   DNAT
+       This target is only valid in the nat table, in the PREROUTING and OUTPUT chains, and user-defined chains which are only called from those chains.  It specifies that the destina‐
+       tion  address  of  the packet should be modified (and all future packets in this connection will also be mangled), and rules should cease being examined.  It takes the following
+       options:
+
+       --to-destination [ipaddr[-ipaddr]][:port[-port]]
+              which can specify a single new destination IP address, an inclusive range of IP addresses. Optionally a port range, if the rule also specifies one of the following proto‐
+              cols:  tcp,  udp,  dccp or sctp.  If no port range is specified, then the destination port will never be modified. If no IP address is specified then only the destination
+              port will be modified.  In Kernels up to 2.6.10 you can add several --to-destination options. For those kernels, if you specify more than one destination address,  either
+              via  an  address  range or multiple --to-destination options, a simple round-robin (one after another in cycle) load balancing takes place between these addresses.  Later
+              Kernels (>= 2.6.11-rc1) don't have the ability to NAT to multiple ranges anymore.
+
+                 注: 如果没有指定 port range 时, 则不会修改 destination port. 如果没有指定 IP address, 则 只会修改 destination port.
+
+       --random
+              If option --random is used then port mapping will be randomized (kernel >= 2.6.22).
+
+       --persistent
+              Gives a client the same source-/destination-address for each connection.  This supersedes the SAME target. Support for persistent mappings is available from 2.6.29-rc2.
+
+       IPv6 support available since Linux kernels >= 3.7.
+
+
+[root@snatserver ~]# echo 1 > /proc/sys/net/ipv4/ip_forward    # 临时开启 kernel 的 转发功能
+[root@dnatserver ~]# iptables -t nat -I PREROUTING -d 192.168.10.254 -j DNAT --to-destination 192.168.20.10  # 将 192.168.10.254 ports 一一映射 到 192.168.20.10 的相同的 ports 上
+[root@dnatserver ~]# iptables -t nat -I PREROUTING -d 192.168.10.254 -p tcp --dport 80 -j DNAT --to-destination 192.168.20.10:8080   # 将 80 端口 映射 到 webserver上的 8080 端口
+[root@dnatserver ~]# iptables -t nat -nL --line-numbers
+    Chain PREROUTING (policy ACCEPT)
+    num  target     prot opt source               destination
+    1    DNAT       tcp  --  0.0.0.0/0            192.168.10.254       tcp dpt:80 to:192.168.20.10:8080  <---将 80 端口 映射 到 webserver上的 8080 端口(如tomcat默认端口)
+
+    Chain INPUT (policy ACCEPT)
+    num  target     prot opt source               destination
+
+    Chain OUTPUT (policy ACCEPT)
+    num  target     prot opt source               destination
+
+    Chain POSTROUTING (policy ACCEPT)
+    num  target     prot opt source               destination
 
 
 =================================================================================
