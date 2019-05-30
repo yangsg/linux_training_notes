@@ -151,6 +151,7 @@ OPTIONS
 
 
 
+=================================================================================
 
 // 禁用 firewalld
 [root@basic ~]# systemctl stop firewalld
@@ -176,6 +177,7 @@ iptables v1.4.21
 [root@basic ~]# ls /etc/sysconfig/iptables-config
 /etc/sysconfig/iptables-config
 
+=================================================================================
 
 查看 iptables 规则的常用选项:
 
@@ -208,6 +210,7 @@ iptables v1.4.21
 [root@basic ~]# ipts -t nat -v -x
 
 
+=================================================================================
 
      -A, --append chain rule-specification
             Append  one or more rules to the end of the selected chain.  When the source and/or destination names resolve to more than one address,
@@ -235,6 +238,7 @@ num  target     prot opt source               destination
 2    ACCEPT     tcp  --  192.168.175.10       192.168.175.20       tcp spt:22
 
 
+=================================================================================
 
      -P, --policy chain target
             Set the policy for the chain to the given target.  See the section TARGETS for the legal targets.
@@ -292,6 +296,7 @@ num  target     prot opt source               destination
       2           0        0 ACCEPT     tcp  --  *      *       192.168.175.10       192.168.175.20       tcp spt:22
 
 
+=================================================================================
 
    -I, --insert chain [rulenum] rule-specification
           Insert one or more rules in the selected chain as the given rule number.
@@ -378,6 +383,7 @@ num  target     prot opt source               destination
 [root@basic ~]# iptables -A INPUT  -d 192.168.175.10 -p icmp --icmp-type 0 -j ACCEPT   # 放行 其他 remote host 给 server 发送的 icmp type 的 echo-reply 的 packet
 
 
+=================================================================================
 
    [!] -i, --in-interface name
           Name of an interface via which a packet was received (only for packets entering the INPUT, FORWARD and PREROUTING chains).  When the  "!"  argument  is  used  before  the
@@ -424,6 +430,7 @@ num  target     prot opt source               destination
 [root@basic ~]# iptables-restore < /etc/iptables-save.rules  #iptables-restore默认会 flush (delete) all previous contents of the respective table.当然可以使用 -n, --noflush 修改这一行为
 
 
+=================================================================================
 
        -F, --flush [chain]
               Flush the selected chain (all the chains in the table if none is given).  This is equivalent to deleting all the rules one by one.
@@ -458,6 +465,7 @@ num  target     prot opt source               destination
       7        0     0 ACCEPT     all  --  *      lo      0.0.0.0/0            0.0.0.0/0
 
 
+=================================================================================
 
      -D, --delete chain rule-specification
      -D, --delete chain rulenum
@@ -491,6 +499,7 @@ num  target     prot opt source               destination
 
 
 
+=================================================================================
 
      -R, --replace chain rulenum rule-specification
             Replace a rule in the selected chain.  If the source and/or destination names resolve to multiple addresses, the command will fail.  Rules are numbered starting at 1.
@@ -530,6 +539,9 @@ num  target     prot opt source               destination
    -m, --match match
           Specifies a match to use, that is, an extension module that tests for a specific property. The set of matches make up the condition  under  which  a  target  is  invoked.
           Matches are evaluated first to last as specified on the command line and work in short-circuit fashion, i.e. if one extension yields false, evaluation will stop.
+
+
+=================================================================================
 
 模块(module):  -m multiport  离散多端口
 [root@basic ~]# iptables -m multiport -h
@@ -600,6 +612,7 @@ num  target     prot opt source               destination
 
 
 
+=================================================================================
 
 模块(module): -m iprange
 
@@ -633,6 +646,7 @@ num  target     prot opt source               destination
 
 
 
+=================================================================================
 
 模块(module): -m state
 
@@ -755,6 +769,7 @@ num  target     prot opt source               destination
 
 
 
+=================================================================================
 
 
 模块(tos):
@@ -792,6 +807,7 @@ num  target     prot opt source               destination
 [root@basic ~]# iptables -I OUTPUT -s 192.168.175.10 -d 192.168.175.1 -p tcp --sport 22 -m tos --tos 0x8 -j DROP
 
 
+=================================================================================
 
 模块(module): -m limit
 
@@ -884,6 +900,7 @@ https://netfilter.org/documentation/HOWTO/packet-filtering-HOWTO-7.html
 
 
 
+=================================================================================
 模块(module): -m connlimit
 
 [root@basic ~]# iptables -m connlimit -h
@@ -938,6 +955,7 @@ https://blog.csdn.net/pestd/article/details/13628849
 
 
 
+=================================================================================
 
 模块(module): -m time
 
@@ -1065,6 +1083,7 @@ num  target     prot opt source               destination
 
 
 
+=================================================================================
 
 模块(module):  -m comment
 
@@ -1098,6 +1117,7 @@ num  target     prot opt source               destination
 
 
 
+=================================================================================
 模块(module): -m mark
 [root@basic ~]# man iptables-extensions   #/^   mark
    mark
@@ -1184,6 +1204,7 @@ num  target     prot opt source               destination
 
 
 
+=================================================================================
 
 ===============-j LOG 记录日志================= (注；需要启用 kernel 日志功能)
     https://www.frozentux.net/iptables-tutorial/iptables-tutorial.html#LOGTARGET
@@ -1249,7 +1270,65 @@ num  target     prot opt source               destination
 [root@basic ~]# tail -f /var/log/kernel.log
 May 29 19:48:08 basic kernel: 192.168.175.236_pingIN=ens33 OUT= MAC=00:0c:29:82:ac:0f:00:0c:29:b9:5f:25:08:00 SRC=192.168.175.236 DST=192.168.175.10 LEN=84 TOS=0x00 PREC=0x00 TTL=64 ID=56841 DF PROTO=ICMP TYPE=8 CODE=0 ID=3860 SEQ=1 MARK=0xa
 
+=================================================================================
 
+关于 filter 表中 FORWARD chain 基本学习
+
+3 个虚拟主机的 信息如下:
+
+// 题外话: 其实类似 ifcfg-ens33 这种文件其实是 专为配置网卡参数的 shell script 文件(其通过类似 source 命令来被执行),所以语法上遵循 script 脚本即可(如可添加以 # 开头的注释行也是允许的)
+[root@node01 ~]# vim /etc/sysconfig/network-scripts/ifcfg-ens33  # 如下只显示主要信息, 并未完全粘贴过来
+        IPADDR=192.168.10.10
+        PREFIX=24
+        GATEWAY=192.168.10.254
+
+[root@router ~]# vim /etc/sysconfig/network-scripts/ifcfg-ens33  # 如下只显示主要信息, 并未完全粘贴过来
+        IPADDR=192.168.10.254
+        PREFIX=24
+
+[root@router ~]# vim /etc/sysconfig/network-scripts/ifcfg-ens37  # 如下只显示主要信息, 并未完全粘贴过来
+        IPADDR=192.168.20.254
+        PREFIX=24
+
+[root@node02 ~]# cat /etc/sysconfig/network-scripts/ifcfg-ens33  # 如下只显示主要信息, 并未完全粘贴过来
+        IPADDR=192.168.20.10
+        PREFIX=24
+        GATEWAY=192.168.20.254
+
+
+
+[root@router ~]# echo 1 > /proc/sys/net/ipv4/ip_forward    # 临时开启 kernel 的 转发功能
+
+[root@node01 ~]# ping 192.168.20.10
+        PING 192.168.20.10 (192.168.20.10) 56(84) bytes of data.
+        64 bytes from 192.168.20.10: icmp_seq=1 ttl=63 time=1.79 ms
+
+[root@node02 ~]# ping 192.168.20.10
+PING 192.168.20.10 (192.168.20.10) 56(84) bytes of data.
+64 bytes from 192.168.20.10: icmp_seq=1 ttl=64 time=0.018 ms
+
+
+[root@router ~]# iptables -A FORWARD -s 192.168.10.10 -d 192.168.20.10 -p icmp --icmp-type 8 -j DROP   # 在 router 上禁止 node01 对 node02 的 echo-request 的 packet 通过
+[root@router ~]# iptables -nL --line-numbers
+        Chain INPUT (policy ACCEPT)
+        num  target     prot opt source               destination
+
+        Chain FORWARD (policy ACCEPT)
+        num  target     prot opt source               destination
+        1    DROP       icmp --  192.168.10.10        192.168.20.10        icmptype 8   <--观察这里
+
+        Chain OUTPUT (policy ACCEPT)
+        num  target     prot opt source               destination
+
+[root@node01 ~]# ping 192.168.20.10
+PING 192.168.20.10 (192.168.20.10) 56(84) bytes of data.
+                 <---- 此处效果是 ping 一致 阻塞(因为 router 不再 forward 有 node01 发送给 node02 的 icmp 的 echo-request 数据包)
+
+[root@node02 ~]# ping 192.168.20.10
+PING 192.168.20.10 (192.168.20.10) 56(84) bytes of data.
+64 bytes from 192.168.20.10: icmp_seq=1 ttl=64 time=0.016 ms  # 可以看到, 此处 node02 仍然 可以 ping 通 node01 主机
+
+    注: 网络排错 一般常规的 思路 是 从 OSI(TCP/IP) 协议层模型的 从下往上 查找分析 原因(注意具体问题具体分析, 以及各种网络工具的借用)
 
 
 ---------------------------------------------------------------------------------
