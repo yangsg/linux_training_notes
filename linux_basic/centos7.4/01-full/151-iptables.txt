@@ -1534,12 +1534,12 @@ SNAT 与 DNAT:  只从方向的角度看, SNAT 类似于 正向代理, 而 DNAT 
 设置 系统 启动时 自动加载 iptables 规则文件
 
 参考:
-http://www.fibrevillage.com/sysadmin/404-how-to-enable-iptables-on-rhel7-centos7
-http://fibrevillage.com/sysadmin/198-linux-iptables-useful-examples
-https://serverfault.com/questions/723185/restoring-iptables-at-boot-rc-local
-https://askubuntu.com/questions/117155/do-i-need-to-restore-iptable-rules-everytime-on-boot#
-https://serverfault.com/questions/801350/how-to-save-iptables-configuration-on-redhat-enterprise-server-7
-https://linuxize.com/post/how-to-install-iptables-on-centos-7/#install-and-enable-iptables
+    http://www.fibrevillage.com/sysadmin/404-how-to-enable-iptables-on-rhel7-centos7
+    http://fibrevillage.com/sysadmin/198-linux-iptables-useful-examples
+    https://serverfault.com/questions/723185/restoring-iptables-at-boot-rc-local
+    https://askubuntu.com/questions/117155/do-i-need-to-restore-iptable-rules-everytime-on-boot#
+    https://serverfault.com/questions/801350/how-to-save-iptables-configuration-on-redhat-enterprise-server-7
+    https://linuxize.com/post/how-to-install-iptables-on-centos-7/#install-and-enable-iptables
 
 [root@basic ~]# yum install iptables-services
 [root@basic ~]# rpm -ql iptables-services
