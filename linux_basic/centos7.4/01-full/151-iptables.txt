@@ -437,8 +437,9 @@ num  target     prot opt source               destination
        -F, --flush [chain]
               Flush the selected chain (all the chains in the table if none is given).  This is equivalent to deleting all the rules one by one.
 
-[root@basic ~]# iptables -F        # 清空, 删除所有 chains 中的规则
-[root@basic ~]# iptables -F INPUT  # 清空, 删除 指定的 INPUT chain 中的 规则
+[root@basic ~]# iptables -F        # 清空 filter 表中 所有 chains 中的规则 (注: -F 选项 不会删除 policy, 只是清空 rules 而已)
+[root@basic ~]# iptables -F INPUT  # 清空 filter 表中 INPUT chain 中的 规则
+[root@basic ~]# iptables -t nat -F # 清空 nat 表中所有 chains 中的 规则
 
 [root@basic ~]# iptables -F && iptables-restore < /etc/iptables-save.rules   # 清空 并 还原 iptables 的规则, 注意一定要作为 一条(复合)命令来执行, 避免将自己'锁在门外'
 
@@ -466,6 +467,56 @@ num  target     prot opt source               destination
       6        0     0 ACCEPT     icmp --  *      *       192.168.175.10       0.0.0.0/0            icmptype 8
       7        0     0 ACCEPT     all  --  *      lo      0.0.0.0/0            0.0.0.0/0
 
+
+
+
+=================================================================================
+
+       -S, --list-rules [chain]
+              Print all rules in the selected chain.  If no chain is selected, all chains are printed like iptables-save.
+              Like every other iptables command, it applies to the specified table (filter is the default).
+
+
+[root@basic ~]# iptables -S   # 按类似 iptables-save 的方式显示 filter 表中 所有 chains 中的 rules.
+-P INPUT DROP
+-P FORWARD DROP
+-P OUTPUT DROP
+-A INPUT -d 192.168.175.10/32 -p tcp -m tcp --dport 80 -j ACCEPT
+-A INPUT -d 192.168.175.10/32 -p tcp -m tcp --dport 443 -j ACCEPT
+-A INPUT -s 192.168.175.1/32 -d 192.168.175.10/32 -p tcp -m tcp --dport 22 -j ACCEPT
+-A INPUT -s 192.168.175.20/32 -d 192.168.175.10/32 -p tcp -m tcp --dport 22 -j ACCEPT
+-A INPUT -s 192.168.175.1/32 -d 192.168.175.10/32 -p icmp -m icmp --icmp-type 8 -j ACCEPT
+-A INPUT -d 192.168.175.10/32 -p icmp -m icmp --icmp-type 0 -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A OUTPUT -s 192.168.175.10/32 -p tcp -m tcp --sport 80 -j ACCEPT
+-A OUTPUT -s 192.168.175.10/32 -p tcp -m tcp --sport 443 -j ACCEPT
+-A OUTPUT -s 192.168.175.10/32 -d 192.168.175.1/32 -p tcp -m tcp --sport 22 -j ACCEPT
+-A OUTPUT -s 192.168.175.10/32 -d 192.168.175.20/32 -p tcp -m tcp --sport 22 -j ACCEPT
+-A OUTPUT -s 192.168.175.10/32 -d 192.168.175.1/32 -p icmp -m icmp --icmp-type 0 -j ACCEPT
+-A OUTPUT -s 192.168.175.10/32 -p icmp -m icmp --icmp-type 8 -j ACCEPT
+-A OUTPUT -o lo -j ACCEPT
+
+[root@basic ~]# iptables -S INPUT   # 按类似 iptables-save 的方式显示 filter 表中 INPUT chain 中的 rules.
+-P INPUT DROP
+-A INPUT -d 192.168.175.10/32 -p tcp -m tcp --dport 80 -j ACCEPT
+-A INPUT -d 192.168.175.10/32 -p tcp -m tcp --dport 443 -j ACCEPT
+-A INPUT -s 192.168.175.1/32 -d 192.168.175.10/32 -p tcp -m tcp --dport 22 -j ACCEPT
+-A INPUT -s 192.168.175.20/32 -d 192.168.175.10/32 -p tcp -m tcp --dport 22 -j ACCEPT
+-A INPUT -s 192.168.175.1/32 -d 192.168.175.10/32 -p icmp -m icmp --icmp-type 8 -j ACCEPT
+-A INPUT -d 192.168.175.10/32 -p icmp -m icmp --icmp-type 0 -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+
+
+[root@basic ~]# iptables -t nat -S   # 按类似 iptables-save 的方式显示 nat 表中 所有 chains 中的 rules.
+-P PREROUTING ACCEPT
+-P INPUT ACCEPT
+-P OUTPUT ACCEPT
+-P POSTROUTING ACCEPT
+-A PREROUTING -d 1.1.1.2/32 -j DNAT --to-destination 192.168.175.20
+
+[root@basic ~]# iptables -t nat -S PREROUTING  # 按类似 iptables-save 的方式显示 nat 表中 PREROUTING chain 中的 rules.
+-P PREROUTING ACCEPT
+-A PREROUTING -d 1.1.1.2/32 -j DNAT --to-destination 192.168.175.20
 
 =================================================================================
 
@@ -1457,6 +1508,7 @@ SNAT 与 DNAT:  只从方向的角度看, SNAT 类似于 正向代理, 而 DNAT 
 
        IPv6 support available since Linux kernels >= 3.7.
 
+注: 规划设置 dnat 规则时 要 注意 避免 端口冲突 (port conflict)
 
 [root@snatserver ~]# echo 1 > /proc/sys/net/ipv4/ip_forward    # 临时开启 kernel 的 转发功能
 [root@dnatserver ~]# iptables -t nat -I PREROUTING -d 192.168.10.254 -j DNAT --to-destination 192.168.20.10  # 将 192.168.10.254 ports 一一映射 到 192.168.20.10 的相同的 ports 上
@@ -1475,6 +1527,7 @@ SNAT 与 DNAT:  只从方向的角度看, SNAT 类似于 正向代理, 而 DNAT 
     Chain POSTROUTING (policy ACCEPT)
     num  target     prot opt source               destination
 
+[root@dnatserver ~]# iptables -t nat -I PREROUTING -d 192.168.10.254 -p tcp --dport 22222 -j DNAT --to-destination 192.168.20.10:22  # 这里使用 22222 是为了避免 端口冲突
 
 =================================================================================
 ---------------------------------------------------------------------------------
