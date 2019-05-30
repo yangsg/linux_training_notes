@@ -26,6 +26,8 @@ https://fatmin.com/2011/10/20/rhel6-simple-iptables-how-to/
 
 https://www.cyberciti.biz/tips/linux-iptables-examples.html
 
+网络基础:
+https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/02-other/050-001-internet-tcp-ip.txt
 
 
 
