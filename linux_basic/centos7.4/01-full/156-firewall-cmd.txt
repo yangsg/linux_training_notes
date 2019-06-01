@@ -461,58 +461,108 @@ yes
 
 ---------------------------------------------------------------------------------------------------
 
-       [--permanent] [--zone=zone] --list-source-ports
-           List source ports added for zone as a space separated list. A port is of the form portid[-portid]/protocol. If zone is omitted, default zone will be used.
+语法: [--permanent] [--zone=zone] --list-source-ports
+         List source ports added for zone as a space separated list. A port is of the form portid[-portid]/protocol. If zone is omitted, default zone will be used.
 
-
----------------------------------------------------------------------------------------------------
-
-       [--permanent] [--zone=zone] --add-source-port=portid[-portid]/protocol [--timeout=timeval]
-           Add the source port for zone. If zone is omitted, default zone will be used. This option can be specified multiple times. If a timeout is supplied, the rule will be active
-           for the specified amount of time and will be removed automatically afterwards.  timeval is either a number (of seconds) or number followed by one of characters s (seconds),
-           m (minutes), h (hours), for example 20m or 1h.
-
-           The port can either be a single port number or a port range portid-portid. The protocol can either be tcp, udp, sctp or dccp.
-
-           The --timeout option is not combinable with the --permanent option.
-
+[root@basic ~]# firewall-cmd --zone=public --list-source-ports
+444/tcp
+[root@basic ~]# firewall-cmd --permanent --zone=public --list-source-ports
+444/tcp
 
 ---------------------------------------------------------------------------------------------------
 
-       [--permanent] [--zone=zone] --remove-source-port=portid[-portid]/protocol
-           Remove the source port from zone. If zone is omitted, default zone will be used. This option can be specified multiple times.
+语法: [--permanent] [--zone=zone] --add-source-port=portid[-portid]/protocol [--timeout=timeval]
+         Add the source port for zone. If zone is omitted, default zone will be used. This option can be specified multiple times. If a timeout is supplied, the rule will be active
+         for the specified amount of time and will be removed automatically afterwards.  timeval is either a number (of seconds) or number followed by one of characters s (seconds),
+         m (minutes), h (hours), for example 20m or 1h.
+
+         The port can either be a single port number or a port range portid-portid. The protocol can either be tcp, udp, sctp or dccp.
+
+         The --timeout option is not combinable with the --permanent option.
+
+[root@basic ~]# firewall-cmd --zone=public --add-source-port=444/tcp
+success
+[root@basic ~]# firewall-cmd --permanent --zone=public --add-source-port=444/tcp  #该命令在 /etc/firewalld/zones/public.xml 中插入了一行'<source-port protocol="tcp" port="444"/>' 配置
+success
+
+
+[root@basic ~]# iptables -nL --line-numbers | less
+Chain IN_public_allow (1 references)
+num  target     prot opt source               destination
+1    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0            tcp dpt:22 ctstate NEW
+2    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0            tcp spt:444 ctstate NEW  <--- 该行规则就是如上命令中 --add-source-port 的效果
 
 ---------------------------------------------------------------------------------------------------
 
-       [--permanent] [--zone=zone] --query-source-port=portid[-portid]/protocol
-           Return whether the source port has been added for zone. If zone is omitted, default zone will be used. Returns 0 if true, 1 otherwise.
+语法: [--permanent] [--zone=zone] --remove-source-port=portid[-portid]/protocol
+         Remove the source port from zone. If zone is omitted, default zone will be used. This option can be specified multiple times.
 
-
----------------------------------------------------------------------------------------------------
-
-       [--permanent] [--zone=zone] --list-icmp-blocks
-           List Internet Control Message Protocol (ICMP) type blocks added for zone as a space separated list. If zone is omitted, default zone will be used.
-
----------------------------------------------------------------------------------------------------
-
-       [--permanent] [--zone=zone] --add-icmp-block=icmptype [--timeout=timeval]
-           Add an ICMP block for icmptype for zone. If zone is omitted, default zone will be used. This option can be specified multiple times. If a timeout is supplied, the rule will
-           be active for the specified amount of time and will be removed automatically afterwards.  timeval is either a number (of seconds) or number followed by one of characters s
-           (seconds), m (minutes), h (hours), for example 20m or 1h.
-
-           The icmptype is the one of the icmp types firewalld supports. To get a listing of supported icmp types: firewall-cmd --get-icmptypes
-
-           The --timeout option is not combinable with the --permanent option.
+[root@basic ~]# firewall-cmd --zone=public --remove-source-port=444/tcp
+success
+[root@basic ~]# firewall-cmd --permanent --zone=public --remove-source-port=444/tcp   #该命令会删除 /etc/firewalld/zones/public.xml 中的'<source-port protocol="tcp" port="444"/>' 配置
+success
 
 ---------------------------------------------------------------------------------------------------
 
-       [--permanent] [--zone=zone] --remove-icmp-block=icmptype
-           Remove the ICMP block for icmptype from zone. If zone is omitted, default zone will be used. This option can be specified multiple times.
+语法: [--permanent] [--zone=zone] --query-source-port=portid[-portid]/protocol
+         Return whether the source port has been added for zone. If zone is omitted, default zone will be used. Returns 0 if true, 1 otherwise.
+
+
+[root@basic ~]# firewall-cmd --zone=public --query-source-port=444/tcp
+yes
+[root@basic ~]# firewall-cmd --permanent --zone=public --query-source-port=444/tcp
+yes
 
 ---------------------------------------------------------------------------------------------------
 
-       [--permanent] [--zone=zone] --query-icmp-block=icmptype
-           Return whether an ICMP block for icmptype has been added for zone. If zone is omitted, default zone will be used. Returns 0 if true, 1 otherwise.
+语法: [--permanent] [--zone=zone] --list-icmp-blocks
+         List Internet Control Message Protocol (ICMP) type blocks added for zone as a space separated list. If zone is omitted, default zone will be used.
+
+
+[root@basic ~]# firewall-cmd --zone=public --list-icmp-blocks
+echo-request
+[root@basic ~]# firewall-cmd --permanent --zone=public --list-icmp-blocks
+echo-request
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] [--zone=zone] --add-icmp-block=icmptype [--timeout=timeval]
+         Add an ICMP block for icmptype for zone. If zone is omitted, default zone will be used. This option can be specified multiple times. If a timeout is supplied, the rule will
+         be active for the specified amount of time and will be removed automatically afterwards.  timeval is either a number (of seconds) or number followed by one of characters s
+         (seconds), m (minutes), h (hours), for example 20m or 1h.
+
+         The icmptype is the one of the icmp types firewalld supports. To get a listing of supported icmp types: firewall-cmd --get-icmptypes
+
+         The --timeout option is not combinable with the --permanent option.
+
+[root@basic ~]# firewall-cmd --get-icmptypes  # 查看支持的 icmp types
+
+[root@basic ~]# firewall-cmd --zone=public --add-icmp-block=echo-request
+success
+[root@basic ~]# firewall-cmd --permanent --zone=public --add-icmp-block=echo-request  #该命令在 /etc/firewalld/zones/public.xml中插入了一行'<icmp-block name="echo-request"/>' 配置
+success
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] [--zone=zone] --remove-icmp-block=icmptype
+         Remove the ICMP block for icmptype from zone. If zone is omitted, default zone will be used. This option can be specified multiple times.
+
+
+[root@basic ~]# firewall-cmd --zone=public --remove-icmp-block=echo-request
+success
+[root@basic ~]# firewall-cmd --permanent --zone=public --remove-icmp-block=echo-request #该命令会删除 /etc/firewalld/zones/public.xml中的 '<icmp-block name="echo-request"/>' 配置
+success
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] [--zone=zone] --query-icmp-block=icmptype
+         Return whether an ICMP block for icmptype has been added for zone. If zone is omitted, default zone will be used. Returns 0 if true, 1 otherwise.
+
+
+[root@basic ~]# firewall-cmd --zone=public --query-icmp-block=echo-request
+yes
+[root@basic ~]# firewall-cmd --permanent --zone=public --query-icmp-block=echo-request
+yes
 
 ---------------------------------------------------------------------------------------------------
 
