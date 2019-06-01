@@ -1,0 +1,314 @@
+
+# keyword firewalld
+
+man firewalld
+
+作用: firewalld - Dynamic Firewall Manager
+
+语法: firewalld [OPTIONS...]
+
+说明：
+   firewalld provides a dynamically managed firewall with support for network/firewall zones to define the trust level of network connections or interfaces. It has support for
+   IPv4, IPv6 firewall settings and for ethernet bridges and has a separation of runtime and permanent configuration options. It also supports an interface for services or
+   applications to add firewall rules directly.
+
+
+---------------------------------------------------------------------------------------------------
+
+关于 D-Bus 的 一些资料:
+  英文:
+    https://www.freedesktop.org/wiki/Software/dbus/
+    https://en.wikipedia.org/wiki/D-Bus
+    https://en.wikipedia.org/wiki/File:Processes_without_D-Bus.svg
+    https://en.wikipedia.org/wiki/File:Processes_with_D-Bus.svg
+
+  中文
+    https://www.csslayer.info/wordpress/linux/what-is-d-bus/
+    https://baike.baidu.com/item/D-Bus/5871068?fr=aladdin
+
+      D-Bus is a message bus system, a simple way for applications to talk to one another. In addition to interprocess communication,
+      D-Bus helps coordinate process lifecycle; it makes it simple and reliable to code a "single instance" application or daemon,
+      and to launch applications and daemons on demand when their services are needed.
+
+      D-Bus 是一个 消息总线系统, 是 一个 applications 间通话的 简单方式. 除了 IPC (进程间通信) 之外, D-Bus 还帮助 协调(coordinate) 进程的 生命周期;
+      它使得 编写 a "single instance" 的 application 或 daemon 变得简单 和 可靠, 通知在 它们的 services 在需要时 按需(on demand) 启动 applications 和 daemons.
+---------------------------------------------------------------------------------------------------
+CONCEPTS
+       firewalld has a D-Bus interface for firewall configuration of services and applications. It also has a command line client for the user. Services or applications already using
+       D-Bus can request changes to the firewall with the D-Bus interface directly. For more information on the firewalld D-Bus interface, please have a look at firewalld.dbus(5).
+
+       firewalld provides support for zones, predefined services and ICMP types and has a separation of runtime and permanent configuration options. Permanent configuration is loaded
+       from XML files in /usr/lib/firewalld or /etc/firewalld (see the section called “DIRECTORIES”).
+
+       If NetworkManager is not in use and firewalld gets started after the network is already up, the connections and manually created interfaces are not bound to the zone specified
+       in the ifcfg file. The interfaces will automatically be handled by the default zone. firewalld will also not get notified about network device renames. All this also applies to
+       interfaces that are not controlled by NetworkManager if NM_CONTROLLED=no is set.
+
+       You can add these interfaces to a zone with firewall-cmd [--permanent] --zone=zone --add-interface=interface. If there is a /etc/sysconfig/network-scripts/ifcfg-interface file,
+       firewalld tries to change the ZONE=zone setting in this file.
+
+       If firewalld gets reloaded, it will restore the interface bindings that were in place before reloading to keep interface bindings stable in the case of NetworkManager
+       uncontrolled interfaces. This mechanism is not possible in the case of a firewalld service restart.
+
+       It is essential to keep the ZONE= setting in the ifcfg file consistent to the binding in firewalld in the case of NetworkManager uncontrolled interfaces.
+
+   Zones
+       A network or firewall zone defines the trust level of the interface used for a connection. There are several pre-defined zones provided by firewalld. Zone configuration options
+       and generic information about zones are described in firewalld.zone(5)
+
+   Services
+       A service can be a list of local ports, protocols and destinations and additionally also a list of firewall helper modules automatically loaded if a service is enabled. Service
+       configuration options and generic information about services are described in firewalld.service(5). The use of predefined services makes it easier for the user to enable and
+       disable access to a service.
+
+   ICMP types
+       The Internet Control Message Protocol (ICMP) is used to exchange information and also error messages in the Internet Protocol (IP). ICMP types can be used in firewalld to limit
+       the exchange of these messages. For more information, please have a look at firewalld.icmptype(5).
+
+   Runtime configuration
+       Runtime configuration is the actual active configuration and is not permanent. After reload/restart of the service or a system reboot, runtime settings will be gone if they
+       haven't been also in permanent configuration.
+
+   Permanent configuration
+       The permanent configuration is stored in config files and will be loaded and become new runtime configuration with every machine boot or service reload/restart.
+
+   Direct interface
+       The direct interface is mainly used by services or applications to add specific firewall rules. It requires basic knowledge of ip(6)tables concepts (tables, chains, commands,
+       parameters, targets).
+
+---------------------------------------------------------------------------------------------------
+Benefits of using firewalld (firewalld 的 好处): https://firewalld.org/
+
+    Changes can be done immediately in the runtime environment. No restart of the service or daemon is needed.
+
+    With the firewalld D-Bus interface it is simple for services, applications and also users to adapt firewall settings.
+    The interface is complete and is used for the firewall configuration tools firewall-cmd, firewall-config and firewall-applet.
+
+    The separation of the runtime and permanent configuration makes it possible to do evaulation and tests in runtime.
+    The runtime configuration is only valid up to the next service reload and restart or to a system reboot. Then the permanent configuration
+    will be loaded again. With the runtime environment it is possible to use runtime for settings that should only be active for
+    a limited amount of time. If the runtime configuration has been used for evaluation, and it is complete and working,
+    then it is possible to save this configuration to the permanent environment.
+
+Features (firewalld 的 特性):
+    -  Complete D-Bus API
+    -  IPv4, IPv6, bridge and ipset support
+    -  IPv4 and IPv6 NAT support
+    -  Firewall zones
+    -  Predefined list of zones, services and icmptypes
+    -  Simple service, port, protocol, source port, masquerading, port forwarding, icmp filter, rich rule, interface and source address handlig in zones
+    -  Simple service definition with ports, protocols, source ports, modules (netfilter helpers) and destination address handling
+    -  Rich Language for more flexible and complex rules in zones
+    -  Timed firewall rules in zones
+    -  Simple log of denied packets
+    -  Direct interface
+    -  Lockdown: Whitelisting of applications that may modify the firewall
+    -  Automatic loading of Linux kernel modules
+    -  Integration with Puppet
+    -  Command line clints for online and offline configuration
+    -  Graphical configuration tool using gtk3
+    -  Applet using Qt4
+---------------------------------------------------------------------------------------------------
+Concepts(概念):(官网有一张设计图片) https://firewalld.org/documentation/concepts.html
+    firewalld 具有两层设计(a two layer design)
+        The core layer and the D-Bus layer on top.  core layer 负责处理(handling) configuration
+        和 如 iptables, ip6tables, ebtables, ipset 和 the module loader 这样的 后端. 
+
+        The firewalld D-Bus interface 是 alter 和 create 其 firewall configuration 的 主要方式. 该 interface 被 所有 firewalld 所提供的 online tools 使用,
+        如 firewall-cmd, firewall-config and firewall-applet. firewall-offline-cmd 不会与 firewalld 通话, 而是 通过 IO handlers 使用 the firewalld core 来
+        直接 altering 和  creating firewalld configuration files. firewall-offline-cmd 可以在 firewalld is running 时 被使用, 但是不推荐这么做,
+        因为 it is only able to alter the permanent configuration that are visible in firewall after about five seconds.
+
+
+        firewalld 不依赖于 NetworkManager, 但还是推荐使用 NetworkManager. 因为如果 不使用 NetworkManager, 会存在一些 限制(limitations).
+
+---------------------------------------------------------------------------------------------------
+Configuration (配置):  https://firewalld.org/documentation/configuration/
+
+    firewalld 的 configuration 存储在 the configuration directories 中的各种 XML files 中,
+    这为 fallbacks 和 system overrides 提供了极大的 灵活性(flexibility).
+
+    - Directories (目录)
+
+      firewalld supports two configuration directories:
+
+      -- Default and Fallback Configuration
+          目录 /usr/lib/firewalld 包含 firewalld 提供的 icmptypes, services and zones 的 the default and fallback configuration.
+          这些由 firewalld package 提供的 文件 不应该被修改(get changed) 而且(因为) 这些 修改 会 随着 firewalld package 的 update 而消失.
+          Additional icmptypes, services and zones can be provided with packages or by creating files.
+
+      -- System Specific Configuration
+         The system or user configuration 存放在 目录 /etc/firewalld 中, 其 即可以由 system administrator 创建,
+         也可以通过 firewalld 的 configuration interface 定制(customization) 来 创建 或 手动创建.
+         The files will overload the default configuration files.
+
+         要手动修改 settings of pre-defined icmptypes, zones or services,  从 the default configuration directory 中 把对应的 file 拷贝到
+         the system configuration directory 对应的目录下 然后 再 按需要做 修改.
+
+         如果目录 /etc/firewalld 不存在 或 该目录下 没有 configuration, 则 firewalld will start using the default configuration and default settings for firewalld.conf.
+
+---------------------------------------------------------------------------------------------------
+Runtime versus Permanent : https://firewalld.org/documentation/configuration/runtime-versus-permanent.html
+
+    The configuration 被分为 运行时(runtime) 和 持久(permanent)的 configuration.
+
+    - Runtime Configuration (运行时配置)
+        The runtime configuration is the actual effective configuration and applied to the firewall in the kernel.
+        At firewalld service start the permanent configuration becomes the runtime configuration.
+        Changes in the runtime configuration are not automatically saved to the permanent configuration.
+
+        The runtime configuration will be lost with a firewalld service stop. A firewalld reload will replace the runtime
+        configuration by the permanent configuration. Changed zone bindings will be restored after the reload.
+
+    - Permanent Configuration (持久的配置)
+        The permanent configuration is stored in configuration files and will be loaded
+        and become new runtime configuration with every machine boot or service reload/restart.
+
+    - Runtime to Permanent (运行时 到 持久化的 迁移):
+        The runtime environment can also be used to create a firewall setup that fits the needs.
+        When it is complete and working it can be migrated with the runtime to permanent migration.
+        It is available in firewall-config and firewall-cmd.
+
+        The firewall-cmd is:
+            firewall-cmd --runtime-to-permanent   # 该命令 保存 active runtime configuration 且 用其 覆盖 permanent configuration.
+
+        如果 the firewall setup 无法工作, 简单的 firewalld reload/restart 就可 重新应用 正常工作的 permanent configuration.
+---------------------------------------------------------------------------------------------------
+firewalld.conf : https://firewalld.org/documentation/configuration/firewalld-conf.html
+
+    目录 /etc/firewalld 下的 firewalld.conf 为 firewalld 提供了 the base configuration.
+    If it is absent or if /etc/firewalld is missing, the firewalld internal defaults will be used.
+
+[root@basic ~]# grep -E  '^[^#]' /etc/firewalld/firewalld.conf  # 查看 firewalld.conf 中的 默认设置
+        DefaultZone=public
+        MinimalMark=100
+        CleanupOnExit=yes
+        Lockdown=no
+        IPv6_rpfilter=yes
+        IndividualCalls=no
+        LogDenied=off
+        AutomaticHelpers=system
+
+  The settings listed below are the default values(关于配置项的一些说明):
+  - DefaultZone
+      The default zone used if an empty zone string is used. Everything that is not explicitly bound to another zone will be handled by the default zone.
+
+      DefaultZone=public
+
+  - Minimal Mark
+      Marks up to this minimum are free for use for example in the direct interface. If more free marks are needed, increase the minimum.
+
+          MinimalMark=100
+
+  - Clean Up On Exit
+    If set to no or false the firewall configuration will not get cleaned up on exit or stop of firewalld.
+
+      CleanupOnExit=yes
+
+  - Lockdown
+    If set to enabled, firewall changes with the D-Bus interface will be limited to applications that are listed
+    in the lockdown whitelist(白名单). The lockdown whitelist file is lockdown-whitelist.xml(<-白名单文件).
+
+      Lockdown=no
+
+          [root@basic ~]# cat /etc/firewalld/lockdown-whitelist.xml  # 查看白名单文件 lockdown-whitelist.xml 的 内容
+                <?xml version="1.0" encoding="utf-8"?>
+                <whitelist>
+                  <command name="/usr/bin/python -Es /usr/bin/firewall-config"/>
+                  <selinux context="system_u:system_r:NetworkManager_t:s0"/>
+                  <selinux context="system_u:system_r:virtd_t:s0-s0:c0.c1023"/>
+                  <user id="0"/>
+                </whitelist>
+          [root@basic ~]#
+
+  - IPv6_rpfilter
+    Performs a reverse path filter test on a packet for IPv6. If a reply to the packet would be sent via the same interface
+    that the packet arrived on, the packet will match and be accepted, otherwise dropped. The rp_filter for IPv4 is controlled using sysctl.
+
+      IPv6_rpfilter=yes
+
+  - Individual Calls
+    Do not use combined -restore calls, but individual calls. This increases the time that is needed to apply changes and to start the daemon, but is good for debugging.
+
+      IndividualCalls=no
+
+  - Log Denied
+    Add logging rules right before reject and drop rules in the INPUT, FORWARD and OUTPUT chains for the default rules and also
+    final reject and drop rules in zones. Possible values are: all, unicast, broadcast, multicast and off.
+
+      LogDenied=off
+
+
+---------------------------------------------------------------------------------------------------
+Utilities (工具) https://firewalld.org/documentation/utilities/
+    These are the tools that are part of firewalld:
+
+      firewall-cmd  <--- 重要, 主要使用该工具
+             https://firewalld.org/documentation/utilities/firewall-cmd.html
+             https://fedoraproject.org/wiki/Firewalld?rd=FirewallD    (<-- 包含许多 firewall-cmd 命令的示例)
+
+      firewall-offline-cmd
+      firewall-config
+      firewall-applet
+
+---------------------------------------------------------------------------------------------------
+
+man 5 firewalld.zone      # 查看 zones    的配置 选项 和 通用信息
+man 5 firewalld.service   # 查看 services 的配置 选项 和 通用信息
+man 5 firewalld.icmptype  # 查看 icmptype 的配置选项 和 通用信息
+man 5 firewalld.conf      # 查看 /etc/firewalld/firewalld.conf 的 描述说明
+
+---------------------------------------------------------------------------------------------------
+
+
+[root@basic ~]# ls /usr/lib/firewalld   # 查看 默认 和 fallback configuration 所在的目录
+    helpers  icmptypes  ipsets  services  xmlschema  zones
+
+[root@basic ~]# ls /etc/firewalld/      # 查看 System 特定的 Configuration 所在的 目录
+    firewalld.conf  helpers  icmptypes  ipsets  lockdown-whitelist.xml  services  zones
+
+[root@basic ~]# ls /usr/lib/firewalld/zones/
+    block.xml  dmz.xml  drop.xml  external.xml  home.xml  internal.xml  public.xml  trusted.xml  work.xml
+
+[root@basic ~]# ls /usr/lib/firewalld/services/
+    amanda-client.xml        dhcpv6.xml               https.xml         ldaps.xml        openvpn.xml               pulseaudio.xml       smtps.xml              tor-socks.xml
+    amanda-k5-client.xml     dhcp.xml                 http.xml          ldap.xml         ovirt-imageio.xml         puppetmaster.xml     smtp.xml               transmission-client.xml
+    bacula-client.xml        dns.xml                  imaps.xml         libvirt-tls.xml  ovirt-storageconsole.xml  quassel.xml          snmptrap.xml           vdsm.xml
+    bacula.xml               docker-registry.xml      imap.xml          libvirt.xml      ovirt-vmconsole.xml       radius.xml           snmp.xml               vnc-server.xml
+    bitcoin-rpc.xml          dropbox-lansync.xml      ipp-client.xml    managesieve.xml  pmcd.xml                  RH-Satellite-6.xml   spideroak-lansync.xml  wbem-https.xml
+    bitcoin-testnet-rpc.xml  elasticsearch.xml        ipp.xml           mdns.xml         pmproxy.xml               rpc-bind.xml         squid.xml              xmpp-bosh.xml
+    bitcoin-testnet.xml      freeipa-ldaps.xml        ipsec.xml         mosh.xml         pmwebapis.xml             rsh.xml              ssh.xml                xmpp-client.xml
+    bitcoin.xml              freeipa-ldap.xml         iscsi-target.xml  mountd.xml       pmwebapi.xml              rsyncd.xml           synergy.xml            xmpp-local.xml
+    ceph-mon.xml             freeipa-replication.xml  kadmin.xml        mssql.xml        pop3s.xml                 samba-client.xml     syslog-tls.xml         xmpp-server.xml
+    ceph.xml                 freeipa-trust.xml        kerberos.xml      ms-wbt.xml       pop3.xml                  samba.xml            syslog.xml
+    cfengine.xml             ftp.xml                  kibana.xml        mysql.xml        postgresql.xml            sane.xml             telnet.xml
+    condor-collector.xml     ganglia-client.xml       klogin.xml        nfs.xml          privoxy.xml               sips.xml             tftp-client.xml
+    ctdb.xml                 ganglia-master.xml       kpasswd.xml       nrpe.xml         proxy-dhcp.xml            sip.xml              tftp.xml
+    dhcpv6-client.xml        high-availability.xml    kshell.xml        ntp.xml          ptp.xml                   smtp-submission.xml  tinc.xml
+
+
+
+---------------------------------------------------------------------------------------------------
+
+  firewalld 主页: http://www.firewalld.org/      (firewalld 的 优点 和 特性)
+  官方文档:  https://firewalld.org/documentation/
+
+
+  红帽redhat7: USING FIREWALLS
+      https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/security_guide/sec-using_firewalls
+  Linux Firewalld用法及案例
+      https://blog.csdn.net/xiazichenxi/article/details/80169927
+
+  更多示例:
+    https://fedoraproject.org/wiki/Firewalld?rd=FirewallD
+
+其他中文资料
+    CentOS7 系统防火墙firewalld工具手册
+      https://www.jianshu.com/p/fd29623cf882?utm_campaign=maleskine&utm_content=note&utm_medium=seo_notes&utm_source=recommendation
+    CentOS7下Firewall防火墙配置用法详解
+      https://www.jianshu.com/p/21e451367c4a
+      https://www.cnblogs.com/liuyansheng/p/6113646.html?utm_source=itdadao&utm_medium=referral
+    Linux Firewalld用法及案例
+      https://blog.csdn.net/xiazichenxi/article/details/80169927
+
+
