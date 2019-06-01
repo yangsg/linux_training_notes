@@ -1,0 +1,627 @@
+
+
+# keyword firewall-cmd
+
+man firewall-cmd
+
+firewall-cmd --help
+
+
+
+作用： firewall-cmd - firewalld command line client
+
+语法: firewall-cmd [OPTIONS...]
+
+说明:
+       firewall-cmd 是 firewalld daemon 的命令行客户端工具. It provides interface to manage runtime and permanent configuration.
+
+       The runtime configuration in firewalld is separated from the permanent configuration. This means that things can get changed in the runtime or permanent configuration.
+
+---------------------------------------------------------------------------------------------------
+// 禁用 firewalld service
+
+[root@basic ~]# systemctl stop firewalld.service
+[root@basic ~]# systemctl disable firewalld.service
+Removed symlink /etc/systemd/system/multi-user.target.wants/firewalld.service.
+Removed symlink /etc/systemd/system/dbus-org.fedoraproject.FirewallD1.service.
+[root@basic ~]# systemctl mask firewalld.service
+Created symlink from /etc/systemd/system/firewalld.service to /dev/null.
+
+
+
+---------------------------------------------------------------------------------------------------
+// 启用 firewalld service
+
+[root@basic ~]# systemctl unmask firewalld.service
+[root@basic ~]# systemctl start firewalld.service
+[root@basic ~]# systemctl enable firewalld.service
+Created symlink from /etc/systemd/system/dbus-org.fedoraproject.FirewallD1.service to /usr/lib/systemd/system/firewalld.service.
+Created symlink from /etc/systemd/system/multi-user.target.wants/firewalld.service to /usr/lib/systemd/system/firewalld.service.
+
+---------------------------------------------------------------------------------------------------
+
+语法: --state
+         Check whether the firewalld daemon is active (i.e. running). Returns an exit code 0 if it is active, NOT_RUNNING otherwise (see the section called “EXIT CODES”). This will
+         also print the state to STDOUT.
+
+[root@basic ~]# firewall-cmd --state  # 查看 firewalld 服务的状态
+running
+
+[root@basic ~]# systemctl status firewalld  # 查看 firewalld unit service 更多的状态信息
+● firewalld.service - firewalld - dynamic firewall daemon
+   Loaded: loaded (/usr/lib/systemd/system/firewalld.service; enabled; vendor preset: enabled)
+   Active: active (running) since Sat 2019-06-01 12:34:20 CST; 3min 41s ago
+     Docs: man:firewalld(1)
+ Main PID: 17264 (firewalld)
+   CGroup: /system.slice/firewalld.service
+           └─17264 /usr/bin/python -Es /usr/sbin/firewalld --nofork --nopid
+
+
+---------------------------------------------------------------------------------------------------
+
+语法: --reload
+         Reload firewall rules and keep state information. Current permanent configuration will become new runtime configuration, i.e. all runtime only changes done until reload are
+         lost with reload if they have not been also in permanent configuration.
+
+
+[root@basic ~]# firewall-cmd --reload    #Reload firewall rules and keep state information.
+success
+
+---------------------------------------------------------------------------------------------------
+
+语法: --complete-reload   该选项会导致状态信息丢失，所以只应在 出现 严重的 firewall problems 的情况下 使用.
+         Reload firewall completely, even netfilter kernel modules. This will most likely terminate active connections, because state information is lost. This option should only be
+         used in case of severe firewall problems. For example if there are state information problems that no connection can be established with correct firewall rules.
+
+[root@basic ~]# firewall-cmd --complete-reload  #Reload firewall completely,even netfilter kernel modules.该命令会流失状态信息(类似关闭active connections),所以只应在严重的防火墙问题时使用
+success
+
+---------------------------------------------------------------------------------------------------
+
+语法: --runtime-to-permanent
+         Save active runtime configuration and overwrite permanent configuration with it. The way this is supposed to work is that when configuring firewalld you do runtime changes
+         only and once you're happy with the configuration and you tested that it works the way you want, you save the configuration to disk.
+
+
+[root@basic ~]# firewall-cmd --runtime-to-permanent  # Save active runtime configuration and overwrite permanent configuration with it.
+success
+
+
+---------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
+
+   Permanent Options (持久选项)
+       --permanent
+           The permanent option --permanent can be used to set options permanently. These changes are not effective immediately, only after service restart/reload or system reboot.
+           Without the --permanent option, a change will only be part of the runtime configuration.
+
+           If you want to make a change in runtime and permanent configuration, use the same call with and without the --permanent option.
+
+           The --permanent option can be optionally added to all options further down where it is supported.
+
+  选项 --permanent 用于 持久化 的设置 options, 这些 changes 不会 立即 生效(effective), 仅在 firewalld service restart/reload 或 system reboot 之后 起作用.
+  如果没有使用 选项 --permanent, a change 将 仅 会成为 runtime configuration 的 一部分.
+
+  如果你想 在 runtime 和 permanent configuration 中 都做修改, use the same call with and without the --permanent option.
+
+---------------------------------------------------------------------------------------------------
+
+语法: --get-default-zone
+         Print default zone for connections and interfaces.
+
+[root@basic ~]# firewall-cmd --get-default-zone
+public
+
+
+---------------------------------------------------------------------------------------------------
+
+语法: --set-default-zone=zone
+         Set default zone for connections and interfaces where no zone has been selected. Setting the default zone changes the zone for the connections or interfaces, that are using
+         the default zone.
+
+         This is a runtime and permanent change.
+
+[root@basic ~]# firewall-cmd --set-default-zone=home # 设置默认的zone, 该命令会同时修改 runtime 和 permanent(即文件 /etc/firewalld/firewalld.conf 中 DefaultZone 值也会被修改)
+success
+
+[root@basic firewalld]# grep 'DefaultZone' /etc/firewalld/firewalld.conf  # 观察如上的 命令 对 firewalld.conf 中 DefaultZone 值 所做的修改
+DefaultZone=home
+
+---------------------------------------------------------------------------------------------------
+
+语法: --get-active-zones
+           Print currently active zones altogether with interfaces and sources used in these zones. Active zones are zones, that have a binding to an interface or source. The output
+           format is:
+
+               zone1
+                 interfaces: interface1 interface2 ..
+                 sources: source1 ..
+               zone2
+                 interfaces: interface3 ..
+               zone3
+                 sources: source2 ..
+
+           If there are no interfaces or sources bound to the zone, the corresponding line will be omitted.
+
+
+[root@basic ~]# firewall-cmd --get-active-zones
+home
+  interfaces: ens33
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] --get-zones
+           Print predefined zones as a space separated list.
+
+[root@basic ~]# firewall-cmd --get-zones   # 显示 runtime 中的 zones
+block dmz drop external home internal public trusted work
+
+[root@basic ~]# firewall-cmd --permanent --get-zones  # 显示 permanent 中的 zones
+block dmz drop external home internal public trusted work
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] --get-services
+         Print predefined services as a space separated list.
+
+[root@basic ~]# firewall-cmd --get-services
+RH-Satellite-6 amanda-client amanda-k5-client bacula bacula-client bitcoin bitcoin-rpc bitcoin-testnet bitcoin-testnet-rpc ceph ceph-mon cfengine condor-collector ctdb dhcp dhcpv6 dhcpv6-client dns docker-registry dropbox-lansync elasticsearch freeipa-ldap freeipa-ldaps freeipa-replication freeipa-trust ftp ganglia-client ganglia-master high-availability http https imap imaps ipp ipp-client ipsec iscsi-target kadmin kerberos kibana klogin kpasswd kshell ldap ldaps libvirt libvirt-tls managesieve mdns mosh mountd ms-wbt mssql mysql nfs nrpe ntp openvpn ovirt-imageio ovirt-storageconsole ovirt-vmconsole pmcd pmproxy pmwebapi pmwebapis pop3 pop3s postgresql privoxy proxy-dhcp ptp pulseaudio puppetmaster quassel radius rpc-bind rsh rsyncd samba samba-client sane sip sips smtp smtp-submission smtps snmp snmptrap spideroak-lansync squid ssh synergy syslog syslog-tls telnet tftp tftp-client tinc tor-socks transmission-client vdsm vnc-server wbem-https xmpp-bosh xmpp-client xmpp-local xmpp-server
+
+[root@basic ~]# firewall-cmd --permanent --get-services
+RH-Satellite-6 amanda-client amanda-k5-client bacula bacula-client bitcoin bitcoin-rpc bitcoin-testnet bitcoin-testnet-rpc ceph ceph-mon cfengine condor-collector ctdb dhcp dhcpv6 dhcpv6-client dns docker-registry dropbox-lansync elasticsearch freeipa-ldap freeipa-ldaps freeipa-replication freeipa-trust ftp ganglia-client ganglia-master high-availability http https imap imaps ipp ipp-client ipsec iscsi-target kadmin kerberos kibana klogin kpasswd kshell ldap ldaps libvirt libvirt-tls managesieve mdns mosh mountd ms-wbt mssql mysql nfs nrpe ntp openvpn ovirt-imageio ovirt-storageconsole ovirt-vmconsole pmcd pmproxy pmwebapi pmwebapis pop3 pop3s postgresql privoxy proxy-dhcp ptp pulseaudio puppetmaster quassel radius rpc-bind rsh rsyncd samba samba-client sane sip sips smtp smtp-submission smtps snmp snmptrap spideroak-lansync squid ssh synergy syslog syslog-tls telnet tftp tftp-client tinc tor-socks transmission-client vdsm vnc-server wbem-https xmpp-bosh xmpp-client xmpp-local xmpp-server
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] --get-icmptypes
+         Print predefined icmptypes as a space separated list.
+
+[root@basic ~]# firewall-cmd --get-icmptypes
+address-unreachable bad-header communication-prohibited destination-unreachable echo-reply echo-request fragmentation-needed host-precedence-violation host-prohibited host-redirect host-unknown host-unreachable ip-header-bad neighbour-advertisement neighbour-solicitation network-prohibited network-redirect network-unknown network-unreachable no-route packet-too-big parameter-problem port-unreachable precedence-cutoff protocol-unreachable redirect required-option-missing router-advertisement router-solicitation source-quench source-route-failed time-exceeded timestamp-reply timestamp-request tos-host-redirect tos-host-unreachable tos-network-redirect tos-network-unreachable ttl-zero-during-reassembly ttl-zero-during-transit unknown-header-type unknown-option
+
+[root@basic ~]# firewall-cmd --permanent --get-icmptypes
+address-unreachable bad-header beyond-scope communication-prohibited destination-unreachable echo-reply echo-request failed-policy fragmentation-needed host-precedence-violation host-prohibited host-redirect host-unknown host-unreachable ip-header-bad neighbour-advertisement neighbour-solicitation network-prohibited network-redirect network-unknown network-unreachable no-route packet-too-big parameter-problem port-unreachable precedence-cutoff protocol-unreachable redirect reject-route required-option-missing router-advertisement router-solicitation source-quench source-route-failed time-exceeded timestamp-reply timestamp-request tos-host-redirect tos-host-unreachable tos-network-redirect tos-network-unreachable ttl-zero-during-reassembly ttl-zero-during-transit unknown-header-type unknown-option
+[root@basic ~]#
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] --get-zone-of-interface=interface
+           Print the name of the zone the interface is bound to or no zone.
+
+
+[root@basic ~]# firewall-cmd --get-zone-of-interface=ens33
+public
+
+[root@basic ~]# firewall-cmd --permanent --get-zone-of-interface=ens33
+no zone
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] --info-zone=zone
+         Print information about the zone zone. The output format is:
+
+             zone
+               interfaces: interface1 ..
+               sources: source1 ..
+               services: service1 ..
+               ports: port1 ..
+               protocols: protocol1 ..
+               forward-ports:
+                     forward-port1
+                     ..
+               source-ports: source-port1 ..
+               icmp-blocks: icmp-type1 ..
+               rich rules:
+                     rich-rule1
+                     ..
+
+
+[root@basic ~]# firewall-cmd --info-zone=public
+public (active)
+  target: default
+  icmp-block-inversion: no
+  interfaces: ens33
+  sources:
+  services: ssh dhcpv6-client
+  ports:
+  protocols:
+  masquerade: no
+  forward-ports:
+  source-ports:
+  icmp-blocks:
+  rich rules:
+
+[root@basic ~]# firewall-cmd --permanent --info-zone=public
+public
+  target: default
+  icmp-block-inversion: no
+  interfaces:
+  sources:
+  services: ssh dhcpv6-client
+  ports:
+  protocols:
+  masquerade: no
+  forward-ports:
+  source-ports:
+  icmp-blocks:
+  rich rules:
+
+---------------------------------------------------------------------------------------------------
+语法: [--permanent] --list-all-zones
+         List everything added for or enabled in all zones. The output format is:
+
+             zone1
+               interfaces: interface1 ..
+               sources: source1 ..
+               services: service1 ..
+               ports: port1 ..
+               protocols: protocol1 ..
+               forward-ports:
+                     forward-port1
+                     ..
+               icmp-blocks: icmp-type1 ..
+               rich rules:
+                     rich-rule1
+                     ..
+             ..
+
+
+[root@basic ~]# firewall-cmd --list-all-zones
+[root@basic ~]# firewall-cmd --permanent --list-all-zones
+
+---------------------------------------------------------------------------------------------------
+
+语法:  [--permanent] [--zone=zone] --list-all
+           List everything added for or enabled in zone. If zone is omitted, default zone will be used.
+
+
+[root@basic ~]# firewall-cmd --zone=public --list-all   # 显示 'public' zone 的所有相关信息
+public (active)
+  target: default
+  icmp-block-inversion: no
+  interfaces: ens33
+  sources:
+  services: ssh dhcpv6-client
+  ports:
+  protocols:
+  masquerade: no
+  forward-ports:
+  source-ports:
+  icmp-blocks:
+  rich rules:
+
+[root@basic ~]# firewall-cmd --permanent --zone=public --list-all
+public
+  target: default
+  icmp-block-inversion: no
+  interfaces:
+  sources:
+  services: ssh dhcpv6-client
+  ports:
+  protocols:
+  masquerade: no
+  forward-ports:
+  source-ports:
+  icmp-blocks:
+  rich rules:
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] [--zone=zone] --list-services
+           List services added for zone as a space separated list. If zone is omitted, default zone will be used.
+
+
+[root@basic ~]# firewall-cmd --list-services   # 列出 添加到 default zone 中的 services
+ssh dhcpv6-client
+
+[root@basic ~]# firewall-cmd --list-services --zone=home  # 列出添加到 'home' zone 中的 services
+ssh mdns samba-client dhcpv6-client
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] [--zone=zone] --add-service=service [--timeout=timeval]
+           Add a service for zone. If zone is omitted, default zone will be used. This option can be specified multiple times. If a timeout is supplied, the rule will be active for the
+           specified amount of time and will be removed automatically afterwards.  timeval is either a number (of seconds) or number followed by one of characters s (seconds), m
+           (minutes), h (hours), for example 20m or 1h.
+
+           The service is one of the firewalld provided services. To get a list of the supported services, use firewall-cmd --get-services.
+
+           The --timeout option is not combinable with the --permanent option.
+
+[root@basic ~]# firewall-cmd --get-services   # 显示所有 预定义(pre-defined) 的 services
+
+// 将 http service 添加到 'public' zone 中
+[root@basic ~]# firewall-cmd --zone=public --add-service=http
+[root@basic ~]# firewall-cmd --permanent --zone=public --add-service=http  # 该命令会在 /etc/firewalld/zones/public.xml 中插入一行 '<service name="http"/>' 配置
+
+  --------------------------------
+  [root@basic ~]# cat /etc/firewalld/zones/public.xml
+  <?xml version="1.0" encoding="utf-8"?>
+  <zone>
+    <short>Public</short>
+    <description>For use in public areas. You do not trust the other computers on networks to not harm your computer. Only selected incoming connections are accepted.</description>
+    <service name="ssh"/>
+    <service name="dhcpv6-client"/>
+    <service name="http"/>     <---- 如上命令 会在 /etc/firewalld/zones/public.xml 文件中插入这一行
+  </zone>
+  --------------------------------
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] [--zone=zone] --remove-service=service
+           Remove a service from zone. This option can be specified multiple times. If zone is omitted, default zone will be used.
+
+
+// 将 http service 从 'public' zone 中 移除
+[root@basic ~]# firewall-cmd  --zone=public --remove-service=http
+[root@basic ~]# firewall-cmd --permanent --zone=public --remove-service=http  # # 该命令会删除 /etc/firewalld/zones/public.xml 中 对应的 '<service name="http"/>' 配置
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] [--zone=zone] --query-service=service
+         Return whether service has been added for zone. If zone is omitted, default zone will be used. Returns 0 if true, 1 otherwise.
+
+
+[root@basic ~]# firewall-cmd --zone=public --query-service=http   # 查看 runtime 中 http service 是否被 添加到了 public zone
+yes
+[root@basic ~]# firewall-cmd --permanent --zone=public --query-service=http  # 查看 permanent 中 http service 是否被 添加到了 public zone
+yes
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] [--zone=zone] --list-ports
+         List ports added for zone as a space separated list. A port is of the form portid[-portid]/protocol, it can be either a port and protocol pair or a port range with a
+         protocol. If zone is omitted, default zone will be used.
+
+
+[root@basic ~]# firewall-cmd --zone=public --list-ports
+80/tcp
+[root@basic ~]# firewall-cmd --permanent --zone=public --list-ports
+80/tcp
+
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] [--zone=zone] --add-port=portid[-portid]/protocol [--timeout=timeval]
+         Add the port for zone. If zone is omitted, default zone will be used. This option can be specified multiple times. If a timeout is supplied, the rule will be active for the
+         specified amount of time and will be removed automatically afterwards.  timeval is either a number (of seconds) or number followed by one of characters s (seconds), m
+         (minutes), h (hours), for example 20m or 1h.
+
+         The port can either be a single port number or a port range portid-portid. The protocol can either be tcp, udp, sctp or dccp.
+
+         The --timeout option is not combinable with the --permanent option.
+
+
+[root@basic ~]# firewall-cmd --zone=public --add-port=80/tcp
+success
+[root@basic ~]# firewall-cmd --permanent --zone=public --add-port=80/tcp  #该命令会在文件 /etc/firewalld/zones/public.xml 中 添加 一行配置 '<port protocol="tcp" port="80"/>'
+success
+
+  -------------------------------------------------------
+  [root@basic ~]# cat /etc/firewalld/zones/public.xml
+  <?xml version="1.0" encoding="utf-8"?>
+  <zone>
+    <short>Public</short>
+    <description>For use in public areas. You do not trust the other computers on networks to not harm your computer. Only selected incoming connections are accepted.</description>
+    <service name="ssh"/>
+    <service name="dhcpv6-client"/>
+    <port protocol="tcp" port="80"/>  <--- 如上命令会 添加 改行 配置
+  </zone>
+  -------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] [--zone=zone] --remove-port=portid[-portid]/protocol
+         Remove the port from zone. If zone is omitted, default zone will be used. This option can be specified multiple times.
+
+
+[root@basic ~]# firewall-cmd --zone=public --remove-port=80/tcp
+success
+[root@basic ~]# firewall-cmd --permanent --zone=public --remove-port=80/tcp  # 该命令会删除文件 /etc/firewalld/zones/public.xml 中 对应的 '<port protocol="tcp" port="80"/>' 配置
+success
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] [--zone=zone] --query-port=portid[-portid]/protocol
+         Return whether the port has been added for zone. If zone is omitted, default zone will be used. Returns 0 if true, 1 otherwise.
+
+
+[root@basic ~]# firewall-cmd --zone=public --query-port=80/tcp
+yes
+[root@basic ~]# firewall-cmd --permanent --zone=public --query-port=80/tcp
+yes
+
+---------------------------------------------------------------------------------------------------
+
+       [--permanent] [--zone=zone] --list-protocols
+           List protocols added for zone as a space separated list. If zone is omitted, default zone will be used.
+
+
+---------------------------------------------------------------------------------------------------
+
+       [--permanent] [--zone=zone] --add-protocol=protocol [--timeout=timeval]
+           Add the protocol for zone. If zone is omitted, default zone will be used. This option can be specified multiple times. If a timeout is supplied, the rule will be active for
+           the specified amount of time and will be removed automatically afterwards.  timeval is either a number (of seconds) or number followed by one of characters s (seconds), m
+           (minutes), h (hours), for example 20m or 1h.
+
+           The protocol can be any protocol supported by the system. Please have a look at /etc/protocols for supported protocols.
+
+           The --timeout option is not combinable with the --permanent option.
+
+
+---------------------------------------------------------------------------------------------------
+
+       [--permanent] [--zone=zone] --remove-protcol=protocol
+           Remove the protocol from zone. If zone is omitted, default zone will be used. This option can be specified multiple times.
+
+---------------------------------------------------------------------------------------------------
+
+       [--permanent] [--zone=zone] --query-protocol=protocol
+           Return whether the protocol has been added for zone. If zone is omitted, default zone will be used. Returns 0 if true, 1 otherwise.
+
+
+---------------------------------------------------------------------------------------------------
+
+       [--permanent] [--zone=zone] --list-source-ports
+           List source ports added for zone as a space separated list. A port is of the form portid[-portid]/protocol. If zone is omitted, default zone will be used.
+
+
+---------------------------------------------------------------------------------------------------
+
+       [--permanent] [--zone=zone] --add-source-port=portid[-portid]/protocol [--timeout=timeval]
+           Add the source port for zone. If zone is omitted, default zone will be used. This option can be specified multiple times. If a timeout is supplied, the rule will be active
+           for the specified amount of time and will be removed automatically afterwards.  timeval is either a number (of seconds) or number followed by one of characters s (seconds),
+           m (minutes), h (hours), for example 20m or 1h.
+
+           The port can either be a single port number or a port range portid-portid. The protocol can either be tcp, udp, sctp or dccp.
+
+           The --timeout option is not combinable with the --permanent option.
+
+
+---------------------------------------------------------------------------------------------------
+
+       [--permanent] [--zone=zone] --remove-source-port=portid[-portid]/protocol
+           Remove the source port from zone. If zone is omitted, default zone will be used. This option can be specified multiple times.
+
+---------------------------------------------------------------------------------------------------
+
+       [--permanent] [--zone=zone] --query-source-port=portid[-portid]/protocol
+           Return whether the source port has been added for zone. If zone is omitted, default zone will be used. Returns 0 if true, 1 otherwise.
+
+
+---------------------------------------------------------------------------------------------------
+
+       [--permanent] [--zone=zone] --list-icmp-blocks
+           List Internet Control Message Protocol (ICMP) type blocks added for zone as a space separated list. If zone is omitted, default zone will be used.
+
+---------------------------------------------------------------------------------------------------
+
+       [--permanent] [--zone=zone] --add-icmp-block=icmptype [--timeout=timeval]
+           Add an ICMP block for icmptype for zone. If zone is omitted, default zone will be used. This option can be specified multiple times. If a timeout is supplied, the rule will
+           be active for the specified amount of time and will be removed automatically afterwards.  timeval is either a number (of seconds) or number followed by one of characters s
+           (seconds), m (minutes), h (hours), for example 20m or 1h.
+
+           The icmptype is the one of the icmp types firewalld supports. To get a listing of supported icmp types: firewall-cmd --get-icmptypes
+
+           The --timeout option is not combinable with the --permanent option.
+
+---------------------------------------------------------------------------------------------------
+
+       [--permanent] [--zone=zone] --remove-icmp-block=icmptype
+           Remove the ICMP block for icmptype from zone. If zone is omitted, default zone will be used. This option can be specified multiple times.
+
+---------------------------------------------------------------------------------------------------
+
+       [--permanent] [--zone=zone] --query-icmp-block=icmptype
+           Return whether an ICMP block for icmptype has been added for zone. If zone is omitted, default zone will be used. Returns 0 if true, 1 otherwise.
+
+---------------------------------------------------------------------------------------------------
+
+
+       [--permanent] [--zone=zone] --list-forward-ports
+           List IPv4 forward ports added for zone as a space separated list. If zone is omitted, default zone will be used.
+
+           For IPv6 forward ports, please use the rich language.
+
+
+---------------------------------------------------------------------------------------------------
+       [--permanent] [--zone=zone] --add-forward-port=port=portid[-portid]:proto=protocol[:toport=portid[-portid]][:toaddr=address[/mask]] [--timeout=timeval]
+           Add the IPv4 forward port for zone. If zone is omitted, default zone will be used. This option can be specified multiple times. If a timeout is supplied, the rule will be
+           active for the specified amount of time and will be removed automatically afterwards.  timeval is either a number (of seconds) or number followed by one of characters s
+           (seconds), m (minutes), h (hours), for example 20m or 1h.
+
+           The port can either be a single port number portid or a port range portid-portid. The protocol can either be tcp, udp, sctp or dccp. The destination address is a simple IP
+           address.
+
+           The --timeout option is not combinable with the --permanent option.
+
+           For IPv6 forward ports, please use the rich language.
+
+
+---------------------------------------------------------------------------------------------------
+       [--permanent] [--zone=zone] --remove-forward-port=port=portid[-portid]:proto=protocol[:toport=portid[-portid]][:toaddr=address[/mask]]
+           Remove the IPv4 forward port from zone. If zone is omitted, default zone will be used. This option can be specified multiple times.
+
+           For IPv6 forward ports, please use the rich language.
+
+
+---------------------------------------------------------------------------------------------------
+       [--permanent] [--zone=zone] --query-forward-port=port=portid[-portid]:proto=protocol[:toport=portid[-portid]][:toaddr=address[/mask]]
+           Return whether the IPv4 forward port has been added for zone. If zone is omitted, default zone will be used. Returns 0 if true, 1 otherwise.
+
+           For IPv6 forward ports, please use the rich language.
+
+
+
+---------------------------------------------------------------------------------------------------
+       [--permanent] [--zone=zone] --add-masquerade [--timeout=timeval]
+           Enable IPv4 masquerade for zone. If zone is omitted, default zone will be used. If a timeout is supplied, masquerading will be active for the specified amount of time.
+           timeval is either a number (of seconds) or number followed by one of characters s (seconds), m (minutes), h (hours), for example 20m or 1h. Masquerading is useful if the
+           machine is a router and machines connected over an interface in another zone should be able to use the first connection.
+
+           The --timeout option is not combinable with the --permanent option.
+
+           For IPv6 masquerading, please use the rich language.
+
+---------------------------------------------------------------------------------------------------
+       [--permanent] [--zone=zone] --remove-masquerade
+           Disable IPv4 masquerade for zone. If zone is omitted, default zone will be used. If the masquerading was enabled with a timeout, it will be disabled also.
+
+           For IPv6 masquerading, please use the rich language.
+
+---------------------------------------------------------------------------------------------------
+       [--permanent] [--zone=zone] --query-masquerade
+           Return whether IPv4 masquerading has been enabled for zone. If zone is omitted, default zone will be used. Returns 0 if true, 1 otherwise.
+
+           For IPv6 masquerading, please use the rich language.
+
+
+---------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
+
+TODO:
+firewall-cmd [--zone=<zone>] --add-interface=<interface>
+firewall-cmd [--zone=<zone>] --change-interface=<interface>
+firewall-cmd [--zone=<zone>] --remove-interface=<interface>
+firewall-cmd [--zone=<zone>] --query-interface=<interface>
+
+firewall-cmd [ --zone=<zone> ] --list-services
+
+[--permanent] [--zone=zone] --add-rich-rule='rule' [--timeout=timeval]
+
+
+
+---------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
+
+
+// 注意：如果是远程主机, 下面的 命令 会把 自己也 ‘锁在外面’
+[root@basic ~]# firewall-cmd --panic-on  # (谨慎使用)启用 panic mode, 直接禁止所有 networking traffic. 在紧急情况下(如遭受系统攻击 system attack)时 很有用.
+success
+
+[root@basic ~]# firewall-cmd --panic-off # 关闭 panic mode, 还原 firewall 到 its permanent settings.
+success
+
+[root@basic ~]# firewall-cmd --query-panic   # 查看 panic mode 是 处于 on 还是 off 状态
+no
+
+---------------------------------------------------------------------------------------------------
+
+
+
+
+
+https://fedoraproject.org/wiki/Firewalld?rd=FirewallD
+https://www.cnblogs.com/liuyansheng/p/6113646.html?utm_source=itdadao&utm_medium=referral
+
+
+
+
