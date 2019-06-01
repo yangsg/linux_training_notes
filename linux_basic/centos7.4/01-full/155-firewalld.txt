@@ -3,6 +3,9 @@
 
 man firewalld
 
+https://firewalld.org/documentation/
+https://fedoraproject.org/wiki/Firewalld?rd=FirewallD
+
 作用: firewalld - Dynamic Firewall Manager
 
 语法: firewalld [OPTIONS...]
