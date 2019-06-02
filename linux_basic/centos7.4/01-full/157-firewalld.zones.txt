@@ -1,0 +1,263 @@
+
+# keyword  firewalld.zones
+
+man 5 firewalld.zones
+man 5 firewalld.richlanguage
+
+
+Understanding Firewalld in Multi-Zone Configurations:
+  https://www.linuxjournal.com/content/understanding-firewalld-multi-zone-configurations
+
+centos7&redhat 之 firewalld 详细介绍配置:
+  https://www.cnblogs.com/fatt/p/6656262.html
+
+
+名称: firewalld.zones - firewalld zones
+
+说明:
+   What is a zone?
+       A network zone defines the level of trust for network connections. This is a one to many relation, which means that a connection can only be part of one zone, but a zone can be
+       used for many network connections.
+
+          一个 network zone 定义了 network connections 的 信任级别, 这是一个 1 对 多 的关系,
+          其意味着 a connection 仅能 作为 唯一的 zone 的 一部分, 但 a zone 可以 被用于 多个 network connections..
+
+       The zone defines the firewall features that are enabled in this zone:
+
+       Predefined services
+           A service is a combination of port and/or protocol entries. Optionally netfilter helper modules can be added and also a IPv4 and IPv6 destination address.
+
+       Ports and protocols
+           Definition of tcp or udp ports, where ports can be a single port or a port range.
+
+       ICMP blocks
+           Blocks selected Internet Control Message Protocol (ICMP) messages. These messages are either information requests or created as a reply to information requests or in error
+           conditions.
+
+       Masquerading
+           The addresses of a private network are mapped to and hidden behind a public IP address. This is a form of address translation.
+
+       Forward ports
+           A forward port is either mapped to the same port on another host or to another port on the same host or to another port on another host.
+
+       Rich language rules
+           The rich language extends the elements (service, port, icmp-block, masquerade, forward-port and source-port) with additional source and destination addresses, logging,
+           actions and limits for logs and actions. It can also be used for host or network white and black listing (for more information, please have a look at
+           firewalld.richlanguage(5)).
+
+       For more information on the zone file format, please have a look at firewalld.zone(5).
+
+
+   Which zones are available?
+       Here are the zones provided by firewalld sorted according to the default trust level of the zones from untrusted to trusted:
+
+       drop
+           Any incoming network packets are dropped, there is no reply. Only outgoing network connections are possible.
+
+       block
+           Any incoming network connections are rejected with an icmp-host-prohibited message for IPv4 and icmp6-adm-prohibited for IPv6. Only network connections initiated within this
+           system are possible.
+
+       public
+           For use in public areas. You do not trust the other computers on networks to not harm your computer. Only selected incoming connections are accepted.
+
+       external
+           For use on external networks with masquerading enabled especially for routers. You do not trust the other computers on networks to not harm your computer. Only selected
+           incoming connections are accepted.
+
+       dmz
+           For computers in your demilitarized zone that are publicly-accessible with limited access to your internal network. Only selected incoming connections are accepted.
+
+       work
+           For use in work areas. You mostly trust the other computers on networks to not harm your computer. Only selected incoming connections are accepted.
+
+       home
+           For use in home areas. You mostly trust the other computers on networks to not harm your computer. Only selected incoming connections are accepted.
+
+       internal
+           For use on internal networks. You mostly trust the other computers on the networks to not harm your computer. Only selected incoming connections are accepted.
+
+       trusted
+           All network connections are accepted.
+
+
+   Which zone should be used?
+       A public WIFI network connection for example should be mainly untrusted, a wired home network connection should be fairly trusted. Select the zone that best matches the network
+       you are using.
+
+   How to configure or add zones?
+       To configure or add zones you can either use one of the firewalld interfaces to handle and change the configuration: These are the graphical configuration tool firewall-config,
+       the command line tool firewall-cmd or the D-Bus interface. Or you can create or copy a zone file in one of the configuration directories.  /usr/lib/firewalld/zones is used for
+       default and fallback configurations and /etc/firewalld/zones is used for user created and customized configuration files.
+
+   How to set or change a zone for a connection?
+       The zone is stored into the ifcfg of the connection with ZONE= option. If the option is missing or empty, the default zone set in firewalld is used.
+
+       If the connection is controlled by NetworkManager, you can also use nm-connection-editor to change the zone.
+
+       For the addion or change of interfaces that are not under control of NetworkManager: firewalld tries to change the ZONE setting in the ifcfg file, if an ifcfg file exists that
+       is using the interface.
+
+       Only for the removal of interfaces that are not under control of NetworkManager: firewalld is not trying to change the ZONE setting in the ifcfg file. This is needed to make
+       sure that an ifdown of the interface will not result in a reset of the zone setting to the default zone. Only the zone binding is then removed in firewalld then.
+
+
+
+---------------------------------------------------------------------------------------------------
+如下内容来自: Understanding Firewalld in Multi-Zone Configurations
+  https://www.linuxjournal.com/content/understanding-firewalld-multi-zone-configurations
+
+  - Firewalld Design Goals
+
+    firewalld 通过 the source IP and/or network interface 把 incoming traffic 分类到了 zones 中.
+    每个 zone 具有其自己的 configuration 来 基于 指定的 条件来 accept 或 deny packets.
+
+    firewalld 简化了 iptables 的语法, 其使得 指定 services 更加容易, 因为 它 通过使用 the name of the service 来指定 而非 其 port(s) and protocol(s), 例如:
+    使用 服务名 samba 而不是 使用 UDP ports 137 和 138 和 TCP ports 139 和 445. firewalld 通过 移除 iptables 中的 the dependence on the order of statements
+    进一步简化了语法.
+
+
+    - Zones
+      The top layer of organization in firewalld is zones. 如果 A packet 匹配 一个 zone 关联的
+      network interface or IP/mask source, 该 packet 就是这个 zone 的一部分.
+      有过个预定义的 zone 可用:
+
+          [root@basic ~]# firewall-cmd --get-zones
+          block dmz drop external home internal public trusted work
+
+       An active zone 就是 配置了 an interface and/or a source 的 任意 zone. 要列出 active zones:
+
+          [root@basic ~]# firewall-cmd --get-active-zones
+          public
+            interfaces: ens33
+
+    - Interfaces:
+
+      Interfaces 是 硬件 或 虚拟网卡适配器(hardware and virtual network adapters) 的 system's names, 如上例所见.
+      All active interfaces 将会 分配(assigned) 给 zones, 即可以是 default zone, 也可以是 一个  user-specified 的 zone.
+      但是，an interface 不能 被 分配 给 多个zones.
+
+      In its default configuration, firewalld 会 将 all interfaces 与 the public zone 配对, 且 不会 为 任何 zones 设置 sources.
+      其结果是, the public zone 就成为了唯一 的 active zone.
+
+
+    - Sources
+      Sources are incoming IP address ranges, 其 也可以被 分配(assigned) 给 zones.
+      A source (or overlapping sources) 不能被分配 给 多个 zones. 否则 会导致 未定义的行为(undefined behavior),
+      因为 其不能清除的知道 which rules 应该 被 应用 于 该 source.
+
+      for every packet there will be a zone with a matching interface, but there won't necessarily be a zone with a matching source.
+      This indicates some form of precedence with priority going to the more specific source zones,
+      but more on that later. First, let's inspect how the public zone is configured:
+
+            # firewall-cmd --zone=public --list-all
+                public (default, active)
+                  interfaces: eno1 eno2
+                  sources:
+                  services: dhcpv6-client ssh
+                  ports:
+                  masquerade: no
+                  forward-ports:
+                  icmp-blocks:
+                  rich rules:
+            # firewall-cmd --permanent --zone=public --get-target
+                  default
+
+
+        Going line by line through the output:
+
+            public (default, active)  indicates that the public zone is the default zone (interfaces default to it when they come up),
+                                      and it is active because it has at least one interface or source associated with it.
+
+            interfaces: eno1 eno2 lists the interfaces associated with the zone.
+
+            sources: lists the sources for the zone. There aren't any now, but if there were, they would be of the form xxx.xxx.xxx.xxx/xx.
+
+            services: dhcpv6-client ssh lists the services allowed through the firewall. You can get an exhaustive list of firewalld's
+                                        defined services by executing firewall-cmd --get-services.
+
+            ports: lists port destinations allowed through the firewall. This is useful if you need to allow a service that isn't defined in firewalld.
+
+            masquerade: no indicates that IP masquerading is disabled for this zone. If enabled, this would allow IP forwarding, with your computer acting as a router.
+
+            forward-ports: lists ports that are forwarded.
+
+            icmp-blocks: a blacklist of blocked icmp traffic.
+
+            rich rules: advanced configurations, processed first in a zone.
+
+            default is the target of the zone, which determines the action taken on a packet that matches the zone yet isn't explicitly handled by one of the above settings.
+
+
+
+      - Targets
+          When a zone processes a packet due to its source or interface, but there is no rule that explicitly
+          handles the packet, the target of the zone determines the behavior:
+
+                -- ACCEPT: accept the packet.
+
+                -- %%REJECT%%: reject the packet, returning a reject reply.
+
+                -- DROP: drop the packet, returning no reply.
+
+                -- default: don't do anything. The zone washes its hands of the problem, and kicks it "upstairs".
+
+
+      - Precedence
+          Active zones fulfill two different roles. 与 interface(s) 关联着的 Zones 作为 interface zones,
+          与 source(s) 关联着的 zones 作为 source zones (a zone could fulfill both roles)
+          Firewalld handles a packet in the following order:
+
+              1. The corresponding source zone. Zero or one such zones may exist. If the source zone deals with the
+                 packet because the packet satisfies a rich rule, the service is whitelisted,
+                 or the target is not default, we end here. Otherwise, we pass the packet on.
+
+              2. The corresponding interface zone. Exactly one such zone will always exist.
+                 If the interfacezone deals with the packet, we end here. Otherwise, we pass the packet on.
+
+              3. The firewalld default action. Accept icmp packets and reject everything else.
+
+          The take-away message is that source zones have precedence over interface zones. Therefore, the general design pattern
+          for multi-zoned firewalld configurations is to create a privileged source zone to allow specific IP's
+          elevated access to system services and a restrictive interface zone to limit the access of everyone else.
+
+          得出的信息 就是 source zones 具有比 interface zones 更高的优先级. 因此, 对于 multi-zoned firewalld configurations 的
+          通用的 设计模式 即使 创建(create) 一个 特权的 source zone 来 allow specific IP's elevated access to system services 和
+          a restrictive interface zone to limit the access of everyone else.
+
+      - A Simple Multi-Zoned Example       见  https://www.linuxjournal.com/content/understanding-firewalld-multi-zone-configurations
+
+
+      - A Practical Multi-Zoned Example    见  https://www.linuxjournal.com/content/understanding-firewalld-multi-zone-configurations
+          ------------------------------------
+          // 如下的命令 解决的问题：允许全世界的 http and https 访问,
+          // your organization (1.1.0.0/16) and workgroup (1.1.1.0/8) to have ssh access, and your workgroup to have samba access.
+
+          # firewall-cmd --permanent --zone=public --remove-service=dhcpv6-client
+          # firewall-cmd --permanent --zone=public --remove-service=ssh
+          # firewall-cmd --permanent --zone=public --add-service=http
+          # firewall-cmd --permanent --zone=public --add-service=https
+
+          # firewall-cmd --permanent --zone=internal --remove-service=mdns
+          # firewall-cmd --permanent --zone=internal --remove-service=samba-client
+          # firewall-cmd --permanent --zone=internal --remove-service=dhcpv6-client
+          # firewall-cmd --permanent --zone=internal --add-source=1.1.0.0/16
+
+          # firewall-cmd --permanent --zone=internal --add-rich-rule='rule family=ipv4 source address="1.1.1.0/8" service name="samba" accept'
+          # firewall-cmd --reload
+
+          # firewall-cmd --permanent --zone=public --set-target=DROP
+          # firewall-cmd --reload
+
+          # firewall-cmd --permanent --zone=internal --add-rich-rule='rule protocol value="icmp" accept'
+          # firewall-cmd --reload
+
+          // 查看配置结果
+          # firewall-cmd --zone=public --list-all
+          # firewall-cmd --permanent --zone=public --get-target
+          # firewall-cmd --zone=internal --list-all
+          # firewall-cmd --permanent --zone=internal --get-target
+          ------------------------------------
+
+---------------------------------------------------------------------------------------------------
+
