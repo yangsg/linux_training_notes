@@ -296,6 +296,9 @@ man 5 firewalld.conf      # 查看 /etc/firewalld/firewalld.conf 的 描述说�
   firewalld 主页: http://www.firewalld.org/      (firewalld 的 优点 和 特性)
   官方文档:  https://firewalld.org/documentation/
 
+  Understanding Firewalld in Multi-Zone Configurations
+    https://www.linuxjournal.com/content/understanding-firewalld-multi-zone-configurations
+
 
   红帽redhat7: USING FIREWALLS
       https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/security_guide/sec-using_firewalls
