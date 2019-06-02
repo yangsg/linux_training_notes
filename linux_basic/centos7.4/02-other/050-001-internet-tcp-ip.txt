@@ -95,7 +95,7 @@ http://www.tcpipguide.com/free/t_TCPConnectionTermination-2.htm
   作用： 标识不同的应用程序
   数字： 0-----65535,  小于1024称为著名端口
 
-  常用端口：
+  常用端口：(其他服务的默认端口号还可以去 目录 /usr/lib/firewalld/services/ 下的 service configuration 中查看)
 
     http    tcp/80
     https   tcp/443
