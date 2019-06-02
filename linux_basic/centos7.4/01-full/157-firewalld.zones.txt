@@ -222,7 +222,7 @@ centos7&redhat 之 firewalld 详细介绍配置:
           elevated access to system services and a restrictive interface zone to limit the access of everyone else.
 
           得出的信息 就是 source zones 具有比 interface zones 更高的优先级. 因此, 对于 multi-zoned firewalld configurations 的
-          通用的 设计模式 即使 创建(create) 一个 特权的 source zone 来 allow specific IP's elevated access to system services 和
+          通用的 设计模式 就是 创建(create) 一个 特权的 source zone 来 allow specific IP's elevated access to system services 和
           a restrictive interface zone to limit the access of everyone else.
 
       - A Simple Multi-Zoned Example       见  https://www.linuxjournal.com/content/understanding-firewalld-multi-zone-configurations
