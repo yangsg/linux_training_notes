@@ -260,5 +260,12 @@ centos7&redhat 之 firewalld 详细介绍配置:
           # firewall-cmd --permanent --zone=internal --get-target
           ------------------------------------
 
+
+
+      - Debugging
+          // 查看 firewalld 背后干的事情:
+          # iptables -S
+
+
 ---------------------------------------------------------------------------------------------------
 
