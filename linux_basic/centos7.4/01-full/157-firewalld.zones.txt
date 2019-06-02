@@ -11,6 +11,9 @@ Understanding Firewalld in Multi-Zone Configurations:
 centos7&redhat 之 firewalld 详细介绍配置:
   https://www.cnblogs.com/fatt/p/6656262.html
 
+Firewalld : IP Masquerade
+  https://www.server-world.info/en/note?os=CentOS_7&p=firewalld&f=2
+
 
 名称: firewalld.zones - firewalld zones
 
