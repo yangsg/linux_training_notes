@@ -10,6 +10,8 @@ firewall-cmd --help
 Understanding Firewalld in Multi-Zone Configurations (该文档对一些其他文档中提及但却没有解释的一些概念做了介绍)
   非常好的一篇文章:    https://www.linuxjournal.com/content/understanding-firewalld-multi-zone-configurations
 
+Firewalld : IP Masquerade
+  https://www.server-world.info/en/note?os=CentOS_7&p=firewalld&f=2
 
 
 作用： firewall-cmd - firewalld command line client
@@ -607,29 +609,91 @@ yes
 
 
 ---------------------------------------------------------------------------------------------------
-       [--permanent] [--zone=zone] --add-masquerade [--timeout=timeval]
-           Enable IPv4 masquerade for zone. If zone is omitted, default zone will be used. If a timeout is supplied, masquerading will be active for the specified amount of time.
-           timeval is either a number (of seconds) or number followed by one of characters s (seconds), m (minutes), h (hours), for example 20m or 1h. Masquerading is useful if the
-           machine is a router and machines connected over an interface in another zone should be able to use the first connection.
 
-           The --timeout option is not combinable with the --permanent option.
+语法: [--permanent] [--zone=zone] --add-masquerade [--timeout=timeval]
+         Enable IPv4 masquerade for zone. If zone is omitted, default zone will be used. If a timeout is supplied, masquerading will be active for the specified amount of time.
+         timeval is either a number (of seconds) or number followed by one of characters s (seconds), m (minutes), h (hours), for example 20m or 1h. Masquerading is useful if the
+         machine is a router and machines connected over an interface in another zone should be able to use the first connection.
 
-           For IPv6 masquerading, please use the rich language.
+         The --timeout option is not combinable with the --permanent option.
 
----------------------------------------------------------------------------------------------------
-       [--permanent] [--zone=zone] --remove-masquerade
-           Disable IPv4 masquerade for zone. If zone is omitted, default zone will be used. If the masquerading was enabled with a timeout, it will be disabled also.
+         For IPv6 masquerading, please use the rich language.
 
-           For IPv6 masquerading, please use the rich language.
 
----------------------------------------------------------------------------------------------------
-       [--permanent] [--zone=zone] --query-masquerade
-           Return whether IPv4 masquerading has been enabled for zone. If zone is omitted, default zone will be used. Returns 0 if true, 1 otherwise.
-
-           For IPv6 masquerading, please use the rich language.
+[root@snatserver ~]# firewall-cmd --zone=external --add-masquerade
+// 注: 其实 默认的 external.xml 本就存在 '<masquerade/>' 配置. 如果文件 /etc/firewalld/zones/external.xml 不存在,
+//     则 如下命令会先 拷贝 /usr/lib/firewalld/zones/external.xml 成为  /etc/firewalld/zones/external.xml, 然后再 修改
+[root@snatserver ~]# firewall-cmd --permanent --zone=external --add-masquerade  #该命令会在 /etc/firewalld/zones/external.xml 中插入一行 '<masquerade/>' 配置
 
 
 ---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] [--zone=zone] --remove-masquerade
+         Disable IPv4 masquerade for zone. If zone is omitted, default zone will be used. If the masquerading was enabled with a timeout, it will be disabled also.
+
+         For IPv6 masquerading, please use the rich language.
+
+
+[root@snatserver ~]# firewall-cmd --zone=external --remove-masquerade
+[root@snatserver ~]# firewall-cmd --permanent --zone=external --remove-masquerade   # 该命令会删除/etc/firewalld/zones/external.xml 中的 '<masquerade/>' 配置
+
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] [--zone=zone] --query-masquerade
+         Return whether IPv4 masquerading has been enabled for zone. If zone is omitted, default zone will be used. Returns 0 if true, 1 otherwise.
+
+         For IPv6 masquerading, please use the rich language.
+
+
+[root@snatserver ~]# firewall-cmd --zone=external --query-masquerade
+yes
+[root@snatserver ~]# firewall-cmd --permanent --zone=external --query-masquerade
+yes
+[root@snatserver ~]# cat /proc/sys/net/ipv4/ip_forward
+1
+
+
+---------------------------------------------------------------------------------------------------
+
+ Options to Handle Bindings of Sources
+     Binding a source to a zone means that this zone settings will be used to restrict traffic from this source.
+
+     A source address or address range is either an IP address or a network IP address with a mask for IPv4 or IPv6 or a MAC address or an ipset with the ipset: prefix. For IPv4, the
+     mask can be a network mask or a plain number. For IPv6 the mask is a plain number. The use of host names is not supported.
+
+     Options in this section affect only one particular zone. If used with --zone=zone option, they affect the zone zone. If the option is omitted, they affect default zone (see
+     --get-default-zone).
+
+     For a list of predefined zones use firewall-cmd [--permanent] --get-zones.
+
+语法: [--permanent] [--zone=zone] --list-sources
+       List sources that are bound to zone zone as a space separated list. If zone is omitted, default zone will be used.
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] [--zone=zone] --add-source=source[/mask]|MAC|ipset:ipset
+       Bind the source to zone zone. If zone is omitted, default zone will be used.
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--zone=zone] --change-source=source[/mask]|MAC|ipset:ipset
+       Change zone the source is bound to to zone zone. It's basically --remove-source followed by --add-source. If the source has not been bound to a zone before, it behaves like
+       --add-source. If zone is omitted, default zone will be used.
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] [--zone=zone] --query-source=source[/mask]|MAC|ipset:ipset
+       Query whether the source is bound to the zone zone. Returns 0 if true, 1 otherwise.
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] --remove-source=source[/mask]|MAC|ipset:ipset
+       Remove binding of the source from zone it was previously added to.
+
+
+
+
 ---------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------
