@@ -30,6 +30,10 @@ https://www.cyberciti.biz/tips/linux-iptables-examples.html
 https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/02-other/050-001-internet-tcp-ip.txt
 
 
+小技巧: 如果使用的是 iptables service 而非 firewalld service 来管理 防火墙规则, 如果是不熟悉的 服务, 除了可以参考官网或google 博客之类的文档外,
+        还可以参考分析 firewalld 相关目录 (如 /usr/lib/firewalld/services/ ) 下的 configuration file 来 编写 iptables 的 配置规则.
+        (其实某些时候某种服务的默认端口号忘记了也可以采用此方法)
+
 
 https://www.frozentux.net/iptables-tutorial/iptables-tutorial.html
 很重要的一点需要记住:
