@@ -7,6 +7,10 @@ man firewall-cmd
 firewall-cmd --help
 
 
+Understanding Firewalld in Multi-Zone Configurations (该文档对一些其他文档中提及但却没有解释的一些概念做了介绍)
+  非常好的一篇文章:    https://www.linuxjournal.com/content/understanding-firewalld-multi-zone-configurations
+
+
 
 作用： firewall-cmd - firewalld command line client
 
