@@ -230,6 +230,7 @@ centos7&redhat 之 firewalld 详细介绍配置:
 
       - A Practical Multi-Zoned Example    见  https://www.linuxjournal.com/content/understanding-firewalld-multi-zone-configurations
           ------------------------------------
+          (实际设置的时候, 要注意先后顺序, 不要将自己锁在门外, 如下示例旨在演示 Multi-Zoned 的设计技巧, 所以没有对 命令的顺序 给与更多考虑)
           // 如下的命令 解决的问题：允许全世界的 http and https 访问,
           // your organization (1.1.0.0/16) and workgroup (1.1.1.0/8) to have ssh access, and your workgroup to have samba access.
 
