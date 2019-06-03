@@ -954,36 +954,36 @@ samba
     https://www.lisenet.com/2016/firewalld-rich-and-direct-rules-setup-rhel-7-server-as-a-router/
 
 ------- snat(此例实际为 -j MASQUERADE, 如果是 static ip, 应该使用 -j SNAT) start
-[root@basic ~]# firewall-cmd --permanent --zone=internal --add-interface=ens33
+[root@snatserver ~]# firewall-cmd --permanent --zone=internal --add-interface=ens33
 The interface is under control of NetworkManager, setting zone to 'internal'.
 success
-[root@basic ~]# firewall-cmd --reload
+[root@snatserver ~]# firewall-cmd --reload
 success
-[root@basic ~]# firewall-cmd --permanent --zone=internal --add-masquerade
+[root@snatserver ~]# firewall-cmd --permanent --zone=internal --add-masquerade
 success
-[root@basic ~]# firewall-cmd --reload
+[root@snatserver ~]# firewall-cmd --reload
 success
-[root@basic ~]# firewall-cmd --get-active-zones
+[root@snatserver ~]# firewall-cmd --get-active-zones
 internal
   interfaces: ens33
 public
   interfaces: ens37
 
-[root@basic ~]# firewall-cmd --direct --add-rule ipv4 nat POSTROUTING 0 -o ens37 -j MASQUERADE
+[root@snatserver ~]# firewall-cmd --direct --add-rule ipv4 nat POSTROUTING 0 -o ens37 -j MASQUERADE
 success
-[root@basic ~]# firewall-cmd --direct --add-rule ipv4 filter FORWARD 0 -i ens33 -o ens37 -j ACCEPT
+[root@snatserver ~]# firewall-cmd --direct --add-rule ipv4 filter FORWARD 0 -i ens33 -o ens37 -j ACCEPT
 success
-[root@basic ~]# firewall-cmd --direct --add-rule ipv4 filter FORWARD 0 -i ens33 -o ens37 -m state --state RELATED,ESTABLISHED -j ACCEPT
+[root@snatserver ~]# firewall-cmd --direct --add-rule ipv4 filter FORWARD 0 -i ens33 -o ens37 -m state --state RELATED,ESTABLISHED -j ACCEPT
 success
-[root@basic ~]#
+[root@snatserver ~]#
 ------ 注: 如果是永久设置, 应该使用如下的命令(即加上 --permanent 选项, 并在之后 --reload )
-  [root@basic ~]# firewall-cmd --permanent --direct --add-rule ipv4 nat POSTROUTING 0 -o ens37 -j MASQUERADE
-  [root@basic ~]# firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 0 -i ens33 -o ens37 -j ACCEPT
-  [root@basic ~]# firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 0 -i ens33 -o ens37 -m state --state RELATED,ESTABLISHED -j ACCEPT
-  [root@basic ~]# firewall-cmd --reload
+  [root@snatserver ~]# firewall-cmd --permanent --direct --add-rule ipv4 nat POSTROUTING 0 -o ens37 -j MASQUERADE
+  [root@snatserver ~]# firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 0 -i ens33 -o ens37 -j ACCEPT
+  [root@snatserver ~]# firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 0 -i ens33 -o ens37 -m state --state RELATED,ESTABLISHED -j ACCEPT
+  [root@snatserver ~]# firewall-cmd --reload
 ------
 
-[root@basic ~]# firewall-cmd --direct --get-all-rules
+[root@snatserver ~]# firewall-cmd --direct --get-all-rules
 ipv4 nat POSTROUTING 0 -o ens37 -j MASQUERADE
 ipv4 filter FORWARD 0 -i ens33 -o ens37 -j ACCEPT
 ipv4 filter FORWARD 0 -i ens33 -o ens37 -m state --state RELATED,ESTABLISHED -j ACCEPT
@@ -994,24 +994,45 @@ ipv4 filter FORWARD 0 -i ens33 -o ens37 -m state --state RELATED,ESTABLISHED -j 
 
 
 ---------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------
+
+语法: [--permanent] [--zone=zone] --add-forward-port=port=portid[-portid]:proto=protocol[:toport=portid[-portid]][:toaddr=address[/mask]] [--timeout=timeval]
+         Add the IPv4 forward port for zone. If zone is omitted, default zone will be used. This option can be specified multiple times. If a timeout is supplied, the rule will be
+         active for the specified amount of time and will be removed automatically afterwards.  timeval is either a number (of seconds) or number followed by one of characters s
+         (seconds), m (minutes), h (hours), for example 20m or 1h.
+
+         The port can either be a single port number portid or a port range portid-portid. The protocol can either be tcp, udp, sctp or dccp. The destination address is a simple IP
+         address.
+
+         The --timeout option is not combinable with the --permanent option.
+
+         For IPv6 forward ports, please use the rich language.
 
 
-[--permanent] [--zone=zone] --list-rich-rules
-firewall-cmd [ --zone=<zone> ] --list-services
+设置 SNAT 或 DNAT 参考资料:
+    https://www.server-world.info/en/note?os=CentOS_7&p=firewalld&f=2
+    https://www.lisenet.com/2016/firewalld-rich-and-direct-rules-setup-rhel-7-server-as-a-router/
 
-[--permanent] [--zone=zone] --add-rich-rule='rule' [--timeout=timeval]
+------- dnat start (注: 如果是 生产环境, 注意加上 --permanent, 并在必要时 --reload 或 直接修改 runtime 环境的响应设置)
+[root@dnatserver ~]# firewall-cmd --get-active-zones  # 查看 interfaces 与 zone 的关系,可以看到默认所有 interfaces 都 分配给了 public zone
+public
+  interfaces: ens33 ens37
 
+[root@dnatserver ~]# nmcli c mod ens37 connection.zone internal  #调整 interfaces 与 zone 的 分配关系
+[root@dnatserver ~]# nmcli c mod ens33 connection.zone external
+[root@dnatserver ~]# firewall-cmd --get-active-zones
+internal
+  interfaces: ens37
+external
+  interfaces: ens33
 
+[root@dnatserver ~]# firewall-cmd --zone=external --add-masquerade  # 启用 masquerade (当然,external zone 默认已经启用了 masquerade, 但不管怎么样,都应该确认一下 )
+Warning: ALREADY_ENABLED: masquerade already enabled in 'external'
+success
 
----------------------------------------------------------------------------------------------------
+[root@dnatserver ~]# firewall-cmd --zone=external --add-forward-port=port=80:proto=tcp:toport=8080:toaddr=192.168.20.10
+success
+------- dnat end
+
 ---------------------------------------------------------------------------------------------------
 
 
@@ -1028,15 +1049,12 @@ no
 ---------------------------------------------------------------------------------------------------
 
 
+其他资料:
+    https://fedoraproject.org/wiki/Firewalld?rd=FirewallD
+    https://www.cnblogs.com/liuyansheng/p/6113646.html?utm_source=itdadao&utm_medium=referral
 
-
-
-https://fedoraproject.org/wiki/Firewalld?rd=FirewallD
-https://www.cnblogs.com/liuyansheng/p/6113646.html?utm_source=itdadao&utm_medium=referral
-
-https://www.server-world.info/en/note?os=CentOS_7&p=firewalld&f=2
-https://www.lisenet.com/2016/firewalld-rich-and-direct-rules-setup-rhel-7-server-as-a-router/
-https://www.certdepot.net/rhel7-get-started-firewalld/
-
+    https://www.server-world.info/en/note?os=CentOS_7&p=firewalld&f=2
+    https://www.lisenet.com/2016/firewalld-rich-and-direct-rules-setup-rhel-7-server-as-a-router/
+    https://www.certdepot.net/rhel7-get-started-firewalld/
 
 
