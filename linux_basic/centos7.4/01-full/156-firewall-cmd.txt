@@ -620,11 +620,14 @@ yes
          For IPv6 masquerading, please use the rich language.
 
 
-[root@snatserver ~]# firewall-cmd --zone=external --add-masquerade
+[root@natserver ~]# firewall-cmd --zone=external --add-masquerade
 // 注: 其实 默认的 external.xml 本就存在 '<masquerade/>' 配置. 如果文件 /etc/firewalld/zones/external.xml 不存在,
 //     则 如下命令会先 拷贝 /usr/lib/firewalld/zones/external.xml 成为  /etc/firewalld/zones/external.xml, 然后再 修改
-[root@snatserver ~]# firewall-cmd --permanent --zone=external --add-masquerade  #该命令会在 /etc/firewalld/zones/external.xml 中插入一行 '<masquerade/>' 配置
+[root@natserver ~]# firewall-cmd --permanent --zone=external --add-masquerade  #该命令会在 /etc/firewalld/zones/external.xml 中插入一行 '<masquerade/>' 配置
 
+
+[root@natserver ~]# cat /proc/sys/net/ipv4/ip_forward   # 查看 ip_forward 是否开启, 该功能可能会自动开启, 也可能不会(如没有 分配 interface 时)
+1
 
 ---------------------------------------------------------------------------------------------------
 
@@ -634,8 +637,8 @@ yes
          For IPv6 masquerading, please use the rich language.
 
 
-[root@snatserver ~]# firewall-cmd --zone=external --remove-masquerade
-[root@snatserver ~]# firewall-cmd --permanent --zone=external --remove-masquerade   # 该命令会删除/etc/firewalld/zones/external.xml 中的 '<masquerade/>' 配置
+[root@natserver ~]# firewall-cmd --zone=external --remove-masquerade
+[root@natserver ~]# firewall-cmd --permanent --zone=external --remove-masquerade   # 该命令会删除/etc/firewalld/zones/external.xml 中的 '<masquerade/>' 配置
 
 
 ---------------------------------------------------------------------------------------------------
@@ -646,12 +649,10 @@ yes
          For IPv6 masquerading, please use the rich language.
 
 
-[root@snatserver ~]# firewall-cmd --zone=external --query-masquerade
+[root@natserver ~]# firewall-cmd --zone=external --query-masquerade
 yes
-[root@snatserver ~]# firewall-cmd --permanent --zone=external --query-masquerade
+[root@natserver ~]# firewall-cmd --permanent --zone=external --query-masquerade
 yes
-[root@snatserver ~]# cat /proc/sys/net/ipv4/ip_forward
-1
 
 
 ---------------------------------------------------------------------------------------------------
@@ -670,10 +671,22 @@ yes
 语法: [--permanent] [--zone=zone] --list-sources
        List sources that are bound to zone zone as a space separated list. If zone is omitted, default zone will be used.
 
+
+[root@basic ~]# firewall-cmd --zone=public --list-sources
+192.168.10.0/24
+[root@basic ~]# firewall-cmd --permanent --zone=public --list-sources
+192.168.10.0/24
+
 ---------------------------------------------------------------------------------------------------
 
 语法: [--permanent] [--zone=zone] --add-source=source[/mask]|MAC|ipset:ipset
        Bind the source to zone zone. If zone is omitted, default zone will be used.
+
+
+[root@basic ~]# firewall-cmd --zone=public --add-source=192.168.10.0/24
+success
+[root@basic ~]# firewall-cmd --permanent --zone=public --add-source=192.168.10.0/24  #该命令在 /etc/firewalld/zones/public.xml中 插入了一行 '<source address="192.168.10.0/24"/>' 配置
+success
 
 ---------------------------------------------------------------------------------------------------
 
@@ -681,10 +694,28 @@ yes
        Change zone the source is bound to to zone zone. It's basically --remove-source followed by --add-source. If the source has not been bound to a zone before, it behaves like
        --add-source. If zone is omitted, default zone will be used.
 
+
+[root@basic ~]# firewall-cmd --zone=public --add-source=192.168.10.0/24
+success
+[root@basic ~]# firewall-cmd --permanent --zone=public --add-source=192.168.10.0/24
+success
+[root@basic ~]# firewall-cmd --zone=public --change-source=1.1.2.0/24
+success
+[root@basic ~]# firewall-cmd --zone=public --list-sources
+192.168.10.0/24 1.1.2.0/24
+[root@basic ~]# firewall-cmd --permanent --zone=public --list-sources
+192.168.10.0/24
+
 ---------------------------------------------------------------------------------------------------
 
 语法: [--permanent] [--zone=zone] --query-source=source[/mask]|MAC|ipset:ipset
        Query whether the source is bound to the zone zone. Returns 0 if true, 1 otherwise.
+
+
+[root@basic ~]# firewall-cmd --zone=public --query-source=192.168.10.0/24
+yes
+[root@basic ~]# firewall-cmd --permanent --zone=public --query-source=192.168.10.0/24
+yes
 
 ---------------------------------------------------------------------------------------------------
 
@@ -692,9 +723,276 @@ yes
        Remove binding of the source from zone it was previously added to.
 
 
+[root@basic ~]# firewall-cmd --remove-source=192.168.10.0/24
+success
+[root@basic ~]# firewall-cmd --permanent --remove-source=192.168.10.0/24  # 该命令删除了 /etc/firewalld/zones/public.xml中的  '<source address="192.168.10.0/24"/>' 配置
+success
+
+---------------------------------------------------------------------------------------------------
+
+   Options to Handle Bindings of Interfaces
+       Binding an interface to a zone means that this zone settings are used to restrict traffic via the interface.
+
+       Options in this section affect only one particular zone. If used with --zone=zone option, they affect the zone zone. If the option is omitted, they affect default zone (see
+       --get-default-zone).
+
+       For a list of predefined zones use firewall-cmd --get-zones.
+
+       An interface name is a string up to 16 characters long, that may not contain ' ', '/', '!' and '*'.
+
+
+[root@basic ~]# firewall-cmd --get-active-zones    # 默认 所有的 interfaces 都是 分配 给 public zone 的
+public
+  interfaces: ens33 ens37
+
+[root@basic ~]# firewall-cmd --zone=public --list-interfaces
+ens33 ens37
+[root@basic ~]# firewall-cmd --permanent --zone=public --list-interfaces
+
+[root@basic ~]#
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] [--zone=zone] --list-interfaces
+           List interfaces that are bound to zone zone as a space separated list. If zone is omitted, default zone will be used.
+
+[root@basic ~]# firewall-cmd --zone=internal --list-interfaces
+ens33
+[root@basic ~]# firewall-cmd --permanent --zone=internal --list-interfaces
+
+[root@basic ~]#
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] [--zone=zone] --add-interface=interface
+         Bind interface interface to zone zone. If zone is omitted, default zone will be used.
+
+         If the interface is under control of NetworkManager, it is at first connected to change the zone for the connection that is using the interface. If this fails, the zone
+         binding is created in firewalld and the limitations below apply. For interfaces that are not under control of NetworkManager, firewalld tries to change the ZONE setting in
+         the ifcfg file, if the file exists.
+
+         As a end user you don't need this in most cases, because NetworkManager (or legacy network service) adds interfaces into zones automatically (according to ZONE= option from
+         ifcfg-interface file) if NM_CONTROLLED=no is not set. You should do it only if there's no /etc/sysconfig/network-scripts/ifcfg-interface file. If there is such file and you
+         add interface to zone with this --add-interface option, make sure the zone is the same in both cases, otherwise the behaviour would be undefined. Please also have a look at
+         the firewalld(1) man page in the Concepts section. For permanent association of interface with a zone, see also 'How to set or change a zone for a connection?' in
+         firewalld.zones(5).
+
+
+[root@basic ~]# firewall-cmd --zone=external --add-interface=ens37
+The interface is under control of NetworkManager, setting zone to 'external'.
+success
+[root@basic ~]# firewall-cmd --permanent --zone=external --add-interface=ens37
+The interface is under control of NetworkManager and already bound to 'external'
+The interface is under control of NetworkManager, setting zone to 'external'.
+success
+
+[root@basic ~]# firewall-cmd --zone=internal --add-interface=ens33
+[root@basic ~]# firewall-cmd --permanent --zone=internal --add-interface=ens33
+The interface is under control of NetworkManager, setting zone to 'internal'.
+success
+
+[root@basic ~]# firewall-cmd --get-active-zones  # 查看 active zones
+internal
+  interfaces: ens33
+external
+  interfaces: ens37
+
+[root@basic ~]# cat /etc/sysconfig/network-scripts/ifcfg-ens33  # 如下是执行上面的命令后多出的内容
+
+          ZONE=internal
+          PROXY_METHOD=none
+          BROWSER_ONLY=no
+          DEFROUTE=yes
+          IPV4_FAILURE_FATAL=no
+          IPV6INIT=no
+          UUID=c96bc909-188e-ec64-3a96-6a90982b08ad
+
+[root@basic ~]# cat /etc/sysconfig/network-scripts/ifcfg-ens37  # 如下是执行上面的命令后多出的内容
+          PROXY_METHOD=none
+          BROWSER_ONLY=no
+          DEFROUTE=yes
+          IPV4_FAILURE_FATAL=no
+          IPV6INIT=no
+          UUID=4a5516a4-dfa4-24af-b1c4-e843e312e2fd
+          ZONE=external
+
+[root@basic ~]# nmcli connection mod ens33 connection.zone internal  # 该命令时在另一台机器上执行的, 其效果与 --add-interface 类似这样的命令的效果类似, 其也会修改文件 ifcfg-ens37 
+[root@basic ~]# cat /etc/sysconfig/network-scripts/ifcfg-ens33  # 查看如上命令 `nmcli connection mod ens33 connection.zone internal` 的效果
+          PROXY_METHOD=none
+          BROWSER_ONLY=no
+          DEFROUTE=yes
+          IPV4_FAILURE_FATAL=no
+          IPV6INIT=no
+          UUID=c96bc909-188e-ec64-3a96-6a90982b08ad
+          ZONE=internal
+
+[root@basic ~]# firewall-cmd --get-active-zones
+internal
+  interfaces: ens33
 
 
 ---------------------------------------------------------------------------------------------------
+
+语法: [--zone=zone] --change-interface=interface
+         If the interface is under control of NetworkManager, it is at first connected to change the zone for the connection that is using the interface. If this fails, the zone
+         binding is created in firewalld and the limitations below apply. For interfaces that are not under control of NetworkManager, firewalld tries to change the ZONE setting in
+         the ifcfg file, if the file exists.
+
+         Change zone the interface interface is bound to to zone zone. It's basically --remove-interface followed by --add-interface. If the interface has not been bound to a zone
+         before, it behaves like --add-interface. If zone is omitted, default zone will be used.
+
+[root@basic ~]# firewall-cmd --zone=public --change-interface=ens33   # 该命令会修改 /etc/sysconfig/network-scripts/ifcfg-ens33 中的 zone 为 ZONE=public
+The interface is under control of NetworkManager, setting zone to 'public'.
+success
+
+[root@basic ~]# grep -E '^ZONE' /etc/sysconfig/network-scripts/ifcfg-ens33   # 查看如上命令的修改效果 
+ZONE=public
+
+[root@basic ~]# firewall-cmd --get-active-zones
+external
+  interfaces: ens37
+public
+  interfaces: ens33
+
+
+
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] [--zone=zone] --query-interface=interface
+         Query whether interface interface is bound to zone zone. Returns 0 if true, 1 otherwise.
+
+[root@basic ~]# firewall-cmd --zone=internal --query-interface=ens33
+yes
+[root@basic ~]# firewall-cmd --permanent --zone=internal --query-interface=ens33
+no
+
+---------------------------------------------------------------------------------------------------
+
+语法: [--permanent] --remove-interface=interface
+         If the interface is under control of NetworkManager, it is at first connected to change the zone for the connection that is using the interface. If this fails, the zone
+         binding is created in firewalld and the limitations below apply.
+
+         For the addion or change of interfaces that are not under control of NetworkManager: firewalld tries to change the ZONE setting in the ifcfg file, if an ifcfg file exists
+         that is using the interface.
+
+         Only for the removal of interfaces that are not under control of NetworkManager: firewalld is not trying to change the ZONE setting in the ifcfg file. This is needed to make
+         sure that an ifdown of the interface will not result in a reset of the zone setting to the default zone. Only the zone binding is then removed in firewalld then.
+
+         Remove binding of interface interface from zone it was previously added to.
+
+[root@basic ~]# firewall-cmd --remove-interface=ens37   # 其实该行命令 就会去修改 /etc/sysconfig/network-scripts/ifcfg-ens37 文件(即 删除 ZONE=external 这一行 )
+The interface is under control of NetworkManager, setting zone to default.
+success
+[root@basic ~]# firewall-cmd --permanent --remove-interface=ens37
+The interface is under control of NetworkManager and already bound to the default zone
+The interface is under control of NetworkManager, setting zone to default.
+success
+
+[root@basic ~]# firewall-cmd --get-active-zones
+public
+  interfaces: ens33 ens37
+
+
+
+---------------------------------------------------------------------------------------------------
+
+   Service Options
+       Options in this section affect only one particular service.
+
+语法: [--permanent] --info-service=service
+         Print information about the service service. The output format is:
+
+             service
+               ports: port1 ..
+               protocols: protocol1 ..
+               source-ports: source-port1 ..
+               modules: module1 ..
+               destination: ipv1:address1 ..
+
+
+
+[root@basic ~]# firewall-cmd --info-service=samba
+samba
+  ports: 137/udp 138/udp 139/tcp 445/tcp
+  protocols:
+  source-ports:
+  modules: netbios-ns
+  destination:
+[root@basic ~]# firewall-cmd --permanent --info-service=samba
+samba
+  ports: 137/udp 138/udp 139/tcp 445/tcp
+  protocols:
+  source-ports:
+  modules: netbios-ns
+  destination:
+
+---------------------------------------------------------------------------------------------------
+
+   Direct Options
+       The direct options give a more direct access to the firewall. These options require user to know basic iptables concepts, i.e.  table (filter/mangle/nat/...), chain
+       (INPUT/OUTPUT/FORWARD/...), commands (-A/-D/-I/...), parameters (-p/-s/-d/-j/...) and targets (ACCEPT/DROP/REJECT/...).
+
+       Direct options should be used only as a last resort when it's not possible to use for example --add-service=service or --add-rich-rule='rule'.
+
+       The first argument of each option has to be ipv4 or ipv6 or eb. With ipv4 it will be for IPv4 (iptables(8)), with ipv6 for IPv6 (ip6tables(8)) and with eb for ethernet bridges
+       (ebtables(8)).
+
+
+---------------------------------------------------------------------------------------------------
+
+       [--permanent] --direct --add-rule { ipv4 | ipv6 | eb } table chain priority args
+           Add a rule with the arguments args to chain chain in table table with priority priority.
+
+           The priority is used to order rules. Priority 0 means add rule on top of the chain, with a higher priority the rule will be added further down. Rules with the same priority
+           are on the same level and the order of these rules is not fixed and may change. If you want to make sure that a rule will be added after another one, use a low priority for
+           the first and a higher for the following.
+
+
+设置 SNAT 或 DNAT 参考资料:
+    https://www.server-world.info/en/note?os=CentOS_7&p=firewalld&f=2
+    https://www.lisenet.com/2016/firewalld-rich-and-direct-rules-setup-rhel-7-server-as-a-router/
+
+------- snat(此例实际为 -j MASQUERADE, 如果是 static ip, 应该使用 -j SNAT) start
+[root@basic ~]# firewall-cmd --permanent --zone=internal --add-interface=ens33
+The interface is under control of NetworkManager, setting zone to 'internal'.
+success
+[root@basic ~]# firewall-cmd --reload
+success
+[root@basic ~]# firewall-cmd --permanent --zone=internal --add-masquerade
+success
+[root@basic ~]# firewall-cmd --reload
+success
+[root@basic ~]# firewall-cmd --get-active-zones
+internal
+  interfaces: ens33
+public
+  interfaces: ens37
+
+[root@basic ~]# firewall-cmd --direct --add-rule ipv4 nat POSTROUTING 0 -o ens37 -j MASQUERADE
+success
+[root@basic ~]# firewall-cmd --direct --add-rule ipv4 filter FORWARD 0 -i ens33 -o ens37 -j ACCEPT
+success
+[root@basic ~]# firewall-cmd --direct --add-rule ipv4 filter FORWARD 0 -i ens33 -o ens37 -m state --state RELATED,ESTABLISHED -j ACCEPT
+success
+[root@basic ~]#
+------ 注: 如果是永久设置, 应该使用如下的命令(即加上 --permanent 选项, 并在之后 --reload )
+  [root@basic ~]# firewall-cmd --permanent --direct --add-rule ipv4 nat POSTROUTING 0 -o ens37 -j MASQUERADE
+  [root@basic ~]# firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 0 -i ens33 -o ens37 -j ACCEPT
+  [root@basic ~]# firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 0 -i ens33 -o ens37 -m state --state RELATED,ESTABLISHED -j ACCEPT
+  [root@basic ~]# firewall-cmd --reload
+------
+
+[root@basic ~]# firewall-cmd --direct --get-all-rules
+ipv4 nat POSTROUTING 0 -o ens37 -j MASQUERADE
+ipv4 filter FORWARD 0 -i ens33 -o ens37 -j ACCEPT
+ipv4 filter FORWARD 0 -i ens33 -o ens37 -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+
+------- snat(此例实际为 -j MASQUERADE, 如果是 static ip, 应该使用 -j SNAT) end
+
+
+
 ---------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------
@@ -705,12 +1003,8 @@ yes
 ---------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------
 
-TODO:
-firewall-cmd [--zone=<zone>] --add-interface=<interface>
-firewall-cmd [--zone=<zone>] --change-interface=<interface>
-firewall-cmd [--zone=<zone>] --remove-interface=<interface>
-firewall-cmd [--zone=<zone>] --query-interface=<interface>
 
+[--permanent] [--zone=zone] --list-rich-rules
 firewall-cmd [ --zone=<zone> ] --list-services
 
 [--permanent] [--zone=zone] --add-rich-rule='rule' [--timeout=timeval]
@@ -740,6 +1034,9 @@ no
 https://fedoraproject.org/wiki/Firewalld?rd=FirewallD
 https://www.cnblogs.com/liuyansheng/p/6113646.html?utm_source=itdadao&utm_medium=referral
 
+https://www.server-world.info/en/note?os=CentOS_7&p=firewalld&f=2
+https://www.lisenet.com/2016/firewalld-rich-and-direct-rules-setup-rhel-7-server-as-a-router/
+https://www.certdepot.net/rhel7-get-started-firewalld/
 
 
 
