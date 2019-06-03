@@ -4,6 +4,8 @@
 
 man firewall-cmd
 
+man 5 firewalld.richlanguage
+
 firewall-cmd --help
 
 
