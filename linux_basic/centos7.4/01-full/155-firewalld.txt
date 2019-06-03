@@ -302,14 +302,18 @@ man 5 firewalld.conf      # 查看 /etc/firewalld/firewalld.conf 的 描述说�
   centos7&redhat 之 firewalld 详细介绍配置
     https://www.cnblogs.com/fatt/p/6656262.html
 
-  Firewalld : IP Masquerade
+  Firewalld : IP Masquerade (关于snat 与 dnat 的设置参考)
     https://www.server-world.info/en/note?os=CentOS_7&p=firewalld&f=2
+    https://www.lisenet.com/2016/firewalld-rich-and-direct-rules-setup-rhel-7-server-as-a-router/
 
 
   红帽redhat7: USING FIREWALLS
       https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/security_guide/sec-using_firewalls
   Linux Firewalld用法及案例
       https://blog.csdn.net/xiazichenxi/article/details/80169927
+
+  RHEL7: How to get started with Firewalld.
+      https://www.certdepot.net/rhel7-get-started-firewalld/
 
   更多示例:
     https://fedoraproject.org/wiki/Firewalld?rd=FirewallD
