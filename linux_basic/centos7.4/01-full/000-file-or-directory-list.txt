@@ -3,6 +3,7 @@ https://www.gnu.org/software/coreutils/
 http://www.man7.org/
 
 
+/etc/hosts  注: windows 操作系统上的 hosts 文件路径为 C:\Windows\System32\drivers\etc\hosts
 
 /usr/share/doc/
 /usr/share/doc/grub2-common-2.02/
