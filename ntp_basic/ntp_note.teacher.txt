@@ -1,0 +1,84 @@
+ntp
+
+	应用层协议，Network Time Protocol
+	作用：实现服务器时间同步
+
+
+服务端软件：
+		软件名称: ntp
+		配置文件: /etc/ntp.conf
+		端口：udp/123
+
+
+示例：部署ntp时间服务器
+
+1、规划主机名、IP地址
+
+2、关闭SELinux, 防火墙
+
+3、安装ntp软件
+
+[root@ntp_server ~]# yum install -y ntp
+
+[root@ntp_server ~]# rpm -q ntp
+ntp-4.2.6p5-25.el7.centos.2.x86_64
+
+
+4、编辑配置文件
+
+[root@ntp_server ~]# vim /etc/ntp.conf
+
+	 18 restrict 172.16.1.0 mask 255.255.255.0 nomodify notrap
+
+	 26 server 127.127.1.0 iburst
+	 27 fudge 127.127.1.0 stratum 10
+
+
+5、启动ntpd服务
+
+[root@ntp_server ~]# systemctl start ntpd
+[root@ntp_server ~]# systemctl enable ntpd
+Created symlink from /etc/systemd/system/multi-user.target.wants/ntpd.service to /usr/lib/systemd/system/ntpd.service.
+[root@ntp_server ~]#
+[root@ntp_server ~]# ps -elf | grep ntp
+5 S ntp      11498     1  0  80   0 -  6417 poll_s 14:42 ?        00:00:00 /usr/sbin/ntpd -u ntp:ntp -g
+
+[root@ntp_server ~]# netstat -anup | grep ntp
+udp        0      0 172.16.1.10:123         0.0.0.0:*                           11498/ntpd
+
+
+
+
+客户端同步时间
+
+[root@ntp_client ~]# ntpdate 172.16.1.10
+18 Dec 14:45:06 ntpdate[1879]: adjust time server 172.16.1.10 offset 0.395298 sec
+
+[root@ntp_client ~]# crontab -l
+*/30 * * * *  /usr/sbin/ntpdate 172.16.1.10
+[root@ntp_client ~]#
+
+
+
+
+
+1、互联网免费时间服务器
+
+2、要求时区一致
+
+	[root@ntp_client ~]# timedatectl set-timezone Asia/Shanghai
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
