@@ -23,6 +23,11 @@
 [root@ntp7client ~]# ntpdate 192.168.175.123  #与本地ntp服务器同步
 
 
+网上资料:
+  https://www.tecmint.com/install-ntp-server-in-centos/
+
+
+
 
 
 
