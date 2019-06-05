@@ -7,6 +7,9 @@ dhcpd server开放的服务端口: udp/67
 dhcpd client通信用的端口：  udp/68
 
 
+注: 使用vmware虚拟机时, 需要关闭 vmware 虚拟网络自己的 dhcp 服务
+
+
 服务器端：
 [root@dhcpd7server ~]#  yum install -y dhcp
 [root@dhcpd7server ~]# rpm -q dhcp
