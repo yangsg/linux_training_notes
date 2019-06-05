@@ -1,0 +1,500 @@
+DNS服务
+
+	应用层协议， Domain Name System 域名系统
+
+	作用：
+		1) 根据主机名，解析对应的IP地址      正向解析
+		2) 根据IP地址，解析对应的主机名 	 反向解析
+
+
+Linux系统：
+
+	/etc/hosts	保存IP地址及主机名的对应关系
+
+Window系统：
+
+	C:\Windows\System32\drivers\etc
+
+
+DNS域名结构
+
+	.根域  ---->  一级域名(com, cn, org, edu, gov, net)  ----> 二级域名
+
+
+区域zone
+
+	正向区域(二级域名)
+
+		uplooking.com
+
+	反向区域
+
+		x.x.x.in-addr.arpa
+
+			192.168.1.0/24
+			1.168.192.in-addr.arpa
+
+			2.16.172.in-addr.arpa
+
+				172.16.2.X
+
+
+
+记录 Record
+
+	1) A记录	主机记录
+
+		主机名到IP地址对应的关系
+
+		vedio.uplooking.com 	A	1.1.1.1
+
+
+	2) PTR记录  反向指针记录
+
+		IP地址到主机名的对应关系
+
+		1.1.1.1		PTR 	vedio.uplooking.com.
+
+
+	3) MX记录	标识邮件服务器
+
+		MX   5(优先级)   mail.uplooking.com.
+		mail.uplooking.com 		A		2.2.2.2
+
+
+	4) NS记录	标识DNS服务器自身
+
+		NS 	ns1.uplooking.com.
+		ns1.uplooking.com 	A	3.3.3.3
+
+
+	5) CNAME记录    别名
+
+		baidu.com 	CNAME 	www.baidu.com.
+
+
+
+
+
+服务端：
+
+	软件：
+		bind			核心软件
+		bind-chroot		加强安全性
+			生成伪根目录 	/var/named/chroot/etc/
+
+	配置文件：
+
+		1) 主配置文件   创建区域
+
+			/var/named/chroot/etc/named.conf
+
+
+		2) 记录文件 	保存记录
+
+			/var/named/chroot/var/named/*
+
+	服务：
+		named, named-chroot
+
+	端口：
+		udp/53		用于接收客户端查询请求
+		tcp/53		DNS主从复制
+
+
+
+示例：配置DNS服务器解析如下主机名
+
+
+		DNS服务器	ns1.uplooking.com
+		视频服务器	1.1.1.1		vedio.uplooking.com
+		音频服务器	1.1.1.2		audio.uplooking.com
+		邮件服务器	1.1.1.3		mail.uplooking.com
+		网站服务器	1.1.1.4		mail.uplooking.com
+
+
+1、规划主机名、IP地址
+
+2、关闭Selinux, 防火墙
+
+3、安装软件
+
+[root@dns_server ~]# yum install -y bind bind-chroot
+
+
+4、编辑named.conf主配置文件，创建区域
+
+[root@dns_server ~]# cat /var/named/chroot/etc/named.conf
+
+	options {
+		directory "/var/named";		//指定记录文件的存放位置
+	};
+
+	zone "uplooking.com" {
+		type master;				//指定区域类型为master
+		file "uplooking.com.zone";	//指定区域对应的记录文件名称
+	};
+
+
+5、准备记录文件
+
+[root@dns_server ~]# cp /usr/share/doc/bind-9.9.4/sample/var/named/named.localhost /var/named/chroot/var/named/uplooking.com.zone
+
+
+6、编辑记录文件
+
+[root@dns_server ~]# cat /var/named/chroot/var/named/uplooking.com.zone
+
+	$TTL 1D
+	@	IN SOA	uplooking.com. 454452000.qq.com. (
+						0	; serial
+						1D	; refresh
+						1H	; retry
+						1W	; expire
+						3H )	; minimum
+		NS	ns1.uplooking.com.
+	ns1	A	192.168.122.101
+	vedio	A	1.1.1.1
+	audio	A	1.1.1.2
+	www	A	1.1.1.4
+		MX   5  mail.uplooking.com.
+	mail	A	1.1.1.3
+
+
+7、启动服务
+
+[root@dns_server ~]# systemctl start named named-chroot
+[root@dns_server ~]# systemctl enable named named-chroot
+
+[root@dns_server ~]# netstat -anup | grep named
+udp        0      0 192.168.122.101:53      0.0.0.0:*                           11852/named
+udp        0      0 127.0.0.1:53            0.0.0.0:*                           11852/named
+udp        0      0 127.0.0.1:53            0.0.0.0:*                           11813/named
+udp6       0      0 ::1:53                  :::*                                11813/named
+[root@dns_server ~]#
+[root@dns_server ~]# netstat -antp | grep name
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+tcp        0      0 192.168.122.101:53      0.0.0.0:*               LISTEN      11852/named
+tcp        0      0 127.0.0.1:53            0.0.0.0:*               LISTEN      11813/named
+
+
+
+
+客户端测试
+
+1、nslookup
+
+[root@dns_client ~]# nslookup
+>
+> server 192.168.122.101
+Default server: 192.168.122.101
+Address: 192.168.122.101#53
+>
+> vedio.uplooking.com
+Server:		192.168.122.101
+Address:	192.168.122.101#53
+
+Name:	vedio.uplooking.com
+Address: 1.1.1.1
+>
+> audio.uplooking.com
+Server:		192.168.122.101
+Address:	192.168.122.101#53
+
+Name:	audio.uplooking.com
+Address: 1.1.1.2
+>
+> mail.uplooking.com
+Server:		192.168.122.101
+Address:	192.168.122.101#53
+
+Name:	mail.uplooking.com
+Address: 1.1.1.3
+>
+> www.uplooking.com
+Server:		192.168.122.101
+Address:	192.168.122.101#53
+
+Name:	www.uplooking.com
+Address: 1.1.1.4
+>
+> ns1.uplooking.com
+Server:		192.168.122.101
+Address:	192.168.122.101#53
+
+Name:	ns1.uplooking.com
+Address: 192.168.122.101
+>
+> exit
+
+
+网卡指定对应的DNS服务器地址：
+
+[root@dns_client ~]# cat /etc/sysconfig/network-scripts/ifcfg-eth0
+
+	TYPE="Ethernet"
+	BOOTPROTO=none
+	IPADDR=192.168.122.102
+	PREFIX=24
+	GATEWAY=192.168.122.1
+	DNS1=192.168.122.101
+	NAME="eth0"
+	DEVICE="eth0"
+	ONBOOT="yes"
+
+
+
+
+2、dig
+
+[root@dns_client ~]# dig -t A vedio.uplooking.com
+
+[root@dns_client ~]# dig -t A mail.uplooking.com
+
+
+
+
+
+域名的负载均衡
+
+	www     A       1.1.1.4
+	www     A       1.1.1.5
+
+泛域名解析
+
+	uplooking.com.  A       1.1.1.4
+	*       A       1.1.1.4
+
+
+
+
+
+
+实现反向解析
+
+	依赖于正向解析
+
+
+1) 添加反向区域
+
+[root@dns_server ~]# vim /var/named/chroot/etc/named.conf
+
+	.....
+
+	zone "1.1.1.in-addr.arpa" {
+		type master;
+		file "1.1.1.zone";
+	};
+
+
+
+2) 编辑反向区域记录文件
+
+[root@dns_server ~]# cd /var/named/chroot/var/named/
+
+[root@dns_server named]# cp uplooking.com.zone 1.1.1.zone
+
+$TTL 1D
+@	IN SOA	uplooking.com. 454452000.qq.com. (
+					0	; serial
+					1D	; refresh
+					1H	; retry
+					1W	; expire
+					3H )	; minimum
+	NS	ns1.uplooking.com.
+ns1	A	192.168.122.101
+1	PTR	vedio.uplooking.com.
+2	PTR	audio.uplooking.com.
+3	PTR	mail.uplooking.com.
+4	PTR	www.uplooking.com.
+
+
+客户端测试反向解析
+
+[root@dns_client ~]# nslookup
+>
+> 1.1.1.1
+Server:		192.168.122.101
+Address:	192.168.122.101#53
+
+1.1.1.1.in-addr.arpa	name = vedio.uplooking.com.
+>
+> 1.1.1.3
+Server:		192.168.122.101
+Address:	192.168.122.101#53
+
+3.1.1.1.in-addr.arpa	name = mail.uplooking.com.
+>
+> 1.1.1.4
+Server:		192.168.122.101
+Address:	192.168.122.101#53
+
+4.1.1.1.in-addr.arpa	name = www.uplooking.com
+
+
+
+
+
+
+
+DNS主从同步
+
+	作用: 避免单台DNS服务器成为单点故障
+
+	注意:
+		1) 在主服务器要有两台DNS服务器NS记录
+
+
+
+示例: 部署DNS主从同步
+
+	环境:
+		192.168.122.101		主服务器
+		192.168.122.102		从服务器
+
+
+1、在主服务器上配置从服务器地址
+
+[root@master_dns ~]# vim /var/named/chroot/etc/named.conf
+
+	zone "uplooking.com" {
+		type master;
+		file "uplooking.com.zone";
+		allow-transfer { 192.168.122.102; };			//允许102同步uplooking.com区域的记录文件
+	};
+
+
+2、编辑uplooking.com.zone记录，添加从服务器的NS记录
+
+[root@master_dns ~]# vim /var/named/chroot/var/named/uplooking.com.zone
+
+	...
+	NS	ns1.uplooking.com.
+	NS	ns2.uplooking.com.
+ns1	A	192.168.122.101
+ns2	A	192.168.122.102
+	....
+
+[root@master_dns ~]# systemctl restart named named-chroot
+
+
+配置从服务器
+
+[root@slave_dns ~]# yum install -y bind bind-chroot
+
+1、编辑从服务器配置文件
+
+[root@slave_dns ~]# vim /var/named/chroot/etc/named.conf
+
+	options {
+	   directory "/var/named";
+	};
+
+	zone "uplooking.com" {
+		type slave;								//指定区域类型为slave从
+		masters { 192.168.122.101; };			//指定主服务器IP
+		file "slaves/uplooking.com.zone";		//指定同步的记录文件存放位置
+	};
+
+[root@slave_dns ~]# systemctl start named named-chroot
+[root@slave_dns ~]# systemctl enable named named-chroot.service
+
+[root@slave_dns ~]# ls /var/named/chroot/var/named/slaves/
+uplooking.com.zone
+
+
+
+在客户端使用从服务器解析主机名
+
+[root@dns_client_02 ~]# nslookup
+>
+> server 192.168.122.102
+Default server: 192.168.122.102
+Address: 192.168.122.102#53
+>
+> vedio.uplooking.com
+Server:		192.168.122.102
+Address:	192.168.122.102#53
+
+Name:	vedio.uplooking.com
+Address: 1.1.1.1
+
+
+
+在主服务器的记录文件中添加记录
+
+[root@master_dns ~]# vim /var/named/chroot/var/named/uplooking.com.zone
+
+	1) 任意添加记录
+	2) 修改序列号
+
+[root@master_dns ~]# systemctl restart named named-chroot		//重启服务，主服务器会把新的记录文件推送到从服务器
+
+
+客户端测试解析新的主机记录
+
+[root@dns_client_02 ~]# nslookup
+> server 192.168.122.102
+Default server: 192.168.122.102
+Address: 192.168.122.102#53
+>
+> python.uplooking.com
+Server:		192.168.122.102
+Address:	192.168.122.102#53
+
+Name:	python.uplooking.com
+Address: 1.1.1.10
+>
+> openstack.uplooking.com
+Server:		192.168.122.102
+Address:	192.168.122.102#53
+
+Name:	openstack.uplooking.com
+Address: 1.1.1.20
+>
+> exit
+
+
+
+
+
+
+
+
+DNS转发器
+
+options {
+    directory "/var/named";
+    forwarders { 192.168.122.102; };		//转发器
+};
+
+
+客户端测试
+
+[root@dns_client_02 ~]# nslookup
+> server 192.168.122.101
+Default server: 192.168.122.101
+Address: 192.168.122.101#53
+>
+> web.linux.com
+Server:		192.168.122.101
+Address:	192.168.122.101#53
+
+Non-authoritative answer:			//非授权应答
+Name:	web.linux.com
+Address: 10.10.10.10
+
+
+
+
+实际环境：
+
+	1) 二级域名  申请
+
+		万网
+
+	2) 云平台
+
+	3) 备案
+
+
