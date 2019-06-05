@@ -1,0 +1,47 @@
+; filepath: /var/named/chroot/var/named/mytraining.com.zone
+$TTL 1D                         ;<<<=== 此处为宏定义
+; 注意：邮箱地址中的'@'要用点'.'代替
+@	IN SOA	mytraining.com. 1234567.qq.com. (
+                              1	    ; serial  ; 如果是 master-slave 架构, 修改 该配置后 记得更新(加 1) 该 序列号
+                              1D	  ; refresh
+                              1H	  ; retry
+                              1W	  ; expire
+                              3H )	; minimum
+        NS	       ns01
+        NS	       ns02
+        MX   5     mail01  ;定义邮件服务器,数字越小，优先级越高
+        MX   10    mail02  ;定义邮件服务器
+ns01    A          192.168.175.170
+ns02    A          192.168.175.171
+mail01  A          192.168.20.1
+mail02  A          192.168.20.2
+
+
+ftp     A          192.168.20.3
+www     A          192.168.20.4
+web     CNAME      www            ;此处web是www的别名
+
+; 利用dns实现test服务器简单的负载均衡(即一个name对应多个ip)
+test    A          192.168.20.5
+        A          192.168.20.6    ;语法解释：(对于A类型的资源记录而言)If the hostname value is omitted, the record will point to the last specified hostname.
+
+; 泛域名解析(注：星号'*'作为wildcard必须在最左侧)
+; 更多信息见：https://en.wikipedia.org/wiki/Wildcard_DNS_record
+book         A         192.168.20.7
+*.book       A         192.168.20.7
+
+blog         A         192.168.20.8
+
+; 检查该配置语法正确与否的命令：
+; named-checkzone mytraining.com  /var/named/chroot/var/named/mytraining.com.zone
+
+; 另注：
+; 通过如下命令可以知道 dns服务进程是通过'named'用户启动的
+;    ss -anptl |grep named
+; 所以关于权限问题，如果严格一点，可以使用如下命令设置文件的所属和访问规则：
+;    chmod --reference=/etc/named.conf /var/named/chroot/var/named/mytraining.com.zone
+;    chown --reference=/etc/named.conf /var/named/chroot/var/named/mytraining.com.zone
+
+
+
+
