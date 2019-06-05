@@ -1,0 +1,115 @@
+dhcp
+
+	应用层协议，Dynamic Host Configuration Protocol  动态主机配置协议
+
+	作用：动态分配TCP/IP参数(IP/netmask/gw/dns)
+
+	工作原理：
+
+		1、客户端发送DHCP DISVOER，探索dhcp服务器
+		2、dhcp服务器发送DHCP OFFER(IP/GW/DNS/)
+		3、客户端发送DHCP REQUEST
+		4、dhcp服务器发送DHCP ACK，确认
+		5、客户端发送Gratuation ARP, 确认IP地址是否冲突
+
+
+
+dhcp服务端：
+
+	软件名称: dhcp
+	配置文件：/etc/dhcp/dhcpd.conf
+	服务：dhcpd
+	端口：udp/67
+	日志文件: /var/log/messages
+
+		# tail -f /var/log/messages
+
+
+
+示例：配置dhcp服务器，分配172.16.1.0/24网络地址
+
+1、规划主机名、配置固定IP
+
+2、关闭防火墙、SElinux
+
+3、配置yum源，安装dhcp软件
+
+[root@dhcp_server ~]# mkdir /opt/software
+[root@dhcp_server ~]# mount /dev/sr0 /opt/software
+
+[root@dhcp_server yum.repos.d]# cat /etc/yum.repos.d/centos74.repo
+
+	[centos7.4]
+	name=centos7.4
+	baseurl=file:///opt/software
+	enabled=1
+	gpgcheck=0
+
+[root@dhcp_server ~]# yum clean all
+[root@dhcp_server ~]# yum repolist
+
+[root@dhcp_server ~]# yum install -y dhcp
+[root@dhcp_server ~]# rpm -q dhcp
+dhcp-4.2.5-58.el7.centos.x86_64
+
+
+4、编辑配置文件
+
+[root@dhcp_server ~]# cp /usr/share/doc/dhcp-4.2.5/dhcpd.conf.example /etc/dhcp/dhcpd.conf
+
+[root@dhcp_server ~]# vim /etc/dhcp/dhcpd.conf
+
+
+ 27 subnet 172.16.1.0 netmask 255.255.255.0 {
+ 28      range 172.16.1.100 172.16.1.200;			//IP地址范围
+ 29      option routers 172.16.1.254;				//网关地址
+ 30      option domain-name-servers 202.106.0.20,114.114.114.114;		//DNS服务器地址
+ 31 }
+
+
+5、启动dhcpd服务
+
+[root@dhcp_server ~]# systemctl start dhcpd
+[root@dhcp_server ~]# systemctl enable dhcpd		//设置服务开机自启动
+
+[root@dhcp_server ~]# ps -elf | grep dhcp
+4 S dhcpd     1566     1  0  80   0 - 29244 poll_s 10:30 ?        00:00:00 /usr/sbin/dhcpd -f -cf /etc/dhcp/dhcpd.conf -user dhcpd -group dhcpd --no-pid
+
+
+[root@dhcp_server ~]# netstat -anup | grep :67
+udp        0      0 0.0.0.0:67              0.0.0.0:*                           1566/dhcpd
+
+
+
+6、测试客户端
+
+[root@dhcp_client ~]# cat /etc/sysconfig/network-scripts/ifcfg-eth0
+
+	TYPE="Ethernet"
+	BOOTPROTO="dhcp"
+	NAME="eth0"
+	DEVICE="eth0"
+	ONBOOT="yes"
+
+[root@dhcp_client ~]# nmcli conn reload
+[root@dhcp_client ~]# nmcli conn up eth0
+
+
+
+
+
+配置客户端绑定固定的IP
+
+ 78 host boss_client {
+ 79   hardware ethernet 52:54:2c:66:b2:88;
+ 80   fixed-address 172.16.1.188;
+ 81 }
+
+
+客户端测试：
+
+	# ifconfig eth0 down
+	# ifconfig eth0 up
+
+
+
