@@ -1,0 +1,168 @@
+
+文件服务器
+
+  samba
+
+    作用：
+      适用于windows与linux间文件共享；
+      设置共享目录
+
+    借助于应用层SMB协议、cifs文件系统
+
+
+  访问类型：
+    匿名访问 (samba 4.0版本前、淘汰)
+    基于用户认证
+      --- 共享用户(useradd, smbpasswd)
+
+
+服务端：
+
+  软件：samba, samba-client
+  配置文件： /etc/samba/smb.conf
+  服务：
+    smb：提供目录共享
+    nmb: 提供通过主机名访问的方式
+
+  端口：
+    smb   tcp/139   tcp/445
+    nmb   udp/137 udp/138
+
+
+共享目录设置
+
+  [共享名称]
+
+    comment = 说明信息
+    path = 目录名称
+    browseable = yes  //设置可浏览
+    writeable = yes   //设置为可写
+
+
+
+
+
+示例：将/opt/data目录共享，要求客户端通过martin用户认证访问，只能下载文件
+
+
+1、规划主机名、IP地址
+
+2、关闭SELinux, 防火墙
+
+3、安装软件
+
+[root@file_server ~]# yum install -y samba samba-client
+
+
+4、编辑配置文件，实现目录
+
+[root@file_server ~]# mkdir /opt/data
+[root@file_server ~]# touch /opt/data/{1..10}.mp3
+
+[root@file_server ~]# vim /etc/samba/smb.conf
+
+ 38 [caiwu]
+ 39         comment = caiwu folder
+ 40         path = /opt/data
+ 41         browseable = yes
+
+
+5、创建共享用户
+
+[root@file_server ~]# useradd martin
+[root@file_server ~]# smbpasswd -a martin     //添加共享用户
+New SMB password:
+Retype new SMB password:
+Added user martin.
+[root@file_server ~]#
+[root@file_server ~]# pdbedit -L        //查看共享用户
+martin:1000:
+
+
+6、启动服务
+
+[root@file_server ~]# systemctl start smb nmb
+[root@file_server ~]# systemctl enable smb nmb
+
+[root@file_server ~]# netstat -antp | grep smb
+tcp        0      0 0.0.0.0:139             0.0.0.0:*               LISTEN      3035/smbd
+tcp        0      0 0.0.0.0:445             0.0.0.0:*               LISTEN      3035/smbd
+
+[root@file_server ~]# netstat -anup | grep nmb
+udp        0      0 192.168.122.255:137     0.0.0.0:*                           3033/nmbd
+udp        0      0 192.168.122.255:138     0.0.0.0:*                           3033/nmbd
+
+
+
+
+在windows测试访问
+
+访问方法1)
+
+  \\192.168.224.100
+
+  1) 取消用户家目录的共享
+
+    #[homes]
+    #       comment = Home Directories
+    #       valid users = %S, %D%w%S
+    #       browseable = No
+    #       read only = No
+    #       inherit acls = Yes
+
+访问方法2)
+  映射网络驱动器
+
+    \\服务IP\共享名称
+
+
+
+
+配置允许martin用户上传文件
+
+1、修改配置文件，添加上传权限
+
+
+[caiwu]
+        comment = caiwu folder
+        path = /opt/data
+        browseable = yes
+        writable = yes    //上传权限
+
+
+
+2、在目录本地添加写权限
+
+[root@file_server ~]# setfacl -m u:martin:rwx /opt/data/
+[root@file_server ~]# getfacl /opt/data/
+getfacl: Removing leading '/' from absolute path names
+# file: opt/data/
+# owner: root
+# group: root
+user::rwx
+user:martin:rwx
+group::r-x
+mask::rwx
+other::r-x
+
+
+
+
+Linux客户端：
+
+[root@file_server ~]# rpm -q samba-client
+samba-client-4.6.2-8.el7.x86_64
+
+[root@file_server ~]# smbclient //192.168.224.100/caiwu -U martin
+
+  get    下载
+  put    上传
+  lcd    切换本地目录
+
+
+
+
+
+
+
+
