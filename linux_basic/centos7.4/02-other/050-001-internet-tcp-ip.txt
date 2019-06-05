@@ -107,7 +107,7 @@ http://www.tcpipguide.com/free/t_TCPConnectionTermination-2.htm
     smtp    tcp/25
     pop3    tcp/110
     imap4   tcp/143
-    dns     tcp/53, udp/53
+    dns     tcp/53, udp/53  (其中 udp/53 用于 接收客户端查询请求, tcp/53 用于 DNS主从复制)
     dhcp    udp/67(服务端), udp/68(客户端)
     samba   tcp/139, tcp/445, udp/137, udp/138
     ntp     udp/123
