@@ -52,3 +52,8 @@ dhcpd client通信用的端口：  udp/68
 [root@dhcpd7client ~]# ip addr show
 
 
+
+其他网上资料:
+  Linux Force DHCP Client (dhclient) to Renew IP Address
+      https://www.cyberciti.biz/faq/howto-linux-renew-dhcp-client-ip-address/
+
