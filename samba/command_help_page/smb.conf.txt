@@ -1,0 +1,1025 @@
+
+
+# keyword smb.conf
+
+man  5 smb.conf
+
+
+NAME
+       smb.conf - The configuration file for the Samba suite  (注： centos7 中 smb.conf 的 path 为 /etc/samba/smb.conf)
+
+SYNOPSIS
+       The smb.conf file is a configuration file for the Samba suite.  smb.conf contains runtime configuration information for the Samba programs. The complete description of the file
+       format and possible parameters held within are here for reference purposes.
+
+FILE FORMAT
+       --------------------------------------------------
+       中文注释:
+           该 file 有 sections 和 parameters 组成, section 开始于 square brackets 中的 the name of the section 并 一直延续直到 the next section begins.
+       --------------------------------------------------
+       The file consists of sections and parameters. A section begins with the name of the section in square brackets and continues until the next section begins. Sections contain
+       parameters of the form:
+
+           name = value
+
+
+       --------------------------------------------------
+       中文注释:
+           The file 是 line-based 的, 也就是说 每个 以  newline-terminated 的 line 表示 a comment, a section name or a parameter.
+           Section 和 parameter 的 names 不区分大小写
+       --------------------------------------------------
+       The file is line-based - that is, each newline-terminated line represents either a comment, a section name or a parameter.
+
+       Section and parameter names are not case sensitive.
+
+       Only the first equals sign in a parameter is significant. Whitespace before or after the first equals sign is discarded. Leading, trailing and internal whitespace in section and
+       parameter names is irrelevant. Leading and trailing whitespace in a parameter value is discarded. Internal whitespace within a parameter value is retained verbatim.
+
+       --------------------------------------------------
+        中文注释:
+            以 a semicolon (“;”) 或 a hash (“#”) character  开始的 任何 line 都会被忽略, 包括仅 包含 whitespace 的 lines..
+            以 '\' 结尾(ending) 按类似 the customary UNIX fashion 续行 到 下一行.
+       --------------------------------------------------
+       Any line beginning with a semicolon (“;”) or a hash (“#”) character is ignored, as are lines containing only whitespace.
+
+       Any line ending in a “\” is continued on the next line in the customary UNIX fashion.
+
+       --------------------------------------------------
+        中文注释:
+            parameters 中的 跟随在 the equals sign 后的 The values 都是 a string(不需要引号) 或 a boolean. 其 可以 用  yes/no, 1/0 or true/false 给出
+            Case(大小写) 在  boolean values 中 并不重要, 但是 其在 string values 中 会得以 保留. Some items such as create masks are numeric.
+       --------------------------------------------------
+       The values following the equals sign in parameters are all either a string (no quotes needed) or a boolean, which may be given as yes/no, 1/0 or true/false. Case is not
+       significant in boolean values, but is preserved in string values. Some items such as create masks are numeric.
+
+SECTION DESCRIPTIONS
+       --------------------------------------------------
+        中文注释:
+            除了 [global] section, 其他 每个 section in the configuration file 描述了 a shared resource (known as a “share”).
+       --------------------------------------------------
+       Each section in the configuration file (except for the [global] section) describes a shared resource (known as a “share”). The section name is the name of the shared resource
+       and the parameters within the section define the shares attributes.
+
+       --------------------------------------------------
+        中文注释:
+            有 3 个 特殊 的 sections,  [global], [homes] and [printers], 将在 special sections 部分 描述它们. 如下 notes 适用 与 ordinary section descriptions.
+       --------------------------------------------------
+       There are three special sections, [global], [homes] and [printers], which are described under special sections. The following notes apply to ordinary section descriptions.
+
+       A share consists of a directory to which access is being given plus a description of the access rights which are granted to the user of the service. Some housekeeping options
+       are also specifiable.
+
+       Sections are either file share services (used by the client as an extension of their native file systems) or printable services (used by the client to access print services on
+       the host running the server).
+
+       --------------------------------------------------
+        中文注释:
+            Sections 可以 被指定 为 guest services, 这种情况下 对其访问是 password 不是 必须的, 此情况下 一个指定的 UNIX guest account 被用于 定义 access privileges.
+       --------------------------------------------------
+       Sections may be designated guest services, in which case no password is required to access them. A specified UNIX guest account is used to define access privileges in this case.
+
+       --------------------------------------------------
+        中文注释:
+            guest services 之外的 sections 必须要 a password 来访问。 The client 提供 the username. 但是 older clients 仅需 提供 passwords 而 无需 提供 usernames,
+            你可以  使用在 the share definition 中的 user = option 来 指定  一列表的 usernames 来 检查 password. 对于如 Windows 95/98/ME/NT/2000 这样的 modern clients,
+            这不是必须的.
+       --------------------------------------------------
+       Sections other than guest services will require a password to access them. The client provides the username. As older clients only provide passwords and not usernames, you may
+       specify a list of usernames to check against the password using the user = option in the share definition. For modern clients such as Windows 95/98/ME/NT/2000, this should not
+       be necessary.
+
+       --------------------------------------------------
+        中文注释:
+             由 samba server 授予的 the access rights 被由 the host system 授予给 指定的 user 或 guest UNIX user 的 the access rights 屏蔽(are masked).
+             该 samba server 授予的 access 不会 超过 the host system 授予的 access.
+       --------------------------------------------------
+       The access rights granted by the server are masked by the access rights granted to the specified or guest UNIX user by the host system. The server does not grant more access
+       than the host system grants.
+
+       The following sample section defines a file space share. The user has write access to the path /home/bar. The share is accessed via the share name foo:
+
+                [foo]                     <-- section name (通过该 name 来 对其进行访问)
+                path = /home/bar          <-- file space share 对应的 path
+                read only = no            <-- 具有 写权限
+
+       The following sample section defines a printable share. The share is read-only, but printable. That is, the only write access permitted is via calls to open, write to and close
+       a spool file. The guest ok parameter means access will be permitted as the default guest user (specified elsewhere):
+
+                [aprinter]
+                path = /usr/spool/public
+                read only = yes
+                printable = yes
+                guest ok = yes   <-- 允许作为 默认的 guest user 来访问
+
+
+SPECIAL SECTIONS
+   The [global] section
+
+       --------------------------------------------------
+        中文注释:
+            The [global] section 中的 parameters 应用于 整个 the samba server, 或 作为 其他 sections 中 没有 具体 定义的 certain items 的 defaults.
+       --------------------------------------------------
+       Parameters in this section apply to the server as a whole, or are defaults for sections that do not specifically define certain items. See the notes under PARAMETERS for more
+       information.
+
+   The [homes] section
+       --------------------------------------------------
+        中文注释:
+            如果 the configuration file 中 包含一个 名为 [homes] 的 section, 则 server 可以 即时 创建 连接 clients 到 其 home directories 的服务(services).
+       --------------------------------------------------
+       If a section called [homes] is included in the configuration file, services connecting clients to their home directories can be created on the fly by the server.
+
+       --------------------------------------------------
+        中文注释:
+            当 产生 the connection request 是, 会 扫描(scan) the existing sections. 如果找到 匹配的, 就 使用该 匹配的 section, 如果 没有找到匹配,
+            则 the requested section name 会被 当作 a username 并 被 用来在 the local password file 中进行查找. 如果 该 name 存在 且 提供了 正确的
+            password, 则会通过 cloning the [homes] section 来 创建 a share.
+       --------------------------------------------------
+       When the connection request is made, the existing sections are scanned. If a match is found, it is used. If no match is found, the requested section name is treated as a
+       username and looked up in the local password file. If the name exists and the correct password has been given, a share is created by cloning the [homes] section.
+
+       --------------------------------------------------
+        中文注释:
+            然后 对于 被新 创建的 share 会做一些 修改:
+
+              ·   The share name 会被 从  homes 修改为 the located username.
+
+              ·   如果 no path was given, the path 会被设置为 the user's home directory.
+       --------------------------------------------------
+       Some modifications are then made to the newly created share:
+
+              ·   The share name is changed from homes to the located username.
+
+              ·   If no path was given, the path is set to the user's home directory.
+
+       If you decide to use a path = line in your [homes] section, it may be useful to use the %S macro. For example:
+
+           path = /data/pchome/%S    <-- 这里使用了 %S macro, %S 意思是 the name of the current service, if any. 
+
+       is useful if you have different home directories for your PCs than for UNIX access. (这对于你的PCs拥有与 UNIX的访问 不同的 home directories 时 很有用)
+
+       This is a fast and simple way to give a large number of clients access to their home directories with a minimum of fuss.
+
+
+       --------------------------------------------------
+        中文注释:
+            如果 the requested section name is “homes”, 相似的 处理过程也会产生, 除非 the share name is not changed to that of the requesting user. 这种 使用 the [homes]
+            section 的 方式 在 多个不同的 users 共享 同一 client PC 时 可以 很好的 工作.
+       --------------------------------------------------
+       A similar process occurs if the requested section name is “homes”, except that the share name is not changed to that of the requesting user. This method of using the [homes]
+       section works well if different users share a client PC.
+
+       --------------------------------------------------
+        中文注释:
+            The [homes] section 可以 指定 所有 a normal service section 可以 指定的 那些 parameters.
+       --------------------------------------------------
+       The [homes] section can specify all the parameters a normal service section can specify, though some make more sense than others. The following is a typical and suitable [homes]
+       section:
+
+           [homes]
+           read only = no
+
+       --------------------------------------------------
+
+        中文注释: 重要!!!!!!!!!!!!
+            很 重要(important) 的一点 是 如果 在 the [homes] section 中 指定了 guest access, 那么 所有的 home directories 将 对
+            所有的 clients 可见(且 这些 clients 不需要 具有 a password). 在一些 很 罕见的 情况下 这 也许 是 你 实际 期望的效果,
+            果真如此, 可以 明智 一点 再 为 其 指定 read only access.
+
+       --------------------------------------------------
+       An important point is that if guest access is specified in the [homes] section, all home directories will be visible to all clients without a password. In the very unlikely
+       event that this is actually desirable, it is wise to also specify read only access.
+
+       --------------------------------------------------
+        中文注释:
+             The browseable flag for auto home directories 将 被从 the global browseable flag 继承, 而不是继承 自 the [homes] browseable flag. 
+             This is useful as it means setting browseable = no in the [homes] section will hide the [homes] share but make any auto home directories visible.
+       --------------------------------------------------
+
+       The browseable flag for auto home directories will be inherited from the global browseable flag, not the [homes] browseable flag. This is useful as it means setting browseable =
+       no in the [homes] section will hide the [homes] share but make any auto home directories visible.
+
+
+   The [printers] section
+       This section works like [homes], but for printers.
+
+       If a [printers] section occurs in the configuration file, users are able to connect to any printer specified in the local host's printcap file.
+
+       When a connection request is made, the existing sections are scanned. If a match is found, it is used. If no match is found, but a [homes] section exists, it is used as
+       described above. Otherwise, the requested section name is treated as a printer name and the appropriate printcap file is scanned to see if the requested section name is a valid
+       printer share name. If a match is found, a new printer share is created by cloning the [printers] section.
+
+       A few modifications are then made to the newly created share:
+
+              ·   The share name is set to the located printer name
+
+              ·   If no printer name was given, the printer name is set to the located printer name
+
+              ·   If the share does not permit guest access and no username was given, the username is set to the located printer name.
+
+       The [printers] service MUST be printable - if you specify otherwise, the server will refuse to load the configuration file.
+
+       Typically the path specified is that of a world-writeable spool directory with the sticky bit set on it. A typical [printers] entry looks like this:
+
+           [printers]
+           path = /usr/spool/public
+           guest ok = yes
+           printable = yes
+
+       All aliases given for a printer in the printcap file are legitimate printer names as far as the server is concerned. If your printing subsystem doesn't work like that, you will
+       have to set up a pseudo-printcap. This is a file consisting of one or more lines like this:
+
+           alias|alias|alias|alias...
+
+       Each alias should be an acceptable printer name for your printing subsystem. In the [global] section, specify the new file as your printcap. The server will only recognize names
+       found in your pseudo-printcap, which of course can contain whatever aliases you like. The same technique could be used simply to limit access to a subset of your local printers.
+
+       An alias, by the way, is defined as any component of the first entry of a printcap record. Records are separated by newlines, components (if there are more than one) are
+       separated by vertical bar symbols (|).
+
+           Note
+           On SYSV systems which use lpstat to determine what printers are defined on the system you may be able to use printcap name = lpstat to automatically obtain a list of
+           printers. See the printcap name option for more details.
+
+
+USERSHARES
+       --------------------------------------------------
+        中文注释:
+            从 Samba version 3.0.23 开始, 针对 non-root users 来 add, modify, and delete their own share definitions 的 the capability 被 添加了进来.
+            This capability 被称为 usershares 且 由 the smb.conf 的  the [global] section 中的 一组 parameters 来 控制, 有如下相关的 parameters: 
+       --------------------------------------------------
+       Starting with Samba version 3.0.23 the capability for non-root users to add, modify, and delete their own share definitions has been added. This capability is called usershares
+       and is controlled by a set of parameters in the [global] section of the smb.conf. The relevant parameters are :
+
+       usershare allow guests
+           Controls if usershares can permit guest access.
+
+       usershare max shares
+           Maximum number of user defined shares allowed.
+
+       usershare owner only
+           If set only directories owned by the sharing user can be shared.
+
+       usershare path
+           Points to the directory containing the user defined share definitions. The filesystem permissions on this directory control who can create user defined shares.
+
+       usershare prefix allow list
+           Comma-separated list of absolute pathnames restricting what directories can be shared. Only directories below the pathnames in this list are permitted.
+
+       usershare prefix deny list
+           Comma-separated list of absolute pathnames restricting what directories can be shared. Directories below the pathnames in this list are prohibited.
+
+       usershare template share
+           Names a pre-existing share used as a template for creating new usershares. All other share parameters not specified in the user defined share definition are copied from this
+           named share.
+
+       To allow members of the UNIX group foo to create user defined shares, create the directory to contain the share definitions as follows:
+
+       Become root:
+
+           mkdir /usr/local/samba/lib/usershares
+           chgrp foo /usr/local/samba/lib/usershares
+           chmod 1770 /usr/local/samba/lib/usershares
+
+       Then add the parameters
+
+                usershare path = /usr/local/samba/lib/usershares
+                usershare max shares = 10 # (or the desired number of shares)
+
+       to the global section of your smb.conf. Members of the group foo may then manipulate the user defined shares using the following commands.
+
+       net usershare add sharename path [comment] [acl] [guest_ok=[y|n]]
+           To create or modify (overwrite) a user defined share.
+
+       net usershare delete sharename
+           To delete a user defined share.
+
+       net usershare list wildcard-sharename
+           To list user defined shares.
+
+       net usershare info wildcard-sharename
+           To print information about user defined shares.
+
+PARAMETERS
+       --------------------------------------------------
+        中文注释:
+             Parameters 定义 了 sections 的特定的 attributes.
+       --------------------------------------------------
+       Parameters define the specific attributes of sections.
+
+
+       --------------------------------------------------
+        中文注释:
+             某些 parameters 特定于 the [global] section (e.g., security). 某些 parameters  可用在 所有 sections 中(e.g., create mask).
+             所有其他的 parameters 仅被允许在 normal sections 中 使用. 为了 在 the following descriptions 中 将 the [homes] and [printers] sections
+             视为 normal 的 目的, 字母 G in parentheses 表示 a parameter 是 特定于 the [global] section 的.
+             字母 S 表示  a parameter 可以在  a service specific section 中 被指定. 所有的 S parameters 也可以在 the [global] section 中 被指定,
+             这种情况下 they will define the default behavior for all services.
+       --------------------------------------------------
+       Some parameters are specific to the [global] section (e.g., security). Some parameters are usable in all sections (e.g., create mask). All others are permissible only in normal
+       sections. For the purposes of the following descriptions the [homes] and [printers] sections will be considered normal. The letter G in parentheses indicates that a parameter is
+       specific to the [global] section. The letter S indicates that a parameter can be specified in a service specific section. All S parameters can also be specified in the [global]
+       section - in which case they will define the default behavior for all services.
+
+       Parameters are arranged here in alphabetical order - this may not create best bedfellows, but at least you can find them! Where there are synonyms, the preferred synonym is
+       described, others refer to the preferred synonym.
+
+
+
+VARIABLE SUBSTITUTIONS
+       Many of the strings that are settable in the config file can take substitutions. For example the option “path = /tmp/%u” is interpreted as “path = /tmp/john” if the user
+       connected with the username john.
+
+       These substitutions are mostly noted in the descriptions below, but there are some general substitutions which apply whenever they might be relevant. These are:
+
+       %U
+           session username (the username that the client wanted, not necessarily the same as the one they got).
+
+       %G
+           primary group name of %U.
+
+       %h
+           the Internet hostname that Samba is running on.
+
+       %m
+           the NetBIOS name of the client machine (very useful).
+
+           This parameter is not available when Samba listens on port 445, as clients no longer send this information. If you use this macro in an include statement on a domain that
+           has a Samba domain controller be sure to set in the [global] section smb ports = 139. This will cause Samba to not listen on port 445 and will permit include functionality
+           to function as it did with Samba 2.x.
+
+       %L
+           the NetBIOS name of the server. This allows you to change your config based on what the client calls you. Your server can have a “dual personality”.
+
+       %M
+           the Internet name of the client machine.
+
+       %R
+           the selected protocol level after protocol negotiation. It can be one of CORE, COREPLUS, LANMAN1, LANMAN2, NT1, SMB2_02, SMB2_10, SMB2_22, SMB2_24, SMB3_00, SMB3_02,
+           SMB3_10, SMB3_11 or SMB2_FF.
+
+       %d
+           the process id of the current server process.
+
+       %a
+           The architecture of the remote machine. It currently recognizes Samba (Samba), the Linux CIFS file system (CIFSFS), OS/2, (OS2), Mac OS X (OSX), Windows for Workgroups
+           (WfWg), Windows 9x/ME (Win95), Windows NT (WinNT), Windows 2000 (Win2K), Windows XP (WinXP), Windows XP 64-bit(WinXP64), Windows 2003 including 2003R2 (Win2K3), and Windows
+           Vista (Vista). Anything else will be known as UNKNOWN.
+
+       %I
+           the IP address of the client machine.
+
+           Before 4.0.0 it could contain IPv4 mapped IPv6 addresses, now it only contains IPv4 or IPv6 addresses.
+
+       %J
+           the IP address of the client machine, colons/dots replaced by underscores.
+
+       %i
+           the local IP address to which a client connected.
+
+           Before 4.0.0 it could contain IPv4 mapped IPv6 addresses, now it only contains IPv4 or IPv6 addresses.
+
+       %j
+           the local IP address to which a client connected, colons/dots replaced by underscores.
+
+       %T
+           the current date and time.
+
+       %t
+           the current date and time in a minimal format without colons (YYYYYmmdd_HHMMSS).
+
+       %D
+           name of the domain or workgroup of the current user.
+
+       %w
+           the winbind separator.
+
+       %$(envvar)
+           the value of the environment variable envar.
+
+       The following substitutes apply only to some configuration options (only those that are used when a connection has been established):
+
+       %S
+           the name of the current service, if any.
+
+       %P
+           the root directory of the current service, if any.
+
+       %u
+           username of the current service, if any.
+
+       %g
+           primary group name of %u.
+
+       %H
+           the home directory of the user given by %u.
+
+       %N
+           the name of your NIS home directory server. This is obtained from your NIS auto.map entry. If you have not compiled Samba with the --with-automount option, this value will
+           be the same as %L.
+
+       %p
+           the path of the service's home directory, obtained from your NIS auto.map entry. The NIS auto.map entry is split up as %N:%p.
+
+       There are some quite creative things that can be done with these substitutions and other smb.conf options.
+
+NAME MANGLING
+       Samba supports name mangling so that DOS and Windows clients can use files that don't conform to the 8.3 format. It can also be set to adjust the case of 8.3 format filenames.
+
+       There are several options that control the way mangling is performed, and they are grouped here rather than listed separately. For the defaults look at the output of the
+       testparm program.
+
+       These options can be set separately for each service.
+
+       The options are:
+
+       case sensitive = yes/no/auto
+           controls whether filenames are case sensitive. If they aren't, Samba must do a filename search and match on passed names. The default setting of auto allows clients that
+           support case sensitive filenames (Linux CIFSVFS and smbclient 3.0.5 and above currently) to tell the Samba server on a per-packet basis that they wish to access the file
+           system in a case-sensitive manner (to support UNIX case sensitive semantics). No Windows or DOS system supports case-sensitive filename so setting this option to auto is
+           that same as setting it to no for them. Default auto.
+
+       default case = upper/lower
+           controls what the default case is for new filenames (ie. files that don't currently exist in the filesystem). Default lower. IMPORTANT NOTE: As part of the optimizations for
+           directories containing large numbers of files, the following special case applies. If the options case sensitive = yes, preserve case = No, and short preserve case = No are
+           set, then the case of all incoming client filenames, not just new filenames, will be modified. See additional notes below.
+
+       preserve case = yes/no
+           controls whether new files (ie. files that don't currently exist in the filesystem) are created with the case that the client passes, or if they are forced to be the default
+           case. Default yes.
+
+       short preserve case = yes/no
+           controls if new files (ie. files that don't currently exist in the filesystem) which conform to 8.3 syntax, that is all in upper case and of suitable length, are created
+           upper case, or if they are forced to be the default case. This option can be used with preserve case = yes to permit long filenames to retain their case, while short names
+           are lowercased. Default yes.
+
+       By default, Samba 3.0 has the same semantics as a Windows NT server, in that it is case insensitive but case preserving. As a special case for directories with large numbers of
+       files, if the case options are set as follows, "case sensitive = yes", "case preserve = no", "short preserve case = no" then the "default case" option will be applied and will
+       modify all filenames sent from the client when accessing this share.
+
+
+REGISTRY-BASED CONFIGURATION
+       Starting with Samba version 3.2.0, the capability to store Samba configuration in the registry is available. The configuration is stored in the registry key
+       HKLM\Software\Samba\smbconf. There are two levels of registry configuration:
+
+               1. Share definitions stored in registry are used. This is triggered by setting the global parameter registry shares to “yes” in smb.conf.
+
+                  The registry shares are loaded not at startup but on demand at runtime by smbd. Shares defined in smb.conf take priority over shares of the same name defined in
+                  registry.
+
+               2. Global smb.conf options stored in registry are used. This can be activated in two different ways:
+
+                  Firstly, a registry only configuration is triggered by setting config backend = registry in the [global] section of smb.conf. This resets everything that has been
+                  read from config files to this point and reads the content of the global configuration section from the registry. This is the recommended method of using registry
+                  based configuration.
+
+                  Secondly, a mixed configuration can be activated by a special new meaning of the parameter include = registry in the [global] section of smb.conf. This reads the
+                  global options from registry with the same priorities as for an include of a text file. This may be especially useful in cases where an initial configuration is
+                  needed to access the registry.
+
+                  Activation of global registry options automatically activates registry shares. So in the registry only case, shares are loaded on demand only.
+
+       Note: To make registry-based configurations foolproof at least to a certain extent, the use of lock directory and config backend inside the registry configuration has been
+       disabled: Especially by changing the lock directory inside the registry configuration, one would create a broken setup where the daemons do not see the configuration they loaded
+       once it is active.
+
+       The registry configuration can be accessed with tools like regedit or net (rpc) registry in the key HKLM\Software\Samba\smbconf. More conveniently, the conf subcommand of the
+       net(8) utility offers a dedicated interface to read and write the registry based configuration locally, i.e. directly accessing the database file, circumventing the server.
+
+IDENTITY MAPPING CONSIDERATIONS
+       In the SMB protocol, users, groups, and machines are represented by their security identifiers (SIDs). On POSIX system Samba processes need to run under corresponding POSIX user
+       identities and with supplemental POSIX groups to allow access to the files owned by those users and groups. The process of mapping SIDs to POSIX users and groups is called
+       IDENTITY MAPPING or, in short, ID MAPPING.
+
+       Samba supports multiple ways to map SIDs to POSIX users and groups. The configuration is driven by the idmap config DOMAIN : OPTION option which allows one to specify identity
+       mapping (idmap) options for each domain separately.
+
+       Identity mapping modules implement different strategies for mapping of SIDs to POSIX user and group identities. They are applicable to different use cases and scenarios. It is
+       advised to read the documentation of the individual identity mapping modules before choosing a specific scenario to use. Each identity management module is documented in a
+       separate manual page. The standard idmap backends are tdb (idmap_tdb(8)), tdb2 (idmap_tdb2(8)), ldap (idmap_ldap(8)), rid (idmap_rid(8)), hash (idmap_hash(8)), autorid
+       (idmap_autorid(8)), ad (idmap_ad(8)), nss (idmap_nss(8)), and rfc2307 (idmap_rfc2307(8)).
+
+       Overall, ID mapping configuration should be decided carefully. Changes to the already deployed ID mapping configuration may create the risk of losing access to the data or
+       disclosing the data to the wrong parties.
+
+       This example shows how to configure two domains with idmap_rid(8), the principal domain and a trusted domain, leaving the default id mapping scheme at tdb.
+
+                [global]
+                security = domain
+                workgroup = MAIN
+
+                idmap config * : backend        = tdb
+                idmap config * : range          = 1000000-1999999
+
+                idmap config MAIN : backend     = rid
+                idmap config MAIN : range       = 5000000-5999999
+
+                idmap config TRUSTED : backend  = rid
+                idmap config TRUSTED : range    = 6000000-6999999
+
+
+EXPLANATION OF EACH PARAMETER
+       abort shutdown script (G)  <-- 注: 此处 括号中的 字母 G 表示该 parameter 是特定于 the [global] section 的(即 只能在 the [global] section 中 使用)
+
+           This a full path name to a script called by smbd(8) that should stop a shutdown procedure issued by the shutdown script.
+
+           If the connected user possesses the SeRemoteShutdownPrivilege, right, this command will be run as root.
+
+           Default: abort shutdown script = ""
+
+           Example: abort shutdown script = /sbin/shutdown -c
+
+       access based share enum (S) <-- 注: 此处 括号中的 字母 S 表示  a parameter 可以在  a service specific section 中 被指定. 所有的 S parameters 也可以在 the [global] section
+                                           中 被指定, 这种情况下 they will define the default behavior for all services.
+
+           If this parameter is yes for a service, then the share hosted by the service will only be visible to users who have read or write access to the share during share
+           enumeration (for example net view \\sambaserver). The share ACLs which allow or deny the access to the share can be modified using for example the sharesec command or using
+           the appropriate Windows tools. This has parallels to access based enumeration, the main difference being that only share permissions are evaluated, and security descriptors
+           on files contained on the share are not used in computing enumeration access rights.
+
+           Default: access based share enum = no
+
+
+---------------------------------------------------------------------------------------------------
+由于 参数实在太多, 如下只给出经常 碰到的 参数 描述, 完整的 参数列表见  man  5 smb.conf
+
+       available (S)
+
+           This parameter lets you "turn off" a service. If available = no, then ALL attempts to connect to the service will fail. Such failures are logged.
+
+           Default: available = yes
+
+       browseable (S)
+
+           This controls whether this share is seen in the list of available shares in a net view and in the browse list.
+
+           Default: browseable = yes
+
+       comment (S)
+
+           This is a text field that is seen next to a share when a client does a queries the server, either via the network neighborhood or via net view to list what shares are
+           available.
+
+           If you want to set the string that is displayed next to the machine name then see the server string parameter.
+
+           Default: comment =  # No comment
+
+           Example: comment = Fred's Files
+
+       create mask (S)
+
+           When a file is created, the necessary permissions are calculated according to the mapping from DOS modes to UNIX permissions, and the resulting UNIX mode is then bit-wise
+           'AND'ed with this parameter. This parameter may be thought of as a bit-wise MASK for the UNIX modes of a file. Any bit not set here will be removed from the modes set on a
+           file when it is created.
+
+           The default value of this parameter removes the group and other write and execute bits from the UNIX modes.
+
+           Following this Samba will bit-wise 'OR' the UNIX mode created from this parameter with the value of the force create mode parameter which is set to 000 by default.
+
+           This parameter does not affect directory masks. See the parameter directory mask for details.
+
+           Default: create mask = 0744
+
+           Example: create mask = 0775
+
+       default service (G)
+
+           This parameter specifies the name of a service which will be connected to if the service actually requested cannot be found. Note that the square brackets are NOT given in
+           the parameter value (see example below).
+
+           There is no default value for this parameter. If this parameter is not given, attempting to connect to a nonexistent service results in an error.
+
+           Typically the default service would be a guest ok, read-only service.
+
+           Also note that the apparent service name will be changed to equal that of the requested service, this is very useful as it allows you to use macros like %S to make a
+           wildcard service.
+
+           Note also that any "_" characters in the name of the service used in the default service will get mapped to a "/". This allows for interesting things.
+
+           Default: default service =
+
+           Example: default service = pub
+
+       delete readonly (S)
+
+           This parameter allows readonly files to be deleted. This is not normal DOS semantics, but is allowed by UNIX.
+
+           This option may be useful for running applications such as rcs, where UNIX file ownership prevents changing file permissions, and DOS semantics prevent deletion of a read
+           only file.
+
+           Default: delete readonly = no
+
+       directory mask (S)
+
+           This parameter is the octal modes which are used when converting DOS modes to UNIX modes when creating UNIX directories.
+
+           When a directory is created, the necessary permissions are calculated according to the mapping from DOS modes to UNIX permissions, and the resulting UNIX mode is then
+           bit-wise 'AND'ed with this parameter. This parameter may be thought of as a bit-wise MASK for the UNIX modes of a directory. Any bit not set here will be removed from the
+           modes set on a directory when it is created.
+
+           The default value of this parameter removes the 'group' and 'other' write bits from the UNIX mode, allowing only the user who owns the directory to modify it.
+
+           Following this Samba will bit-wise 'OR' the UNIX mode created from this parameter with the value of the force directory mode parameter. This parameter is set to 000 by
+           default (i.e. no extra mode bits are added).
+
+           Default: directory mask = 0755
+
+           Example: directory mask = 0775
+
+
+       force create mode (S)
+
+           This parameter specifies a set of UNIX mode bit permissions that will always be set on a file created by Samba. This is done by bitwise 'OR'ing these bits onto the mode bits
+           of a file that is being created. The default for this parameter is (in octal) 000. The modes in this parameter are bitwise 'OR'ed onto the file mode after the mask set in
+           the create mask parameter is applied.
+
+           The example below would force all newly created files to have read and execute permissions set for 'group' and 'other' as well as the read/write/execute bits set for the
+           'user'.
+
+           Default: force create mode = 0000
+
+           Example: force create mode = 0755
+
+       force create mode (S)
+
+           This parameter specifies a set of UNIX mode bit permissions that will always be set on a file created by Samba. This is done by bitwise 'OR'ing these bits onto the mode bits
+           of a file that is being created. The default for this parameter is (in octal) 000. The modes in this parameter are bitwise 'OR'ed onto the file mode after the mask set in
+           the create mask parameter is applied.
+
+           The example below would force all newly created files to have read and execute permissions set for 'group' and 'other' as well as the read/write/execute bits set for the
+           'user'.
+
+           Default: force create mode = 0000
+
+           Example: force create mode = 0755
+
+       force directory mode (S)
+
+           This parameter specifies a set of UNIX mode bit permissions that will always be set on a directory created by Samba. This is done by bitwise 'OR'ing these bits onto the mode
+           bits of a directory that is being created. The default for this parameter is (in octal) 0000 which will not add any extra permission bits to a created directory. This
+           operation is done after the mode mask in the parameter directory mask is applied.
+
+           The example below would force all created directories to have read and execute permissions set for 'group' and 'other' as well as the read/write/execute bits set for the
+           'user'.
+
+           Default: force directory mode = 0000
+
+           Example: force directory mode = 0755
+
+       force group (S)
+
+           This specifies a UNIX group name that will be assigned as the default primary group for all users connecting to this service. This is useful for sharing files by ensuring
+           that all access to files on service will use the named group for their permissions checking. Thus, by assigning permissions for this group to the files and directories
+           within this service the Samba administrator can restrict or allow sharing of these files.
+
+           In Samba 2.0.5 and above this parameter has extended functionality in the following way. If the group name listed here has a '+' character prepended to it then the current
+           user accessing the share only has the primary group default assigned to this group if they are already assigned as a member of that group. This allows an administrator to
+           decide that only users who are already in a particular group will create files with group ownership set to that group. This gives a finer granularity of ownership
+           assignment. For example, the setting force group = +sys means that only users who are already in group sys will have their default primary group assigned to sys when
+           accessing this Samba share. All other users will retain their ordinary primary group.
+
+           If the force user parameter is also set the group specified in force group will override the primary group set in force user.
+
+           Default: force group =
+
+           Example: force group = agroup
+
+       force user (S)
+
+           This specifies a UNIX user name that will be assigned as the default user for all users connecting to this service. This is useful for sharing files. You should also use it
+           carefully as using it incorrectly can cause security problems.
+
+           This user name only gets used once a connection is established. Thus clients still need to connect as a valid user and supply a valid password. Once connected, all file
+           operations will be performed as the "forced user", no matter what username the client connected as. This can be very useful.
+
+           In Samba 2.0.5 and above this parameter also causes the primary group of the forced user to be used as the primary group for all file activity. Prior to 2.0.5 the primary
+           group was left as the primary group of the connecting user (this was a bug).
+
+           Default: force user =
+
+           Example: force user = auser
+
+       public
+
+           This parameter is a synonym for guest ok.
+
+       guest ok (S)
+
+           If this parameter is yes for a service, then no password is required to connect to the service. Privileges will be those of the guest account.
+
+           This parameter nullifies the benefits of setting restrict anonymous = 2
+
+           See the section below on security for more information about this option.
+
+           Default: guest ok = no
+
+       only guest
+
+           This parameter is a synonym for guest only.
+
+       guest only (S)
+
+           If this parameter is yes for a service, then only guest connections to the service are permitted. This parameter will have no effect if guest ok is not set for the service.
+
+           See the section below on security for more information about this option.
+
+           Default: guest only = no
+
+       hide dot files (S)   更多 hide 什么的 选项见 man  5 smb.conf
+
+           This is a boolean parameter that controls whether files starting with a dot appear as hidden files.
+
+           Default: hide dot files = yes
+
+       hosts allow (S)
+
+           A synonym for this parameter is allow hosts.
+
+           This parameter is a comma, space, or tab delimited set of hosts which are permitted to access a service.
+
+           If specified in the [global] section then it will apply to all services, regardless of whether the individual service has a different setting.
+
+           You can specify the hosts by name or IP number. For example, you could restrict access to only the hosts on a Class C subnet with something like allow hosts = 150.203.5..
+           The full syntax of the list is described in the man page hosts_access(5). Note that this man page may not be present on your system, so a brief description will be given
+           here also.     (更多可用的 hosts 的 语法格式见 man 5 hosts_access)
+
+           Note that the localhost address 127.0.0.1 will always be allowed access unless specifically denied by a hosts deny option.
+
+           You can also specify hosts by network/netmask pairs and by netgroup names if your system supports netgroups. The EXCEPT keyword can also be used to limit a wildcard list.
+           The following examples may provide some help:
+
+           Example 1: allow all IPs in 150.203.*.*; except one
+
+           hosts allow = 150.203. EXCEPT 150.203.6.66
+
+           Example 2: allow hosts that match the given network/netmask
+
+           hosts allow = 150.203.15.0/255.255.255.0
+
+           Example 3: allow a couple of hosts
+
+           hosts allow = lapland, arvidsjaur
+
+           Example 4: allow only hosts in NIS netgroup "foonet", but deny access from one particular host
+
+           hosts allow = @foonet
+
+           hosts deny = pirate
+
+               Note
+               Note that access still requires suitable user-level passwords.
+           See testparm(1) for a way of testing your host access to see if it does what you expect.  (见 man testparm)
+
+           Default: hosts allow =  # none (i.e., all hosts permitted access)
+
+           Example: hosts allow = 150.203.5. myhost.mynet.edu.au
+
+       hosts deny (S)
+
+           The opposite of hosts allow - hosts listed here are NOT permitted access to services unless the specific services have their own lists to override this one. Where the lists
+           conflict, the allow list takes precedence.
+
+           In the event that it is necessary to deny all by default, use the keyword ALL (or the netmask 0.0.0.0/0) and then explicitly specify to the hosts allow = hosts allow
+           parameter those hosts that should be permitted access.
+
+           Default: hosts deny =  # none (i.e., no hosts specifically excluded)
+
+           Example: hosts deny = 150.203.4. badhost.mynet.edu.au
+
+       invalid users (S)
+
+           This is a list of users that should not be allowed to login to this service. This is really a paranoid check to absolutely ensure an improper setting does not breach your
+           security.
+
+           A name starting with a '@' is interpreted as an NIS netgroup first (if your system supports NIS), and then as a UNIX group if the name was not found in the NIS netgroup
+           database.
+
+           A name starting with '+' is interpreted only by looking in the UNIX group database via the NSS getgrnam() interface. A name starting with '&' is interpreted only by looking
+           in the NIS netgroup database (this requires NIS to be working on your system). The characters '+' and '&' may be used at the start of the name in either order so the value
+           +&group means check the UNIX group database, followed by the NIS netgroup database, and the value &+group means check the NIS netgroup database, followed by the UNIX group
+           database (the same as the '@' prefix).
+
+           The current servicename is substituted for %S. This is useful in the [homes] section.
+
+           Default: invalid users =  # no invalid users
+
+           Example: invalid users = root fred admin @wheel
+
+
+       printable (S)
+
+           If this parameter is yes, then clients may open, write to and submit spool files on the directory specified for the service.
+
+           Note that a printable service will ALWAYS allow writing to the service path (user privileges permitting) via the spooling of print data. The read only parameter controls
+           only non-printing access to the resource.
+
+           Default: printable = no
+
+
+       read only (S)
+
+           An inverted synonym is writeable.
+
+           If this parameter is yes, then users of a service may not create or modify files in the service's directory.
+
+           Note that a printable service (printable = yes) will ALWAYS allow writing to the directory (user privileges permitting), but only via spooling operations.
+
+           Default: read only = yes
+
+
+           This option affects how clients respond to Samba and is one of the most important settings in the smb.conf file.
+
+           The default is security = user, as this is the most common setting, used for a standalone file server or a DC.
+
+           The alternatives are security = ads or security = domain, which support joining Samba to a Windows domain
+
+           You should use security = user and map to guest if you want to mainly setup shares without a password (guest shares). This is commonly used for a shared printer server.
+
+           The different settings will now be explained.
+
+           SECURITY = AUTO
+
+           This is the default security setting in Samba, and causes Samba to consult the server role parameter (if set) to determine the security mode.
+
+           SECURITY = USER
+
+           If server role is not specified, this is the default security setting in Samba. With user-level security a client must first "log-on" with a valid username and password
+           (which can be mapped using the username map parameter). Encrypted passwords (see the encrypted passwords parameter) can also be used in this security mode. Parameters such
+           as user and guest only if set are then applied and may change the UNIX user to use on this connection, but only after the user has been successfully authenticated.
+
+           Note that the name of the resource being requested is not sent to the server until after the server has successfully authenticated the client. This is why guest shares don't
+           work in user level security without allowing the server to automatically map unknown users into the guest account. See the map to guest parameter for details on doing this.
+
+           SECURITY = DOMAIN
+
+           This mode will only work correctly if net(8) has been used to add this machine into a Windows NT Domain. It expects the encrypted passwords parameter to be set to yes. In
+           this mode Samba will try to validate the username/password by passing it to a Windows NT Primary or Backup Domain Controller, in exactly the same way that a Windows NT
+           Server would do.
+
+           Note that a valid UNIX user must still exist as well as the account on the Domain Controller to allow Samba to have a valid UNIX account to map file access to.
+
+           Note that from the client's point of view security = domain is the same as security = user. It only affects how the server deals with the authentication, it does not in any
+           way affect what the client sees.
+
+           Note that the name of the resource being requested is not sent to the server until after the server has successfully authenticated the client. This is why guest shares don't
+           work in user level security without allowing the server to automatically map unknown users into the guest account. See the map to guest parameter for details on doing this.
+
+           See also the password server parameter and the encrypted passwords parameter.
+
+           SECURITY = ADS
+
+           In this mode, Samba will act as a domain member in an ADS realm. To operate in this mode, the machine running Samba will need to have Kerberos installed and configured and
+           Samba will need to be joined to the ADS realm using the net utility.
+
+           Note that this mode does NOT make Samba operate as a Active Directory Domain Controller.
+
+           Note that this forces require strong key = yes and client schannel = yes for the primary domain.
+
+           Read the chapter about Domain Membership in the HOWTO for details.
+
+           Default: security = AUTO
+
+           Example: security = DOMAIN
+
+
+       writeable (S)
+
+           Inverted synonym for read only.
+
+           Default: writeable = no
+
+
+---------------------------------------------------------------------------------------------------
+
+       workgroup (G)
+
+           This controls what workgroup your server will appear to be in when queried by clients. Note that this parameter also controls the Domain name used with the security = domain
+           setting.
+
+           Default: workgroup = WORKGROUP
+
+           Example: workgroup = MYGROUP
+
+       server string (G)
+
+           This controls what string will show up in the printer comment box in print manager and next to the IPC connection in net view. It can be any string that you wish to show to
+           your users.
+
+           It also sets what will appear in browse lists next to the machine name.
+
+           A %v will be replaced with the Samba version number.
+
+           A %h will be replaced with the hostname.
+
+           Default: server string = Samba %v
+
+           Example: server string = University of GNUs Samba Server
+
+       netbios name (G)
+
+           This sets the NetBIOS name by which a Samba server is known. By default it is the same as the first component of the host's DNS name. If a machine is a browse server or
+           logon server this name (or the first component of the hosts DNS name) will be the name that these services are advertised under.
+
+           Note that the maximum length for a NetBIOS name is 15 characters.
+
+           There is a bug in Samba that breaks operation of browsing and access to shares if the netbios name is set to the literal name PIPE. To avoid this problem, do not name your
+           Samba server PIPE.
+
+           Default: netbios name =  # machine DNS name
+
+           Example: netbios name = MYNAME
+
+       dns proxy (G)
+
+           Specifies that nmbd(8) when acting as a WINS server and finding that a NetBIOS name has not been registered, should treat the NetBIOS name word-for-word as a DNS name and do
+           a lookup with the DNS server for that name on behalf of the name-querying client.
+
+           Note that the maximum length for a NetBIOS name is 15 characters, so the DNS name (or DNS alias) can likewise only be 15 characters, maximum.
+
+           nmbd spawns a second copy of itself to do the DNS name lookup requests, as doing a name lookup is a blocking action.
+
+           Default: dns proxy = yes
+
+       map to guest (G)
+
+           This parameter can take four different values, which tell smbd(8) what to do with user login requests that don't match a valid UNIX user in some way.
+
+           The four settings are :
+
+                  ·   Never - Means user login requests with an invalid password are rejected. This is the default.
+
+                  ·   Bad User - Means user logins with an invalid password are rejected, unless the username does not exist, in which case it is treated as a guest login and mapped
+                      into the guest account.
+
+                  ·   Bad Password - Means user logins with an invalid password are treated as a guest login and mapped into the guest account. Note that this can cause problems as it
+                      means that any user incorrectly typing their password will be silently logged on as "guest" - and will not know the reason they cannot access files they think
+                      they should - there will have been no message given to them that they got their password wrong. Helpdesk services will hate you if you set the map to guest
+                      parameter this way :-).
+
+                  ·   Bad Uid - Is only applicable when Samba is configured in some type of domain mode security (security = {domain|ads}) and means that user logins which are
+                      successfully authenticated but which have no valid Unix user account (and smbd is unable to create one) should be mapped to the defined guest account. This was
+                      the default behavior of Samba 2.x releases. Note that if a member server is running winbindd, this option should never be required because the nss_winbind library
+                      will export the Windows domain users and groups to the underlying OS via the Name Service Switch interface.
+
+           Note that this parameter is needed to set up "Guest" share services. This is because in these modes the name of the resource being requested is not sent to the server until
+           after the server has successfully authenticated the client so the server cannot make authentication decisions at the correct time (connection to the share) for "Guest"
+           shares.
+
+           Default: map to guest = Never
+
+           Example: map to guest = Bad User
+
+
+       private dir (G)
+
+           This parameters defines the directory smbd will use for storing such files as smbpasswd and secrets.tdb.
+
+           Default: private dir = /var/lib/samba/private
+
+
+       passdb backend (G)
+
+           This option allows the administrator to chose which backend will be used for storing user and possibly group information. This allows you to swap between different storage
+           mechanisms without recompile.
+
+           The parameter value is divided into two parts, the backend's name, and a 'location' string that has meaning only to that particular backed. These are separated by a :
+           character.
+
+           Available backends can include:
+
+                  ·   smbpasswd - The old plaintext passdb backend. Some Samba features will not work if this passdb backend is used. Takes a path to the smbpasswd file as an optional
+                      argument.
+
+                  ·   tdbsam - The TDB based password storage backend. Takes a path to the TDB as an optional argument (defaults to passdb.tdb in the private dir directory.
+
+                  ·   ldapsam - The LDAP based passdb backend. Takes an LDAP URL as an optional argument (defaults to ldap://localhost)
+
+                      LDAP connections should be secured where possible. This may be done using either Start-TLS (see ldap ssl) or by specifying ldaps:// in the URL argument.
+
+                      Multiple servers may also be specified in double-quotes. Whether multiple servers are supported or not and the exact syntax depends on the LDAP library you use.
+
+                Examples of use are:
+
+               passdb backend = tdbsam:/etc/samba/private/passdb.tdb
+
+               or multi server LDAP URL with OpenLDAP library:
+
+               passdb backend = ldapsam:"ldap://ldap-1.example.com ldap://ldap-2.example.com"
+
+               or multi server LDAP URL with Netscape based LDAP library:
+
+               passdb backend = ldapsam:"ldap://ldap-1.example.com ldap-2.example.com"
+
+           Default: passdb backend = tdbsam
+
+
+
+
+
+
+---------------------------------------------------------------------------------------------------
+
+
+
+
+
