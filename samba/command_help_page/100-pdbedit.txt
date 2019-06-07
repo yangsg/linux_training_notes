@@ -1,0 +1,173 @@
+
+# keyword pdbedit
+
+man pdbedit
+
+
+作用: pdbedit - manage the SAM database (Database of Samba Users)
+
+语法:
+       pdbedit [-a] [-b passdb-backend] [-c account-control] [-C value] [-d debuglevel] [-D drive] [-e passdb-backend] [-f fullname] [--force-initialized-passwords] [-g] [-h homedir]
+        [-i passdb-backend] [-I domain] [-K] [-L] [-m] [-M SID|RID] [-N description] [-P account-policy] [-p profile] [--policies-reset] [-r] [-s configfile] [-S script]
+        [--set-nt-hash] [-t] [--time-format] [-u username] [-U SID|RID] [-v] [-V] [-w] [-x] [-y] [-z] [-Z]
+
+说明:
+       This tool is part of the samba(7) suite.
+
+       The pdbedit program is used to manage the users accounts stored in the sam database and can only be run by root.
+
+       The pdbedit tool uses the passdb modular interface and is independent from the kind of users database used (currently there are smbpasswd, ldap, nis+ and tdb based and more can
+       be added without changing the tool).
+
+       There are five main ways to use pdbedit: adding a user account, removing a user account, modifying a user account, listing user accounts, importing users accounts.
+
+
+pdbedit 工具 使用 the passdb modular interface 且 是 独立于 使用的 users database 的 类型的.
+该工具 只能 通过 root 来 调用
+
+
+---------------------------------------------------------------------------------------------------
+
+       -L|--list
+           This option lists all the user accounts present in the users database. This option prints a list of user/uid pairs separated by the ':' character.
+
+           Example: pdbedit -L
+
+               sorce:500:Simo Sorce
+               samba:45:Test User
+
+
+       -u|--user username
+           This option specifies the username to be used for the operation requested (listing, adding, removing). It is required in add, remove and modify operations and optional in
+           list operations.
+
+
+[root@sambaserver ~]# pdbedit -L     # 列出所有 users database 中所有的 user accounts
+Bob:1001:
+
+[root@sambaserver ~]# pdbedit -L -u Bob
+Bob:1001:
+[root@sambaserver ~]# pdbedit -L -u Alice
+Username not found!
+
+
+---------------------------------------------------------------------------------------------------
+       -v|--verbose
+           This option enables the verbose listing format. It causes pdbedit to list the users in the database, printing out the account fields in a descriptive format. Used together
+           with -w also shows passwords hashes.
+
+[root@sambaserver ~]# pdbedit -L -v
+---------------
+Unix username:        Bob
+NT username:
+Account Flags:        [U          ]
+User SID:             S-1-5-21-1405157953-4185412201-4186437731-1000
+Primary Group SID:    S-1-5-21-1405157953-4185412201-4186437731-513
+Full Name:
+Home Directory:       \\sambaserver\bob
+HomeDir Drive:
+Logon Script:
+Profile Path:         \\sambaserver\bob\profile
+Domain:               SAMBASERVER
+Account desc:
+Workstations:
+Munged dial:
+Logon time:           0
+Logoff time:          Wed, 06 Feb 2036 23:06:39 CST
+Kickoff time:         Wed, 06 Feb 2036 23:06:39 CST
+Password last set:    Thu, 06 Jun 2019 17:51:23 CST
+Password can change:  Thu, 06 Jun 2019 17:51:23 CST
+Password must change: never
+Last bad password   : 0
+Bad password count  : 0
+Logon hours         : FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+[root@sambaserver ~]#
+
+
+---------------------------------------------------------------------------------------------------
+       -a|--create
+           This option is used to add a user into the database. This command needs a user name specified with the -u switch. When adding a new user, pdbedit will also ask for the
+           password to be used.
+
+           Example: pdbedit -a -u sorce
+
+               new password:
+               retype new password
+
+               Note
+               pdbedit does not call the unix password synchronization script if unix password sync has been set. It only updates the data in the Samba user database.
+
+               If you wish to add a user and synchronise the password that immediately, use smbpasswd's -a option.
+
+
+[root@sambaserver ~]# useradd Alice
+[root@sambaserver ~]# pdbedit -a -u Alice    # 添加 名为 Alice 的 samba user account
+new password:
+retype new password:
+Unix username:        Alice
+NT username:
+Account Flags:        [U          ]
+User SID:             S-1-5-21-1405157953-4185412201-4186437731-1001
+Primary Group SID:    S-1-5-21-1405157953-4185412201-4186437731-513
+Full Name:
+Home Directory:       \\sambaserver\alice
+HomeDir Drive:
+Logon Script:
+Profile Path:         \\sambaserver\alice\profile
+Domain:               SAMBASERVER
+Account desc:
+Workstations:
+Munged dial:
+Logon time:           0
+Logoff time:          Wed, 06 Feb 2036 23:06:39 CST
+Kickoff time:         Wed, 06 Feb 2036 23:06:39 CST
+Password last set:    Fri, 07 Jun 2019 10:37:01 CST
+Password can change:  Fri, 07 Jun 2019 10:37:01 CST
+Password must change: never
+Last bad password   : 0
+Bad password count  : 0
+Logon hours         : FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+
+---------------------------------------------------------------------------------------------------
+
+       -t|--password-from-stdin
+           This option causes pdbedit to read the password from standard input, rather than from /dev/tty (like the passwd(1) program does). The password has to be submitted twice and
+           terminated by a newline each.
+
+
+[root@sambaserver ~]# useradd Leonard
+[root@sambaserver ~]# password=123 && echo -ne "$password\n$password\n" | pdbedit -a --password-from-stdin -u Leonard   # 添加 samba user 时 通过 stdin 指定密码
+Unix username:        Leonard
+NT username:
+Account Flags:        [U          ]
+User SID:             S-1-5-21-1405157953-4185412201-4186437731-1003
+Primary Group SID:    S-1-5-21-1405157953-4185412201-4186437731-513
+Full Name:
+Home Directory:       \\sambaserver\leonard
+HomeDir Drive:
+Logon Script:
+Profile Path:         \\sambaserver\leonard\profile
+Domain:               SAMBASERVER
+Account desc:
+Workstations:
+Munged dial:
+Logon time:           0
+Logoff time:          Wed, 06 Feb 2036 23:06:39 CST
+Kickoff time:         Wed, 06 Feb 2036 23:06:39 CST
+Password last set:    Fri, 07 Jun 2019 10:55:51 CST
+Password can change:  Fri, 07 Jun 2019 10:55:51 CST
+Password must change: never
+Last bad password   : 0
+Bad password count  : 0
+Logon hours         : FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+
+---------------------------------------------------------------------------------------------------
+
+       -x|--delete
+           This option causes pdbedit to delete an account from the database. It needs a username specified with the -u switch.
+
+           Example: pdbedit -x -u bob
+
+[root@sambaserver ~]# pdbedit -x -u Leonard   # 删除 samba user
+
+
