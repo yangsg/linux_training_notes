@@ -182,3 +182,26 @@ vim /etc/samba/smb.conf.example  #查看示例 配置文件
 [root@sambaserver ~]# ls /var/lib/samba/private/{passdb.tdb,secrets.tdb}   #<--- 存放 samba 用户 账号 和 密码 的数据库文件
 /var/lib/samba/private/passdb.tdb  /var/lib/samba/private/secrets.tdb
 
+
+---------------------------------------------------------------------------------------------------
+[root@basic ~]# cat /usr/lib/systemd/system/smb.service   # 还可用类似的方式查看 nmb.service 的 unit file 信息
+[Unit]
+Description=Samba SMB Daemon
+Documentation=man:smbd(8) man:samba(7) man:smb.conf(5)
+After=network.target nmb.service winbind.service
+
+[Service]
+Type=notify
+NotifyAccess=all
+PIDFile=/run/smbd.pid   <--- 注意这里的 /run/smbd.pid 文件
+LimitNOFILE=16384
+EnvironmentFile=-/etc/sysconfig/samba
+ExecStart=/usr/sbin/smbd --foreground --no-process-group $SMBDOPTIONS
+ExecReload=/bin/kill -HUP $MAINPID
+LimitCORE=infinity
+Environment=KRB5CCNAME=FILE:/run/samba/krb5cc_samba
+
+[Install]
+WantedBy=multi-user.target
+
+---------------------------------------------------------------------------------------------------
