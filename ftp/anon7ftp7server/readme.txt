@@ -146,6 +146,7 @@ man 5 vsftpd.conf
        https://linuxize.com/post/how-to-setup-ftp-server-with-vsftpd-on-centos-7/#6-securing-transmissions-with-ssl-tls
        https://www.tecmint.com/install-ftp-server-in-centos-7/
        https://www.krizna.com/centos/setup-ftp-server-centos-7-vsftp/
+       https://www.tecmint.com/secure-vsftpd-using-ssl-tls-on-centos/
        https://blog.csdn.net/qq_14940627/article/details/83189999
 
    ftp的主动模式和被动模式: http://slacksite.com/other/ftp.html
