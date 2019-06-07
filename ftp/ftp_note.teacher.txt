@@ -1,0 +1,119 @@
+
+ftp
+
+	应用层协议，File Transfer Protocol 文件传输协议
+	作用：通过网络共享文件
+
+	ftp协议的工作模式：
+
+		命令连接
+		数据连接
+
+	ftp协议的连接模式：
+		主动模式
+			端口号：
+				命令连接： 21/tcp
+				数据连接： 20/tcp
+
+			a. 客户端连接服务器的21端口，建立命令连接
+			b. 服务器使用20端口主动连接客户端，传输数据
+
+
+		被动模式
+			端口号：
+				命令连接： 21/tcp
+				数据连接:  >1024  随机
+
+			a. 客户端连接服务器的21端口，建立命令连接
+			b. 服务器随机产生数据连接端口，通过已建立的命令连接告知客户端数据连接端口号
+			c. 客户端连接数据端口，传输数据
+
+
+
+	访问方式：
+		匿名访问
+			--- ftp用户
+		本地用户认证的访问
+
+	默认情况下，客户端会访问对应用户宿主目录下的文件
+
+		匿名用户ftp ---->  /var/ftp
+
+
+服务器端：
+	软件：vsftpd
+	配置文件：/etc/vsftpd/vsftpd.conf
+	服务名称: vsftpd
+
+
+[root@file_server ~]# yum install -y vsftpd
+
+
+配置项说明：
+
+1、匿名用户
+
+	1) anonymous_enable=YES
+		开启匿名访问
+
+	2) write_enable=YES
+		针对所有用户的上传权限
+
+	3) anon_upload_enable=YES
+		启用匿名用户上传文件的权限
+
+		注意：
+			a. 确保匿名用户对本地目录拥有写权限
+			b. 匿名用户上传时，不允许在数据根目录直接上传文件
+			c. 不允许在匿名用户的数据根目录添加任何写权限，否则ftp会禁止匿名访问
+
+
+	4) anon_mkdir_write_enable=YES
+		启用匿名用户上传目录的权限
+
+
+	5) anon_other_write_enable=YES
+		启用匿名用户其他写入操作(删除、重命名)
+
+
+	6) anon_umask=022
+
+		保证其他匿名用户可正常下载文件
+
+
+	7) anon_root=/data/caiwu
+
+		修改匿名用户默认的数据目录
+
+
+
+2、本地用户认证
+
+	1) local_enable=YES
+
+		启用本地用户认证
+
+	2) local_root=/opt/jishu
+
+		修改本地用户的数据目录
+
+
+
+
+ftp客户端工具：
+
+	Windows:
+
+		ftp://192.168.224.100/
+		ftp客户端工具
+
+	Linux:
+
+		lftp IP
+
+			get
+			mget
+			mirror
+
+		[root@ftp_client ~]# lftp 192.168.224.100 -u martin
+
