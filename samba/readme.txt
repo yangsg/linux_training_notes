@@ -39,6 +39,8 @@ Bob:1001:
 // 修改配置
 [root@sambaserver ~]# vim /etc/samba/smb.conf
 
+## 其实还可以禁用一些不需要的其他share, 参考: https://github.com/yangsg/linux_training_notes/blob/master/samba/sambaserver/etc/samba/smb.conf
+
 ##  注释掉 [homes] section, 即不 提供对用户家目录的共享
 #[homes]
 #       comment = Home Directories
@@ -97,6 +99,9 @@ udp        0      0 0.0.0.0:138             0.0.0.0:*                           
             step02: 在弹出的对象框中 选择驱动器号(即盘符) 和 共享目录的访问路径,访问路径格式如下：
                             \\服务IP\共享名称   如:  \\192.168.175.10\Secure
 
+        取消网路驱动器的方法:
+             右键点击 网络驱动器对应的盘符 -> 在弹出菜单中选择 [断开连接] 即可
+
 在 linux 客户端访问:
 [root@basic ~]# smbclient //192.168.175.10/Secure -U Bob
 Enter SAMBA\Bob's password:
@@ -127,6 +132,22 @@ HELP lcd:
 smb: \>
 
 
+[root@basic ~]# smbclient -L //192.168.175.10/Secure -U Bob   # 列出 samba server 提供的 可用的 services
+      Enter SAMBA\Bob's password:
+
+              Sharename       Type      Comment
+              ---------       ----      -------
+              Secure          Disk      secure share folder
+              IPC$            IPC       IPC Service (Samba 4.8.3)   <--关于IPC$ 的信息见 https://www.cyberciti.biz/faq/samba-restrict-access-to-ipc-share/
+      Reconnecting with SMB1 for workgroup listing.
+
+              Server               Comment
+              ---------            -------
+
+              Workgroup            Master
+              ---------            -------
+              SAMBA                SAMBASERVER
+
 
 ---------------------------------------------------------------------------------------------------
 
@@ -144,6 +165,9 @@ smb: \>
     https://devel.samba.org/
 
     http://www.ubiqx.org/cifs/
+
+    https://www.cyberciti.biz/faq/samba-restrict-access-to-ipc-share/
+    https://support.microsoft.com/en-us/help/3034016/ipc-share-and-null-session-behavior-in-windows
 
 man samba
 man 5 smb.conf
