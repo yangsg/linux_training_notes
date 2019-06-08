@@ -1,0 +1,76 @@
+
+# keyword openssl
+
+man openssl
+man req
+man rsa
+man 5 x509v3_config
+man 5 config
+man x509
+man version
+
+/etc/pki/tls/openssl.cnf
+
+注: 1024 位 的 非对称加密算法 已经不安全, 所以最好使用 2048 位的
+
+
+TODO
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# yum -y update openssl
+
+[root@basic ~]# rpm -q openssl
+    openssl-1.0.2k-16.el7_6.1.x86_64
+
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# openssl version -a
+OpenSSL 1.0.2k-fips  26 Jan 2017
+built on: reproducible build, date unspecified
+platform: linux-x86_64
+options:  bn(64,64) md2(int) rc4(16x,int) des(idx,cisc,16,int) idea(int) blowfish(idx)
+compiler: gcc -I. -I.. -I../include  -fPIC -DOPENSSL_PIC -DZLIB -DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H -DKRB5_MIT -m64 -DL_ENDIAN -Wall -O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches   -m64 -mtune=generic -Wa,--noexecstack -DPURIFY -DOPENSSL_IA32_SSE2 -DOPENSSL_BN_ASM_MONT -DOPENSSL_BN_ASM_MONT5 -DOPENSSL_BN_ASM_GF2m -DRC4_ASM -DSHA1_ASM -DSHA256_ASM -DSHA512_ASM -DMD5_ASM -DAES_ASM -DVPAES_ASM -DBSAES_ASM -DWHIRLPOOL_ASM -DGHASH_ASM -DECP_NISTZ256_ASM
+OPENSSLDIR: "/etc/pki/tls"
+engines:  rdrand dynamic
+
+
+[root@basic ~]# openssl version -d
+OPENSSLDIR: "/etc/pki/tls"
+
+
+
+
+
+
+---------------------------------------------------------------------------------------------------
+网上资料：
+
+    https://stackoverflow.com/questions/13732826/convert-pem-to-crt-and-key
+    https://serverfault.com/questions/9708/what-is-a-pem-file-and-how-does-it-differ-from-other-openssl-generated-key-file
+    https://crypto.stackexchange.com/questions/43697/what-is-the-difference-between-pem-csr-key-and-crt
+    https://www.madboa.com/geek/openssl/
+
+
+    https://www.digicert.com/ssl-certificate-country-codes.htm
+    https://stackoverflow.com/questions/8075274/is-it-possible-making-openssl-skipping-the-country-common-name-prompts
+    https://security.stackexchange.com/questions/150770/are-certificate-sans-case-sensitive
+
+中文:
+    https://www.cnblogs.com/hnxxcxg/p/7610582.html
+    https://www.cnblogs.com/gordon0918/p/5409286.html
+    https://www.cnblogs.com/f-ck-need-u/p/7113610.html?utm_source=itdadao&utm_medium=referral
+
+
+
+
+
+
+
+
+
+
+
+
+
+
