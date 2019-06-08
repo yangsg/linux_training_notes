@@ -104,8 +104,8 @@ newftpuser
 # do not even prompt for a password.
 # Note that the default vsftpd pam config also checks /etc/vsftpd/ftpusers
 # for users that are denied.
-#  因为我们在 /etc/vsftpd/vsftpd.conf 中将 /etc/vsftpd/user_list 配置为了 允许 login access 的 "白名单", 所以 需要根据需要对其进行修改
-root
+#  因为我们在 /etc/vsftpd/vsftpd.conf 中将 /etc/vsftpd/user_list 配置为了 允许 login access(即 ftp访问) 的 "白名单", 所以 需要根据需要对其进行修改
+#root
 #bin
 #daemon
 #adm
@@ -120,7 +120,6 @@ root
 #games
 #nobody
 newftpuser
-[root@secure7ftp7server ~]#
 
 
 [root@secure7ftp7server ~]# mkdir -p /home/newftpuser/ftp/upload
@@ -136,7 +135,7 @@ dr-xr-x--- 3 newftpuser newftpuser 20 Jun  8 17:11 /home/newftpuser/ftp
 echo "This account is limited to FTP access only."
 [root@secure7ftp7server ~]# echo "/bin/ftponly" | tee -a /etc/shells
 /bin/ftponly
-[root@secure7ftp7server ~]# usermod newftpuser -s /bin/ftponly
+[root@secure7ftp7server ~]# usermod newftpuser -s /bin/ftponly     # 禁止 用于 shell 访问
 
 [root@secure7ftp7server ~]# systemctl restart vsftpd
 
