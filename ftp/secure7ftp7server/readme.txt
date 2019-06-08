@@ -23,123 +23,141 @@ secure7ftp7server 的 ip: 192.168.175.10
 [root@secure7ftp7server ~]# grep 'ftp' /etc/passwd
 ftp:x:14:50:FTP User:/var/ftp:/sbin/nologin
 
+// 创建 秘钥 证书 存放目录
+[root@secure7ftp7server ~]# mkdir /etc/vsftpd/ssl
+[root@secure7ftp7server ~]# chmod 700 /etc/vsftpd/ssl
+
+
+[root@anon7ftp7server ~]# vim /etc/vsftpd/vsftpd.conf    # 最终的 /etc/vsftpd/vsftpd.conf 配置 如下
+          anonymous_enable=NO
+          local_enable=YES
+          write_enable=YES
+          local_umask=022
+          dirmessage_enable=YES
+          xferlog_enable=YES
+          connect_from_port_20=YES
+          xferlog_std_format=YES
+          chroot_local_user=YES
+          listen=NO
+          listen_ipv6=YES
+          pam_service_name=vsftpd
+          userlist_enable=YES
+          userlist_file=/etc/vsftpd/user_list
+          userlist_deny=NO
+          tcp_wrappers=YES
+          user_sub_token=$USER
+          local_root=/home/$USER/ftp
+          pasv_min_port=30000
+          pasv_max_port=31000
+          rsa_cert_file=/etc/vsftpd/ssl/vsftpd.pem
+          rsa_private_key_file=/etc/vsftpd/ssl/vsftpd.pem
+          ssl_enable=YES
+
+
+// 生成私钥 和 自签名的 证书 (1024 已不太安全, 最好使用 2048 位的)
+[root@secure7ftp7server ~]# openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout /etc/vsftpd/ssl/vsftpd.pem -out /etc/vsftpd/ssl/vsftpd.pem
+    Generating a 2048 bit RSA private key
+    .....+++
+    ................+++
+    writing new private key to '/etc/vsftpd/ssl/vsftpd.pem'
+    -----
+    You are about to be asked to enter information that will be incorporated
+    into your certificate request.
+    What you are about to enter is what is called a Distinguished Name or a DN.
+    There are quite a few fields but you can leave some blank
+    For some fields there will be a default value,
+    If you enter '.', the field will be left blank.
+    -----
+    Country Name (2 letter code) [XX]:CN
+    State or Province Name (full name) []:Beijing
+    Locality Name (eg, city) [Default City]:Beijing
+    Organization Name (eg, company) [Default Company Ltd]:mytraining
+    Organizational Unit Name (eg, section) []:mytraining
+    Common Name (eg, your name or your server's hostname) []:mytraining.com   <-- 输入公司域名
+    Email Address []:123@qq.com
+
+[root@secure7ftp7server ~]# chmod 400 /etc/vsftpd/ssl/vsftpd.pem
+
+[root@secure7ftp7server ~]# systemctl restart vsftpd
+
 
 [root@secure7ftp7server ~]# systemctl start vsftpd
 [root@secure7ftp7server ~]# systemctl enable vsftpd
 Created symlink from /etc/systemd/system/multi-user.target.wants/vsftpd.service to /usr/lib/systemd/system/vsftpd.service.
 
+[root@secure7ftp7server ~]# useradd newftpuser
+[root@secure7ftp7server ~]# passwd newftpuser
+Changing password for user newftpuser.
+New password:
+Retype new password:
+passwd: all authentication tokens updated successfully.
+
+// 将用户添加到 /etc/vsftpd/user_list
+[root@secure7ftp7server ~]# echo "newftpuser" | sudo tee -a /etc/vsftpd/user_list
+newftpuser
+
+
+[root@secure7ftp7server ~]# vim /etc/vsftpd/user_list
+# vsftpd userlist
+# If userlist_deny=NO, only allow users in this file
+# If userlist_deny=YES (default), never allow users in this file, and
+# do not even prompt for a password.
+# Note that the default vsftpd pam config also checks /etc/vsftpd/ftpusers
+# for users that are denied.
+#  因为我们在 /etc/vsftpd/vsftpd.conf 中将 /etc/vsftpd/user_list 配置为了 允许 login access 的 "白名单", 所以 需要根据需要对其进行修改
+root
+#bin
+#daemon
+#adm
+#lp
+#sync
+#shutdown
+#halt
+#mail
+#news
+#uucp
+#operator
+#games
+#nobody
+newftpuser
+[root@secure7ftp7server ~]#
+
+
+[root@secure7ftp7server ~]# mkdir -p /home/newftpuser/ftp/upload
+[root@secure7ftp7server ~]# chmod 550 /home/newftpuser/ftp
+[root@secure7ftp7server ~]# chmod 750 /home/newftpuser/ftp/upload
+[root@secure7ftp7server ~]# chown -R newftpuser: /home/newftpuser/ftp
+[root@secure7ftp7server ~]# ls -ld /home/newftpuser/ftp
+dr-xr-x--- 3 newftpuser newftpuser 20 Jun  8 17:11 /home/newftpuser/ftp
+
+// 禁止 shell access
+[root@secure7ftp7server ~]# echo -e '#!/bin/sh\necho "This account is limited to FTP access only."' |  tee -a  /bin/ftponly
+#!/bin/sh
+echo "This account is limited to FTP access only."
+[root@secure7ftp7server ~]# echo "/bin/ftponly" | tee -a /etc/shells
+/bin/ftponly
+[root@secure7ftp7server ~]# usermod newftpuser -s /bin/ftponly
+
+[root@secure7ftp7server ~]# systemctl restart vsftpd
 
 ---------------------------------------------------------------------------------------------------
-
-
-
-
-[root@anon7ftp7server ~]# grep 'ftp' /etc/passwd
-ftp:x:14:50:FTP User:/var/ftp:/sbin/nologin
-
-[root@anon7ftp7server ~]# chown -R ftp:ftp /var/ftp/pub/
-[root@anon7ftp7server ~]# chmod 755 /var/ftp/pub/
-
-[root@anon7ftp7server ~]# vim /etc/vsftpd/vsftpd.conf    # 如下配置是针对 匿名访问 的设置
-        ## 开启匿名访问
-        anonymous_enable=YES
-
-        ## 针对所有用户的上传权限
-        write_enable=YES
-
-        ##    注意：
-        ##      a. 确保匿名用户对本地目录拥有写权限
-        ##      b. 匿名用户上传时，不允许在数据根目录直接上传文件
-        ##      c. 不允许在匿名用户的数据根目录添加任何写权限，否则ftp会禁止匿名访问
-        ## 启用匿名用户上传文件的权限
-        anon_upload_enable=YES
-
-        ## 启用匿名用户上传目录的权限
-        anon_mkdir_write_enable=YES
-
-        ## 启用匿名用户其他写入操作(删除、重命名)
-        anon_other_write_enable=YES
-
-        ## 保证其他匿名用户可正常下载文件
-        anon_umask=022
-
-        ## 修改匿名用户默认的数据目录 (如果有需要的话, 注意, 如果启用了这该项, 还应该注意系统的文件系统本身的权限是否满足要求)
-        ## anon_root=/data/caiwu
-
-
-// 启动 vsftpd 并将其 设为 开机自启
-[root@anon7ftp7server ~]# systemctl start vsftpd
-[root@anon7ftp7server ~]# systemctl enable vsftpd
-Created symlink from /etc/systemd/system/multi-user.target.wants/vsftpd.service to /usr/lib/systemd/system/vsftpd.service.
-
----------------------------------------------------------------------------------------------------
-
-windows 客户端:
-
-    ftp://192.168.175.10
+windows 客户端: (使用专用的 ftp 工具 )
 
     ftp 客户端工具: 如  filezilla:  https://filezilla-project.org/
 
 
 linux 客户端:
-     linux 下的 ftp 客户端工具有 ftp, lftp. 其中 lftp 有命令自动补齐功能
 
-[root@client ~]# yum -y install ftp      # 安装 ftp 客户端工具 ftp
-
-[root@client ~]# ftp 192.168.175.10            # 连接 ftp 服务器  # 更多信息见 man ftp
-Connected to 192.168.175.10 (192.168.175.10).
-220 (vsFTPd 3.0.2)
-Name (192.168.175.10:root): ftp    <--- 匿名登录, 输入 用户名 'ftp'
-331 Please specify the password.
-Password:      <---  直接 回车
-230 Login successful.
-Remote system type is UNIX.
-Using binary mode to transfer files.
-ftp> help   <--- 查看帮助, 显示可用命令
-Commands may be abbreviated.  Commands are:
-
-!               debug           mdir            sendport        site
-$               dir             mget            put             size
-account         disconnect      mkdir           pwd             status
-append          exit            mls             quit            struct
-ascii           form            mode            quote           system
-bell            get             modtime         recv            sunique
-binary          glob            mput            reget           tenex
-bye             hash            newer           rstatus         tick
-case            help            nmap            rhelp           trace
-cd              idle            nlist           rename          type
-cdup            image           ntrans          reset           user
-chmod           lcd             open            restart         umask
-close           ls              prompt          rmdir           verbose
-cr              macdef          passive         runique         ?
-delete          mdelete         proxy           send
-ftp> help ls  <--- 查看指定 命令的帮助信息
-ls              list contents of remote directory
-ftp> ls   <--- 执行 ls 命令
-227 Entering Passive Mode (192,168,175,10,171,58).
-150 Here comes the directory listing.
-drwxr-xr-x    3 14       50             30 Jun 07 11:02 pub
-226 Directory send OK.
-ftp> cd pub   <--- 切换目录
-250 Directory successfully changed.
-ftp> quit   <--- 退出
-221 Goodbye.
-
-ftp 内部 的 常用的命令有:
-
-         lcd
-         get
-         mget
-----------------------------------------------------
 [root@client ~]# yum -y install lftp     # 安装 ftp 客户端工具 lftp
+[root@basic linux_training_notes]# lftp      # 参考: http://www.linuxweblog.com/ftp-tls-ssl
+lftp :~> set ssl:verify-certificate no    <--- 取消验证  (因为这里 server 端使用的是自签名的证书)
+lftp :~> connect 192.168.175.10           <--- 连接 到 server
+lftp 192.168.175.10:~> login newftpuser   <--- 登录
+Password:        <--- 输入密码
+lftp newftpuser@192.168.175.10:~> ls     <--- 执行 ls 命令
+drwxr-x---    2 1001     1001            6 Jun 08 09:11 upload
+lftp newftpuser@192.168.175.10:/>
 
-[root@client ~]# lftp 192.168.175.10     # 更多信息见 man lftp
-lftp 192.168.175.10:~> ls   <-- 执行 ls 命令
-drwxr-xr-x    3 14       50             30 Jun 07 11:02 pub
-lftp 192.168.175.10:/> help help  <--- 查看 help 命令的帮助信息
-Usage: help [<cmd>]
-Print help for command <cmd>, or list of available commands
-lftp 192.168.175.10:/> help  <--- 查看帮助信息
 
 lftp 内部 的常用命令有:
 
@@ -147,6 +165,7 @@ lftp 内部 的常用命令有:
         get
         mget
         mirror
+
 ---------------------------------------------------------------------------------------------------
 
 man vsftpd
@@ -163,4 +182,12 @@ man 5 vsftpd.conf
 
    ftp的主动模式和被动模式: http://slacksite.com/other/ftp.html
 
+   证书:
+       https://www.cnblogs.com/hnxxcxg/p/7610582.html
+       https://blog.csdn.net/gengxiaoming7/article/details/78505107
+
    https://serverfault.com/questions/247096/allow-anonymous-upload-for-vsftpd
+
+  lftp with ssl
+    https://stackoverflow.com/questions/23900071/how-do-i-get-lftp-to-use-ssl-tls-security-mechanism-from-the-command-line
+    http://www.linuxweblog.com/ftp-tls-ssl
