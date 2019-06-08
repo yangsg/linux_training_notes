@@ -56,6 +56,16 @@ OPENSSLDIR: "/etc/pki/tls"
     https://stackoverflow.com/questions/8075274/is-it-possible-making-openssl-skipping-the-country-common-name-prompts
     https://security.stackexchange.com/questions/150770/are-certificate-sans-case-sensitive
 
+    私钥相关权限设置:
+        https://superuser.com/questions/215504/permissions-on-private-key-in-ssh-folder
+        https://stackoverflow.com/questions/9270734/ssh-permissions-are-too-open-error
+        https://support.rackspace.com/how-to/logging-in-with-an-ssh-private-key-on-linuxmac/
+        https://superuser.com/questions/556493/permissions-for-ssl-key
+        https://unix.stackexchange.com/questions/115838/what-is-the-right-file-permission-for-a-pem-file-to-ssh-and-scp
+
+    私钥位置:
+        https://serverfault.com/questions/259302/best-location-for-ssl-certificate-and-private-keys-on-ubuntu
+
 中文:
     https://www.cnblogs.com/hnxxcxg/p/7610582.html
     https://www.cnblogs.com/gordon0918/p/5409286.html
