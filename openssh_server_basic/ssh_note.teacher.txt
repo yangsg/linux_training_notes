@@ -1,0 +1,185 @@
+ssh
+
+	应用层协议，Secure Shell
+	提供加密连接服务
+
+服务器管理方式：
+
+	本地管理
+		安装操作系统
+		系统故障修复
+	远程连接管理
+
+
+服务器端：
+
+	openssh-server
+
+	启动sshd服务
+
+		[root@node01 ~]# systemctl status sshd
+
+		[root@node01 ~]# netstat -antp | grep ssh
+		tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      868/sshd
+
+
+客户端：
+
+	Linux：
+		openssh-clients
+
+	# ssh [username@]IP
+
+		[root@client_01 ~]# ssh root@192.168.122.171
+
+
+	Windows:
+
+		SecureCRT
+		Xshell
+
+
+
+1、远程执行命令
+
+# ssh username@IP 'command'
+
+	[root@client_01 ~]# ssh root@192.168.122.171 'hostname'
+	root@192.168.122.171's password:
+	server_01
+
+
+2、文件/目录的远程拷贝
+
+	scp/rsync
+
+	1) scp用法
+
+			-r选项
+
+		[root@client_01 ~]# scp /tmp/test.txt root@192.168.122.171:/tmp
+
+		[root@client_01 ~]# scp root@192.168.122.171:/etc/hostname /tmp
+
+		[root@client_01 ~]# scp -r root@192.168.122.171:/tmp/dir01 /tmp/
+
+
+	2) rsync  增量拷贝工具
+
+		a. 拷贝目录下的文件
+
+		[root@client_01 ~]# rsync -av /tmp/dir01/ root@192.168.122.171:/tmp/
+
+		b. 拷贝目录
+
+		[root@client_01 ~]# rsync -av /tmp/dir01 root@192.168.122.171:/tmp/
+
+
+
+
+ssh认证方式:
+
+	基于用户名/密码的认证
+
+	基于密钥的认证
+		1) 在客户端生成密钥对
+		2) 将公钥文件拷贝到服务器
+
+
+基于密钥的ssh连接
+
+1) 生成密钥对
+
+[root@client_01 ~]# ssh-keygen
+
+[root@client_01 ~]# ls /root/.ssh/
+id_rsa  id_rsa.pub
+
+
+2) 将公钥文件拷贝到服务器
+
+[root@client_01 ~]# ssh-copy-id root@192.168.122.171
+
+在远程服务器查看公钥文件
+
+[root@server_01 ~]# ls .ssh/
+authorized_keys
+
+
+
+
+
+
+openssh-server的配置文件
+
+	/etc/ssh/sshd_config
+
+		1) 修改默认端口
+
+			Port 22
+
+			a. 关闭防火墙
+
+				[root@node01 ~]# systemctl stop firewalld
+				[root@node01 ~]# systemctl disable firewalld		//设置firewalld开机自动关闭
+
+				[root@node01 ~]# iptables -F 		//清除防火墙自带的规则
+
+			b. 关闭SELinux
+
+				[root@node01 ~]# getenforce
+				Disabled
+
+				[root@node01 ~]# vim /etc/sysconfig/selinux
+
+					SELINUX=disabled
+
+				重启系统生效
+
+
+
+		2) 禁止root用户远程登录
+
+			PermitRootLogin no
+
+		3) 禁用密码认证
+
+			PasswordAuthentication no
+
+		4) 关闭DNS反解
+
+			UseDNS  no
+			GSSAPIAuthtication no
+
+		5) 设置尝试密码的最大次数
+
+			MaxAuthTries 1
+
+
+	重启sshd服务
+
+	# systemctl restart sshd
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
