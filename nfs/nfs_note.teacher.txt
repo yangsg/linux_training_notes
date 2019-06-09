@@ -1,0 +1,122 @@
+nfs服务器
+
+	nfs
+		文件系统名称，Network File System 由Sun公司研发
+		提供文件共享, 借助RPC(Remote Procudure Call远程过程调用)机制实现数据传输
+
+		作用：共享存储
+
+
+服务器端：
+	软件：nfs-utils, rpcbind
+
+
+配置文件：
+
+	/etc/exports
+
+	格式：
+
+		目录名称    客户端地址(参数1,参数2)  客户端地址(参数1,参数2)
+
+	客户端地址：
+		1) IP地址  192.168.1.1
+		2) 网段    192.168.1.0/24
+		3) *       所有客户端
+
+	参数：
+		1) ro	只读
+		2) rw	读写
+		3) sync 	同步	可靠性高
+		4) async	异步	速度快
+		5) no_root_squash	保留root的属主、属组
+
+
+
+示例：配置nfs服务器，提供共享存储 	(/data/webdata  逻辑卷)
+
+	  要求前端业务服务器连接共享存储时，只允许查看文件
+
+
+
+1、创建逻辑卷，挂载
+
+[root@nfs_server ~]# pvcreate /dev/vdb
+[root@nfs_server ~]# vgcreate vg01 /dev/vdb
+[root@nfs_server ~]# lvcreate -L 10G -n lv01 vg01
+[root@nfs_server ~]# lvscan
+  ACTIVE            '/dev/centos/swap' [2.00 GiB] inherit
+  ACTIVE            '/dev/centos/root' [<17.00 GiB] inherit
+  ACTIVE            '/dev/vg01/lv01' [10.00 GiB] inherit
+
+[root@nfs_server ~]# mkfs.ext4 /dev/vg01/lv01
+
+[root@nfs_server ~]# mkdir -p /data/webdata
+[root@nfs_server ~]# vim /etc/fstab
+/dev/vg01/lv01	/data/webdata	ext4	defaults	0 0
+[root@nfs_server ~]# mount -a
+
+
+2、安装nfs软件
+
+[root@nfs_server ~]# yum install -y nfs-utils rpcbind
+
+
+3、编辑配置文件
+
+[root@nfs_server ~]# cat /etc/exports
+
+	/data/webdata		192.168.122.0/24(ro)
+
+
+4、启动nfs服务
+
+[root@nfs_server ~]# systemctl start nfs-server
+[root@nfs_server ~]# systemctl enable nfs-server
+
+
+
+客户端使用nfs服务器：
+
+[root@web_server_01 ~]# mkdir /var/www/html -p
+
+[root@web_server_01 ~]# yum install -y nfs-utils
+
+[root@web_server_01 ~]# tail -n 1 /etc/fstab
+192.168.122.103:/data/webdata	/var/www/html	nfs	defaults	0 0
+
+
+
+
+
+
+示例02：配置nfs读写共享   /data/mysqldata
+
+
+[root@nfs_server ~]# cat /etc/exports
+/data/webdata		192.168.122.0/24(ro)
+/data/mysqldata		192.168.122.0/24(rw,sync,no_root_squash)
+
+
+[root@nfs_server ~]# exportfs -rav	//配置nfs进程重新读取配置文件
+
+
+[root@nfs_server ~]# chmod o+w /data/mysqldata/
+[root@nfs_server ~]# ls -ldh /data/mysqldata/
+drwxr-xrwx 2 root root 71 12月 19 16:52 /data/mysqldata/
+[root@nfs_server ~]#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
