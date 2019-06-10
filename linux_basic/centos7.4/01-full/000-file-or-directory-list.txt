@@ -72,18 +72,14 @@ CentOS Linux release 7.4.1708 (Core)
 /etc/sysconfig/modules/*.modules   # 见 /usr/lib/systemd/system/rhel-loadmodules.service  和 /lib/systemd/rhel-loadmodules
 /etc/rc.modules
 
-注:  /etc/modules-load.d/*.conf 用于单纯的加载模块, 而 /etc/modprobe.d/*.conf 中 可以为模块加上参数. (注意这两种文件内容格式是不一样的, 虽然它们的后缀名都是 .conf)
-警告:
-    centos7 中, 最好不要再使用 /etc/modprobe.d/*.conf 配置(或对其非常小心地使用), 而应使用 /etc/modules-load.d/*.conf,
-    因为在实际练习时, 将模块(如 nf_conntrack_ftp) 通过 /etc/modules-load.d/*.conf 配置并重启系统后, 该模块能被成功自动加载,
-    但如果通过 /etc/modprobe.d/*.conf 配置并重启系统后, 该模块并没有 被自动加载.
-
+注:  /etc/modules-load.d/*.conf 用于单纯的加载模块
 /etc/modules-load.d/*.conf (推荐)#见 man 5 modules-load.d 和 man systemd-modules-load.service  # 格式:各个模块name占一行,空行和以non-whitespace的 '#' 或 ';'开始的行会被忽略, 可视为注释.
 /run/modules-load.d/*.conf
 /usr/lib/modules-load.d/*.conf
 
 
-/etc/modprobe.d/*.conf (不推荐)#见 man modprobe 和 man 5 modprobe.d (注:模块名中的 _ and - 没有区别,因为自动执行 _ 的转换,空行和 以non-whitespace的 '#' 或 ';'开始的行会被忽略, 可视为注释.)
+注: /etc/modprobe.d/*.conf 中用于给 module 添加参数 或 定义别名等, 其作用 与 /etc/modules-load.d/*.conf 是 不同的
+/etc/modprobe.d/*.conf  #见 man modprobe 和 man 5 modprobe.d (注:模块名中的 _ and - 没有区别,因为自动执行 _ 的转换,空行和 以non-whitespace的 '#' 或 ';'开始的行会被忽略, 可视为注释.)
 /run/modprobe.d/*.conf
 /lib/modprobe.d/*.conf
 
