@@ -110,3 +110,14 @@ insmod /lib/modules/3.10.0-693.el7.x86_64/kernel/net/netfilter/nf_conntrack_ftp.
   centos6 上持久化 load module 的方式:
     https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/sec-persistent_module_loading
 
+
+网上资料:
+--------------------------------------------------------------
+用modprobe 加载模块时，提示模块找不到的问题
+  http://blog.chinaunix.net/uid-20296509-id-3283759.html
+    所以我们需要做的事情:
+    1.将编译好的模块放入/lib/module/`uname -r`下，
+    2. 用depmod更新modules.dep文件
+    3. modprobe helloworld.ko
+--------------------------------------------------------------
+
