@@ -61,9 +61,11 @@ http://www.man7.org/
 
 /etc/init.d/netconsole
 
+注: 不推荐  rhel-loadmodules.service 这种 legacy module configuration
 /etc/sysconfig/modules/*.modules   # 见 /usr/lib/systemd/system/rhel-loadmodules.service  和 /lib/systemd/rhel-loadmodules
 /etc/rc.modules
 
+注:  /etc/modules-load.d/*.conf 用于单纯的加载模块, 而 /etc/modprobe.d/*.conf 中 可以为模块加上参数. (注意这两种文件内容格式是不一样的, 虽然它们的后缀名都是 .conf)
 /etc/modules-load.d/*.conf     #见 man 5 modules-load.d   和 man systemd-modules-load.service  # 格式:各个模块name占一行,空行和以non-whitespace的 '#' 或 ';'开始的行会被忽略, 可视为注释.
 /run/modules-load.d/*.conf
 /usr/lib/modules-load.d/*.conf
