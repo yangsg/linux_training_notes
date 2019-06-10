@@ -1,0 +1,78 @@
+
+# keyword systool
+
+man systool
+
+
+作用: systool - view system device information by bus, class, and topology
+
+语法: systool [options [device]]
+
+说明:
+       Calling systool without parameters will present all available bus types, device classes, and root devices.
+
+       When device is supplied, the information requested by options is shown only for the specified device, otherwise all present devices are displayed.
+
+       systool uses APIs provided by libsysfs to gather information.  systool runs only on Linux systems running kernels 2.5 or later, with the sysfs filesystem mounted.
+
+
+[root@basic ~]# yum -y install sysfsutils   # 安装 systool 所在的 package
+
+
+[root@basic ~]# systool  # Calling systool without parameters will present all available bus types, device classes, and root devices.
+
+---------------------------------------------------------------------------------------------------
+       -m module_name
+              Show information for a specific module
+
+       -v     Show all attributes with values
+
+
+
+[root@basic ~]# systool -v -m nf_conntrack_ftp   # 显示已经被加载的模块 nf_conntrack_ftp 的相关信息(如所有属性值等)
+Module = "nf_conntrack_ftp"
+
+  Attributes:
+    coresize            = "18638"
+    initsize            = "0"
+    initstate           = "live"
+    refcnt              = "0"
+    rhelversion         = "7.4"
+    srcversion          = "D43BF56A22E3D137BA1227B"
+    taint               = ""
+    uevent              = <store method only>
+
+  Parameters:
+    loose               = "N"
+    ports               = "21"     <--- 观察这里的端口
+
+  Sections:
+    .bss                = "0xffffffffc0560ea0"
+    .data..read_mostly  = "0xffffffffc0560360"
+    .gnu.linkonce.this_module= "0xffffffffc0560c60"
+    .init.text          = "0xffffffffc059b000"
+    .note.gnu.build-id  = "0xffffffffc055f000"
+    .rodata             = "0xffffffffc055f400"
+    .rodata.str1.1      = "0xffffffffc055f2bc"
+    .rodata.str1.8      = "0xffffffffc055f048"
+    .strtab             = "0xffffffffc059cb40"
+    .symtab             = "0xffffffffc059c000"
+    .text               = "0xffffffffc055d000"
+    __bug_table         = "0xffffffffc055f3f4"
+    __kcrctab_gpl       = "0xffffffffc055f040"
+    __ksymtab_gpl       = "0xffffffffc055f030"
+    __ksymtab_strings   = "0xffffffffc055f560"
+    __mcount_loc        = "0xffffffffc055f5b0"
+    __param             = "0xffffffffc055f570"
+    __verbose           = "0xffffffffc0560000"
+
+
+---------------------------------------------------------------------------------------------------
+
+
+网上资料:
+    https://serverfault.com/questions/62316/how-do-i-list-loaded-linux-module-parameter-values
+    https://www.linuxquestions.org/questions/linux-general-1/show-options-that-kernel-module-was-loaded-with-624228/
+
+
+
