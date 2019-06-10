@@ -173,5 +173,8 @@ man 7 glob
 
 
 
-
+---------------------------------------------------------
+其他帮助文档:
+包含 kernel, kernel modules 即其 相应参数 information 的文档
+yum install kernel-doc   # /usr/share/doc/kernel-doc-<kernel_version>/Documentation/
 
