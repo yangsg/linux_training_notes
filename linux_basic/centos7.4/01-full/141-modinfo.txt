@@ -1,0 +1,74 @@
+
+# keyword modinfo
+
+man modinfo
+
+
+作用: modinfo - Show information about a Linux Kernel module
+
+语法: modinfo [-0] [-F field] [-k kernel] [modulename|filename...]
+语法: modinfo -V
+语法: modinfo -h
+
+说明:
+       modinfo extracts information from the Linux Kernel modules given on the command line. If the module name is not a filename, then the /lib/modules/version directory is searched,
+       as is also done by modprobe(8) when loading kernel modules.
+
+       modinfo by default lists each attribute of the module in form fieldname : value, for easy reading. The filename is listed the same way (although it's not really an attribute).
+
+       This version of modinfo can understand modules of any Linux Kernel architecture.
+
+
+[root@basic ~]# modinfo nf_conntrack_ftp
+      filename:       /lib/modules/3.10.0-693.el7.x86_64/kernel/net/netfilter/nf_conntrack_ftp.ko.xz
+      alias:          nfct-helper-ftp
+      alias:          ip_conntrack_ftp   <--- 可以看到, ip_conntrack_ftp 是  nf_conntrack_ftp 的别名
+      description:    ftp connection tracking helper
+      author:         Rusty Russell <rusty@rustcorp.com.au>
+      license:        GPL
+      rhelversion:    7.4
+      srcversion:     D43BF56A22E3D137BA1227B
+      depends:        nf_conntrack
+      intree:         Y
+      vermagic:       3.10.0-693.el7.x86_64 SMP mod_unload modversions
+      signer:         CentOS Linux kernel signing key
+      sig_key:        DA:18:7D:CA:7D:BE:53:AB:05:BD:13:BD:0C:4E:21:F4:22:B6:A4:9C
+      sig_hashalgo:   sha256
+      parm:           ports:array of ushort
+      parm:           loose:bool
+
+
+
+[root@basic ~]# modinfo /lib/modules/3.10.0-693.el7.x86_64/kernel/net/netfilter/nf_conntrack_ftp.ko.xz
+      filename:       /lib/modules/3.10.0-693.el7.x86_64/kernel/net/netfilter/nf_conntrack_ftp.ko.xz
+      alias:          nfct-helper-ftp
+      alias:          ip_conntrack_ftp
+      description:    ftp connection tracking helper
+      author:         Rusty Russell <rusty@rustcorp.com.au>
+      license:        GPL
+      rhelversion:    7.4
+      srcversion:     D43BF56A22E3D137BA1227B
+      depends:        nf_conntrack
+      intree:         Y
+      vermagic:       3.10.0-693.el7.x86_64 SMP mod_unload modversions
+      signer:         CentOS Linux kernel signing key
+      sig_key:        DA:18:7D:CA:7D:BE:53:AB:05:BD:13:BD:0C:4E:21:F4:22:B6:A4:9C
+      sig_hashalgo:   sha256
+      parm:           ports:array of ushort
+      parm:           loose:bool
+
+---------------------------------------------------------------------------------------------------
+     -F, --field
+         Only print this field value, one per line. This is most useful for scripts. Field names are case-insensitive. Common fields (which may not be in every module) include
+         author, description, license, parm, depends, and alias. There are often multiple parm, alias and depends fields. The special field filename lists the filename of the module.
+
+
+[root@basic ~]# modinfo -F parm nf_conntrack_ftp   # -F, --field
+ports: (array of ushort)
+loose: (bool)
+
+---------------------------------------------------------------------------------------------------
+
+
+
+
