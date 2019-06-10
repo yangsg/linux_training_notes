@@ -69,6 +69,7 @@ CentOS Linux release 7.4.1708 (Core)
 /etc/init.d/netconsole
 
 注: 不推荐  rhel-loadmodules.service 这种 legacy module configuration
+    centos6 上持久化load module 的方法见: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/sec-persistent_module_loading
 /etc/sysconfig/modules/*.modules   # 见 /usr/lib/systemd/system/rhel-loadmodules.service  和 /lib/systemd/rhel-loadmodules
 /etc/rc.modules
 
