@@ -15,7 +15,7 @@
         默认其 会 写入到 文件 modules.dep, 且 在相同的目录下 还会生成 一个 二进制散列版本(a binary hashed version)的 名为 modules.dep.bin 的文件.
         如果在 command line 指定了 filenames, 则 仅有 这些 modules 会被 检查 (该用法很有用,除非要列出所有的 modules).
         depmod 同时还会 创建 名为 modules.symbols 和 modules.symbols.bin(即 modules.symbols 的 binary hashed 版本) 的文件 来包含 modules 提供的 symbols 的列表.
-        最后, 如果 modules supply special device names (devname) that should be populated in /dev on boot (by a utility such as systemd-tmpfiles), 
+        最后, 如果 modules supply special device names (devname) that should be populated in /dev on boot (by a utility such as systemd-tmpfiles),
         depmod 还将输出 名为 modules.devname 的文件.
 
     ---------------------------------------------------------------------------------------------------
