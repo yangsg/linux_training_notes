@@ -47,6 +47,15 @@ nf_conntrack          133387  1 nf_conntrack_ftp
 [root@basic ~]# systool -vm nf_conntrack_ftp | grep ports   # 查看 加载 模块  nf_conntrack_ftp 的 ports 参数
     ports               = "21"
 
+
+---------------------------------------------------------------------------------------------------
+参考 http://baruch.siach.name/blog/posts/linux_kernel_module_parameters/
+
+[root@basic ~]# modprobe nf_conntrack_ftp ports=444    # 加载(load) 模块 nf_conntrack_ftp 是 为其指定 ports 参数
+
+[root@basic ~]# systool -vm nf_conntrack_ftp | grep ports
+    ports               = "444"
+
 ---------------------------------------------------------------------------------------------------
 
      -r, --remove
@@ -103,6 +112,9 @@ insmod /lib/modules/3.10.0-693.el7.x86_64/kernel/net/netfilter/nf_conntrack_ftp.
     https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/sec-loading_a_module
     https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/sec-loading_a_customized_module-persistent_changes
     https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/sec-specific_kernel_module_capabilities
+
+    为kernel module  指定 parameters:
+        http://baruch.siach.name/blog/posts/linux_kernel_module_parameters/
 
     https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/s1-kernel-modules-additional-resources
 
