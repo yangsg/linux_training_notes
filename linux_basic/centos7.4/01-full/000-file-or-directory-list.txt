@@ -57,7 +57,7 @@ http://www.man7.org/
 
 /etc/init.d/*  (systemV)
 
-/etc/rc.d/rc.local
+/etc/rc.d/rc.local       # 见 /usr/lib/systemd/system/rc-local.service  (前提条件是 /etc/rc.d/rc.local 具有可执行权限, 即 is executable)
 
 /etc/init.d/netconsole
 
@@ -72,6 +72,9 @@ http://www.man7.org/
 /etc/modprobe.d/*.conf     #见 man modprobe 和 man 5 modprobe.d (注：模块名中的 _ and - 没有区别,因为自动执行 _ 的转换,空行和 以non-whitespace的 '#' 或 ';'开始的行会被忽略, 可视为注释.)
 /run/modprobe.d/*.conf
 /lib/modprobe.d/*.conf
+
+/etc/sysctl.conf           # /usr/lib/systemd/system/systemd-sysctl.service
+/etc/sysctl.d/*.conf
 
 /etc/sysconfig/authconfig  # man authconfig
 /etc/sysconfig/cpupower    # man cpupower
@@ -106,6 +109,8 @@ virt/
 
 
 /boot/vmlinuz-3.10.0-693.el7.x86_64    'vmlinuz' 的 'vm' 表示 'virtual memory', 支持虚拟内存, 'z' 表示 'zip', 表压缩过的格式
+
+
 
 目录:
 /etc/skel/      'skel' 简写自单词 ‘skeleton’  骨架
