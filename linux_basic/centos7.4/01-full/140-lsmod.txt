@@ -1,0 +1,29 @@
+
+# keyword lsmod
+
+man lsmod
+
+作用: lsmod - Show the status of modules in the Linux Kernel
+
+语法: lsmod
+
+说明: lsmod is a trivial program which nicely formats the contents of the /proc/modules, showing what kernel modules are currently loaded.
+
+      lsmod 读取文件 /proc/modules 并对其进行了 格式化, 显示了 当前被 加载了 的 kernel modules.
+
+
+[root@basic ~]# lsmod | less   # 显示当前 加载了 的 kernel modules
+[root@basic ~]# lsmod | grep nf_conntrack_ftp  # 注: 其实 ip_conntrack_ftp 是 nf_conntrack_ftp 的 别名(alias)
+
+[root@basic ~]# lsmod | head -n 10
+Module                  Size  Used by
+vmw_vsock_vmci_transport    30577  1
+vsock                  35327  2 vmw_vsock_vmci_transport
+snd_seq_midi           13565  0
+snd_seq_midi_event     14899  1 snd_seq_midi
+iosf_mbi               13523  0
+crc32_pclmul           13113  0
+ghash_clmulni_intel    13259  0
+aesni_intel            69884  0
+lrw                    13286  1 aesni_intel
+
