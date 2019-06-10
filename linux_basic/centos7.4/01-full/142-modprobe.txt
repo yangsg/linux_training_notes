@@ -59,6 +59,7 @@ nf_conntrack          133387  1 nf_conntrack_ftp
 
 [root@basic ~]# modprobe -r nf_conntrack_ftp  # 卸载(unload) 模块 nf_conntrack_ftp
 
+[root@basic ~]# modprobe -r nf_nat_ftp nf_conntrack_ftp   # 卸载(unload) 模块 nf_nat_ftp 和 模块 nf_conntrack_ftp
 
 
 ---------------------------------------------------------------------------------------------------
@@ -76,3 +77,36 @@ nf_conntrack          133387  1 nf_conntrack_ftp
     ports               = "555"
 
 ---------------------------------------------------------------------------------------------------
+
+       -R, --resolve-alias
+           Print all module names matching an alias. This can be useful for debugging module alias problems.
+
+[root@basic ~]# modprobe -R ip_conntrack_ftp   # 显示 匹配别名 ip_conntrack_ftp 的 所有 modules 的 names (该命令不会 load module)
+nf_conntrack_ftp
+
+---------------------------------------------------------------------------------------------------
+       -v, --verbose
+           Print messages about what the program is doing. Usually modprobe only prints messages if something goes wrong.
+
+           This option is passed through install or remove commands to other modprobe commands in the MODPROBE_OPTIONS environment variable.
+
+
+[root@basic ~]# modprobe -v nf_conntrack_ftp   # modprobe -v shows module dependencies as they are loaded
+insmod /lib/modules/3.10.0-693.el7.x86_64/kernel/net/netfilter/nf_conntrack.ko.xz
+insmod /lib/modules/3.10.0-693.el7.x86_64/kernel/net/netfilter/nf_conntrack_ftp.ko.xz
+
+---------------------------------------------------------------------------------------------------
+
+网上资料:
+    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/sec-loading_a_module
+    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/sec-loading_a_customized_module-persistent_changes
+    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/sec-specific_kernel_module_capabilities
+
+    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/s1-kernel-modules-additional-resources
+
+        yum install kernel-doc
+          /usr/share/doc/kernel-doc-<kernel_version>/Documentation/   (包含关于 kernel, kernel modules 即其 相应参数 的帮助文档)
+
+  centos6 上持久化 load module 的方式:
+    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/sec-persistent_module_loading
+
