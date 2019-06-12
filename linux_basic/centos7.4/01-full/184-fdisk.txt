@@ -1,0 +1,362 @@
+
+# keyword fdisk
+
+man fdisk
+
+作用:
+       fdisk - manipulate disk partition table
+
+语法: fdisk [-uc] [-b sectorsize] [-C cyls] [-H heads] [-S sects] device
+语法: fdisk -l [-u] [device...]
+语法: fdisk -s partition...
+语法: fdisk -v
+语法: fdisk -h
+
+注: MBR 格式分区表 最多 支持 2TB(换算率1024) 的磁盘, 超过 2TB 的磁盘 应该使用 GPT 格式的分区表
+
+                  2TB(换算率1024) == 2.2TB(换算率1000)
+
+          fdisk 支持 mbr, gdisk 支持 gpt, parted 即支持 mbr 也支持 gpt
+
+说明:
+       fdisk  (in  the  first form of invocation) is a menu-driven program for creation and manipulation of partition tables.  It understands DOS-type partition tables and BSD- or SUN-
+       type disklabels.
+
+       fdisk does not understand GUID partition tables (GPTs) and it is not designed for large partitions.  In these cases, use the more advanced GNU parted(8).
+
+       fdisk does not use DOS-compatible mode and cylinders as display units by default.  The old deprecated DOS behavior can be enabled with  the  '-c=dos  -u=cylinders'  command-line
+       options.
+
+       Hard  disks can be divided into one or more logical disks called partitions.  This division is recorded in the partition table, found in sector 0 of the disk.  (In the BSD world
+       one talks about `disk slices' and a `disklabel'.)
+
+       Linux needs at least one partition, namely for its root file system.  It can use swap files and/or swap partitions, but the latter are more efficient.  So, usually one will want
+       a  second  Linux partition dedicated as swap partition.  On Intel-compatible hardware, the BIOS that boots the system can often only access the first 1024 cylinders of the disk.
+       For this reason people with large disks often create a third partition, just a few MB large, typically mounted on /boot, to store the kernel image  and  a  few  auxiliary  files
+       needed  at boot time, so as to make sure that this stuff is accessible to the BIOS.  There may be reasons of security, ease of administration and backup, or testing, to use more
+       than the minimum number of partitions.
+
+DEVICES
+       The device is usually /dev/sda, /dev/sdb or so.  A device name refers to the entire disk.  Old systems without libata (a library used inside the Linux kernel to support ATA host
+       controllers and devices) make a difference between IDE and SCSI disks.  In such cases the device name will be /dev/hd* (IDE) or /dev/sd* (SCSI).
+
+       The  partition is a device name followed by a partition number.  For example, /dev/sda1 is the first partition on the first hard disk in the system.  See also Linux kernel docu‐
+       mentation (the Documentation/devices.txt file).
+
+
+DISK LABELS
+       A BSD/SUN-type disklabel can describe 8 partitions, the third of which should be a `whole disk' partition.  Do not start a partition that actually uses its first sector (like  a
+       swap partition) at cylinder 0, since that will destroy the disklabel.
+
+       An IRIX/SGI-type disklabel can describe 16 partitions, the eleventh of which should be an entire `volume' partition, while the ninth should be labeled `volume header'.  The vol‐
+       ume header will also cover the partition table, i.e., it starts at block zero and extends by default over five cylinders.  The remaining space in the volume header may  be  used
+       by header directory entries.  No partitions may overlap with the volume header.  Also do not change its type or make some filesystem on it, since you will lose the partition ta‐
+       ble.  Use this type of label only when working with Linux on IRIX/SGI machines or IRIX/SGI disks under Linux.
+
+      ------------------------------------------
+      注: 这里的 2 TB 只的是 换算率为 1024 的 2TB, 即 2TB(换算率1024) == 2.2TB(换算率1000)
+      ------------------------------------------
+       A DOS-type partition table can describe an unlimited number of partitions.  In sector 0 there is room for the description of 4 partitions (called `primary').  One of  these  may
+       be an extended partition; this is a box holding logical partitions, with descriptors found in a linked list of sectors, each preceding the corresponding logical partitions.  The
+       four primary partitions, present or not, get numbers 1-4.  Logical partitions start numbering from 5.
+
+       In a DOS-type partition table the starting offset and the size of each partition is stored in two ways: as an absolute number of sectors (given in 32  bits),  and  as  a  Cylin‐
+       ders/Heads/Sectors  triple (given in 10+8+6 bits).  The former is OK -- with 512-byte sectors this will work up to 2 TB.  The latter has two problems.  First, these C/H/S fields
+       can be filled only when the number of heads and the number of sectors per track are known.  And second, even if we know what these numbers should be, the 24 bits that are avail‐
+       able do not suffice.  DOS uses C/H/S only, Windows uses both, Linux never uses C/H/S.
+      ------------------------------------------
+
+       If  possible,  fdisk  will  obtain  the disk geometry automatically.  This is not necessarily the physical disk geometry (indeed, modern disks do not really have anything like a
+       physical geometry, certainly not something that can be described in simplistic Cylinders/Heads/Sectors form), but it is the disk geometry that MS-DOS uses for the partition  ta‐
+       ble.
+
+       Usually  all  goes well by default, and there are no problems if Linux is the only system on the disk.  However, if the disk has to be shared with other operating systems, it is
+       often a good idea to let an fdisk from another operating system make at least one partition.  When Linux boots it looks at the partition table, and tries to deduce  what  (fake)
+       geometry is required for good cooperation with other systems.
+
+       Whenever  a  partition  table  is  printed out, a consistency check is performed on the partition table entries.  This check verifies that the physical and logical start and end
+       points are identical, and that each partition starts and ends on a cylinder boundary (except for the first partition).
+
+      ------------------------------------------
+      注: 某些版本的 MS-DOS 创建 a first partition 时 不是从 a cylinder boundary 开始, 而是从 the first cylinder 的 sector 2 开始.
+      ------------------------------------------
+       Some versions of MS-DOS create a first partition which does not begin on a cylinder boundary, but on sector 2 of the first cylinder.  Partitions beginning in cylinder  1  cannot
+       begin on a cylinder boundary, but this is unlikely to cause difficulty unless you have OS/2 on your machine.
+
+      ------------------------------------------
+      注: 在 分区表已经被更新后退出前, A  sync() and an ioctl(BLKRRPART) (重新从磁盘读取 分区表) 会被执行.
+      ------------------------------------------
+       A  sync() and an ioctl(BLKRRPART) (reread partition table from disk) are performed before exiting when the partition table has been updated.  Long ago it used to be necessary to
+       reboot after the use of fdisk.  I do not think this is the case anymore -- indeed, rebooting too quickly might cause loss of not-yet-written data.  Note that both the kernel and
+       the disk hardware may buffer data.
+
+
+
+
+---------------------------------------------------------------------------------------------------
+
+示例:  创建一个主分区, 一个 扩展分区， 一个 逻辑分区
+
+[root@basic ~]# fdisk  /dev/sdb
+Welcome to fdisk (util-linux 2.23.2).
+
+Changes will remain in memory only, until you decide to write them.  <=== 所有的修改都保留在内存中，直到对其执行写操作(写之前一定要小心)
+Be careful before using the write command.
+
+Device does not contain a recognized partition table
+Building a new DOS disklabel with disk identifier 0x80d45cda.
+
+Command (m for help): m
+Command action
+   a   toggle a bootable flag
+   b   edit bsd disklabel
+   c   toggle the dos compatibility flag
+   d   delete a partition                     <------ d: 删除一个分区
+   g   create a new empty GPT partition table <------ g: 创建一个新的空的 GPT 分区表 (最好不要使用此功能, 而使用 gpt 专用的工具)
+   G   create an IRIX (SGI) partition table
+   l   list known partition types             <------ l: 列出已知的 分区类型
+   m   print this menu                        <------ m: 显示菜单
+   n   add a new partition                    <------ n: 添加一个新的分区
+   o   create a new empty DOS partition table <------ o: 创建一个新的 空的 DOS 的 分区表
+   p   print the partition table              <------ p: 显示 分区表
+   q   quit without saving changes            <------ q: 退出(不保存)
+   s   create a new empty Sun disklabel
+   t   change a partition's system id
+   u   change display/entry units
+   v   verify the partition table
+   w   write table to disk and exit           <------ w: 写入 table 到 disk 并 退出(即保存并退出)
+   x   extra functionality (experts only)
+
+Command (m for help): n     <===============  执行 n 菜单 (new/add 一个新的分区)
+Partition type:
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended
+Select (default p): p      <===============  选择分区类型为 primary 分区
+Partition number (1-4, default 1): 1    <=========  设置分区 number
+First sector (2048-4194303, default 2048):  <====== 直接回车，选择默认值
+Using default value 2048
+Last sector, +sectors or +size{K,M,G} (2048-4194303, default 4194303): +512M  <===== 设置 Last sector 为 相对于 First sector 的 +512M
+Partition 1 of type Linux and of size 512 MiB is set
+
+Command (m for help): p      <===========  显示 效果
+
+Disk /dev/sdb: 2147 MB, 2147483648 bytes, 4194304 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk label type: dos
+Disk identifier: 0x697d2f1c
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sdb1            2048     1050623      524288   83  Linux
+
+Command (m for help): n    <======= 选择 菜单 n , 准备创建第一个 扩展分区
+Partition type:
+   p   primary (1 primary, 0 extended, 3 free)
+   e   extended
+Select (default p): e    <=========  选择 菜单 e, 即选择 分区类型为 extended
+Partition number (2-4, default 2): 2   <======= 设置 分区number 为 2
+First sector (1050624-4194303, default 1050624):  <======== 直接回车, 选择默认值
+Using default value 1050624
+Last sector, +sectors or +size{K,M,G} (1050624-4194303, default 4194303): +512M   <========= 设置 Last sector
+Partition 2 of type Extended and of size 512 MiB is set
+
+Command (m for help): p   <====== 查看效果
+
+Disk /dev/sdb: 2147 MB, 2147483648 bytes, 4194304 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk label type: dos
+Disk identifier: 0x697d2f1c
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sdb1            2048     1050623      524288   83  Linux
+/dev/sdb2         1050624     2099199      524288    5  Extended
+
+Command (m for help): n     <=========== 选择菜单 n, 准备创建一个 逻辑分区
+Partition type:
+   p   primary (1 primary, 1 extended, 2 free)
+   l   logical (numbered from 5)
+Select (default p): l       <========== 选择菜单 l, 即 设置 分区类型为 logical
+Adding logical partition 5  <========== 设置分区号 为 5
+First sector (1052672-2099199, default 1052672):   <======= 直接回车，选择默认值
+Using default value 1052672
+Last sector, +sectors or +size{K,M,G} (1052672-2099199, default 2099199): +256M  <====== 设置 Last sector
+Partition 5 of type Linux and of size 256 MiB is set
+
+Command (m for help): p       <============ 查看效果
+
+Disk /dev/sdb: 2147 MB, 2147483648 bytes, 4194304 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk label type: dos
+Disk identifier: 0x697d2f1c
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sdb1            2048     1050623      524288   83  Linux
+/dev/sdb2         1050624     2099199      524288    5  Extended
+/dev/sdb5         1052672     1576959      262144   83  Linux
+
+Command (m for help): w    <============  将 内存中 对 分区表的 修改 写到(保存) 到 磁盘的 分区表中
+The partition table has been altered!
+
+Calling ioctl() to re-read partition table.  <====== 注: 该版本的 fdisk 在 exit 之前会 使用 ioctl() 重新读取 partition table. 所以 partprobe 不是必须的,
+Syncing disks.                                           但为了保险起见 和 不依赖与 具体的 fdisk 版本, 最好还是执行一下 partprobe 命令(或重启系统,当然生产服务器不能这么干)
+
+
+
+[root@basic ~]# partprobe -s /dev/sdb     #  通知 请求 kernel 重新再读取 分区表   # -s     Show a summary of devices and their partitions.
+/dev/sdb: msdos partitions 1 2 <5>
+
+
+[root@basic ~]# cat /proc/partitions      # 核心的分割纪录
+major minor  #blocks  name
+
+   8        0   20971520 sda
+   8        1     204800 sda1
+   8        2   20765696 sda2
+   8       16    2097152 sdb
+   8       17     524288 sdb1  <------ 观察
+   8       18          1 sdb2  <------
+   8       21     262144 sdb5  <------
+  11        0    1048575 sr0
+ 253        0   18665472 dm-0
+ 253        1    2097152 dm-1
+
+---------------------------------------------------------------------------------------------------
+示例:  创建一个 swap 分区
+
+[root@basic ~]# fdisk /dev/sdb
+Welcome to fdisk (util-linux 2.23.2).
+
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+
+
+Command (m for help): p   <====== 查看当前状态
+
+Disk /dev/sdb: 2147 MB, 2147483648 bytes, 4194304 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk label type: dos
+Disk identifier: 0x697d2f1c
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sdb1            2048     1050623      524288   83  Linux
+/dev/sdb2         1050624     2099199      524288    5  Extended
+/dev/sdb5         1052672     1576959      262144   83  Linux
+
+Command (m for help): n   <=========== 选择菜单 n, 装备创建一个 swap 分区
+Partition type:
+   p   primary (1 primary, 1 extended, 2 free)
+   l   logical (numbered from 5)
+Select (default p): p         <======  选择 菜单p, 即 primary 类型的 分区
+Partition number (3,4, default 3): 3   <======= 选择 分区 number
+First sector (2099200-4194303, default 2099200):   <======== 直接回车, 选择默认值
+Using default value 2099200
+Last sector, +sectors or +size{K,M,G} (2099200-4194303, default 4194303): +512M  <======= 设置 Last sector
+Partition 3 of type Linux and of size 512 MiB is set
+
+Command (m for help): t     <=========== 选择菜单 t 准备对 新建的 swap 分区的 partition's system id 进行修改
+Partition number (1-3,5, default 5): 3   <======= 选择 新建的 swap 对应的 分区 number
+Hex code (type L to list all codes): L   <======= 查看 一下 所有的 partition's system ids
+
+ 0  Empty           24  NEC DOS         81  Minix / old Lin bf  Solaris
+ 1  FAT12           27  Hidden NTFS Win 82  Linux swap / So c1  DRDOS/sec (FAT-
+ 2  XENIX root      39  Plan 9          83  Linux           c4  DRDOS/sec (FAT-
+ 3  XENIX usr       3c  PartitionMagic  84  OS/2 hidden C:  c6  DRDOS/sec (FAT-
+ 4  FAT16 <32M      40  Venix 80286     85  Linux extended  c7  Syrinx
+ 5  Extended        41  PPC PReP Boot   86  NTFS volume set da  Non-FS data
+ 6  FAT16           42  SFS             87  NTFS volume set db  CP/M / CTOS / .
+ 7  HPFS/NTFS/exFAT 4d  QNX4.x          88  Linux plaintext de  Dell Utility
+ 8  AIX             4e  QNX4.x 2nd part 8e  Linux LVM       df  BootIt
+ 9  AIX bootable    4f  QNX4.x 3rd part 93  Amoeba          e1  DOS access
+ a  OS/2 Boot Manag 50  OnTrack DM      94  Amoeba BBT      e3  DOS R/O
+ b  W95 FAT32       51  OnTrack DM6 Aux 9f  BSD/OS          e4  SpeedStor
+ c  W95 FAT32 (LBA) 52  CP/M            a0  IBM Thinkpad hi eb  BeOS fs
+ e  W95 FAT16 (LBA) 53  OnTrack DM6 Aux a5  FreeBSD         ee  GPT
+ f  W95 Ext'd (LBA) 54  OnTrackDM6      a6  OpenBSD         ef  EFI (FAT-12/16/
+10  OPUS            55  EZ-Drive        a7  NeXTSTEP        f0  Linux/PA-RISC b
+11  Hidden FAT12    56  Golden Bow      a8  Darwin UFS      f1  SpeedStor
+12  Compaq diagnost 5c  Priam Edisk     a9  NetBSD          f4  SpeedStor
+14  Hidden FAT16 <3 61  SpeedStor       ab  Darwin boot     f2  DOS secondary
+16  Hidden FAT16    63  GNU HURD or Sys af  HFS / HFS+      fb  VMware VMFS
+17  Hidden HPFS/NTF 64  Novell Netware  b7  BSDI fs         fc  VMware VMKCORE
+18  AST SmartSleep  65  Novell Netware  b8  BSDI swap       fd  Linux raid auto
+1b  Hidden W95 FAT3 70  DiskSecure Mult bb  Boot Wizard hid fe  LANstep
+1c  Hidden W95 FAT3 75  PC/IX           be  Solaris boot    ff  BBT
+1e  Hidden W95 FAT1 80  Old Minix
+Hex code (type L to list all codes): 82   <============= 设置 Hex code 为 82, 即 Linux swap / So....
+Changed type of partition 'Linux' to 'Linux swap / Solaris'
+
+Command (m for help): p    <============ 查看效果
+
+Disk /dev/sdb: 2147 MB, 2147483648 bytes, 4194304 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk label type: dos
+Disk identifier: 0x697d2f1c
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sdb1            2048     1050623      524288   83  Linux
+/dev/sdb2         1050624     2099199      524288    5  Extended
+/dev/sdb3         2099200     3147775      524288   82  Linux swap / Solaris   <-----------观察效果
+/dev/sdb5         1052672     1576959      262144   83  Linux
+
+Command (m for help): w    <============ 将内存中对 分区表的修改  写回保存到 磁盘
+The partition table has been altered!
+
+Calling ioctl() to re-read partition table.
+Syncing disks.
+[root@basic ~]#
+
+[root@basic ~]# partprobe -s /dev/sdb    #  通知 请求 kernel 重新再读取 分区表   # -s     Show a summary of devices and their partitions.
+/dev/sdb: msdos partitions 1 2 <5> 3
+
+
+[root@basic ~]# cat /proc/partitions        # 核心的分割纪录
+major minor  #blocks  name
+
+   8        0   20971520 sda
+   8        1     204800 sda1
+   8        2   20765696 sda2
+   8       16    2097152 sdb
+   8       17     524288 sdb1
+   8       18          1 sdb2
+   8       19     524288 sdb3
+   8       21     262144 sdb5
+  11        0    1048575 sr0
+ 253        0   18665472 dm-0
+ 253        1    2097152 dm-1
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+
+swap 分区:
+    https://www.computernetworkingnotes.com/rhce-study-guide/how-to-create-swap-partition-in-linux.html
+    https://unix.stackexchange.com/questions/253140/partition-system-id-fdisk
+
+mbr 与 gpt 的区别:
+      https://www.maketecheasier.com/differences-between-mbr-and-gpt/
+      https://www.linkedin.com/pulse/whats-difference-between-gpt-mbr-when-partitioning-drive-tiwari
+      https://blog.csdn.net/yang2716210363/article/details/78581388
+
+      https://support.microsoft.com/en-gb/help/2581408/windows-support-for-hard-disks-that-are-larger-than-2-tb
+      https://blogs.technet.microsoft.com/askcore/2010/02/18/understanding-the-2-tb-limit-in-windows-storage/
+
+fdisk:
+      https://unix.stackexchange.com/questions/340764/should-i-use-fdisk-for-partitioning-or-gpt-aware-tools
+
+
+      设备文件资料:
+          http://www.lanana.org/docs/device-list/
+                  [root@basic ~]# yum -y install kernel-doc
+                  [root@basic ~]# rpm -ql kernel-doc | grep 'Documentation/devices.txt'
+                          /usr/share/doc/kernel-doc-3.10.0/Documentation/devices.txt
+
+
+
