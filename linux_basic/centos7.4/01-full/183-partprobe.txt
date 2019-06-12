@@ -1,0 +1,30 @@
+
+
+# keyword partprobe
+
+man partprobe
+
+
+作用:
+       partprobe - inform the OS of partition table changes
+
+语法:
+       partprobe [-d] [-s] [devices...]
+
+说明:
+       This manual page documents briefly the partprobe command.
+
+       partprobe is a program that informs the operating system kernel of partition table changes, by requesting that the operating system re-read the partition table.
+
+partprobe 用于 请求 kernel 重新读取 分区表 (当分区表发生变化时很有用)
+
+
+[root@basic ~]# partprobe
+
+[root@basic ~]# partprobe -s          # -s     Show a summary of devices and their partitions.
+/dev/sda: msdos partitions 1 2
+/dev/sdb: gpt partitions 1 2
+
+[root@basic ~]# partprobe -s /dev/sdb   # 通知 kernel 只读取 磁盘 /dev/sdb 的分区表  # -s     Show a summary of devices and their partitions.
+/dev/sdb: gpt partitions 1 2
+
