@@ -1,0 +1,106 @@
+
+# keyword parted
+
+man parted
+info parted  包含更多详细信息
+
+
+作用: parted - a partition manipulation program
+
+语法: parted [options] [device [command [options...]...]]
+
+说明:
+       parted  is  a  program to manipulate disk partitions.  It supports multiple partition table formats, including MS-DOS and GPT.  It is useful for creating space for new operating
+       systems, reorganising disk usage, and copying data to new hard disks.
+
+       This manual page documents parted briefly.  Complete documentation is distributed with the package in GNU Info format.
+
+注: parted 支持 多种 格式的 partition table, 包括 MS-DOS 和 GPT.
+
+
+---------------------------------------------------------------------------------------------------
+[root@basic ~]# parted  /dev/sda print
+Model: VMware, VMware Virtual S (scsi)
+Disk /dev/sda: 21.5GB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags:
+
+Number  Start   End     Size    Type     File system  Flags
+ 1      1049kB  211MB   210MB   primary  xfs          boot
+ 2      211MB   21.5GB  21.3GB  primary               lvm
+
+
+[root@basic ~]# parted  /dev/sda1 print
+Model: Unknown (unknown)
+Disk /dev/sda1: 210MB
+Sector size (logical/physical): 512B/512B
+Partition Table: loop
+Disk Flags:
+
+Number  Start  End    Size   File system  Flags
+ 1      0.00B  210MB  210MB  xfs
+
+---------------------------------------------------------------------------------------------------
+// 查看parted 帮助 (该例子仅仅演示如何查看 parted 内部 command 的相关帮助)
+
+[root@basic ~]# parted /dev/sda    # 进入 parted 的交互式 环境中 查看 其 内部命令的 帮助信息
+GNU Parted 3.1
+Using /dev/sda
+Welcome to GNU Parted! Type 'help' to view a list of commands.
+(parted) help    <======= 显示通用帮助信息
+  align-check TYPE N                        check partition N for TYPE(min|opt) alignment
+  help [COMMAND]                           print general help, or help on COMMAND
+  mklabel,mktable LABEL-TYPE               create a new disklabel (partition table)
+  mkpart PART-TYPE [FS-TYPE] START END     make a partition
+  name NUMBER NAME                         name partition NUMBER as NAME
+  print [devices|free|list,all|NUMBER]     display the partition table, available devices, free space, all found partitions,
+        or a particular partition
+  quit                                     exit program
+  rescue START END                         rescue a lost partition near START and END
+  rm NUMBER                                delete partition NUMBER
+  select DEVICE                            choose the device to edit
+  disk_set FLAG STATE                      change the FLAG on selected device
+  disk_toggle [FLAG]                       toggle the state of FLAG on selected device
+  set NUMBER FLAG STATE                    change the FLAG on partition NUMBER
+  toggle [NUMBER [FLAG]]                   toggle the state of FLAG on partition NUMBER
+  unit UNIT                                set the default unit to UNIT
+  version                                  display the version number and copyright information of GNU Parted
+(parted) help mkpart  <======= 显示内部命令 mkpart 的帮助信息 (可以看到,此处的某些帮助信息是 parted 的 man page 和 info page 都没有提供的, 所以最好相互配合着查看这些帮助信息)
+  mkpart PART-TYPE [FS-TYPE] START END     make a partition
+
+        PART-TYPE is one of: primary, logical, extended
+        FS-TYPE is one of: btrfs, nilfs2, ext4, ext3, ext2, fat32, fat16, hfsx, hfs+, hfs, jfs, swsusp, linux-swap(v1),
+        linux-swap(v0), ntfs, reiserfs, hp-ufs, sun-ufs, xfs, apfs2, apfs1, asfs, amufs5, amufs4, amufs3, amufs2, amufs1,
+        amufs0, amufs, affs7, affs6, affs5, affs4, affs3, affs2, affs1, affs0, linux-swap, linux-swap(new), linux-swap(old)
+        START and END are disk locations, such as 4GB or 10%.  Negative values count from the end of the disk.  For example,
+        -1s specifies exactly the last sector.
+
+        'mkpart' makes a partition without creating a new file system on the partition.  FS-TYPE may be specified to set an
+        appropriate partition ID.
+(parted) quit
+[root@basic ~]#
+
+[root@basic ~]# parted /dev/sda help mklabel      # 在 非交互模式中 查看 parted 内部命令 mklabel 的 版主信息
+  mklabel,mktable LABEL-TYPE               create a new disklabel (partition table)
+
+        LABEL-TYPE is one of: aix, amiga, bsd, dvh, gpt, mac, msdos, pc98, sun, loop
+
+
+---------------------------------------------------------------------------------------------------
+
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+    https://www.tecmint.com/parted-command-to-create-resize-rescue-linux-disk-partitions/
+    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/storage_administration_guide/s2-disk-storage-parted-create-part
+
+
+    关于 问题 Warning: The resulting partition is not properly aligned for best performance. 的相关和解决资料:
+
+      https://superuser.com/questions/349887/gnu-parted-how-to-deal-with-the-error-about-proper-aligment-of-partitions
+      https://blog.hqcodeshop.fi/archives/273-GNU-Parted-Solving-the-dreaded-The-resulting-partition-is-not-properly-aligned-for-best-performance.html
+
+
+
+https://superuser.com/questions/349887/gnu-parted-how-to-deal-with-the-error-about-proper-aligment-of-partitions
