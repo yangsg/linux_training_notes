@@ -17,6 +17,14 @@ info parted  包含更多详细信息
 
 注: parted 支持 多种 格式的 partition table, 包括 MS-DOS 和 GPT.
 
+警告: 谨慎使用 parted, 优先考虑 fdisk 或 gdisk
+      因为 parted 分区等 内部的 修改命令 执行成功后 会 立即生效, 所以使用时 要特别小心.
+      在满足要求的前提下，最好还是优先考虑使用 fdisk(msdos) 或 gdisk(gpt) 来 修改 而非 parted,
+      因为它们 在 最终确认之前 不会立即生效 (即意味着发现错误时还有"后悔药").
+      而 parted 非常适合 于 在脚本(script) 中执行(即非交互式的方式)
+      或者 对 一块全新的 磁盘(即不需要保留旧数据或分区表等)进行分区的情况.
+
+      而针对 显示命令 而言 可以 根据需要 随意选择使用 fdisk, gdisk, parted 命令之一, 无需过于小心
 
 ---------------------------------------------------------------------------------------------------
 [root@basic ~]# parted  /dev/sda print
@@ -89,18 +97,255 @@ Welcome to GNU Parted! Type 'help' to view a list of commands.
 
 ---------------------------------------------------------------------------------------------------
 
+示例: 在 一块 全新的 磁盘上 创建 分区表 和 分区 (注: 如果是旧的既有分区表上操作, 就直接执行分区操作,不要再重新创建新的分区表来覆盖就的分区表了, 从而避免数据丢失)
+
+[root@basic ~]# parted /dev/sdb    # 在 全新的 磁盘  /dev/sdb 上 创建分区表 和 分区
+GNU Parted 3.1
+Using /dev/sdb
+Welcome to GNU Parted! Type 'help' to view a list of commands.
+(parted) help   <==============显示帮助信息
+  align-check TYPE N                        check partition N for TYPE(min|opt) alignment
+  help [COMMAND]                           print general help, or help on COMMAND
+  mklabel,mktable LABEL-TYPE               create a new disklabel (partition table)
+  mkpart PART-TYPE [FS-TYPE] START END     make a partition
+  name NUMBER NAME                         name partition NUMBER as NAME
+  print [devices|free|list,all|NUMBER]     display the partition table, available devices, free space, all found partitions, or a particular partition
+  quit                                     exit program
+  rescue START END                         rescue a lost partition near START and END
+  rm NUMBER                                delete partition NUMBER
+  select DEVICE                            choose the device to edit
+  disk_set FLAG STATE                      change the FLAG on selected device
+  disk_toggle [FLAG]                       toggle the state of FLAG on selected device
+  set NUMBER FLAG STATE                    change the FLAG on partition NUMBER
+  toggle [NUMBER [FLAG]]                   toggle the state of FLAG on partition NUMBER
+  unit UNIT                                set the default unit to UNIT
+  version                                  display the version number and copyright information of GNU Parted
+(parted) print  <==============显示 当前 选择的 磁盘 信息
+Error: /dev/sdb: unrecognised disk label
+Model: VMware, VMware Virtual S (scsi)
+Disk /dev/sdb: 2147MB
+Sector size (logical/physical): 512B/512B   <====== 可观察到, 扇区 为 512 Bytes
+Partition Table: unknown                    <====== 还没有创建过分区表
+Disk Flags:
+(parted) help mklabel
+  mklabel,mktable LABEL-TYPE               create a new disklabel (partition table)
+
+        LABEL-TYPE is one of: aix, amiga, bsd, dvh, gpt, mac, msdos, pc98, sun, loop
+(parted) mklabel gpt
+(parted) print
+Model: VMware, VMware Virtual S (scsi)
+Disk /dev/sdb: 2147MB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start  End  Size  File system  Name  Flags
+
+(parted) help mkpart
+  mkpart PART-TYPE [FS-TYPE] START END     make a partition
+
+        PART-TYPE is one of: primary, logical, extended
+        FS-TYPE is one of: btrfs, nilfs2, ext4, ext3, ext2, fat32, fat16, hfsx, hfs+, hfs, jfs, swsusp, linux-swap(v1), linux-swap(v0), ntfs, reiserfs, hp-ufs, sun-ufs, xfs, apfs2, apfs1,
+        asfs, amufs5, amufs4, amufs3, amufs2, amufs1, amufs0, amufs, affs7, affs6, affs5, affs4, affs3, affs2, affs1, affs0, linux-swap, linux-swap(new), linux-swap(old)
+        START and END are disk locations, such as 4GB or 10%.  Negative values count from the end of the disk.  For example, -1s specifies exactly the last sector.
+
+        'mkpart' makes a partition without creating a new file system on the partition.  FS-TYPE may be specified to set an appropriate partition ID.
+(parted) help unit
+  unit UNIT                                set the default unit to UNIT
+
+        UNIT is one of: s, B, kB, MB, GB, TB, compact, cyl, chs, %, kiB, MiB, GiB, TiB  <=== 注: kiB, MiB, GiB, TiB 使用 1024 来换算, 而 MB, GB 等使用 1000 来换算
+(parted) mkpart    <======= 执行 mkpart 命令, 准备创建第 一 个 分区
+Partition name?  []? p1       <======= 输入分区名
+File system type?  [ext2]?    <======= 直接回车, 不对其进行格式化
+Start? 0%     <====== 指定开始位置(此处使用 百分数 0%, 让 parted 自动 align)
+End? 512MiB   <====== 这里使用的是 IEC binary units(按1024换算), 所以这里的数字 512 是一个精确(exact) 数,
+                      通常you should prefer to specify units of bytes ("B"), sectors ("s"), or IEC binary units like "MiB", but not "MB", "GB", etc.(见 info parted)
+(parted) print     <======== 查看当前效果
+Model: VMware, VMware Virtual S (scsi)
+Disk /dev/sdb: 2147MB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End    Size   File system  Name  Flags
+ 1      1049kB  537MB  536MB               p1           <===== 注意: 这里的 单位 MB 是 按 1000 来换算的, 而 MiB 才是按 1024 来换算的
+
+(parted) unit MiB       <======= 设置 默认 和 显示的 单位 为 MiB (此时按 1024 换算)
+(parted) print     <========= 重新查看当前效果
+Model: VMware, VMware Virtual S (scsi)
+Disk /dev/sdb: 2048MiB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start    End     Size    File system  Name  Flags
+ 1      1.00MiB  512MiB  511MiB               p1
+
+(parted) help align-check   <===== 查看 内部命令 align-check 帮助信息
+  align-check TYPE N                        check partition N for TYPE(min|opt) alignment
+
+        NUMBER is the partition number used by Linux.  On MS-DOS disk labels, the primary partitions number from 1 to 4, logical partitions from 5 onwards.
+(parted) align-check optimal 1   <======= 检查是否对齐(与磁盘性能相关)
+1 aligned
+(parted) help print      <==== 查看 内部命令 print 的 帮助信息
+  print [devices|free|list,all|NUMBER]     display the partition table, available devices, free space, all found partitions, or a particular partition
+
+        Without arguments, 'print' displays the entire partition table. However with the following arguments it performs various other actions.
+          devices   : display all active block devices
+          free      : display information about free unpartitioned space on the current block device
+          list, all : display the partition tables of all active block devices
+          NUMBER    : display more detailed information about this particular partition
+(parted) print free        <====== 查看当前效果(包括 空闲的 尚未 分区的 磁盘空间)
+Model: VMware, VMware Virtual S (scsi)
+Disk /dev/sdb: 2048MiB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start    End      Size     File system  Name  Flags
+        0.02MiB  1.00MiB  0.98MiB  Free Space
+ 1      1.00MiB  512MiB   511MiB                p1
+        512MiB   2048MiB  1536MiB  Free Space
+
+(parted) mkpart        <====== 执行命令 mkpart,  准备创建 第二个 分区
+Partition name?  []? p2
+File system type?  [ext2]?   <===== 直接回车, 不对其 进行 格式化
+Start? 512MiB                <===== 输入开始位置
+End? 1GiB                    <===== 输入结束位置
+(parted) print free          <===== 查看当前状态
+Model: VMware, VMware Virtual S (scsi)
+Disk /dev/sdb: 2048MiB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start    End      Size     File system  Name  Flags
+        0.02MiB  1.00MiB  0.98MiB  Free Space
+ 1      1.00MiB  512MiB   511MiB                p1
+ 2      512MiB   1024MiB  512MiB                p2
+        1024MiB  2048MiB  1024MiB  Free Space
+
+(parted) mkpart     <====== 执行内部命令 mkpart, 准备创建 第 三 个 分区
+Partition name?  []? p3      <==== 输入 分区名
+File system type?  [ext2]?   <==== 直接回车, 对对其 进行 格式化
+Start? 1024MiB               <===== 输入开始位置
+End? 100%                    <===== 输入结束位置(使用百分数 100%, 将当前选择磁盘的所有剩余空闲 空间 都 分配给 该分区)
+(parted) print free   <===== 查看当前效果
+Model: VMware, VMware Virtual S (scsi)
+Disk /dev/sdb: 2048MiB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start    End      Size     File system  Name  Flags
+        0.02MiB  1.00MiB  0.98MiB  Free Space
+ 1      1.00MiB  512MiB   511MiB                p1
+ 2      512MiB   1024MiB  512MiB                p2
+ 3      1024MiB  2047MiB  1023MiB               p3
+        2047MiB  2048MiB  0.98MiB  Free Space   <==== 这里还剩余 0.98MiB, 因为不足 1MiB, 所以如果将如上命令中将 100% 该为 2048MiB, 则会失败,
+                                                      并报错误 "Error: The location 2048MiB is outside of the device /dev/sdb."
+
+(parted) quit   <======== 执行 内部命令 quit 退出 parted 的 交互式环境
+Information: You may need to update /etc/fstab.
+
+
+[root@basic ~]# partprobe -s     # 通知 kernel 重新 读取 分区表  # -s     Show a summary of devices and their partitions.
+/dev/sda: msdos partitions 1 2
+/dev/sdb: gpt partitions 1 2 3
+
+[root@basic ~]# lsblk /dev/sdb    # 实际的磁盘分区状态
+NAME   MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sdb      8:16   0    2G  0 disk
+├─sdb1   8:17   0  511M  0 part
+├─sdb2   8:18   0  512M  0 part
+└─sdb3   8:19   0 1023M  0 part
+[root@basic ~]# blkid /dev/sdb
+/dev/sdb: PTTYPE="gpt"
+[root@basic ~]# blkid /dev/sdb1
+/dev/sdb1: PARTLABEL="p1" PARTUUID="47f48d2b-419c-46d7-aa41-8d1e3a661d3f"
+[root@basic ~]# cat /proc/partitions   # 内核的 的分割纪录
+major minor  #blocks  name
+
+   8       16    2097152 sdb
+   8       17     523264 sdb1
+   8       18     524288 sdb2
+   8       19    1047552 sdb3
+   8        0   20971520 sda
+   8        1     204800 sda1
+   8        2   20765696 sda2
+  11        0    1048575 sr0
+ 253        0   18665472 dm-0
+ 253        1    2097152 dm-1
 
 ---------------------------------------------------------------------------------------------------
+示例: 删除分区:
+[root@basic ~]# parted /dev/sdb
+GNU Parted 3.1
+Using /dev/sdb
+Welcome to GNU Parted! Type 'help' to view a list of commands.
+(parted) print     <============= 查看当前状态
+Model: VMware, VMware Virtual S (scsi)
+Disk /dev/sdb: 2147MB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size    File system  Name  Flags
+ 1      1049kB  537MB   536MB                p1
+ 2      537MB   1074MB  537MB                p2
+ 3      1074MB  2146MB  1073MB               p3
+
+(parted) help rm      <============= 查看 内部命令 rm 的 帮助信息
+  rm NUMBER                                delete partition NUMBER
+
+        NUMBER is the partition number used by Linux.  On MS-DOS disk labels, the primary partitions number from 1 to 4, logical partitions from 5 onwards.
+(parted) rm 3   <============= 删除 number 为 3 对应的 分区
+(parted) print  <============= 查看当前状态
+Model: VMware, VMware Virtual S (scsi)
+Disk /dev/sdb: 2147MB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size   File system  Name  Flags
+ 1      1049kB  537MB   536MB               p1
+ 2      537MB   1074MB  537MB               p2
+
+(parted) quit   <============退出 parted 交互式环境
+Information: You may need to update /etc/fstab.
+
+[root@basic ~]# partprobe -s /dev/sdb    # 通知 内核 重新读取 磁盘 /dev/sdb 的分区表
+/dev/sdb: gpt partitions 1 2
+
+
+---------------------------------------------------------------------------------------------------
+parted 还有一些其他功能, 见其他相关资料
+
 网上资料:
-    https://www.tecmint.com/parted-command-to-create-resize-rescue-linux-disk-partitions/
+    示例:
+        https://www.thegeekstuff.com/2011/09/parted-command-examples/
+        https://www.tecmint.com/parted-command-to-create-resize-rescue-linux-disk-partitions/
+        https://www.thegeekdiary.com/how-to-create-a-partition-using-parted-command/
+
+
     https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/storage_administration_guide/s2-disk-storage-parted-create-part
 
 
     关于 问题 Warning: The resulting partition is not properly aligned for best performance. 的相关和解决资料:
 
       https://superuser.com/questions/349887/gnu-parted-how-to-deal-with-the-error-about-proper-aligment-of-partitions
-      https://blog.hqcodeshop.fi/archives/273-GNU-Parted-Solving-the-dreaded-The-resulting-partition-is-not-properly-aligned-for-best-performance.html
+    解决方法:  https://blog.hqcodeshop.fi/archives/273-GNU-Parted-Solving-the-dreaded-The-resulting-partition-is-not-properly-aligned-for-best-performance.html
 
+    关于单位: IEC binary unit(1024) 与 SI (1000)
+        https://baike.baidu.com/item/KB/331?fr=aladdin
 
+    关于 gpt:
+        https://en.wikipedia.org/wiki/GUID_Partition_Table
+        https://baike.baidu.com/item/GPT/15413476?fr=aladdin
+        https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/windows-and-gpt-faq
+        https://superuser.com/questions/368173/what-is-the-maximum-number-of-partitions-that-can-be-made-on-a-hard-drive
+        https://unix.stackexchange.com/questions/53288/unable-to-create-logical-partition-with-parted
+        https://unix.stackexchange.com/questions/382719/are-there-extended-partitions-in-gpt-partition-table
 
-https://superuser.com/questions/349887/gnu-parted-how-to-deal-with-the-error-about-proper-aligment-of-partitions
+        https://blog.csdn.net/yang2716210363/article/details/78581388
+
