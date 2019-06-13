@@ -278,6 +278,7 @@ Journal backup:           inode blocks
       https://stackoverflow.com/questions/21397110/how-to-store-one-billion-files-on-ext4
       https://unix.stackexchange.com/questions/26598/how-can-i-increase-the-number-of-inodes-in-an-ext4-filesystem
       https://www.baishitou.cn/1180.html     (ext4最大inodes文件数)
+      https://askubuntu.com/questions/600159/how-can-i-create-an-ext4-partition-with-an-extra-large-number-of-inodes
 
 
     https://www.thegeekstuff.com/2013/01/mke2fs-examples/
