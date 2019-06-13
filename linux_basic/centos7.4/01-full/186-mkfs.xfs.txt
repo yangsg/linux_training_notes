@@ -1,0 +1,222 @@
+
+
+man 5 xfs
+man mkfs.xfs
+man xfs_info
+
+---------------------------------------------------------------------------------------------------
+这段内容来自 man 5 xfs
+NAME
+       xfs - layout, mount options, and supported file attributes for the XFS filesystem
+
+DESCRIPTION
+       An XFS filesystem can reside on a regular disk partition or on a logical volume.  An XFS filesystem has up to three parts: a data section, a log section, and a realtime section.
+       Using the default mkfs.xfs(8) options, the realtime section is absent, and the log area is contained within the data section.  The log section can be either  separate  from  the
+       data section or contained within it.  The filesystem sections are divided into a certain number of blocks, whose size is specified at mkfs.xfs(8) time with the -b option.
+
+       The  data section contains all the filesystem metadata (inodes, directories, indirect blocks) as well as the user file data for ordinary (non-realtime) files and the log area if
+       the log is internal to the data section.  The data section is divided into a number of allocation groups.  The number and size of the allocation groups are chosen by mkfs.xfs(8)
+       so  that  there is normally a small number of equal-sized groups.  The number of allocation groups controls the amount of parallelism available in file and block allocation.  It
+       should be increased from the default if there is sufficient memory and a lot of allocation activity.  The number of allocation groups should not be set very high, since this can
+       cause  large  amounts  of  CPU  time  to  be used by the filesystem, especially when the filesystem is nearly full.  More allocation groups are added (of the original size) when
+       xfs_growfs(8) is run.
+
+       The log section (or area, if it is internal to the data section) is used to store changes to filesystem metadata while the filesystem is running until those changes are made  to
+       the  data  section.  It is written sequentially during normal operation and read only during mount.  When mounting a filesystem after a crash, the log is read to complete opera‐
+       tions that were in progress at the time of the crash.
+
+       The realtime section is used to store the data of realtime files.  These files had an attribute bit set through xfsctl(3) after file creation, before any data was written to the
+       file.   The  realtime  section is divided into a number of extents of fixed size (specified at mkfs.xfs(8) time).  Each file in the realtime section has an extent size that is a
+       multiple of the realtime section extent size.
+
+       Each allocation group contains several data structures.  The first sector contains the superblock.  For allocation groups after the first, the superblock is just a copy  and  is
+       not  updated  after  mkfs.xfs(8).   The next three sectors contain information for block and inode allocation within the allocation group.  Also contained within each allocation
+       group are data structures to locate free blocks and inodes; these are located through the header structures.
+
+      ---------------------------------------------------------------------------------------------------
+      注释: 每个 XFS filesystem 被 一个 UUID 所标记(labeled). 该 UUID 存储在 每个 allocation group header 中 并 用于 帮助区分 不同的 XFS filesystem,
+            因此 你 应该 避免 使用 dd(1) 或 其他 block-by-block 程序来 copy XFS filesystems. 如果 同一 机器上的 两个 XFS filesystems 具有 相同的 UUID,
+            xfsdump(8) 在执行 增量 或 恢复 转储 时 就会混淆. 制作 XFS filesystems 的 拷贝时 推荐使用 xfsdump(8) and xfsrestore(8). 
+      ---------------------------------------------------------------------------------------------------
+       Each XFS filesystem is labeled with a Universal Unique Identifier (UUID).  The UUID is stored in every allocation group header and is used to help distinguish one XFS filesystem
+       from  another, therefore you should avoid using dd(1) or other block-by-block copying programs to copy XFS filesystems.  If two XFS filesystems on the same machine have the same
+       UUID, xfsdump(8) may become confused when doing incremental and resumed dumps.  xfsdump(8) and xfsrestore(8) are recommended for making copies of XFS filesystems.
+
+---------------------------------------------------------------------------------------------------
+
+作用: mkfs.xfs - construct an XFS filesystem
+
+语法: mkfs.xfs [ -b block_size ] [ -m global_metadata_options ] [ -d data_section_options ] [ -f ] [ -i inode_options ] [ -l log_section_options ] [ -n naming_options ] [ -p protofile
+       ] [ -q ] [ -r realtime_section_options ] [ -s sector_size ] [ -L label ] [ -N ] [ -K ] device
+       mkfs.xfs -V
+
+说明:
+       mkfs.xfs constructs an XFS filesystem by writing on a special file using the values found in the arguments of the command line.  It is invoked automatically by mkfs(8)  when  it
+       is given the -t xfs option.
+
+       In  its  simplest  (and most commonly used form), the size of the filesystem is determined from the disk driver.  As an example, to make a filesystem with an internal log on the
+       first partition on the first SCSI disk, use:
+
+              mkfs.xfs /dev/sda1
+
+       The metadata log can be placed on another device to reduce the number of disk seeks.  To create a filesystem on the first partition on the first SCSI disk with a 10000 block log
+       located on the first partition on the second SCSI disk, use:
+
+              mkfs.xfs -l logdev=/dev/sdb1,size=10000b /dev/sda1
+
+       Each  of  the option elements in the argument list above can be given as multiple comma-separated suboptions if multiple suboptions apply to the same option.  Equivalently, each
+       main option can be given multiple times with different suboptions.  For example, -l internal,size=10000b and -l internal -l size=10000b are equivalent.
+
+       In the descriptions below, sizes are given in sectors, bytes, blocks, kilobytes, megabytes, gigabytes, etc.  Sizes are treated as hexadecimal if prefixed by 0x or 0X,  octal  if
+       prefixed by 0, or decimal otherwise.  The following lists possible multiplication suffixes:
+              s - multiply by sector size (default = 512, see -s option below).
+              b - multiply by filesystem block size (default = 4K, see -b option below).
+              k - multiply by one kilobyte (1,024 bytes).
+              m - multiply by one megabyte (1,048,576 bytes).
+              g - multiply by one gigabyte (1,073,741,824 bytes).
+              t - multiply by one terabyte (1,099,511,627,776 bytes).
+              p - multiply by one petabyte (1,024 terabytes).
+              e - multiply by one exabyte (1,048,576 terabytes).
+
+              ------------------------------------------------------
+              进位制 Kilo Mega  Giga  Tera  Peta  Exa   Zetta
+              ------------------------------------------------------
+              二进制 1024 1024K 1024M 1024G 1024T 1024P 1024E
+              十进制 1000 1000K 1000M 1000G 1000T 1000P 1000E
+              ------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------
+// 创建几个 新的区分 做练习
+[root@basic ~]# parted /dev/sdb mklabel gpt
+[root@basic ~]# parted /dev/sdb mkpart primary 0% 1GiB
+[root@basic ~]# parted /dev/sdb mkpart primary 1GiB 2GiB
+[root@basic ~]# parted /dev/sdb mkpart primary 2GiB 3GiB
+[root@basic ~]# parted /dev/sdb mkpart primary 3GiB 100%
+
+[root@basic ~]# parted /dev/sdb unit MiB print     # 使用 parted 命令查看一下磁盘信息
+Model: VMware, VMware Virtual S (scsi)
+Disk /dev/sdb: 4096MiB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start    End      Size     File system  Name     Flags
+ 1      1.00MiB  1024MiB  1023MiB               primary
+ 2      1024MiB  2048MiB  1024MiB               primary
+ 3      2048MiB  3072MiB  1024MiB               primary
+ 4      3072MiB  4095MiB  1023MiB               primary
+
+
+[root@basic ~]# gdisk -l /dev/sdb          # 使用 gdisk 查看一下磁盘信息
+GPT fdisk (gdisk) version 0.8.10
+
+Partition table scan:
+  MBR: protective
+  BSD: not present
+  APM: not present
+  GPT: present
+
+Found valid GPT with protective MBR; using GPT.
+Disk /dev/sdb: 8388608 sectors, 4.0 GiB
+Logical sector size: 512 bytes
+Disk identifier (GUID): 7A38356E-4E82-4BAB-BD6F-7FB005F1CDED
+Partition table holds up to 128 entries
+First usable sector is 34, last usable sector is 8388574
+Partitions will be aligned on 2048-sector boundaries
+Total free space is 4029 sectors (2.0 MiB)
+
+Number  Start (sector)    End (sector)  Size       Code  Name
+   1            2048         2097151   1023.0 MiB  0700  primary
+   2         2097152         4194303   1024.0 MiB  0700  primary
+   3         4194304         6291455   1024.0 MiB  0700  primary
+   4         6291456         8386559   1023.0 MiB  0700  primary
+
+[root@basic ~]# lsblk -p /dev/sdb    # 使用 lsblk 查看一下 磁盘 /dev/sdb 的信息
+NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+/dev/sdb      8:16   0    4G  0 disk
+├─/dev/sdb1   8:17   0 1023M  0 part
+├─/dev/sdb2   8:18   0    1G  0 part
+├─/dev/sdb3   8:19   0    1G  0 part
+└─/dev/sdb4   8:20   0 1023M  0 part
+
+---------------------------------------------------------------------------------------------------
+示例: 创建文件系统
+[root@basic ~]# mkfs.xfs /dev/sdb1   # 在 分区上 创建 格式为 xfs 的  /dev/sdb1 文件系统
+meta-data=/dev/sdb1              isize=512    agcount=4, agsize=65472 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=0, sparse=0
+data     =                       bsize=4096   blocks=261888, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal log           bsize=4096   blocks=855, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+
+
+[root@basic ~]# file -sL /dev/sdb1    # 使用 file 命令 查看文件系统类型
+/dev/sdb1: SGI XFS filesystem data (blksz 4096, inosz 512, v2 dirs)
+
+[root@basic ~]# blkid /dev/sdb1       # 使用 blkid 命令查看文件系统类型
+/dev/sdb1: UUID="a1b3be35-53fe-438a-97fc-fe28dffda2b7" TYPE="xfs" PARTLABEL="primary" PARTUUID="426e445a-b056-4ea9-9935-5049051c1e38"
+
+[root@basic ~]# parted /dev/sdb1 print   # 使用 parted 命令 查看文件系统类型
+Model: Unknown (unknown)
+Disk /dev/sdb1: 1073MB
+Sector size (logical/physical): 512B/512B
+Partition Table: loop
+Disk Flags:
+
+Number  Start  End     Size    File system  Flags
+ 1      0.00B  1073MB  1073MB  xfs
+
+
+---------------------------------------------------------------------------------------------------
+示例: 查找系统的 CPU 数，并据以设定你的 agcount 数值
+
+[root@basic ~]# grep 'processor' /proc/cpuinfo
+processor       : 0
+processor       : 1
+
+[root@basic ~]# mkfs.xfs -d agcount=2 /dev/sdb2      # 创建 xfs 类型的 文件系统是 指定 allocation groups 的数量
+meta-data=/dev/sdb2              isize=512    agcount=2, agsize=131072 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=0, sparse=0
+data     =                       bsize=4096   blocks=262144, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal log           bsize=4096   blocks=2560, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+
+
+---------------------------------------------------------------------------------------------------
+
+
+
+[root@basic ~]# xfs_info /dev/mapper/centos-root   # 对于挂载了的 xfs 文件系统, 可以使用 xfs_info 查看详细信息
+meta-data=/dev/mapper/centos-root isize=512    agcount=4, agsize=1166592 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=0 spinodes=0
+data     =                       bsize=4096   blocks=4666368, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal               bsize=4096   blocks=2560, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+
+
+
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+
+    https://www.thegeekstuff.com/2011/05/ext2-ext3-ext4/
+
+    https://www.cnblogs.com/sunlizhao/p/9610300.html
+
+    http://xfs.org/index.php/XFS_FAQ
+
+
+    xfs 针对 raid10 的优化:
+    https://blog.tsunanet.net/2011/08/mkfsxfs-raid10-optimal-performance.html
+
