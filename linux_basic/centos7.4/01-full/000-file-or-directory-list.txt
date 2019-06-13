@@ -146,6 +146,8 @@ virt/
 /var/spool/anacron # anacron 存储 timestamp files 的目录
 
 
+/lib/modules/$(uname -r)/kernel/fs   # linux 所支持的文件系统
+/proc/filesystems   # 系统已经加载到内存中支持的文件系统
 
 
 
