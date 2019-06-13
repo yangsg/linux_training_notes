@@ -1,0 +1,234 @@
+
+# keyword gdisk
+
+man gdisk
+
+
+[root@basic 01-full]# yum -y install gdisk
+
+
+作用: gdisk - Interactive GUID partition table (GPT) manipulator
+
+语法: gdisk [ -l ] device
+
+说明:
+       GPT  fdisk  (aka gdisk) is a text-mode menu-driven program for creation and manipulation of partition tables. It will automatically convert an old-style Master Boot Record (MBR)
+       partition table or BSD disklabel stored without an MBR carrier partition to the newer Globally Unique Identifier (GUID) Partition Table (GPT) format, or will load a GUID  parti‐
+       tion table. When used with the -l command-line option, the program displays the current partition table and then exits.
+
+       GPT  fdisk operates mainly on the GPT headers and partition tables; however, it can and will generate a fresh protective MBR, when required. (Any boot loader code in the protec‐
+       tive MBR will not be disturbed.) If you've created an unusual protective MBR, such as a hybrid MBR created by gptsync or gdisk's own hybrid MBR creation feature, this should not
+       be  disturbed  by  most ordinary actions. Some advanced data recovery options require you to understand the distinctions between the main and backup data, as well as between the
+       GPT headers and the partition tables. For information on MBR vs. GPT, as well as GPT terminology  and  structure,  see  the  extended  gdisk  documentation  at  http://www.rods‐
+       books.com/gdisk/ or consult Wikipedia.
+
+       The  gdisk program employs a user interface similar to that of Linux's fdisk, but gdisk modifies GPT partitions. It also has the capability of transforming MBR partitions or BSD
+       disklabels into GPT partitions. Like the original fdisk program, gdisk does not modify disk structures until you explicitly write them to disk, so if you make a mistake, you can
+       exit from the program with the 'q' option to leave your partitions unmodified.
+
+       Ordinarily, gdisk operates on disk device files, such as /dev/sda or /dev/hda under Linux, /dev/disk0 under Mac OS X, or /dev/ad0 or /dev/da0 under FreeBSD. The program can also
+       operate on disk image files, which can be either copies of whole disks (made with dd, for instance) or raw disk images used by emulators such as QEMU or VMWare. Note  that  only
+       raw disk images are supported; gdisk cannot work on compressed or other advanced disk image formats.
+
+       The  MBR  partitioning  system  uses  a combination of cylinder/head/sector (CHS) addressing and logical block addressing (LBA). The former is klunky and limiting. GPT drops CHS
+       addressing and uses 64-bit LBA mode exclusively. Thus, GPT data structures, and therefore gdisk, do not need to deal with CHS geometries and all the problems they create.  Users
+       of fdisk will note that gdisk lacks the options and limitations associated with CHS geometries.
+
+       For  best  results, you should use an OS-specific partition table program whenever possible. For example, you should make Mac OS X partitions with the Mac OS X Disk Utility pro‐
+       gram and Linux partitions with the Linux gdisk or GNU Parted program.
+
+       Upon start, gdisk attempts to identify the partition type in use on the disk. If it finds valid GPT data, gdisk will use it. If gdisk finds a valid MBR or BSD disklabel  but  no
+       GPT  data, it will attempt to convert the MBR or disklabel into GPT form. (BSD disklabels are likely to have unusable first and/or final partitions because they overlap with the
+       GPT data structures, though.) GPT fdisk can identify, but not use data in, Apple Partition Map (APM) disks, which are used on 680x0- and PowerPC-based Macintoshes. Upon  exiting
+       with the 'w' option, gdisk replaces the MBR or disklabel with a GPT. This action is potentially dangerous! Your system may become unbootable, and partition type codes may become
+       corrupted if the disk uses unrecognized type codes. Boot problems are particularly likely if you're multi-booting with any GPT-unaware OS. If you mistakenly launch gdisk  on  an
+       MBR disk, you can safely exit the program without making any changes by using the 'q' option.
+
+       The MBR-to-GPT conversion will leave at least one gap in the partition numbering if the original MBR used logical partitions. These gaps are harmless, but you can eliminate them
+       by using the 's' option, if you like.  (Doing this may require you to update your /etc/fstab file.)
+
+       When creating a fresh partition table, certain considerations may be in order:
+
+       *      For data (non-boot) disks, and for boot disks used on BIOS-based computers with GRUB as the boot loader, partitions may be created in whatever order and in whatever sizes
+              are desired.
+
+       *      Boot  disks for EFI-based systems require an EFI System Partition (gdisk internal code 0xEF00) formatted as FAT-32.  The recommended size of this partition is between 100
+              and 300 MiB.  Boot-related files are stored here. (Note that GNU Parted identifies such partitions as having the "boot flag" set.)
+
+       *      Some boot loaders for BIOS-based systems make use of a BIOS Boot Partition (gdisk internal code 0xEF02), in which the secondary boot loader is  stored,  possibly  without
+              the benefit of a filesystem. (GRUB2 may optionally use such a partition.) This partition can typically be quite small (roughly 32 to 200 KiB), but you should consult your
+              boot loader documentation for details.
+
+       *      If Windows is to boot from a GPT disk, a partition of type Microsoft Reserved (gdisk internal code 0x0C01) is recommended. This partition should be about 128 MiB in size.
+              It  ordinarily  follows  the EFI System Partition and immediately precedes the Windows data partitions. (Note that old versions of GNU Parted create all FAT partitions as
+              this type, which actually makes the partition unusable for normal file storage in both Windows and Mac OS X.)
+
+       *      Some OSes' GPT utilities create some blank space (typically 128 MiB) after each partition. The intent is to enable future disk utilities to  use  this  space.  Such  free
+              space  is  not  required  of GPT disks, but creating it may help in future disk maintenance. You can use GPT fdisk's relative partition positioning option (specifying the
+              starting sector as '+128M', for instance) to simplify creating such gaps.
+
+
+---------------------------------------------------------------------------------------------------
+分区前 先使用其他命令观察 磁盘 状态信息
+
+[root@basic ~]# lsblk -p    # 使用 lsblk 命令列出块设备
+NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+/dev/sda                      8:0    0   20G  0 disk
+├─/dev/sda1                   8:1    0  200M  0 part /boot
+└─/dev/sda2                   8:2    0 19.8G  0 part
+  ├─/dev/mapper/centos-root 253:0    0 17.8G  0 lvm  /
+  └─/dev/mapper/centos-swap 253:1    0    2G  0 lvm  [SWAP]
+/dev/sdb                      8:16   0    2G  0 disk
+/dev/sr0                     11:0    1 1024M  0 rom
+
+
+[root@basic ~]# parted /dev/sdb print     # 使用 parted 命令查看分区表 信息(如类型, 是否存在...)
+Error: /dev/sdb: unrecognised disk label
+Model: VMware, VMware Virtual S (scsi)
+Disk /dev/sdb: 2147MB
+Sector size (logical/physical): 512B/512B
+Partition Table: unknown    <---------------- 这里 unknown 表示还没有分区表
+Disk Flags:
+
+
+---------------------------------------------------------------------------------------------------
+示例: 创建一个 普通分区 和 一个 swap 分区
+
+[root@basic ~]# gdisk /dev/sdb
+GPT fdisk (gdisk) version 0.8.10
+
+Partition table scan:
+  MBR: not present
+  BSD: not present
+  APM: not present
+  GPT: not present
+
+Creating new GPT entries.
+
+Command (? for help): ?    <=========== 选择 菜单 ?  查看内部命令 的帮助信息
+b       back up GPT data to a file
+c       change a partition's name                        <======== c: 修改分区名
+d       delete a partition                               <======== d: 删除分区
+i       show detailed information on a partition         <======== i: 显示一个分区的详细信息
+l       list known partition types                       <======== l: 列出已知的分区类型
+n       add a new partition                              <======== n: 新建一个分区
+o       create a new empty GUID partition table (GPT)    <======== o: 创建一个新的空的 gpt 分区表
+p       print the partition table                        <======== p: 显示分区表
+q       quit without saving changes                      <======== q: 退出(但不保存修改)
+r       recovery and transformation options (experts only)
+s       sort partitions
+t       change a partition's type code                   <======== t: 修改分区类型 code
+v       verify disk
+w       write table to disk and exit                     <======== w: 写回磁盘并退出(即保存并退出)
+x       extra functionality (experts only)
+?       print this menu                                  <======== ?: 显示帮助菜单
+
+Command (? for help): p     <============== 查看分区表
+Disk /dev/sdb: 4194304 sectors, 2.0 GiB
+Logical sector size: 512 bytes
+Disk identifier (GUID): BDBB33AE-9636-473D-8165-202DA621CD6A
+Partition table holds up to 128 entries
+First usable sector is 34, last usable sector is 4194270
+Partitions will be aligned on 2048-sector boundaries
+Total free space is 4194237 sectors (2.0 GiB)
+
+Number  Start (sector)    End (sector)  Size       Code  Name
+
+Command (? for help): n   <======== 选择菜单 n, 准备新建一个分区
+Partition number (1-128, default 1): 1    <========= 设置分区 number
+First sector (34-4194270, default = 2048) or {+-}size{KMGTP}:   <=========== 设置 分区的 First sector, 这里使用默认的 2048, 保持对齐(aligned)
+Last sector (2048-4194270, default = 4194270) or {+-}size{KMGTP}: +512M   <=========== 设置 Last sector
+Current type is 'Linux filesystem'
+Hex code or GUID (L to show codes, Enter = 8300): L
+0700 Microsoft basic data  0c01 Microsoft reserved    2700 Windows RE
+3000 ONIE boot             3001 ONIE config           4100 PowerPC PReP boot
+4200 Windows LDM data      4201 Windows LDM metadata  7501 IBM GPFS
+7f00 ChromeOS kernel       7f01 ChromeOS root         7f02 ChromeOS reserved
+8200 Linux swap            8300 Linux filesystem      8301 Linux reserved
+8302 Linux /home           8400 Intel Rapid Start     8e00 Linux LVM
+a500 FreeBSD disklabel     a501 FreeBSD boot          a502 FreeBSD swap
+a503 FreeBSD UFS           a504 FreeBSD ZFS           a505 FreeBSD Vinum/RAID
+a580 Midnight BSD data     a581 Midnight BSD boot     a582 Midnight BSD swap
+a583 Midnight BSD UFS      a584 Midnight BSD ZFS      a585 Midnight BSD Vinum
+a800 Apple UFS             a901 NetBSD swap           a902 NetBSD FFS
+a903 NetBSD LFS            a904 NetBSD concatenated   a905 NetBSD encrypted
+a906 NetBSD RAID           ab00 Apple boot            af00 Apple HFS/HFS+
+af01 Apple RAID            af02 Apple RAID offline    af03 Apple label
+af04 AppleTV recovery      af05 Apple Core Storage    be00 Solaris boot
+bf00 Solaris root          bf01 Solaris /usr & Mac Z  bf02 Solaris swap
+bf03 Solaris backup        bf04 Solaris /var          bf05 Solaris /home
+bf06 Solaris alternate se  bf07 Solaris Reserved 1    bf08 Solaris Reserved 2
+bf09 Solaris Reserved 3    bf0a Solaris Reserved 4    bf0b Solaris Reserved 5
+c001 HP-UX data            c002 HP-UX service         ea00 Freedesktop $BOOT
+eb00 Haiku BFS             ed00 Sony system partitio  ed01 Lenovo system partit
+Press the <Enter> key to see more codes:
+ef00 EFI System            ef01 MBR partition scheme  ef02 BIOS boot partition
+fb00 VMWare VMFS           fb01 VMWare reserved       fc00 VMWare kcore crash p
+fd00 Linux RAID
+Hex code or GUID (L to show codes, Enter = 8300):   <========= 设置 Hex code, 这里直接回车表示选择 8300 Linux Filesystem(注意根据实际情况设置)
+Changed type of partition to 'Linux filesystem'
+
+Command (? for help): p   <============== 查看当前分区表效果
+Disk /dev/sdb: 4194304 sectors, 2.0 GiB
+Logical sector size: 512 bytes
+Disk identifier (GUID): BDBB33AE-9636-473D-8165-202DA621CD6A
+Partition table holds up to 128 entries
+First usable sector is 34, last usable sector is 4194270
+Partitions will be aligned on 2048-sector boundaries
+Total free space is 3145661 sectors (1.5 GiB)
+
+Number  Start (sector)    End (sector)  Size       Code  Name
+   1            2048         1050623   512.0 MiB   8300  Linux filesystem
+
+Command (? for help): n   <============== 选择菜单 n, 准备创建一个 swap 分区
+Partition number (2-128, default 2):      <============== 设置 分区 number
+First sector (34-4194270, default = 1050624) or {+-}size{KMGTP}:   <========== 设置新建分区的 First sector (直接回车表选择默认值)
+Last sector (1050624-4194270, default = 4194270) or {+-}size{KMGTP}: +512M  <========= 设置新建分区的 Last sector
+Current type is 'Linux filesystem'
+Hex code or GUID (L to show codes, Enter = 8300): 8200  <========= 设置 分区类型对应的 Hex code: 8200, 表示 Linux swap 类型
+Changed type of partition to 'Linux swap'
+
+Command (? for help): p    <=============== 查看 分区表效果
+Disk /dev/sdb: 4194304 sectors, 2.0 GiB
+Logical sector size: 512 bytes
+Disk identifier (GUID): BDBB33AE-9636-473D-8165-202DA621CD6A
+Partition table holds up to 128 entries
+First usable sector is 34, last usable sector is 4194270
+Partitions will be aligned on 2048-sector boundaries
+Total free space is 2097085 sectors (1024.0 MiB)
+
+Number  Start (sector)    End (sector)  Size       Code  Name
+   1            2048         1050623   512.0 MiB   8300  Linux filesystem
+   2         1050624         2099199   512.0 MiB   8200  Linux swap
+
+Command (? for help): w   <============ 保存修改到磁盘 并退出
+
+Final checks complete. About to write GPT data. THIS WILL OVERWRITE EXISTING
+PARTITIONS!!
+
+Do you want to proceed? (Y/N): y  <========= 确认保存并退出
+OK; writing new GUID partition table (GPT) to /dev/sdb.
+The operation has completed successfully.
+
+[root@basic ~]# partprobe -s /dev/sdb   # 通知请求 内核 重新读取 磁盘 /dev/sdb 的分区表(虽然好像 gdisk 保存退出时已经通知了kernel, 但保险起见还是执行一次 partprobe 较好)
+/dev/sdb: gpt partitions 1 2
+
+[root@basic ~]# cat /proc/partitions    # 核心的分割纪录
+major minor  #blocks  name
+
+   8        0   20971520 sda
+   8        1     204800 sda1
+   8        2   20765696 sda2
+   8       16    2097152 sdb
+   8       17     524288 sdb1  <----- 观察
+   8       18     524288 sdb2  <-----
+  11        0    1048575 sr0
+ 253        0   18665472 dm-0
+
+---------------------------------------------------------------------------------------------------
+
+网上资料:
+
+    http://www.rodsbooks.com/gdisk/
+    http://en.wikipedia.org/wiki/GUID_Partition_Table
+
