@@ -1,0 +1,38 @@
+
+# keyword xfs_repair
+
+man xfs_repair
+
+作用: xfs_repair - repair an XFS filesystem
+
+语法: xfs_repair [ -dfLnPv ] [ -m maxmem ] [ -c subopt=value ] [ -o subopt[=value] ] [ -t interval ] [ -l logdev ] [ -r rtdev ] device
+语法: xfs_repair -V
+
+说明:
+       xfs_repair  repairs corrupt or damaged XFS filesystems (see xfs(5)).  The filesystem is specified using the device argument which should be the device name of the disk partition
+       or volume containing the filesystem. If given the name of a block device, xfs_repair will attempt to find the raw device associated with the specified block device and will  use
+       the raw device instead.
+
+       Regardless, the filesystem to be repaired must be unmounted, otherwise, the resulting filesystem may be inconsistent or corrupt.
+
+警告:
+     修复 文件系统 前 一定到 先 umount 掉 该文件系统, 否则 可能会 导致文件系统  不一致 或 损坏.
+
+---------------------------------------------------------------------------------------------------
+
+       -n     No modify mode. Specifies that xfs_repair should not modify the filesystem but should only scan the filesystem and indicate what repairs would have been made.
+
+[root@basic ~]# xfs_repair -n /dev/sdb1   # 选项 -n 表示 单纯的 检查 文件系统, 但不会实际做 任何的 修改
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# xfs_repair /dev/sdb1    # 检查 并修复 文件系统 (注: 修复前一定要 umount 掉 /dev/sdb1, 否则可能造成文件系统不一致或损坏)
+
+---------------------------------------------------------------------------------------------------
+
+网上资料:
+
+    http://unixadminschool.com/blog/2014/03/solaris-everything-you-need-to-know-before-you-run-fsck/
+    https://blog.51cto.com/zhangyu/143217
+
+
