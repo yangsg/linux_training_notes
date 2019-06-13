@@ -1,0 +1,13 @@
+
+# keyword xfsdump
+
+
+man xfsdump
+
+TODO
+
+
+[root@basic ~]# yum -y install xfsdump   #  xfsdump package 中 包含了 xfsdump 和 xfsrestore 命令
+
+
+
