@@ -1,0 +1,148 @@
+
+# keyword tune2fs
+
+man tune2fs
+
+
+作用:
+       tune2fs - adjust tunable filesystem parameters on ext2/ext3/ext4 filesystems
+
+语法:
+       tune2fs  [  -l  ]  [  -c  max-mount-counts  ]  [  -e errors-behavior ] [ -f ] [ -i interval-between-checks ] [ -j ] [ -J journal-options ] [ -m reserved-blocks-percentage ] [ -o
+       [^]mount-options[,...]  ] [ -r reserved-blocks-count ] [ -s sparse-super-flag ] [ -u user ] [ -g group ] [ -C mount-count ] [ -E extended-options ] [ -L volume-name ] [ -M last-
+       mounted-directory ] [ -O [^]feature[,...]  ] [ -Q quota-options ] [ -T time-last-checked ] [ -U UUID ] device
+
+说明:
+       tune2fs  allows  the  system  administrator to adjust various tunable filesystem parameters on Linux ext2, ext3, or ext4 filesystems.  The current values of these options can be
+       displayed by using the -l option to tune2fs(8) program, or by using the dumpe2fs(8) program.
+
+       The device specifier can either be a filename (i.e., /dev/sda1), or a LABEL or UUID specifier: "LABEL=volume-name" or "UUID=uuid".  (i.e., LABEL=home or UUID=e40486c6-84d5-4f2f-
+       b99c-032281799c9d).
+
+
+---------------------------------------------------------------------------------------------------
+
+       -l     List the contents of the filesystem superblock, including the current values of the parameters that can be set via this program.
+
+[root@basic ~]# tune2fs -l /dev/sdb1      # 显示 分区 /dev/sdb1 上文件系统 ext4 的 概要信息
+tune2fs 1.42.9 (28-Dec-2013)
+Filesystem volume name:   <none>
+Last mounted on:          <not available>
+Filesystem UUID:          ec919de7-ec5c-49cf-8197-513ea81a1f09
+Filesystem magic number:  0xEF53
+Filesystem revision #:    1 (dynamic)
+Filesystem features:      has_journal ext_attr resize_inode dir_index filetype extent 64bit flex_bg sparse_super large_file huge_file uninit_bg dir_nlink extra_isize
+Filesystem flags:         signed_directory_hash
+Default mount options:    user_xattr acl
+Filesystem state:         clean
+Errors behavior:          Continue
+Filesystem OS type:       Linux
+Inode count:              65536
+Block count:              261888
+Reserved block count:     13094
+Free blocks:              253029
+Free inodes:              65525
+First block:              0
+Block size:               4096
+Fragment size:            4096
+Group descriptor size:    64
+Reserved GDT blocks:      127
+Blocks per group:         32768
+Fragments per group:      32768
+Inodes per group:         8192
+Inode blocks per group:   512
+Flex block group size:    16
+Filesystem created:       Thu Jun 13 21:53:39 2019
+Last mount time:          n/a
+Last write time:          Thu Jun 13 21:53:40 2019
+Mount count:              0
+Maximum mount count:      -1
+Last checked:             Thu Jun 13 21:53:39 2019
+Check interval:           0 (<none>)
+Lifetime writes:          17 MB
+Reserved blocks uid:      0 (user root)
+Reserved blocks gid:      0 (group root)
+First inode:              11
+Inode size:               256
+Required extra isize:     28
+Desired extra isize:      28
+Journal inode:            8
+Default directory hash:   half_md4
+Directory Hash Seed:      b46caca1-4256-4e59-bc4b-b196986fa510
+Journal backup:           inode blocks
+
+
+---------------------------------------------------------------------------------------------------
+
+       -L volume-label
+              Set the volume label of the filesystem.  Ext2 filesystem labels can be at most 16 characters long; if volume-label is longer than 16 characters, tune2fs will truncate  it
+              and  print a warning.  The volume label can be used by mount(8), fsck(8), and /etc/fstab(5) (and possibly others) by specifying LABEL=volume_label instead of a block spe‐
+              cial device name like /dev/hda5.
+
+[root@basic ~]# tune2fs -l /dev/sdb1 | grep -i name
+Filesystem volume name:   <none>
+
+[root@basic ~]# tune2fs -L image_store /dev/sdb1    # 为 文件系统设置 label , 最多 16 个 字符长度
+tune2fs 1.42.9 (28-Dec-2013)
+
+[root@basic ~]# tune2fs -l /dev/sdb1 | grep -i name
+Filesystem volume name:   image_store
+
+
+---------------------------------------------------------------------------------------------------
+       -U UUID
+              Set the universally unique identifier (UUID) of the filesystem to UUID.   The  format  of  the  UUID  is  a  series  of  hex  digits  separated  by  hyphens,  like  this:
+              "c1b9d5a2-f162-11cf-9ece-0020afc76f16".  The UUID parameter may also be one of the following:
+
+                   clear  clear the filesystem UUID
+
+                   random generate a new randomly-generated UUID
+
+                   time   generate a new time-based UUID
+
+              The UUID may be used by mount(8), fsck(8), and /etc/fstab(5) (and possibly others) by specifying UUID=uuid instead of a block special device name like /dev/hda1.
+
+              See  uuidgen(8)  for  more  information.  If the system does not have a good random number generator such as /dev/random or /dev/urandom, tune2fs will automatically use a
+              time-based UUID instead of a randomly-generated UUID.
+
+
+
+
+
+[root@basic ~]# tune2fs -l /dev/sdb1 | grep -i uuid
+Filesystem UUID:          ec919de7-ec5c-49cf-8197-513ea81a1f09
+
+[root@basic ~]# uuidgen
+f5582c09-a0fb-4d46-9f1b-888612c4d319
+
+[root@basic ~]# tune2fs -U f5582c09-a0fb-4d46-9f1b-888612c4d319  /dev/sdb1   # 为分区 /dev/sdb1 的 ext4 文件系统设置新的 uuid
+tune2fs 1.42.9 (28-Dec-2013)
+
+[root@basic ~]# tune2fs -l /dev/sdb1 | grep -i uuid
+Filesystem UUID:          f5582c09-a0fb-4d46-9f1b-888612c4d319
+
+[root@basic ~]# tune2fs -U random  /dev/sdb1   # 为分区 /dev/sdb1 的 ext4 文件系统设置新的 uuid (此处 uuid 为随机生成的) 
+tune2fs 1.42.9 (28-Dec-2013)
+
+[root@basic ~]# tune2fs -l /dev/sdb1 | grep -i uuid
+Filesystem UUID:          9f3ab8c0-85e4-4fe2-b74d-286b0b0f440f
+
+
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+    https://linux.101hacks.com/unix/tune2fs/
+    http://www.landoflinux.com/linux_tune2fs_command.html
+
+    https://serverfault.com/questions/394629/file-system-for-a-lot-of-small-files/394635
+    https://serverfault.com/questions/6711/filesystem-for-millions-of-small-files
+    https://www.howtogeek.com/howto/33552/htg-explains-which-linux-file-system-should-you-choose/
+
+
+
+
+
+
+
+
+
