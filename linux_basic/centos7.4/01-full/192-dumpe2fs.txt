@@ -1,0 +1,109 @@
+
+# keyword dumpe2fs
+
+man dumpe2fs
+
+
+作用: dumpe2fs - dump ext2/ext3/ext4 filesystem information
+
+语法: dumpe2fs [ -bfhixV ] [ -o superblock=superblock ] [ -o blocksize=blocksize ] device
+
+说明:
+       dumpe2fs prints the super block and blocks group information for the filesystem present on device.
+
+       Note: When used with a mounted filesystem, the printed information may be old or inconsistent.
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# dumpe2fs /dev/sdb1 | less
+
+[root@basic ~]# dumpe2fs /dev/sdb1 | grep -i superblock
+dumpe2fs 1.42.9 (28-Dec-2013)
+  Primary superblock at 0, Group descriptors at 1-1
+  Backup superblock at 32768, Group descriptors at 32769-32769
+  Backup superblock at 98304, Group descriptors at 98305-98305
+  Backup superblock at 163840, Group descriptors at 163841-163841
+  Backup superblock at 229376, Group descriptors at 229377-229377
+
+
+
+---------------------------------------------------------------------------------------------------
+
+       -h     only display the superblock information and not any of the block group descriptor detail information.
+
+
+[root@basic ~]# dumpe2fs -h /dev/sdb1     # 仅显示 superblock 中的信息 而 不包含 block group descriptor 的详细信息
+Filesystem UUID:          9f3ab8c0-85e4-4fe2-b74d-286b0b0f440f
+Filesystem magic number:  0xEF53
+Filesystem revision #:    1 (dynamic)
+Filesystem features:      has_journal ext_attr resize_inode dir_index filetype extent 64bit flex_bg sparse_super large_file huge_file uninit_bg dir_nlink extra_isize
+Filesystem flags:         signed_directory_hash
+Default mount options:    user_xattr acl
+Filesystem state:         clean
+Errors behavior:          Continue
+Filesystem OS type:       Linux
+Inode count:              65536
+Block count:              261888
+Reserved block count:     13094
+Free blocks:              253029
+Free inodes:              65525
+First block:              0
+Block size:               4096
+Fragment size:            4096
+Group descriptor size:    64
+Reserved GDT blocks:      127
+Blocks per group:         32768
+Fragments per group:      32768
+Inodes per group:         8192
+Inode blocks per group:   512
+Flex block group size:    16
+Filesystem created:       Thu Jun 13 21:53:39 2019
+Last mount time:          n/a
+Last write time:          Fri Jun 14 23:08:47 2019
+Mount count:              0
+Maximum mount count:      -1
+Last checked:             Thu Jun 13 21:53:39 2019
+Check interval:           0 (<none>)
+Lifetime writes:          17 MB
+Reserved blocks uid:      0 (user root)
+Reserved blocks gid:      0 (group root)
+First inode:              11
+Inode size:               256
+Required extra isize:     28
+Desired extra isize:      28
+Journal inode:            8
+Default directory hash:   half_md4
+Directory Hash Seed:      b46caca1-4256-4e59-bc4b-b196986fa510
+Journal backup:           inode blocks
+Journal features:         (none)
+Journal size:             16M
+Journal length:           4096
+Journal sequence:         0x00000001
+Journal start:            0
+
+
+---------------------------------------------------------------------------------------------------
+
+       -b     print the blocks which are reserved as bad in the filesystem.
+
+[root@basic ~]# dumpe2fs -b /dev/sdb1   # 显示 文件系统中 保留为 坏(bad) 的 blocks
+dumpe2fs 1.42.9 (28-Dec-2013)
+
+
+---------------------------------------------------------------------------------------------------
+
+       -x     print the detailed group information block numbers in hexadecimal format
+
+[root@basic ~]# dumpe2fs -x /dev/sdb1 | less   # -x     print the detailed group information block numbers in hexadecimal format
+
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+
+    https://www.tecmint.com/manage-ext2-ext3-and-ext4-health-in-linux/
+
+    https://www.geeksforgeeks.org/dumpe2fs-command-in-linux-with-examples/
+    http://www.linux-commands-examples.com/dumpe2fs
+
+    http://www.361way.com/mke2fs-dumpe2fs-tune2fs/4091.html
+
