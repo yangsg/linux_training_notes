@@ -1,0 +1,409 @@
+
+
+# keyword mount
+
+man mount
+
+
+作用: mount - mount a filesystem
+
+语法: mount [-lhV]
+语法: mount -a [-fFnrsvw] [-t vfstype] [-O optlist]
+语法: mount [-fnrsvw] [-o option[,option]...]  device|dir
+语法: mount [-fnrsvw] [-t vfstype] [-o options] device dir
+
+
+说明:
+       All  files  accessible  in  a  Unix  system are arranged in one big tree, the file hierarchy, rooted at /.  These files can be spread out over several devices. The mount command
+       serves to attach the filesystem found on some device to the big file tree. Conversely, the umount(8) command will detach it again.
+
+       The standard form of the mount command, is
+
+              mount -t type device dir
+
+       This tells the kernel to attach the filesystem found on device (which is of type type) at the directory dir.  The previous contents (if any) and owner and  mode  of  dir  become
+       invisible, and as long as this filesystem remains mounted, the pathname dir refers to the root of the filesystem on device.
+
+       If only directory or device is given, for example:
+
+              mount /dir
+
+       then mount looks for a mountpoint and if not found then for a device in the /etc/fstab file. It's possible to use --target or --source options to avoid ambivalent interpretation
+       of the given argument. For example
+
+              mount --target /mountpoint
+
+       The listing and help.
+              The listing mode is maintained for backward compatibility only.
+
+              For more robust and definable output use findmnt(8), especially in your scripts. Note that control characters in the mountpoint name are replaced with '?'.
+
+              mount [-l] [-t type]
+                     lists all mounted filesystems (of type type).  The option -l adds the labels in this listing.  See below.
+
+       The device indication.
+              Most devices are indicated by a file name (of a block special device), like /dev/sda1, but there are other possibilities. For example, in the case of an NFS mount, device
+              may  look  like  knuth.cwi.nl:/dir.   It is possible to indicate a block special device using its filesystem LABEL or UUID (see the -L and -U options below) and partition
+              PARTUUID or PARTLABEL (partition identifiers are supported for GUID Partition Table (GPT) and MAC partition tables only).
+
+              The recommended setup is to use tags (e.g. LABEL=<label>) rather than /dev/disk/by-{label,uuid,partuuid,partlabel} udev symlinks in the /etc/fstab file. The tags are more
+              readable, robust and portable. The mount(8) command internally uses udev symlinks, so use the symlinks in /etc/fstab has no advantage over the tags.  For more details see
+              libblkid(3).
+
+              Note that mount(8) uses UUIDs as strings. The UUIDs from command line or fstab(5) are not converted to internal binary representation. The string  representation  of  the
+              UUID should be based on lower case characters.
+
+              The proc filesystem is not associated with a special device, and when mounting it, an arbitrary keyword, such as proc can be used instead of a device specification.  (The
+              customary choice none is less fortunate: the error message `none busy' from umount can be confusing.)
+
+       The /etc/fstab, /etc/mtab and /proc/mounts files.
+              The file /etc/fstab (see fstab(5)), may contain lines describing what devices are usually mounted where, using which options. The default location of  the  fstab(5)  file
+              could be overridden by --fstab <path> command line option (see below for more details).
+
+              The command
+
+                     mount -a [-t type] [-O optlist]
+
+              (usually  given in a bootscript) causes all filesystems mentioned in fstab (of the proper type and/or having or not having the proper options) to be mounted as indicated,
+              except for those whose line contains the noauto keyword. Adding the -F option will make mount fork, so that the filesystems are mounted simultaneously.
+
+              When mounting a filesystem mentioned in fstab or mtab, it suffices to give only the device, or only the mount point.
+
+              The programs mount and umount maintain a list of currently mounted filesystems in the file /etc/mtab.  If no arguments are given to mount, this list is printed.
+
+              The mount program does not read the /etc/fstab file if device (or LABEL, UUID, PARTUUID or PARTLABEL) and dir are specified. For example:
+
+                     mount /dev/foo /dir
+
+              If you want to override mount options from /etc/fstab you have to use:
+
+                     mount device|dir -o <options>
+
+              and then the mount options from command line will be appended to the list of options from /etc/fstab.  The usual behaviour is that the last option wins if there  is  more
+              duplicated options.
+
+              When the proc filesystem is mounted (say at /proc), the files /etc/mtab and /proc/mounts have very similar contents. The former has somewhat more information, such as the
+              mount options used, but is not necessarily up-to-date (cf. the -n option below). It is possible to replace /etc/mtab by a symbolic link to  /proc/mounts,  and  especially
+              when  you have very large numbers of mounts things will be much faster with that symlink, but some information is lost that way, and in particular using the "user" option
+              will fail.
+
+       The non-superuser mounts.
+              Normally, only the superuser can mount filesystems.  However, when fstab contains the user option on a line, anybody can mount the corresponding system.
+
+              Thus, given a line
+
+                     /dev/cdrom  /cd  iso9660  ro,user,noauto,unhide
+
+              any user can mount the iso9660 filesystem found on his CDROM using the command
+
+                     mount /dev/cdrom
+
+              or
+
+                     mount /cd
+
+              For more details, see fstab(5).  Only the user that mounted a filesystem can unmount it again.  If any user should be able to unmount, then use users instead of  user  in
+              the  fstab  line.   The  owner option is similar to the user option, with the restriction that the user must be the owner of the special file. This may be useful e.g. for
+              /dev/fd if a login script makes the console user owner of this device.  The group option is similar, with the restriction that the user must be member of the group of the
+              special file.
+
+       The bind mounts.
+              Since Linux 2.4.0 it is possible to remount part of the file hierarchy somewhere else. The call is
+                     mount --bind olddir newdir
+              or shortoption
+                     mount -B olddir newdir
+              or fstab entry is:
+                     /olddir /newdir none bind
+
+              After  this call the same contents is accessible in two places.  One can also remount a single file (on a single file). It's also possible to use the bind mount to create
+              a mountpoint from a regular directory, for example:
+
+                     mount --bind foo foo
+
+              The bind mount call attaches only (part of) a single filesystem, not possible submounts. The entire file hierarchy including submounts is attached a second place using
+
+                     mount --rbind olddir newdir
+
+              or shortoption
+
+                     mount -R olddir newdir
+
+              Note that the filesystem mount options will remain the same as those on the original mount point.
+
+              mount(8) since v2.27 (backported to RHEL7.3) allow to change the options by passing the -o option along with --bind for example:
+
+                     mount --bind,ro foo foo
+
+              This feature is not supported by Linux kernel and it is implemented in userspace by additional remount mount(2) syscall. This solution is not atomic.
+
+              The alternative (classic) way to create a read-only bind mount is to use remount operation, for example:
+
+                     mount --bind olddir newdir
+                     mount -o remount,ro,bind olddir newdir
+
+              Note that read-only bind will create a read-only mountpoint (VFS entry), but the original filesystem superblock will still be writable, meaning that the  olddir  will  be
+              writable, but the newdir will be read-only.
+
+              It's impossible to change mount options recursively (for example with  -o rbind,ro).
+
+       The move operation.
+              Since Linux 2.5.1 it is possible to atomically move a mounted tree to another place. The call is
+                     mount --move olddir newdir
+              or shortoption
+                     mount -M olddir newdir
+              This will cause the contents which previously appeared under olddir to be accessed under newdir.  The physical location of the files is not changed.  Note that the olddir
+              has to be a mountpoint.
+
+              Note that moving a mount residing under a shared mount is invalid and unsupported. Use findmnt -o TARGET,PROPAGATION to see the current propagation flags.
+
+       The shared subtrees operations.
+              Since Linux 2.6.15 it is possible to mark a mount and its submounts as shared, private, slave or unbindable. A shared mount provides ability to  create  mirrors  of  that
+              mount such that mounts and umounts within any of the mirrors propagate to the other mirror. A slave mount receives propagation from its master, but any not vice-versa.  A
+              private mount carries no propagation abilities.  A unbindable mount is a private mount which cannot be cloned through a bind operation. Detailed semantics  is  documented
+              in Documentation/filesystems/sharedsubtree.txt file in the kernel source tree.
+
+              Supported operations:
+                     mount --make-shared mountpoint
+                     mount --make-slave mountpoint
+                     mount --make-private mountpoint
+                     mount --make-unbindable mountpoint
+
+              The following commands allows one to recursively change the type of all the mounts under a given mountpoint.
+
+                     mount --make-rshared mountpoint
+                     mount --make-rslave mountpoint
+                     mount --make-rprivate mountpoint
+                     mount --make-runbindable mountpoint
+
+              mount(8) does not read fstab(5) when --make-* operation is requested. All necessary information has to be specified on command line.
+
+              Note that Linux kernel does not allow to change more propagation flags by one mount(2) syscall and the flags cannot be mixed with another mount options.
+
+              Since  util-linux 2.23 mount command allows to use more propagation flags together and with another mount operations. This feature is EXPERIMENTAL.  The propagation flags
+              are applied by additional mount(2) syscalls after previous successful mount operation. Note that this use case is not atomic. The propagation flags is possible to specify
+              in fstab(5) as mount options (private, slave, shared, unbindable, rprivate, rslave, rshared, runbindable).
+
+              For example
+                     mount --make-private --make-unbindable /dev/sda1 /A
+
+              is the same as
+                     mount /dev/sda1 /A
+                     mount --make-private /A
+                     mount --make-unbindable /A
+
+
+---------------------------------------------------------------------------------------------------
+示例: 显示已挂载的 文件系统
+
+语法: mount [-l] [-t type]
+
+[root@basic ~]# mount    # 列出所有 被 挂载的 文件系统, 该命令显示的是文件 /etc/mtab 中包含的 所有已挂载的 文件系统的列表
+sysfs on /sys type sysfs (rw,nosuid,nodev,noexec,relatime)
+proc on /proc type proc (rw,nosuid,nodev,noexec,relatime)
+devtmpfs on /dev type devtmpfs (rw,nosuid,size=488804k,nr_inodes=122201,mode=755)
+securityfs on /sys/kernel/security type securityfs (rw,nosuid,nodev,noexec,relatime)
+tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev)
+devpts on /dev/pts type devpts (rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000)
+tmpfs on /run type tmpfs (rw,nosuid,nodev,mode=755)
+tmpfs on /sys/fs/cgroup type tmpfs (ro,nosuid,nodev,noexec,mode=755)
+cgroup on /sys/fs/cgroup/systemd type cgroup (rw,nosuid,nodev,noexec,relatime,xattr,release_agent=/usr/lib/systemd/systemd-cgroups-agent,name=systemd)
+pstore on /sys/fs/pstore type pstore (rw,nosuid,nodev,noexec,relatime)
+cgroup on /sys/fs/cgroup/memory type cgroup (rw,nosuid,nodev,noexec,relatime,memory)
+cgroup on /sys/fs/cgroup/cpu,cpuacct type cgroup (rw,nosuid,nodev,noexec,relatime,cpuacct,cpu)
+cgroup on /sys/fs/cgroup/cpuset type cgroup (rw,nosuid,nodev,noexec,relatime,cpuset)
+cgroup on /sys/fs/cgroup/net_cls,net_prio type cgroup (rw,nosuid,nodev,noexec,relatime,net_prio,net_cls)
+cgroup on /sys/fs/cgroup/freezer type cgroup (rw,nosuid,nodev,noexec,relatime,freezer)
+cgroup on /sys/fs/cgroup/pids type cgroup (rw,nosuid,nodev,noexec,relatime,pids)
+cgroup on /sys/fs/cgroup/perf_event type cgroup (rw,nosuid,nodev,noexec,relatime,perf_event)
+cgroup on /sys/fs/cgroup/devices type cgroup (rw,nosuid,nodev,noexec,relatime,devices)
+cgroup on /sys/fs/cgroup/hugetlb type cgroup (rw,nosuid,nodev,noexec,relatime,hugetlb)
+cgroup on /sys/fs/cgroup/blkio type cgroup (rw,nosuid,nodev,noexec,relatime,blkio)
+configfs on /sys/kernel/config type configfs (rw,relatime)
+/dev/mapper/centos-root on / type xfs (rw,relatime,attr2,inode64,noquota)
+systemd-1 on /proc/sys/fs/binfmt_misc type autofs (rw,relatime,fd=36,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=13586)
+debugfs on /sys/kernel/debug type debugfs (rw,relatime)
+mqueue on /dev/mqueue type mqueue (rw,relatime)
+hugetlbfs on /dev/hugepages type hugetlbfs (rw,relatime)
+/dev/sda1 on /boot type xfs (rw,relatime,attr2,inode64,noquota)
+tmpfs on /run/user/0 type tmpfs (rw,nosuid,nodev,relatime,size=99972k,mode=700)
+
+
+       -l, --show-labels
+              Add the labels in the mount output. Mount must have permission to read the disk device (e.g. be suid root) for this to work.  One can set such a label for ext2,  ext3  or
+              ext4 using the e2label(8) utility, or for XFS using xfs_admin(8), or for reiserfs using reiserfstune(8).
+
+[root@basic ~]# mount -l   # 列出所有 被 挂载的 文件系统 (显示结果中包括 label)
+
+
+[root@basic ~]# mount -t xfs    # 列出 所有 被 挂载的 类型为 xfs 的文件系统
+/dev/mapper/centos-root on / type xfs (rw,relatime,attr2,inode64,noquota)
+/dev/sda1 on /boot type xfs (rw,relatime,attr2,inode64,noquota)
+
+---------------------------------------------------------------------------------------------------
+示例: 挂载文件系统 , 即将 device 上的 文件系统 附加(attach) 到 目录树 上
+
+     -t, --types vfstype
+            The argument following the -t is used to indicate the filesystem type.  The filesystem types which are currently supported include: adfs, affs, autofs, cifs, coda, coher‐
+            ent, cramfs, debugfs, devpts, efs, ext, ext2, ext3, ext4, hfs, hfsplus, hpfs, iso9660, jfs, minix, msdos, ncpfs, nfs, nfs4, ntfs,  proc,  qnx4,  ramfs,  reiserfs,  romfs,
+            squashfs, smbfs, sysv, tmpfs, ubifs, udf, ufs, umsdos, usbfs, vfat, xenix, xfs, xiafs.  Note that coherent, sysv and xenix are equivalent and that xenix and coherent will
+            be removed at some point in the future — use sysv instead. Since kernel version 2.1.21 the types ext and xiafs do not exist anymore. Earlier, usbfs was known as usbdevfs.
+            Note, the real list of all supported filesystems depends on your kernel.
+
+            The programs mount and umount support filesystem subtypes.  The subtype is defined by '.subtype' suffix.  For example  'fuse.sshfs'. It's recommended to use subtype nota‐
+            tion rather than add any prefix to the mount source (for example 'sshfs#example.com' is depreacated).
+
+            For most types all the mount program has to do is issue a simple mount(2) system call, and no detailed knowledge of the filesystem type is required.  For a few types how‐
+            ever  (like  nfs, nfs4, cifs, smbfs, ncpfs) ad hoc code is necessary. The nfs, nfs4, cifs, smbfs, and ncpfs filesystems have a separate mount program. In order to make it
+            possible to treat all types in a uniform way, mount will execute the program /sbin/mount.TYPE (if that exists) when called with type TYPE.  Since various versions of  the
+            smbmount program have different calling conventions, /sbin/mount.smbfs may have to be a shell script that sets up the desired call.
+
+            If  no  -t option is given, or if the auto type is specified, mount will try to guess the desired type.  Mount uses the blkid library for guessing the filesystem type; if
+            that does not turn up anything that looks familiar, mount will try to read the file /etc/filesystems, or, if that does not exist, /proc/filesystems.  All of the  filesys‐
+            tem  types  listed  there will be tried, except for those that are labeled "nodev" (e.g., devpts, proc and nfs).  If /etc/filesystems ends in a line with a single * only,
+            mount will read /proc/filesystems afterwards. All of the filesystem types will be mounted with mount option "silent".
+
+            The auto type may be useful for user-mounted floppies.  Creating a file /etc/filesystems can be useful to change the probe order (e.g., to try vfat before msdos  or  ext3
+            before ext2) or if you use a kernel module autoloader.
+
+            More  than  one  type may be specified in a comma separated list.  The list of filesystem types can be prefixed with no to specify the filesystem types on which no action
+            should be taken.  (This can be meaningful with the -a option.) For example, the command:
+
+                   mount -a -t nomsdos,ext
+
+            mounts all filesystems except those of type msdos and ext.
+
+
+
+
+[root@basic ~]# blkid /dev/sdb1
+/dev/sdb1: UUID="e8609f7d-9bd1-4e1f-8d46-74e4b71dcf21" TYPE="ext4" PARTLABEL="primary" PARTUUID="7a6cfe6e-31e0-43a0-8cf1-06ffbac30ad0"
+
+[root@basic ~]# mount /dev/sdb1 /image_dir/     # 挂载 分区 /dev/sdb1 的文件系统 到 目录 /image_dir/ 上
+
+[root@basic ~]# mount | grep  /dev/sdb1
+/dev/sdb1 on /image_dir type ext4 (rw,relatime,data=ordered)
+
+[root@basic ~]# ls /image_dir/
+lost+found
+
+
+[root@basic ~]# mount -t ext4 /dev/sdb2  /vedio_dir/    # 挂载 时 明确指定 文件系统的 类型
+
+---------------------------------------------------------------------------------------------------
+
+[root@nfs4client ~]# mount -t nfs4 -o proto=tcp,port=2049  192.168.175.111:/nfs4_share/data  /data    # 挂载 nfs4 only 的 nfs 文件系统
+
+---------------------------------------------------------------------------------------------------
+
+       -U, --uuid uuid
+              Mount the partition that has the specified uuid.  These two options require the file /proc/partitions (present since Linux 2.1.116) to exist.
+
+[root@basic ~]# cat /proc/partitions
+major minor  #blocks  name
+
+   8       16    4194304 sdb
+   8       17    1047552 sdb1
+   8       18    1048576 sdb2
+   8       19    1048576 sdb3
+   8       20    1047552 sdb4
+   8        0   20971520 sda
+   8        1     204800 sda1
+   8        2   20765696 sda2
+  11        0    1048575 sr0
+ 253        0   18665472 dm-0
+ 253        1    2097152 dm-1
+
+[root@basic ~]# blkid /dev/sdb3
+/dev/sdb3: UUID="fb0b067c-cddc-4755-aae0-57c0d86f4e3a" TYPE="ext4" PARTLABEL="primary" PARTUUID="eb822a95-bed2-478d-afa6-b77b68111e4b"
+
+
+[root@basic ~]# mount -U fb0b067c-cddc-4755-aae0-57c0d86f4e3a /audio_dir/    # -U, --uuid uuid # 通过 uuid 挂载 文件系统
+[root@basic ~]# mount | grep /audio_dir
+/dev/sdb3 on /audio_dir type ext4 (rw,relatime,data=ordered)
+
+
+---------------------------------------------------------------------------------------------------
+
+       -L, --label label
+              Mount the partition that has the specified label.
+
+[root@basic ~]# tune2fs -L mp3_store /dev/sdb4    # 设置 分区 /dev/sdb4 的 ext4 的 文件系统的 label 为 mp3_store
+tune2fs 1.42.9 (28-Dec-2013)
+
+[root@basic ~]# tune2fs -l /dev/sdb4 | grep -i name   # 使用命令 tune2fs 查看 分区 /dev/sdb4 的 ext4 的 文件系统的 label
+Filesystem volume name:   mp3_store
+
+[root@basic ~]# blkid /dev/sdb4    # 使用命令 blkid 查看 分区 文件系统 上的 label
+/dev/sdb4: LABEL="mp3_store" UUID="0452838e-6dd9-4422-b628-bc6044947cf0" TYPE="ext4" PARTLABEL="primary" PARTUUID="feb23825-c90f-4f1a-8313-1b70171f05cb"
+
+
+[root@basic ~]# mkdir /mp3_dir
+
+[root@basic ~]# mount -L mp3_store  /mp3_dir/    # -L, --label label  # 通过 label 挂载文件系统
+
+[root@basic ~]# mount -l | grep mp3_store
+/dev/sdb4 on /mp3_dir type ext4 (rw,relatime,data=ordered) [mp3_store]
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# vim /etc/fstab     # 编辑 /etc/fstab
+/dev/sdb1  /image_dir                   ext4    defaults        0 0
+/dev/sdb2  /vedio_dir                   ext4    defaults        0 0
+
+
+[root@basic ~]# mount --source /dev/sdb2     # 查找 /etc/fstab 中 分区 /dev/sdb2 所在行 并 挂载 对应的 文件系统
+[root@basic ~]# mount --target /image_dir    # 查找 /etc/fstab 中 mountpoint 为 /image_dir 所在行 并 挂载 对应的 文件系统
+
+[root@basic ~]# mount | grep -E '/dev/sdb2|/image_dir'  # 查看效果
+/dev/sdb1 on /image_dir type ext4 (rw,relatime,data=ordered)
+/dev/sdb2 on /vedio_dir type ext4 (rw,relatime,data=ordered)
+
+
+[root@basic ~]# umount /dev/sdb2
+[root@basic ~]# mount --source /dev/sdb2 -o ro,noexec   # 此处使用 -o 在 /etc/fstab 中原有的 options的基础上追加(append)新选项, 如果选项重复,则后面的选项会覆盖前面的选项 
+
+[root@basic ~]# mount | grep /dev/sdb2
+/dev/sdb2 on /vedio_dir type ext4 (ro,noexec,relatime,data=ordered)   <---- 观察结果
+
+---------------------------------------------------------------------------------------------------
+
+
+语法: mount -a [-t type] [-O optlist]
+
+       -a, --all
+              Mount all filesystems (of the given types) mentioned in fstab.
+
+[root@basic ~]# cat /etc/fstab
+
+          #
+          # /etc/fstab
+          # Created by anaconda on Sun Dec 23 07:43:48 2018
+          #
+          # Accessible filesystems, by reference, are maintained under '/dev/disk'
+          # See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+          #
+          /dev/mapper/centos-root /                       xfs     defaults        0 0
+          UUID=ac69fa51-b1c3-45d2-aa6e-be4be3faa86a /boot                   xfs     defaults        0 0
+          /dev/mapper/centos-swap swap                    swap    defaults        0 0
+
+
+[root@basic ~]# mount -a    # 挂载 /etc/fstab 中 描述的 所有文件系统(包含关键字 noauto 的 行除外)
+
+[root@basic ~]# mount -a -t nomsdos,ext   # 挂载 /etc/fstab 中描述的文件系统, 但类型为 msdos 和 ext 的文件系统除外(因为文件系统类型列表(逗号分隔) msdos,ext 加了前缀 no, 即 nomsdos,ext)
+
+---------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

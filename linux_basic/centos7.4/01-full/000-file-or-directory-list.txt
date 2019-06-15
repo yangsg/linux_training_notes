@@ -150,6 +150,10 @@ virt/
 /proc/filesystems   # 系统已经加载到内存中支持的文件系统
 
 
+/etc/fstab
+/etc/mtab    #  包含了 当前挂载的 文件系统的 列表 # 与 mount 和  umount 命令有关
+
+
 
 
 
