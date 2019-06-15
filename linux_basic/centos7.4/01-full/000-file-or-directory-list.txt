@@ -152,6 +152,7 @@ virt/
 
 /etc/fstab
 /etc/mtab    #  包含了 当前挂载的 文件系统的 列表 # 与 mount 和  umount 命令有关
+/proc/mounts
 
 
 

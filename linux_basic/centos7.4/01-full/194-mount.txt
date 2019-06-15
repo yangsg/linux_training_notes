@@ -346,6 +346,24 @@ Filesystem volume name:   mp3_store
 
 ---------------------------------------------------------------------------------------------------
 
+       --source src
+              If  only  one  argument  for the mount command is given then the argument might be interpreted as target (mountpoint) or source (device).
+              This option allows to explicitly define that the argument is mount source.
+
+       --target dir
+              If only one argument for the mount command is given then the argument might be interpreted as target (mountpoint) or source (device).
+              This  option  allows  to  explicitly define that the argument is mount target.
+
+       -o, --options opts
+              Options are specified with a -o flag followed by a comma separated string of options. For example:
+
+                     mount LABEL=mydisk -o noatime,nouser
+
+              For more details, see FILESYSTEM INDEPENDENT MOUNT OPTIONS and FILESYSTEM SPECIFIC MOUNT OPTIONS sections.
+
+
+
+
 [root@basic ~]# vim /etc/fstab     # 编辑 /etc/fstab
 /dev/sdb1  /image_dir                   ext4    defaults        0 0
 /dev/sdb2  /vedio_dir                   ext4    defaults        0 0
@@ -367,6 +385,15 @@ Filesystem volume name:   mp3_store
 
 ---------------------------------------------------------------------------------------------------
 
+[root@basic ~]# vim /etc/fstab
+# 如下一行用于挂载 cdrom, 关于 mount 选项 user, users, owner, group 的意义见 man mount
+/dev/sr0  /cd  iso9660  ro,user,noauto,unhide 0 0
+
+[root@basic ~]# mount --source /dev/sr0      # 查找 /etc/fstab 中 /dev/sr0 所在行 并加载 对应的 文件系统
+[root@basic ~]# mount | grep /dev/sr0
+/dev/sr0 on /cd type iso9660 (ro,nosuid,nodev,noexec,relatime,unhide,user)
+
+---------------------------------------------------------------------------------------------------
 
 语法: mount -a [-t type] [-O optlist]
 
@@ -393,17 +420,88 @@ Filesystem volume name:   mp3_store
 
 ---------------------------------------------------------------------------------------------------
 
+       -B, --bind
+              Remount a subtree somewhere else (so that its contents are available in both places). See above.
+
+       -R, --rbind
+              Remount a subtree and all possible submounts somewhere else (so that its contents are available in both places). See above.
+
+
+[root@basic ~]# mkdir olddir
+[root@basic ~]# mkdir newdir
+[root@basic ~]# touch olddir/a.txt
+[root@basic ~]# mount --bind  /root/olddir/  /root/newdir/   # 挂载目录
+[root@basic ~]# ls /root/newdir/
+a.txt
+[root@basic ~]# touch newdir/b.txt
+[root@basic ~]# ls olddir/
+a.txt  b.txt
 
 
 
 
 
+[root@basic ~]# cat /etc/fstab    # 在 文件 /etc/fstab 中 配置目录挂载
+# 将 目录 /root/dir01 挂载到 /root/dir02
+/root/dir01  /root/dir02  none bind
+
+[root@basic ~]# mount -a
+[root@basic ~]# mount | grep dir02
+/dev/mapper/centos-root on /root/dir02 type xfs (rw,relatime,attr2,inode64,noquota)
 
 
+--------------------
+关于 --rbind
+参考:
+    https://blog.csdn.net/realmeh/article/details/17888613
+    https://stackoverflow.com/questions/730589/create-a-loop-in-a-linux-filesystem
+
+[root@basic ~]# mkdir /something
+[root@basic ~]# mkdir /new_something
+[root@basic ~]# mkdir -p /something/underneath/that
+[root@basic ~]# touch /something/myfile
+[root@basic ~]# touch /something/underneath/that/otherfile
+[root@basic ~]# mount /dev/sdb1 /something/underneath/that
+[root@basic ~]# mount --bind /something /new_something
+
+[root@basic ~]# ls /something/underneath/that/otherfile   <----- 存在
+/something/underneath/that/otherfile
+[root@basic ~]# ls /new_something/underneath/that/otherfile  <----- 不存在(无法访问)
+ls: cannot access /new_something/underneath/that/otherfile: No such file or directory
+
+[root@basic ~]# mount --rbind /something /new_something   # 其中 --rbind 中的 r 表示 recursive 递归
+
+[root@basic ~]# ls /new_something/underneath/that/otherfile
+/new_something/underneath/that/otherfile
+
+警告: One caveat about rbind mounts: they do not handle the case where a filesystem is mounted after the rbind is setup.
 
 
+---------------------------------------------------------------------------------------------------
+示例: 文件系统 mount 选项 remount 的用法
+
+[root@basic ~]# mount | grep /dev/sdb2
+/dev/sdb2 on /vedio_dir type ext4 (rw,relatime,data=ordered)
+
+[root@basic ~]# mount --source /dev/sdb2 -o remount,ro,noexec  # 通过 remount 选项 重新 以 ro 和 noexec 选项 挂载 分区 /dev/sdb2 的 文件系统
+
+[root@basic ~]# mount | grep /dev/sdb2
+/dev/sdb2 on /vedio_dir type ext4 (ro,noexec,relatime,data=ordered)
 
 
+---------------------------------------------------------------------------------------------------
+网上资料:
 
+    https://www.thegeekstuff.com/2013/01/mount-umount-examples/
+    https://www.cnblogs.com/chengmo/archive/2010/10/13/1850515.html
+    https://www.poftut.com/linux-mount-command-tutorial-examples/
+
+    挂载smbfs:
+    https://www.linuxnix.com/8-ways-to-mount-smbfs-samba-file-system-in-linux/
+
+
+    关于 --rbind:
+    https://blog.csdn.net/realmeh/article/details/17888613
+    https://stackoverflow.com/questions/730589/create-a-loop-in-a-linux-filesystem
 
 
