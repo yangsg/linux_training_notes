@@ -1,0 +1,92 @@
+
+# keyword fsck.ext4
+
+man fsck.ext4
+
+
+作用: e2fsck - check a Linux ext2/ext3/ext4 file system
+
+语法:
+     e2fsck [ -pacnyrdfkvtDFV ] [ -b superblock ] [ -B blocksize ] [ -l|-L bad_blocks_file ] [ -C fd ] [ -j external-journal ] [ -E extended_options ] device
+
+说明:
+    ---------------------------------------------------------------------------------------------------
+    中文注释:
+        e2fsck 被用于检查 ext2/ext3/ext4 家族的文件系统.  对于 ext3 和 ext4 这样使用 a journal 的文件系统,
+        如果 系统 shut down uncleanly without any errors, 通常, 在 重做 journal 中 被提交的 事务后,
+        该文件系统就会被标记为 clean. 因此，对于 使用 journalling 的 文件系统, e2fsck 通常将 重做 日志 并 退出,
+        unless its superblock indicates that further checking is required.
+    ---------------------------------------------------------------------------------------------------
+     e2fsck  is  used  to  check  the ext2/ext3/ext4 family of file systems.  For ext3 and ext4 filesystems that use a journal, if the system has been shut down uncleanly without any
+     errors, normally, after replaying the committed transactions  in the journal, the file system should be marked as clean.   Hence, for filesystems that  use  journalling,  e2fsck
+     will normally replay the journal and exit, unless its superblock indicates that further checking is required.
+
+     device is the device file where the filesystem is stored (e.g.  /dev/hdc1).
+
+    ---------------------------------------------------------------------------------------------------
+    中文注释:
+        注意 通常 在  mounted 的 文件系统上执行 e2fsck 是 不 安全的. 唯一的 例外是 指定了 -n 选项, 且 -c, -l, or -L 选项没有被指定.
+        然而，即使 这样做是 安全的, 如果文件系统是 处于 mounted 的, 由 e2fsck 输出的 结果 也是 无效的(not valid).
+        如果 e2fsck 询问 你 是否 要 检查 一个 mounted 的文件系统, 唯一正确的回答 是 'no',
+        Only experts who really know what they are doing should consider answering this question in any other way.
+    ---------------------------------------------------------------------------------------------------
+     Note  that  in  general  it  is not safe to run e2fsck on mounted filesystems.  The only exception is if the -n option is specified, and -c, -l, or -L options are not specified.
+     However, even if it is safe to do so, the results printed by e2fsck are not valid if the filesystem is mounted.   If e2fsck asks whether or not you  should  check  a  filesystem
+     which is mounted, the only correct answer is ``no''.  Only experts who really know what they are doing should consider answering this question in any other way.
+
+---------------------------------------------------------------------------------------------------
+
+     -n     Open the filesystem read-only, and assume an answer of `no' to all questions.  Allows e2fsck to be used non-interactively.  This option may not be specified at  the  same
+            time as the -p or -y options.
+
+注: 选项 -n 用于 只 检查 但不修改(即 read-only), 但即使是这样,也应该在非 mounted 的 文件系统上执行 check 操作.
+    因为如果使用 -n 在 mounted 的文件系统上执行 check操作, 其输出结果 也是 无效的.
+
+[root@basic ~]# umount /dev/sdb2
+
+[root@basic ~]# fsck.ext4 -n /dev/sdb2   # 只检查,不修改 (即以 read-only 方式打开 文件系统)
+e2fsck 1.42.9 (28-Dec-2013)
+/dev/sdb2: clean, 11/65536 files, 44146/1048576 blocks
+
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# umount /dev/sdb2
+
+[root@basic ~]# fsck.ext4 /dev/sdb2       # 检查 分区 /dev/sdb2 上的 ext4 文件系统
+e2fsck 1.42.9 (28-Dec-2013)
+/dev/sdb2: clean, 11/65536 files, 44146/1048576 blocks
+
+---------------------------------------------------------------------------------------------------
+
+     -c     This  option  causes e2fsck to use badblocks(8) program to do a read-only scan of the device in order to find any bad blocks.  If any bad blocks are found, they are added
+            to the bad block inode to prevent them from being allocated to a file or directory.  If this option is specified twice, then the bad block scan will be done using a  non-
+            destructive read-write test.
+
+
+[root@basic ~]# umount /dev/sdb2
+
+[root@basic ~]# fsck.ext4 -c /dev/sdb2      # 检查 bad blocks
+e2fsck 1.42.9 (28-Dec-2013)
+Checking for bad blocks (read-only test): done
+/dev/sdb2: Updating bad block inode.
+Pass 1: Checking inodes, blocks, and sizes
+Pass 2: Checking directory structure
+Pass 3: Checking directory connectivity
+Pass 4: Checking reference counts
+Pass 5: Checking group summary information
+
+/dev/sdb2: ***** FILE SYSTEM WAS MODIFIED *****
+/dev/sdb2: 11/65536 files (0.0% non-contiguous), 44146/1048576 blocks
+
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+
+    http://unixadminschool.com/blog/2014/03/solaris-everything-you-need-to-know-before-you-run-fsck/
+    https://blog.51cto.com/zhangyu/143217
+
+    https://unix.stackexchange.com/questions/87415/whats-the-difference-between-e2fsck-and-fsck-and-which-one-i-should-use
+    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/storage_administration_guide/fsck-fs-specific
+
+
