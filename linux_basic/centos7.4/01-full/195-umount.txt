@@ -1,0 +1,41 @@
+
+
+# keyword umount
+
+man umount
+
+
+作用: umount - unmount file systems
+
+语法: umount [-hV]
+语法: umount -a [-dflnrv] [-t vfstype] [-O options]
+语法: umount [-dflnrv] {dir|device}...
+
+
+说明:
+       The umount command detaches the file system(s) mentioned from the file hierarchy.  A file system is specified by giving the directory where it has been mounted.  Giving the spe‐
+       cial device on which the file system lives may also work, but is obsolete, mainly because it will fail in case this device was mounted on more than one directory.
+
+       Note that a file system cannot be unmounted when it is 'busy' - for example, when there are open files on it, or when some process has its working directory  there,  or  when  a
+       swap  file  on  it  is in use.  The offending process could even be umount itself - it opens libc, and libc in its turn may open for example locale files.  A lazy unmount avoids
+       this problem.
+
+注: 当 文件系统 处于 'budy' 状态时, 是不能 被 unmounted 的.
+
+
+[root@basic ~]# umount /vedio_dir    # detaches 挂载到 目录(挂载点) /vedio_dir 的 文件系统
+
+[root@basic ~]# umount /dev/sdb1     # (不太推荐) 也能 仍可 工作，但该方式已经过时, 主要是因为如果文件系统如果挂载到了 多个目录上, 该方式会失败.
+
+[root@basic ~]# umount /image_dir/ /vedio_dir/   # detaches 目录 /image_dir 和 /vedio_dir 上 挂载的 文件系统
+
+[root@basic ~]# umount -v /image_dir/     # -v, --verbose : Verbose mode.
+umount: /image_dir (/dev/sdb1) unmounted
+
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+      https://www.thegeekstuff.com/2013/01/mount-umount-examples/
+
+---------------------------------------------------------------------------------------------------
+
