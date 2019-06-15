@@ -1,0 +1,176 @@
+
+
+# keyword findmnt
+
+man findmnt
+
+
+作用: findmnt - find a filesystem
+
+语法: findmnt [options]
+语法: findmnt [options] device|mountpoint
+语法: findmnt [options] [--source] device [--target] mountpoint
+
+说明:
+       findmnt  will  list  all  mounted  filesytems  or search for a filesystem.  The findmnt command is able to search in /etc/fstab, /etc/mtab or /proc/self/mountinfo.  If device or
+       mountpoint is not given, all filesystems are shown.
+
+       The device may be specified by device name, maj:min, filesystem LABEL or UUID, or partition PARTUUID or PARTLABEL.  Note that a device name may be interpreted  as  a  mountpoint
+       (and vice versa) if the --target or --source options are not specified.
+
+       The command prints all mounted filesystems in the tree-like format by default.
+
+
+
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# findmnt
+TARGET                                SOURCE                               FSTYPE     OPTIONS
+/                                     /dev/mapper/centos-root              xfs        rw,relatime,attr2,inode64,noquota
+├─/sys                                sysfs                                sysfs      rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/security              securityfs                           securityfs rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/cgroup                    tmpfs                                tmpfs      ro,nosuid,nodev,noexec,mode=755
+│ │ ├─/sys/fs/cgroup/systemd          cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,xattr,release_agent=/usr/lib/systemd/systemd-cgroups-agent,name=systemd
+│ │ ├─/sys/fs/cgroup/cpu,cpuacct      cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,cpuacct,cpu
+│ │ ├─/sys/fs/cgroup/net_cls,net_prio cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,net_prio,net_cls
+│ │ ├─/sys/fs/cgroup/hugetlb          cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,hugetlb
+│ │ ├─/sys/fs/cgroup/pids             cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,pids
+│ │ ├─/sys/fs/cgroup/perf_event       cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,perf_event
+│ │ ├─/sys/fs/cgroup/devices          cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,devices
+│ │ ├─/sys/fs/cgroup/memory           cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,memory
+│ │ ├─/sys/fs/cgroup/blkio            cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,blkio
+│ │ ├─/sys/fs/cgroup/cpuset           cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,cpuset
+│ │ └─/sys/fs/cgroup/freezer          cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,freezer
+│ ├─/sys/fs/pstore                    pstore                               pstore     rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/debug                 debugfs                              debugfs    rw,relatime
+│ └─/sys/kernel/config                configfs                             configfs   rw,relatime
+├─/proc                               proc                                 proc       rw,nosuid,nodev,noexec,relatime
+│ └─/proc/sys/fs/binfmt_misc          systemd-1                            autofs     rw,relatime,fd=32,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=13427
+├─/dev                                devtmpfs                             devtmpfs   rw,nosuid,size=488804k,nr_inodes=122201,mode=755
+│ ├─/dev/shm                          tmpfs                                tmpfs      rw,nosuid,nodev
+│ ├─/dev/pts                          devpts                               devpts     rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000
+│ ├─/dev/hugepages                    hugetlbfs                            hugetlbfs  rw,relatime
+│ └─/dev/mqueue                       mqueue                               mqueue     rw,relatime
+├─/run                                tmpfs                                tmpfs      rw,nosuid,nodev,mode=755
+│ └─/run/user/0                       tmpfs                                tmpfs      rw,nosuid,nodev,relatime,size=99972k,mode=700
+├─/boot                               /dev/sda1                            xfs        rw,relatime,attr2,inode64,noquota
+├─/root/dir02                         /dev/mapper/centos-root[/root/dir01] xfs        rw,relatime,attr2,inode64,noquota
+└─/vedio_dir                          /dev/sdb2                            ext4       rw,relatime,data=ordered
+
+
+---------------------------------------------------------------------------------------------------
+
+     -l, --list
+            Use the list output format.  This output format is automatically enabled if the output is restricted by the -t, -O, -S or -T option and the option --submounts is not used
+            or if more that one source file (the option -F) is specified.
+
+
+[root@basic ~]# findmnt --list
+TARGET                          SOURCE                               FSTYPE     OPTIONS
+/sys                            sysfs                                sysfs      rw,nosuid,nodev,noexec,relatime
+/proc                           proc                                 proc       rw,nosuid,nodev,noexec,relatime
+/dev                            devtmpfs                             devtmpfs   rw,nosuid,size=488804k,nr_inodes=122201,mode=755
+/sys/kernel/security            securityfs                           securityfs rw,nosuid,nodev,noexec,relatime
+/dev/shm                        tmpfs                                tmpfs      rw,nosuid,nodev
+/dev/pts                        devpts                               devpts     rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000
+/run                            tmpfs                                tmpfs      rw,nosuid,nodev,mode=755
+/sys/fs/cgroup                  tmpfs                                tmpfs      ro,nosuid,nodev,noexec,mode=755
+/sys/fs/cgroup/systemd          cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,xattr,release_agent=/usr/lib/systemd/systemd-cgroups-agent,name=systemd
+/sys/fs/pstore                  pstore                               pstore     rw,nosuid,nodev,noexec,relatime
+/sys/fs/cgroup/cpu,cpuacct      cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,cpuacct,cpu
+/sys/fs/cgroup/net_cls,net_prio cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,net_prio,net_cls
+/sys/fs/cgroup/hugetlb          cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,hugetlb
+/sys/fs/cgroup/pids             cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,pids
+/sys/fs/cgroup/perf_event       cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,perf_event
+/sys/fs/cgroup/devices          cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,devices
+/sys/fs/cgroup/memory           cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,memory
+/sys/fs/cgroup/blkio            cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,blkio
+/sys/fs/cgroup/cpuset           cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,cpuset
+/sys/fs/cgroup/freezer          cgroup                               cgroup     rw,nosuid,nodev,noexec,relatime,freezer
+/sys/kernel/config              configfs                             configfs   rw,relatime
+/                               /dev/mapper/centos-root              xfs        rw,relatime,attr2,inode64,noquota
+/proc/sys/fs/binfmt_misc        systemd-1                            autofs     rw,relatime,fd=32,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=13427
+/sys/kernel/debug               debugfs                              debugfs    rw,relatime
+/dev/hugepages                  hugetlbfs                            hugetlbfs  rw,relatime
+/dev/mqueue                     mqueue                               mqueue     rw,relatime
+/root/dir02                     /dev/mapper/centos-root[/root/dir01] xfs        rw,relatime,attr2,inode64,noquota
+/boot                           /dev/sda1                            xfs        rw,relatime,attr2,inode64,noquota
+/run/user/0                     tmpfs                                tmpfs      rw,nosuid,nodev,relatime,size=99972k,mode=700
+/vedio_dir                      /dev/sdb2                            ext4       rw,relatime,data=ordered
+[root@basic ~]#
+
+
+---------------------------------------------------------------------------------------------------
+
+     -S, --source spec
+            Explicitly define the mount source.  Supported are device, maj:min, LABEL=, UUID=, PARTLABEL= or PARTUUID=.
+
+[root@basic ~]# findmnt --source /dev/sdb2
+TARGET     SOURCE    FSTYPE OPTIONS
+/vedio_dir /dev/sdb2 ext4   rw,relatime,data=ordered
+
+---------------------------------------------------------------------------------------------------
+
+     -T, --target path
+            Explicitly  define  the  mount target (mountpoint directory). If the path is not a mountpoint file or directory than findmnt checks path elements in reverse order for get
+            the mountpoint (this feature is supported only if search in kernel files and unsupported for --fstab).
+
+
+[root@basic ~]# findmnt --target /vedio_dir
+TARGET     SOURCE    FSTYPE OPTIONS
+/vedio_dir /dev/sdb2 ext4   rw,relatime,data=ordered
+
+---------------------------------------------------------------------------------------------------
+
+     -t, --types list
+            Limit the set of printed filesystems.  More than one type may be specified in a comma-separated list.  The list of filesystem types can be prefixed with no to specify the
+            filesystem types on which no action should be taken.  For more details see mount(8).
+
+
+[root@basic ~]# findmnt -t xfs
+TARGET        SOURCE                               FSTYPE OPTIONS
+/             /dev/mapper/centos-root              xfs    rw,relatime,attr2,inode64,noquota
+├─/boot       /dev/sda1                            xfs    rw,relatime,attr2,inode64,noquota
+└─/root/dir02 /dev/mapper/centos-root[/root/dir01] xfs    rw,relatime,attr2,inode64,noquota
+
+[root@basic ~]# findmnt -t xfs,ext4
+TARGET        SOURCE                               FSTYPE OPTIONS
+/             /dev/mapper/centos-root              xfs    rw,relatime,attr2,inode64,noquota
+├─/boot       /dev/sda1                            xfs    rw,relatime,attr2,inode64,noquota
+├─/root/dir02 /dev/mapper/centos-root[/root/dir01] xfs    rw,relatime,attr2,inode64,noquota
+└─/vedio_dir  /dev/sdb2                            ext4   rw,relatime,data=ordered
+
+
+---------------------------------------------------------------------------------------------------
+
+       -i, --invert
+              Invert the sense of matching.
+
+
+---------------------------------------------------------------------------------------------------
+EXAMPLES
+       findmnt --fstab -t nfs
+              Prints all NFS filesystems defined in /etc/fstab.
+
+       findmnt --fstab /mnt/foo
+              Prints all /etc/fstab filesystems where the mountpoint directory is /mnt/foo.  It also prints bind mounts where /mnt/foo is a source.
+
+       findmnt --fstab --target /mnt/foo
+              Prints all /etc/fstab filesystems where the mountpoint directory is /mnt/foo.
+
+       findmnt --fstab --evaluate
+              Prints all /etc/fstab filesystems and converts LABEL= and UUID= tags to the real device names.
+
+       findmnt -n --raw --evaluate --output=target LABEL=/boot
+              Prints only the mountpoint where the filesystem with label "/boot" is mounted.
+
+       findmnt --poll --target /mnt/foo
+              Monitors mount, unmount, remount and move on /mnt/foo.
+
+       findmnt --poll=umount --first-only --target /mnt/foo
+              Waits for /mnt/foo unmount.
+
+       findmnt --poll=remount -t ext3 -O ro
+              Monitors remounts to read-only mode on all ext3 filesystems.
+
