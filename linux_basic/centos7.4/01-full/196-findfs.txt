@@ -1,0 +1,69 @@
+
+
+# keyword findfs
+
+man findfs
+
+
+作用: findfs - find a filesystem by label or UUID
+
+语法: findfs NAME=value
+
+说明:
+       findfs will search the block devices in the system looking for a filesystem or partition with specified tag. The currently supported tags are:
+
+       LABEL=<label>
+              Specifies filesystem label.
+
+       UUID=<uuid>
+              Specifies filesystem UUID.
+
+       PARTUUID=<uuid>
+              Specifies partition UUID. This partition identifier is supported for example for GUID  Partition  Table (GPT) partition tables.
+
+       PARTLABEL=<label>
+              Specifies partition label (name). The partition labels are supported for example for GUID Partition Table (GPT) or MAC partition tables.
+
+       If the filesystem or partition is found, the device name will be printed on stdout.
+
+       The complete overview about filesystems and partitions you can get for example by
+
+              lsblk --fs
+
+              partx --show <disk>
+
+              blkid
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# blkid /dev/sdb*
+/dev/sdb: PTTYPE="gpt"
+/dev/sdb1: UUID="e8609f7d-9bd1-4e1f-8d46-74e4b71dcf21" TYPE="ext4" PARTLABEL="primary" PARTUUID="7a6cfe6e-31e0-43a0-8cf1-06ffbac30ad0"
+/dev/sdb2: UUID="922cbda3-2f3d-4a0a-8063-5492d0d8399a" TYPE="ext4" PARTLABEL="primary" PARTUUID="d9c6b944-c79d-4093-a6c3-e6b5bb12ebad"
+/dev/sdb3: UUID="fb0b067c-cddc-4755-aae0-57c0d86f4e3a" TYPE="ext4" PARTLABEL="primary" PARTUUID="eb822a95-bed2-478d-afa6-b77b68111e4b"
+/dev/sdb4: LABEL="mp3_store" UUID="0452838e-6dd9-4422-b628-bc6044947cf0" TYPE="ext4" PARTLABEL="primary" PARTUUID="feb23825-c90f-4f1a-8313-1b70171f05cb"
+
+
+[root@basic ~]# findfs UUID="e8609f7d-9bd1-4e1f-8d46-74e4b71dcf21"
+/dev/sdb1
+
+[root@basic ~]# findfs PARTLABEL="primary"
+/dev/sdb3   <--- 注意这里
+
+[root@basic ~]# findfs PARTUUID="7a6cfe6e-31e0-43a0-8cf1-06ffbac30ad0"
+/dev/sdb1
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# tune2fs -L image_store /dev/sdb1   # 为 分区 /dev/sdb1 上的 ext4 文件系统设置 label
+tune2fs 1.42.9 (28-Dec-2013)
+
+[root@basic ~]# blkid  /dev/sdb1
+/dev/sdb1: LABEL="image_store" UUID="e8609f7d-9bd1-4e1f-8d46-74e4b71dcf21" TYPE="ext4" PARTLABEL="primary" PARTUUID="7a6cfe6e-31e0-43a0-8cf1-06ffbac30ad0"
+
+[root@basic ~]# findfs LABEL="image_store"
+/dev/sdb1
+
+---------------------------------------------------------------------------------------------------
+
+
