@@ -565,6 +565,35 @@ CentOS_BuildTag  EFI  EULA  GPL  images  isolinux  LiveOS  Packages  repodata  R
     https://blog.csdn.net/ustc_dylan/article/details/6878252
     https://www.runoob.com/linux/linux-comm-losetup.html
 
+---------------------------------------------------------------------------------------------------
+示例: 自制 loop 装置文件 ~/loop_dev_file.img 并 挂载
+
+[root@basic ~]# dd if=/dev/zero of=~/loop_dev_file.img bs=1MiB count=512   # 创建 512MiB 的 装置文件
+512+0 records in
+512+0 records out
+536870912 bytes (537 MB) copied, 14.9257 s, 36.0 MB/s
+
+[root@basic ~]# mkfs.xfs ~/loop_dev_file.img   # 格式化
+meta-data=/root/loop_dev_file.img isize=512    agcount=4, agsize=32768 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=0, sparse=0
+data     =                       bsize=4096   blocks=131072, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal log           bsize=4096   blocks=855, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+
+[root@basic ~]# blkid ~/loop_dev_file.img   # 查看 被格式化的 ~/loop_dev_file.img 中 文件系统的 UUID
+/root/loop_dev_file.img: UUID="dbd31b0a-b7cf-4649-8c3f-5c02cf44f607" TYPE="xfs"
+
+[root@basic ~]# mkdir /mnt/dir01
+
+[root@basic ~]# mount -o loop UUID="dbd31b0a-b7cf-4649-8c3f-5c02cf44f607"  /mnt/dir01
+
+[root@basic ~]# mount | grep /mnt/dir01
+/root/loop_dev_file.img on /mnt/dir01 type xfs (rw,relatime,attr2,inode64,noquota)
+[root@basic ~]#
 
 
 ---------------------------------------------------------------------------------------------------
