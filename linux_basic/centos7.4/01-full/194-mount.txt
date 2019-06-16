@@ -540,6 +540,9 @@ mount: /dev/loop0 is write-protected, mounting read-only
 [root@basic ~]# mount | grep /mnt/centos_dvd
 /tmp/CentOS-7.4-x86_64-Everything-1708.iso on /mnt/centos_dvd type iso9660 (ro,relatime)
 
+[root@basic ~]# df -hT | grep /mnt/centos_dvd
+/dev/loop0              iso9660   8.1G  8.1G     0 100% /mnt/centos_dvd
+
 [root@basic ~]# ls /dev/ | grep loop
 loop0   <----- 观察
 loop-control
@@ -550,6 +553,9 @@ brw-rw---- 1 root disk 7, 0 Jun 16 16:42 /dev/loop0
 
 [root@basic ~]# ls /mnt/centos_dvd/
 CentOS_BuildTag  EFI  EULA  GPL  images  isolinux  LiveOS  Packages  repodata  RPM-GPG-KEY-CentOS-7  RPM-GPG-KEY-CentOS-Testing-7  TRANS.TBL
+
+[root@basic ~]# umount /mnt/centos_dvd/     # 取消挂载
+[root@basic ~]# umount -d /dev/loop0        # -d, --detach-loop
 
 
 
