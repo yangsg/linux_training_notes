@@ -1,0 +1,71 @@
+
+# keyword losetup
+
+man losetup
+
+
+作用: losetup - set up and control loop devices
+
+语法:
+       Get info:
+
+            losetup loopdev
+
+            losetup -l [-a]
+
+            losetup -j file [-o offset]
+
+       Delete loop:
+
+            losetup -d loopdev...
+
+       Delete all used loop devices:
+
+            losetup -D
+
+       Print name of first unused loop device:
+
+            losetup -f
+
+       Set up a loop device:
+
+            losetup [-o offset] [--sizelimit size]
+                    [-Pr] [--show] -f|loopdev file
+
+       Resize loop device:
+
+            losetup -c loopdev
+
+说明:
+       losetup  is  used to associate loop devices with regular files or block devices, to detach loop devices and to query the status of a loop device. If only the loopdev argument is
+       given, the status of the corresponding loop device is shown.
+
+       Note that the old output format (e.g. losetup -a) with comma delimited strings is deprecated in favour of the --list output format (e.g. losetup -a -l).
+
+
+
+FILES
+       /dev/loop[0..N]
+              loop block devices
+
+       /dev/loop-cotrol
+              loop control device
+
+EXAMPLE
+       The following commands can be used as an example of using the loop device.
+
+              # dd if=/dev/zero of=~/file.img bs=1MiB count=10
+              # losetup --find --show ~/file.img
+              /dev/loop0
+              # mkfs -t ext2 /dev/loop0
+              # mount /dev/loop0 /mnt
+               ...
+              # umount /dev/loop0
+              # losetup --detach /dev/loop0
+
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+
+        https://www.runoob.com/linux/linux-comm-losetup.html
+
