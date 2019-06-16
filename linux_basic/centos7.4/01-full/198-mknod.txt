@@ -1,4 +1,44 @@
 
+# keyword mknod
+
+man mknod
+
+作用: mknod - make block or character special files
+
+语法: mknod [OPTION]... NAME TYPE [MAJOR MINOR]
+
+说明: Create the special file NAME of the given TYPE.
+
+     Both  MAJOR and MINOR must be specified when TYPE is b, c, or u, and they must be omitted when TYPE is p.  If MAJOR or MINOR begins with 0x or 0X, it is interpreted as hexadeci‐
+     mal; otherwise, if it begins with 0, as octal; otherwise, as decimal.  TYPE may be:
+
+     b      create a block (buffered) special file
+
+     c, u   create a character (unbuffered) special file
+
+     p      create a FIFO
+
+---------------------------------------------------------------------------------------------------
+
+
+[root@basic ~]# mknod /dev/vda10 b 252 10
+[root@basic ~]# ls -l /dev/vda10
+brw-r--r-- 1 root root 252, 10 Jun 16 12:59 /dev/vda10
+
+[root@basic ~]# mknod /tmp/testpipe p
+[root@basic ~]# ls -l /tmp/testpipe
+prw-r--r-- 1 root root 0 Jun 16 13:00 /tmp/testpipe
+
+[root@basic ~]# rm /dev/vda10 /tmp/testpipe
+
+
+
+其他示例:
+      http://linux-commands-examples.com/mknod
+      http://blog.chinaunix.net/uid-28458801-id-5789623.html
+
+---------------------------------------------------------------------------------------------------
+
 ---------------------------------------------------------------------------------------------------
 查看设备驱动:
 
