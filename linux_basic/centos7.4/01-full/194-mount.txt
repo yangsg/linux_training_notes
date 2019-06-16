@@ -191,6 +191,18 @@ man mount
                      mount --make-private /A
                      mount --make-unbindable /A
 
+---------------------------------------------------------------------------------------------------
+FILES
+       /etc/fstab        filesystem table
+
+       /etc/mtab         table of mounted filesystems
+
+       /etc/mtab~        lock file
+
+       /etc/mtab.tmp     temporary file
+
+       /etc/filesystems  a list of filesystem types to try
+
 
 ---------------------------------------------------------------------------------------------------
 示例: 显示已挂载的 文件系统
@@ -491,6 +503,66 @@ ls: cannot access /new_something/underneath/that/otherfile: No such file or dire
 
 ---------------------------------------------------------------------------------------------------
 
+THE LOOP DEVICE
+       One further possible type is a mount via the loop device. For example, the command
+
+              mount /tmp/disk.img /mnt -t vfat -o loop=/dev/loop
+
+       will set up the loop device /dev/loop3 to correspond to the file /tmp/disk.img, and then mount this device on /mnt.
+
+       If no explicit loop device is mentioned (but just an option `-o loop' is given), then mount will try to find some unused loop device and use that, for example
+
+              mount /tmp/disk.img /mnt -o loop
+
+       The mount command automatically creates a loop device from a regular file if a filesystem type is not specified or the filesystem is known for libblkid, for example:
+
+              mount /tmp/disk.img /mnt
+
+              mount -t ext3 /tmp/disk.img /mnt
+
+       This type of mount knows about four options, namely loop, offset and sizelimit , that are really options to losetup(8).  (These options can be used in addition to those specific
+       to the filesystem type.)
+
+       Since Linux 2.6.25 is supported auto-destruction of loop devices and then any loop device allocated by mount will be freed by umount independently on /etc/mtab.
+
+       You can also free a loop device by hand, using `losetup -d' or `umount -d`.
+
+
+
+[root@basic ~]# ls /dev/ | grep loop
+loop-control
+
+[root@basic ~]# mkdir /mnt/centos_dvd
+[root@basic ~]# mount -o loop /tmp/CentOS-7.4-x86_64-Everything-1708.iso  /mnt/centos_dvd/    # 利用 选项 -o loop 挂载 iso 文件
+mount: /dev/loop0 is write-protected, mounting read-only
+
+
+[root@basic ~]# mount | grep /mnt/centos_dvd
+/tmp/CentOS-7.4-x86_64-Everything-1708.iso on /mnt/centos_dvd type iso9660 (ro,relatime)
+
+[root@basic ~]# ls /dev/ | grep loop
+loop0   <----- 观察
+loop-control
+
+[root@basic ~]# ls -l /dev/loop0
+brw-rw---- 1 root disk 7, 0 Jun 16 16:42 /dev/loop0
+
+
+[root@basic ~]# ls /mnt/centos_dvd/
+CentOS_BuildTag  EFI  EULA  GPL  images  isolinux  LiveOS  Packages  repodata  RPM-GPG-KEY-CentOS-7  RPM-GPG-KEY-CentOS-Testing-7  TRANS.TBL
+
+
+
+    man losetup
+    https://unix.stackexchange.com/questions/4535/what-is-a-loop-device-when-mounting
+    https://en.wikipedia.org/wiki/Loop_device
+    https://blog.csdn.net/ustc_dylan/article/details/6878252
+    https://www.runoob.com/linux/linux-comm-losetup.html
+
+
+
+---------------------------------------------------------------------------------------------------
+
        -n, --no-mtab
               Mount without writing in /etc/mtab.  This is necessary for example when /etc is on a read-only filesystem.
 
@@ -516,5 +588,12 @@ ls: cannot access /new_something/underneath/that/otherfile: No such file or dire
     关于 --rbind:
     https://blog.csdn.net/realmeh/article/details/17888613
     https://stackoverflow.com/questions/730589/create-a-loop-in-a-linux-filesystem
+
+    loop device:
+        man losetup
+        https://unix.stackexchange.com/questions/4535/what-is-a-loop-device-when-mounting
+        https://en.wikipedia.org/wiki/Loop_device
+        https://blog.csdn.net/ustc_dylan/article/details/6878252
+        https://www.runoob.com/linux/linux-comm-losetup.html
 
 
