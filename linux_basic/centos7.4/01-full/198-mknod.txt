@@ -11,6 +11,9 @@ man null  或 man zero
 man tty
 man pts
 
+man fs
+man proc
+
 ---------------------------------------------------------------------------------------------------
 来源: https://www.ibm.com/support/knowledgecenter/en/linuxonibm/com.ibm.linux.z.lgdd/lgdd_c_devaccess_if.html
 
