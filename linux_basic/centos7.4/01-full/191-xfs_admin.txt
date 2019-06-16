@@ -1,0 +1,125 @@
+
+
+# keyword xfs_admin
+
+man xfs_admin
+
+
+作用: xfs_admin - change parameters of an XFS filesystem
+
+语法: xfs_admin [ -eflpu ] [ -c 0|1 ] [ -L label ] [ -U uuid ] device
+语法: xfs_admin -V
+
+说明:
+       xfs_admin uses the xfs_db(8) command to modify various parameters of a filesystem.
+
+       Devices  that are mounted cannot be modified.  Administrators must unmount filesystems before xfs_admin or xfs_db(8) can convert parameters.  A number of parameters of a mounted
+       filesystem can be examined and modified using the xfs_growfs(8) command.
+
+
+注: 使用 xfs_admin 前, 要确保 对应的 devices 是 unmounted 的
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# parted /dev/sdb print
+Model: VMware, VMware Virtual S (scsi)
+Disk /dev/sdb: 4295MB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size    File system  Name     Flags
+ 1      1049kB  1074MB  1073MB  xfs          primary
+ 2      1074MB  2147MB  1074MB  xfs          primary
+ 3      2147MB  3221MB  1074MB  xfs          primary
+ 4      3221MB  4294MB  1073MB  xfs          primary
+
+[root@basic ~]# blkid | grep /dev/sdb
+/dev/sdb1: UUID="c85e0439-fcc3-4f18-9ccf-34d9c845cd7b" TYPE="xfs" PARTLABEL="primary" PARTUUID="df4b5867-24d4-4cb8-87d6-7d95094748f5"
+/dev/sdb2: UUID="a45bb078-be19-4009-b88a-eebb63292a9d" TYPE="xfs" PARTLABEL="primary" PARTUUID="8fd3b098-f36e-4054-9acc-18d756fc4fdb"
+/dev/sdb3: UUID="1bf4884f-37e7-48e7-bc9b-eb7199c45bdb" TYPE="xfs" PARTLABEL="primary" PARTUUID="a34528e6-9d48-4098-a487-3276b2f18c01"
+/dev/sdb4: UUID="8d9da0a4-d01d-4126-9966-a99138efed85" TYPE="xfs" PARTLABEL="primary" PARTUUID="18faafd0-584b-4917-8509-b0ffcc24c475"
+
+---------------------------------------------------------------------------------------------------
+
+       -L label
+              Set the filesystem label to label.  XFS filesystem labels can be at most 12 characters long; if label is longer than 12 characters, xfs_admin will truncate it and print a
+              warning message.  The filesystem label can be cleared using the special "--" value for label.
+
+       -l     Print the current filesystem label.
+
+
+[root@basic ~]# xfs_admin -L image_store /dev/sdb1   # 设置 分区 /dev/sdb1 上 xfs 文件系统的label. xfs 文件系统的 最大字符长度为 12
+writing all SBs
+new label = "image_store"
+
+[root@basic ~]# blkid /dev/sdb1
+/dev/sdb1: LABEL="image_store" UUID="c85e0439-fcc3-4f18-9ccf-34d9c845cd7b" TYPE="xfs" PARTLABEL="primary" PARTUUID="df4b5867-24d4-4cb8-87d6-7d95094748f5"
+
+[root@basic ~]# xfs_admin -l /dev/sdb1   # 显示 分区 /dev/sdb1 上 xfs 文件系统 的 label
+label = "image_store"
+
+
+[root@basic ~]# xfs_admin -L -- /dev/sdb1   # 利用特殊值 "--" 清除 分区 /dev/sdb1 上 xfs 文件系统 的 label
+writing all SBs
+new label = ""
+
+[root@basic ~]# blkid /dev/sdb1
+/dev/sdb1: UUID="c85e0439-fcc3-4f18-9ccf-34d9c845cd7b" TYPE="xfs" PARTLABEL="primary" PARTUUID="df4b5867-24d4-4cb8-87d6-7d95094748f5"
+
+---------------------------------------------------------------------------------------------------
+
+       -U uuid
+              Set  the  UUID of the filesystem to uuid.  A sample UUID looks like this: "c1b9d5a2-f162-11cf-9ece-0020afc76f16".  The uuid may also be nil, which will set the filesystem
+              UUID to the null UUID.  The uuid may also be generate, which will generate a new UUID for the filesystem.  Note that on CRC-enabled filesystems, this will set  an  incom‐
+              patible  flag  such  that older kernels will not be able to mount the filesystem.  To remove this incompatible flag, use restore, which will restore the original UUID and
+              remove the incompatible feature flag as needed.
+
+       -u     Print the current filesystem UUID (Universally Unique IDentifier).
+
+
+[root@basic ~]# blkid /dev/sdb1
+/dev/sdb1: UUID="c85e0439-fcc3-4f18-9ccf-34d9c845cd7b" TYPE="xfs" PARTLABEL="primary" PARTUUID="df4b5867-24d4-4cb8-87d6-7d95094748f5"
+
+[root@basic ~]# uuidgen
+f81d88b6-f199-4ff1-9257-8cee1140f655
+
+[root@basic ~]# xfs_admin -U f81d88b6-f199-4ff1-9257-8cee1140f655 /dev/sdb1   # 为 分区 /dev/sdb1 的 xfs 文件系统设置 uuid
+Clearing log and setting UUID
+writing all SBs
+new UUID = f81d88b6-f199-4ff1-9257-8cee1140f655
+
+[root@basic ~]# blkid /dev/sdb1
+/dev/sdb1: UUID="f81d88b6-f199-4ff1-9257-8cee1140f655" TYPE="xfs" PARTLABEL="primary" PARTUUID="df4b5867-24d4-4cb8-87d6-7d95094748f5"
+
+[root@basic ~]# xfs_admin -u /dev/sdb1       # 查看 分区 /dev/sdb1 的 xfs 文件系统的 uuid
+UUID = f81d88b6-f199-4ff1-9257-8cee1140f655
+
+
+[root@basic ~]# xfs_admin -U generate /dev/sdb1   # 使用特殊值 generate 为 分区 /dev/sdb1 的 xfs 文件系统设置 uuid
+Clearing log and setting UUID
+writing all SBs
+new UUID = e3ebfc2a-4154-4dbf-8e0f-430a7c150c5d
+
+[root@basic ~]# blkid /dev/sdb1
+/dev/sdb1: UUID="e3ebfc2a-4154-4dbf-8e0f-430a7c150c5d" TYPE="xfs" PARTLABEL="primary" PARTUUID="df4b5867-24d4-4cb8-87d6-7d95094748f5"
+
+[root@basic ~]# xfs_admin -U nil /dev/sdb1   # 使用特殊值 nil 来 将 /dev/sdb1 的 xfs 文件系统的 uuid 设置为 null uuid
+Clearing log and setting UUID
+writing all SBs
+new UUID = 00000000-0000-0000-0000-000000000000
+
+[root@basic ~]# blkid /dev/sdb1
+/dev/sdb1: TYPE="xfs" PARTLABEL="primary" PARTUUID="df4b5867-24d4-4cb8-87d6-7d95094748f5"
+
+[root@basic ~]# xfs_admin -u /dev/sdb1
+UUID = 00000000-0000-0000-0000-000000000000
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+
+    https://www.thegeekdiary.com/how-to-use-xfs_admin-command-to-change-parameters-of-an-xfs-filesystem/
+    http://www.fibrevillage.com/storage/698-xfs-admin-command-examples
+
+
+
