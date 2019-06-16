@@ -309,6 +309,23 @@ drwxr-xr-x.  3 root root    20 Dec 23 09:40 .vim
 -rw-r--r--.  1 root root  8764 Dec 23 10:38 .vimrc
 drwxr-xr-x  18 root root   332 Apr 22 18:39 linux_training_notes
 
-
+[root@basic ~]# ls -l -a  -sh     # -s, --size: print the allocated size of each file, in blocks
+total 64K
+   0 dr-xr-x---.  4 root root  234 Jun 16 20:06 .
+   0 dr-xr-xr-x. 17 root root  244 Dec 23 10:57 ..
+4.0K -rw-------.  1 root root 1.7K Dec 23 07:47 anaconda-ks.cfg
+8.0K -rw-------.  1 root root 4.5K Jun 16 19:37 .bash_history
+4.0K -rw-r--r--.  1 root root   18 Dec 29  2013 .bash_logout
+4.0K -rw-r--r--.  1 root root  176 Dec 29  2013 .bash_profile
+4.0K -rw-r--r--.  1 root root  176 Dec 29  2013 .bashrc
+4.0K -rw-r--r--.  1 root root  100 Dec 29  2013 .cshrc
+4.0K -rw-------.  1 root root   50 Jun 16 22:28 .lesshst
+   0 drwxr-----.  3 root root   19 Dec 23 08:08 .pki
+4.0K -rw-------.  1 root root 1.0K Dec 23 08:06 .rnd
+4.0K -rw-r--r--.  1 root root  308 Dec 23 09:01 .screenrc
+4.0K -rw-r--r--.  1 root root  129 Dec 29  2013 .tcshrc
+   0 drwxr-xr-x.  3 root root   20 Dec 23 09:40 .vim
+8.0K -rw-------   1 root root 6.4K Jun 16 20:06 .viminfo
+ 12K -rw-r--r--.  1 root root 8.6K Dec 23 10:38 .vimrc
 
 
