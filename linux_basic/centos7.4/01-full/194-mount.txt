@@ -490,6 +490,19 @@ ls: cannot access /new_something/underneath/that/otherfile: No such file or dire
 
 
 ---------------------------------------------------------------------------------------------------
+
+       -n, --no-mtab
+              Mount without writing in /etc/mtab.  This is necessary for example when /etc is on a read-only filesystem.
+
+如下内容 来自 <鸟哥的 linux 私房菜>
+    /etc/fstab 是开机时的配置文件，不过，实际 filesystem 的挂载是记录到 /etc/mtab 与 /proc/mounts 这两个档案当中的。
+    每次我们在更动 filesystem 的挂载时，也会同时更动这两个档案喔！但是，万一发生你在 /etc/fstab 输入的数据错误，
+    导致无法顺利开机成功，而进入单人维护模式当中，那时候的 / 可是 read only 的状态，
+    当然你就无法修改 /etc/fstab ，也无法更新 /etc/mtab 啰～那怎么办？没关系，可以利用底下这一招：
+
+    [root@study ~]# mount -n -o remount,rw  # -n, --no-mtab: 挂载是不写入文件 /etc/mtab. 在 /etc 处于 只读的文件系统上时 这 是 必要的
+
+---------------------------------------------------------------------------------------------------
 网上资料:
 
     https://www.thegeekstuff.com/2013/01/mount-umount-examples/
