@@ -3,6 +3,21 @@
 # keyword apropos
 # keyword whatis
 
+
+---------------------------------------------------------------------------------------------------
+查看设备驱动:
+
+ls -l /dev/
+
+man hd
+man sd
+man lp
+man null  或 man zero
+man tty
+man pts
+
+---------------------------------------------------------------------------------------------------
+
 [root@basic ~]# man man
 
        The table below shows the section numbers of the manual followed by the types of pages they contain.
