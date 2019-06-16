@@ -1,0 +1,254 @@
+
+# keyword mkswap
+
+man mkswap
+
+
+作用: mkswap - set up a Linux swap area
+
+语法: mkswap [options] device [size]
+
+说明:
+       mkswap sets up a Linux swap area on a device or in a file.
+
+       The  device  argument will usually be a disk partition (something like /dev/sdb7) but can also be a file.  The Linux kernel does not look at partition IDs, but many installation
+       scripts will assume that partitions of hex type 82 (LINUX_SWAP) are meant to be swap partitions.  (Warning: Solaris also uses this type.  Be careful not  to  kill  your  Solaris
+       partitions.)
+
+       The  size  parameter  is  superfluous but retained for backwards compatibility.  (It specifies the desired size of the swap area in 1024-byte blocks.  mkswap will use the entire
+       partition or file if it is omitted.  Specifying it is unwise -- a typo may destroy your disk.)
+
+       After creating the swap area, you need the swapon command to start using it.  Usually swap areas are listed in /etc/fstab so that they can be taken into use at boot  time  by  a
+       swapon -a command in some boot script.
+
+WARNING
+       The  swap header does not touch the first block.  A boot loader or disk label can be there, but it is not a recommended setup.  The recommended setup is to use a separate parti‐
+       tion for a Linux swap area.
+
+       mkswap, like many others mkfs-like utils, erases the first partition block to make any previous filesystem invisible.
+
+       However, mkswap refuses to erase the first block on a device with a disk label (SUN, BSD, ...).
+
+---------------------------------------------------------------------------------------------------
+利用 parted 命令 创建练习用的 swap 分区 的方法
+
+[root@basic ~]# parted /dev/sdb mklabel gpt
+[root@basic ~]# parted /dev/sdb mkpart p1 linux-swap 0% 1GiB
+[root@basic ~]# parted /dev/sdb mkpart p2 linux-swap 1GiB 2GiB
+[root@basic ~]# parted /dev/sdb mkpart p3 linux-swap 2GiB 3GiB
+[root@basic ~]# parted /dev/sdb mkpart p4 linux-swap 3GiB 100%
+
+[root@basic ~]# partprobe -s /dev/sdb   # 通知请求 kernel 重新读取 磁盘 /dev/sdb 中的 分区表
+/dev/sdb: gpt partitions 1 2 3 4
+
+[root@basic ~]# cat /proc/partitions  # 查看 kernel 的 分割记录
+major minor  #blocks  name
+
+   8        0   20971520 sda
+   8        1     204800 sda1
+   8        2   20765696 sda2
+   8       16    4194304 sdb
+   8       17    1047552 sdb1  <----- 观察
+   8       18    1048576 sdb2  <----- 观察
+   8       19    1048576 sdb3  <----- 观察
+   8       20    1047552 sdb4  <----- 观察
+  11        0    1048575 sr0
+ 253        0   18665472 dm-0
+ 253        1    2097152 dm-1
+
+
+[root@basic ~]# gdisk -l /dev/sdb
+GPT fdisk (gdisk) version 0.8.10
+
+Partition table scan:
+  MBR: protective
+  BSD: not present
+  APM: not present
+  GPT: present
+
+Found valid GPT with protective MBR; using GPT.
+Disk /dev/sdb: 8388608 sectors, 4.0 GiB
+Logical sector size: 512 bytes
+Disk identifier (GUID): 8E9E51C8-610F-4AE7-ABCD-4013B64DDC4E
+Partition table holds up to 128 entries
+First usable sector is 34, last usable sector is 8388574
+Partitions will be aligned on 2048-sector boundaries
+Total free space is 4029 sectors (2.0 MiB)
+
+Number  Start (sector)    End (sector)  Size       Code  Name
+   1            2048         2097151   1023.0 MiB  8200  p1
+   2         2097152         4194303   1024.0 MiB  8200  p2
+   3         4194304         6291455   1024.0 MiB  8200  p3
+   4         6291456         8386559   1023.0 MiB  8200  p4
+
+---------------------------------------------------------------------------------------------------
+利用 gdisk 创建 swap 分区的方法
+
+[root@basic ~]# gdisk /dev/sdb
+GPT fdisk (gdisk) version 0.8.10
+
+Partition table scan:
+  MBR: not present
+  BSD: not present
+  APM: not present
+  GPT: not present
+
+Creating new GPT entries.
+
+Command (? for help): ?   <=================== 查看 菜单 帮助信息
+b       back up GPT data to a file
+c       change a partition's name
+d       delete a partition
+i       show detailed information on a partition
+l       list known partition types
+n       add a new partition
+o       create a new empty GUID partition table (GPT)
+p       print the partition table
+q       quit without saving changes
+r       recovery and transformation options (experts only)
+s       sort partitions
+t       change a partition's type code
+v       verify disk
+w       write table to disk and exit
+x       extra functionality (experts only)
+?       print this menu
+
+Command (? for help): l   <======================  查看 已知的 分区类型
+0700 Microsoft basic data  0c01 Microsoft reserved    2700 Windows RE
+3000 ONIE boot             3001 ONIE config           4100 PowerPC PReP boot
+4200 Windows LDM data      4201 Windows LDM metadata  7501 IBM GPFS
+7f00 ChromeOS kernel       7f01 ChromeOS root         7f02 ChromeOS reserved
+8200 Linux swap            8300 Linux filesystem      8301 Linux reserved
+8302 Linux /home           8400 Intel Rapid Start     8e00 Linux LVM
+a500 FreeBSD disklabel     a501 FreeBSD boot          a502 FreeBSD swap
+a503 FreeBSD UFS           a504 FreeBSD ZFS           a505 FreeBSD Vinum/RAID
+a580 Midnight BSD data     a581 Midnight BSD boot     a582 Midnight BSD swap
+a583 Midnight BSD UFS      a584 Midnight BSD ZFS      a585 Midnight BSD Vinum
+a800 Apple UFS             a901 NetBSD swap           a902 NetBSD FFS
+a903 NetBSD LFS            a904 NetBSD concatenated   a905 NetBSD encrypted
+a906 NetBSD RAID           ab00 Apple boot            af00 Apple HFS/HFS+
+af01 Apple RAID            af02 Apple RAID offline    af03 Apple label
+af04 AppleTV recovery      af05 Apple Core Storage    be00 Solaris boot
+bf00 Solaris root          bf01 Solaris /usr & Mac Z  bf02 Solaris swap
+bf03 Solaris backup        bf04 Solaris /var          bf05 Solaris /home
+bf06 Solaris alternate se  bf07 Solaris Reserved 1    bf08 Solaris Reserved 2
+bf09 Solaris Reserved 3    bf0a Solaris Reserved 4    bf0b Solaris Reserved 5
+c001 HP-UX data            c002 HP-UX service         ea00 Freedesktop $BOOT
+eb00 Haiku BFS             ed00 Sony system partitio  ed01 Lenovo system partit
+Press the <Enter> key to see more codes:
+ef00 EFI System            ef01 MBR partition scheme  ef02 BIOS boot partition
+fb00 VMWare VMFS           fb01 VMWare reserved       fc00 VMWare kcore crash p
+fd00 Linux RAID
+
+Command (? for help): n  <================ 选择 菜单 n 准备创建 新分区
+Partition number (1-128, default 1):    <======== 直接 回车 选择 默认的 分区 number
+First sector (34-4194270, default = 2048) or {+-}size{KMGTP}:    <=========== 直接回车 设置 First sector 为默认值
+Last sector (2048-4194270, default = 4194270) or {+-}size{KMGTP}: +512M   <============ 设置 Last sector
+Current type is 'Linux filesystem'
+Hex code or GUID (L to show codes, Enter = 8300): 8200   <======= 设置 分区类型的 Hex code 为 8200, 即 Linux swap
+Changed type of partition to 'Linux swap'
+
+Command (? for help): w  <=========== 写入修改到磁盘并退出(即保存并退出)
+
+Final checks complete. About to write GPT data. THIS WILL OVERWRITE EXISTING
+PARTITIONS!!
+
+Do you want to proceed? (Y/N): y  <=============== 确认并退出
+OK; writing new GUID partition table (GPT) to /dev/sdb.
+The operation has completed successfully.
+
+[root@basic ~]# partprobe -s /dev/sdb   # 通知请求 kernel 重新读取 磁盘 /dev/sdb 中的 分区表
+/dev/sdb: gpt partitions 1
+
+[root@basic ~]# cat /proc/partitions    # 查看 kernel 的 分割记录
+major minor  #blocks  name
+
+   8        0   20971520 sda
+   8        1     204800 sda1
+   8        2   20765696 sda2
+   8       16    2097152 sdb
+   8       17     524288 sdb1   <------------ 观察
+  11        0    1048575 sr0
+ 253        0   18665472 dm-0
+ 253        1    2097152 dm-1
+
+
+[root@basic ~]# gdisk -l /dev/sdb
+GPT fdisk (gdisk) version 0.8.10
+
+Partition table scan:
+  MBR: protective
+  BSD: not present
+  APM: not present
+  GPT: present
+
+Found valid GPT with protective MBR; using GPT.
+Disk /dev/sdb: 4194304 sectors, 2.0 GiB
+Logical sector size: 512 bytes
+Disk identifier (GUID): 01E85EB9-5075-419A-9855-B7C749D55EF2
+Partition table holds up to 128 entries
+First usable sector is 34, last usable sector is 4194270
+Partitions will be aligned on 2048-sector boundaries
+Total free space is 3145661 sectors (1.5 GiB)
+
+Number  Start (sector)    End (sector)  Size       Code  Name
+   1            2048         1050623   512.0 MiB   8200  Linux swap
+
+
+---------------------------------------------------------------------------------------------------
+示例: 在 分区 /dev/sdb1 上创建 类型为 swap 的 文件系统
+
+[root@basic ~]# mkswap /dev/sdb1   # 在 分区 /dev/sdb1 上创建 类型为 swap 的 文件系统
+Setting up swapspace version 1, size = 1047548 KiB
+no label, UUID=42571a7f-bbad-4e13-b103-34b1aeb613c1
+
+[root@basic ~]# blkid /dev/sdb1
+/dev/sdb1: UUID="42571a7f-bbad-4e13-b103-34b1aeb613c1" TYPE="swap" PARTLABEL="p1" PARTUUID="f6f8e64c-8895-422e-832f-41649fc19d4e"
+
+[root@basic ~]# free -m
+              total        used        free      shared  buff/cache   available
+Mem:            976         123         731           6         121         707
+Swap:          2047           0        2047
+
+[root@basic ~]# swapon /dev/sdb1    # enable devices (/dev/sdb1) for paging and swapping
+
+[root@basic ~]# free -m
+              total        used        free      shared  buff/cache   available
+Mem:            976         126         728           6         122         704
+Swap:          3070           0        3070
+
+
+
+---------------------------------------------------------------------------------------------------
+示例: 设置 开机 自动 挂载
+[root@basic ~]# vim /etc/fstab
+/dev/sdb1 swap                    swap    defaults        0 0
+
+[root@basic ~]# free -m
+              total        used        free      shared  buff/cache   available
+Mem:            976         127         721           6         127         701
+Swap:          2047           0        2047
+
+[root@basic ~]# swapon -a   # 手动 启用 文件 /etc/fstab 中 所有 可 自动 启用 的 swap 文件系统 用于 paging 和 swapping
+
+[root@basic ~]# free -m
+              total        used        free      shared  buff/cache   available
+Mem:            976         130         718           6         127         697
+Swap:          3070           0        3070
+
+
+[root@basic ~]# swapon --show
+NAME      TYPE       SIZE USED PRIO
+/dev/dm-1 partition    2G   0B   -1
+/dev/sdb1 partition 1023M   0B   -2
+
+---------------------------------------------------------------------------------------------------
+
+网上资料:
+      https://www.tecmint.com/create-a-linux-swap-file/
+      http://www.linuxandubuntu.com/home/how-to-create-or-increase-swap-space-in-linux/
+      https://www.thegeekstuff.com/2010/08/how-to-add-swap-space/
+      https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-16-04
+      https://www.cyberciti.biz/faq/linux-add-a-swap-file-howto/
+
+
