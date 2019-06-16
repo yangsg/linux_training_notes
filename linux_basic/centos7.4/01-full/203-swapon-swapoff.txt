@@ -1,0 +1,174 @@
+
+# keyword swapon swapoff
+
+man swapon
+man swapoff
+
+作用: swapon, swapoff - enable/disable devices and files for paging and swapping
+
+语法:
+       Get info:
+            swapon -s [-h] [-V]
+
+       Enable/disable:
+            swapon [-d] [-f] [-p priority] [-v] specialfile...
+            swapoff [-v] specialfile...
+
+       Enable/disable all:
+            swapon -a [-e] [-f] [-v]
+            swapoff -a [-v]
+
+说明:
+       swapon is used to specify devices on which paging and swapping are to take place.
+
+       The device or file used is given by the specialfile parameter. It may be of the form -L label or -U uuid to indicate a device by label or uuid.
+
+       Calls  to  swapon normally occur in the system boot scripts making all swap devices available, so that the paging and swapping activity is interleaved across several devices and
+       files.
+
+       swapoff disables swapping on the specified devices and files.  When the -a flag is given, swapping is disabled on all known swap devices and files (as found  in  /proc/swaps  or
+       /etc/fstab).
+
+
+NOTES
+       You should not use swapon on a file with holes.  Swap over NFS may not work.
+
+       swapon automatically detects and rewrites swap space signature with old software suspend data (e.g S1SUSPEND, S2SUSPEND, ...). The problem is that if we don't do it, then we get
+       data corruption the next time an attempt at unsuspending is made.
+
+       swapon may not work correctly when using a swap file with some versions of btrfs.  This is due to the swap file implementation in the kernel expecting to be able to write to the
+       file  directly,  without  the  assistance  of  the file system.  Since btrfs is a copy-on-write file system, the file location may not be static and corruption can result. Btrfs
+       actively disallows the use of files on its file systems by refusing to map the file. This can be seen in the system log as "swapon: swapfile has holes." One possible  workaround
+       is to map the file to a loopback device. This will allow the file system to determine the mapping properly but may come with a performance impact.
+
+---------------------------------------------------------------------------------------------------
+获取信息
+
+       -s, --summary
+              Display swap usage summary by device. Equivalent to "cat /proc/swaps".  Not available before Linux 2.1.25.
+
+
+[root@basic ~]# swapon -s
+Filename                                Type            Size    Used    Priority
+/dev/dm-1                               partition       2097148 0       -1
+
+
+       --show [column,column]
+              Display definable device table similar to --summary output.  See --help output for column list.
+
+
+[root@basic ~]# swapon --show
+NAME      TYPE      SIZE USED PRIO
+/dev/dm-1 partition   2G   0B   -1
+
+
+[root@basic ~]# swapon --help |  tail -n 23    # 查看 swapon 的 help 帮助信息
+The <spec> parameter:
+ -L <label>             synonym for LABEL=<label>
+ -U <uuid>              synonym for UUID=<uuid>
+ LABEL=<label>          specifies device by swap area label
+ UUID=<uuid>            specifies device by swap area UUID
+ PARTLABEL=<label>      specifies device by partition label
+ PARTUUID=<uuid>        specifies device by partition UUID
+ <device>               name of device to be used
+ <file>                 name of file to be used
+
+Available discard policy types (for --discard):
+ once     : only single-time area discards are issued. (swapon)
+ pages    : discard freed pages before they are reused.
+ * if no policy is selected both discard types are enabled. (default)
+
+Available columns (for --show):
+ NAME  device file or partition path
+ TYPE  type of the device
+ SIZE  size of the swap area
+ USED  bytes in use
+ PRIO  swap priority
+
+For more details see swapon(8).
+
+
+       --bytes
+              Display swap size in bytes in --show output instead of user friendly size and unit.  -U uuid Use the partition that has the specified uuid.
+
+
+[root@basic ~]# swapon --show --bytes
+NAME      TYPE            SIZE USED PRIO
+/dev/dm-1 partition 2147479552    0   -1
+
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# free -m
+              total        used        free      shared  buff/cache   available
+Mem:            976         139         559           6         277         666
+Swap:          2047           0        2047
+
+[root@basic ~]# swapon /dev/sdb1    # 启用 分区 /dev/sdb1 的 swap 文件系统 用于  paging 和 swapping
+
+[root@basic ~]# free -m
+              total        used        free      shared  buff/cache   available
+Mem:            976         140         559           6         277         666
+Swap:          3070           0        3070
+
+[root@basic ~]# swapon --show
+NAME      TYPE       SIZE USED PRIO
+/dev/dm-1 partition    2G   0B   -1
+/dev/sdb1 partition 1023M   0B   -2
+
+[root@basic ~]# cat /proc/swaps
+Filename                                Type            Size    Used    Priority
+/dev/dm-1                               partition       2097148 0       -1
+/dev/sdb1                               partition       1047548 0       -2
+
+
+[root@basic ~]# swapoff /dev/sdb1     # 禁用 分区 /dev/sdb1 的 swap 文件系统 用于 paging 和 swapping
+
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# blkid /dev/sdb1
+/dev/sdb1: UUID="42571a7f-bbad-4e13-b103-34b1aeb613c1" TYPE="swap" PARTLABEL="p1" PARTUUID="f6f8e64c-8895-422e-832f-41649fc19d4e"
+
+// 如下两条 命令等价, 都是通过 uuid 来启用 其 对应的  swap 文件系统 用于 paging 和 swapping
+[root@basic ~]# swapon -U 42571a7f-bbad-4e13-b103-34b1aeb613c1        # 通过 uuid 来启用 其 对应的  swap 文件系统 用于 paging 和 swapping
+[root@basic ~]# swapon UUID="42571a7f-bbad-4e13-b103-34b1aeb613c1"    # 通过 uuid 来启用 其 对应的  swap 文件系统 用于 paging 和 swapping
+
+
+// 如下两条 命令等价, 都是通过 uuid 来禁用 其 对应的  swap 文件系统 用于 paging 和 swapping
+[root@basic ~]# swapoff -U 42571a7f-bbad-4e13-b103-34b1aeb613c1       # 通过 uuid 来禁用 其 对应的  swap 文件系统 用于 paging 和 swapping
+[root@basic ~]# swapoff UUID="42571a7f-bbad-4e13-b103-34b1aeb613c1"   # 通过 uuid 来禁用 其 对应的  swap 文件系统 用于 paging 和 swapping
+
+---------------------------------------------------------------------------------------------------
+
+       -a, --all
+              All  devices  marked  as ``swap'' in /etc/fstab are made available, except for those with the ``noauto'' option.  Devices that are already being used as swap are silently
+              skipped.
+
+       -v, --verbose
+              Be verbose.
+
+
+[root@basic ~]# swapon -a
+[root@basic ~]# swapon -a -v
+swapon /dev/mapper/centos-swap
+swapon: /dev/mapper/centos-swap: found swap signature: version 1, page-size 4, same byte order
+swapon: /dev/mapper/centos-swap: pagesize=4096, swapsize=2147483648, devsize=2147483648
+swapon /dev/sdb1
+swapon: /dev/sdb1: found swap signature: version 1, page-size 4, same byte order
+swapon: /dev/sdb1: pagesize=4096, swapsize=1072693248, devsize=1072693248
+
+
+
+[root@basic ~]# swapoff -a
+[root@basic ~]# swapoff -a -v
+swapoff /dev/sdb1
+swapoff /dev/dm-1
+
+---------------------------------------------------------------------------------------------------
+FILES
+       /dev/sd??  standard paging devices
+       /etc/fstab ascii filesystem description table
+
+
+
