@@ -1,0 +1,126 @@
+
+# keyword wipefs
+
+man wipefs
+
+作用: wipefs - wipe a signature from a device
+
+语法: wipefs [-ahnpqtV] [-o offset] device...
+
+说明:
+       wipefs can erase filesystem, raid or partition-table signatures (magic strings) from the specified device to make the signatures invisible for libblkid.
+
+       wipefs  does  not  erase the filesystem itself nor any other data from the device.  When used without options -a or -o, it lists all visible filesystems and the offsets of their
+       basic signatures.
+
+       wipefs calls BLKRRPART ioctl when erase partition table to inform kernel about the change.
+
+       Note that some filesystems or some partition tables store more magic strings on the devices.  The wipefs command lists only the first  offset  where  a  magic  string  has  been
+       detected.   The  device  is  not scanned for additional magic strings for the same filesystem.  It is possible that after wipefs -o offset the same filesystem or partition table
+       will still be visible by another magic string on another offset.
+
+       When used with option -a, all magic strings that are visible for libblkid are erased.
+
+       Note that by default wipefs does not erase nested partition tables on non-whole disk devices. The option --force is required.
+
+
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# dd if=/tmp/ubuntu-16.04.6-desktop-amd64.iso of=/dev/sdb
+1350656+0 records in
+1350656+0 records out
+691535872 bytes (692 MB) copied, 26.9276 s, 25.7 MB/s
+
+[root@basic ~]# sync
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# wipefs /dev/sdb    # lists all visible filesystems and the offsets of their basic signatures.
+offset               type
+----------------------------------------------------------------
+0x0                  mac   [partition table]
+
+0x1fe                dos   [partition table]
+
+0x8001               iso9660   [filesystem]
+                     LABEL: Ubuntu 16.04.6 LTS amd64
+                     UUID:  2019-02-27-09-57-36-00
+
+
+
+[root@basic ~]# blkid /dev/sdb
+/dev/sdb: UUID="2019-02-27-09-57-36-00" LABEL="Ubuntu 16.04.6 LTS amd64" TYPE="iso9660" PTTYPE="dos"
+---------------------------------------------------------------------------------------------------
+
+       -a, --all
+              Erase all available signatures.  The set of erased signatures can be restricted with the -t list option.
+
+
+[root@basic ~]# wipefs -a /dev/sdb      # -a, --all: 擦除 所有 可用的 signatures.
+/dev/sdb: 5 bytes were erased at offset 0x00008001 (iso9660): 43 44 30 30 31
+/dev/sdb: 2 bytes were erased at offset 0x000001fe (dos): 55 aa
+/dev/sdb: 2 bytes were erased at offset 0x00000000 (mac): 45 52
+/dev/sdb: calling ioclt to re-read partition table: Success
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# parted /dev/sdb mklabel gpt
+[root@basic ~]# parted /dev/sdb mkpart p1 0% 1GiB
+[root@basic ~]# parted /dev/sdb mkpart p2 1GiB 2GiB
+[root@basic ~]# parted /dev/sdb mkpart p3 2GiB 3GiB
+[root@basic ~]# parted /dev/sdb mkpart p4 3GiB 100%
+
+[root@basic ~]# wipefs /dev/sdb
+offset               type
+----------------------------------------------------------------
+0x200                gpt   [partition table]
+
+[root@basic ~]# parted /dev/sdb print
+Model: VMware, VMware Virtual S (scsi)
+Disk /dev/sdb: 4295MB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size    File system  Name  Flags
+ 1      1049kB  1074MB  1073MB               p1
+ 2      1074MB  2147MB  1074MB               p2
+ 3      2147MB  3221MB  1074MB               p3
+ 4      3221MB  4294MB  1073MB               p4
+
+[root@basic ~]# wipefs -a /dev/sdb
+/dev/sdb: 8 bytes were erased at offset 0x00000200 (gpt): 45 46 49 20 50 41 52 54
+/dev/sdb: 8 bytes were erased at offset 0xfffffe00 (gpt): 45 46 49 20 50 41 52 54
+/dev/sdb: 2 bytes were erased at offset 0x000001fe (PMBR): 55 aa
+/dev/sdb: calling ioclt to re-read partition table: Success
+
+---------------------------------------------------------------------------------------------------
+       -n, --no-act
+              Causes everything to be done except for the write() call.
+
+[root@basic ~]# wipefs -a -n /dev/sdb      #  -n, --no-act: Causes everything to be done except for the write() call.
+/dev/sdb: 5 bytes were erased at offset 0x00008001 (iso9660): 43 44 30 30 31
+/dev/sdb: 2 bytes were erased at offset 0x000001fe (dos): 55 aa
+/dev/sdb: 2 bytes were erased at offset 0x00000000 (mac): 45 52
+/dev/sdb: calling ioclt to re-read partition table: Success
+
+[root@basic ~]# wipefs /dev/sdb     # 可以看到, 执行了上面加了选项 -n 的 命令后, 相关的 signatures 仍然存在
+offset               type
+----------------------------------------------------------------
+0x0                  mac   [partition table]
+
+0x1fe                dos   [partition table]
+
+0x8001               iso9660   [filesystem]
+                     LABEL: Ubuntu 16.04.6 LTS amd64
+                     UUID:  2019-02-27-09-57-36-00
+
+
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+    https://wiki.archlinux.org/index.php/USB_flash_installation_media
+    https://www.cyberciti.biz/faq/howto-use-wipefs-to-wipe-a-signature-from-disk-on-linux/
+    https://www.systutorials.com/docs/linux/man/8-wipefs/
+
+
