@@ -19,3 +19,37 @@ man head
 
 [root@basic ~]# head -n 20 /etc/man_db.conf | tail -n 10  #显示 man_db.conf 的第11到20行
 
+
+---------------------------------------------------------------------------------------------------
+       -c, --bytes=[-]K
+              print the first K bytes of each file; with the leading '-', print all but the last K bytes of each file
+
+       K may have a multiplier suffix: b 512, kB 1000, K 1024, MB 1000*1000, M 1024*1024, GB 1000*1000*1000, G 1024*1024*1024, and so on for T, P, E, Z, Y.
+
+
+[root@basic ~]# head -c 1024M < /dev/urandom > 1G_random_data_file   # 创建 1G 大小包含随机内容的文件
+[root@basic ~]# head -c 1024M < /dev/zero > 1G_zero_data_file        # 创建 1G 大小内容用 zero 填充的文件
+
+[root@basic ~]# dd if=/dev/urandom of=1G_random_data_file bs=1M count=1024 iflag=fullblock
+[root@basic ~]# dd if=/dev/zero of=1G_zero_data_file bs=1M count=1024 iflag=fullblock
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+        关于dd命令的资料:
+            https://unix.stackexchange.com/questions/121865/create-random-data-with-dd-and-get-partial-read-warning-is-the-data-after-the
+            https://www.linuxnix.com/what-you-should-know-about-linux-dd-command/
+            https://linoxide.com/linux-command/linux-dd-command-create-1gb-file/
+            https://superuser.com/questions/470949/how-do-i-create-a-1gb-random-file-in-linux
+            https://unix.stackexchange.com/questions/32988/why-does-dd-from-dev-random-give-different-file-sizes
+            https://unix.stackexchange.com/questions/17295/when-is-dd-suitable-for-copying-data-or-when-are-read-and-write-partial
+
+            http://pubs.opengroup.org/onlinepubs/9699919799//utilities/dd.html
+         快速创建大文件:
+            https://stackoverflow.com/questions/257844/quickly-create-a-large-file-on-a-linux-system
+
+            https://en.wikipedia.org/wiki//dev/zero
+            https://en.wikipedia.org/wiki/Sparse_file
+            https://baike.baidu.com/item/%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/1600319?fr=aladdin
+
+
+
