@@ -1,0 +1,200 @@
+
+# keyword dd
+
+man dd
+info dd   # 包含更多的信息(不过有些信息也只能在 man dd 中找到)
+
+
+11.2 'dd': Convert and copy a file
+==================================
+
+'dd' copies a file (from standard input to standard output, by default)
+with a changeable I/O block size, while optionally performing
+conversions on it.  Synopses:
+
+     dd [OPERAND]...
+     dd OPTION
+
+   The only options are '--help' and '--version'.  *Note Common
+options::.  'dd' accepts the following operands, whose syntax was
+inspired by the DD (data definition) statement of OS/360 JCL.
+
+'if=FILE'
+     Read from FILE instead of standard input.
+
+'of=FILE'
+     Write to FILE instead of standard output.  Unless 'conv=notrunc' is
+     given, 'dd' truncates FILE to zero bytes (or the size specified
+     with 'seek=').
+
+'bs=BYTES'
+     Set both input and output block sizes to BYTES.  This makes 'dd'
+     read and write BYTES per block, overriding any 'ibs' and 'obs'
+     settings.  In addition, if no data-transforming 'conv' option is
+     specified, input is copied to the output as soon as it's read, even
+     if it is smaller than the block size.
+
+'count=N'
+     Copy N 'ibs'-byte blocks from the input file, instead of everything
+     until the end of the file.  if 'iflag=count_bytes' is specified, N
+     is interpreted as a byte count rather than a block count.  Note if
+     the input may return short reads as could be the case when reading
+     from a pipe for example, 'iflag=fullblock' will ensure that
+     'count=' corresponds to complete input blocks rather than the
+     traditional POSIX specified behavior of counting input read
+     operations.
+
+     N and BYTES may be followed by the following multiplicative suffixes: c =1, w =2, b =512, kB  =1000,  K  =1024,  MB  =1000*1000,  M  =1024*1024,  xM  =M  GB  =1000*1000*1000,  G
+     =1024*1024*1024, and so on for T, P, E, Z, Y.
+
+
+'iflag=FLAG[,FLAG]...'
+     Access the input file using the flags specified by the FLAG
+     argument(s).  (No spaces around any comma(s).)
+
+
+     'fullblock'
+          Accumulate full blocks from input.  The 'read' system call may
+          return early if a full block is not available.  When that
+          happens, continue calling 'read' to fill the remainder of the
+          block.  This flag can be used only with 'iflag'.  This flag is
+          useful with pipes for example as they may return short reads.
+          In that case, this flag is needed to ensure that a 'count='
+          argument is interpreted as a block count rather than a count
+          of read operations.
+
+'status=LEVEL'
+     Transfer information is normally output to stderr upon receipt of
+     the 'INFO' signal or when 'dd' exits.  Specifying LEVEL will adjust
+     the amount of information printed, with the last LEVEL specified
+     taking precedence.
+
+     'none'
+          Do not print any informational or warning messages to stderr.
+          Error messages are output as normal.
+
+     'noxfer'
+          Do not print the final transfer rate and volume statistics
+          that normally make up the last status line.
+
+     'progress'
+          Print the transfer rate and volume statistics on stderr, when
+          processing each input block.  Statistics are output on a
+          single line at most once every second, but updates can be
+          delayed when waiting on I/O.
+
+
+'oflag=FLAG[,FLAG]...'
+     Access the output file using the flags specified by the FLAG
+     argument(s).  (No spaces around any comma(s).)
+
+     Here are the flags.  Not every flag is supported on every operating
+     system.
+
+     'dsync'
+          Use synchronized I/O for data.  For the output file, this
+          forces a physical write of output data on each write.  For the
+          input file, this flag can matter when reading from a remote
+          file that has been written to synchronously by some other
+          process.  Metadata (e.g., last-access and last-modified time)
+          is not necessarily synchronized.
+
+     'sync'
+          Use synchronized I/O for both data and metadata.
+
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# head -c 1024M < /dev/urandom > 1G_random_data_file   # 创建 1G 大小包含随机内容的文件
+[root@basic ~]# head -c 1024M < /dev/zero > 1G_zero_data_file        # 创建 1G 大小内容用 zero 填充的文件
+
+[root@basic ~]# dd if=/dev/urandom of=1G_random_data_file bs=1M count=1024 iflag=fullblock
+[root@basic ~]# dd if=/dev/zero of=1G_zero_data_file bs=1M count=1024 iflag=fullblock
+
+
+---------------------------------------------------------------------------------------------------
+示例: 将 /etc/passwd 备份到 /tmp/passwd.back 当中
+
+[root@basic ~]# dd if=/etc/passwd of=/tmp/passwd.back
+1+1 records in
+1+1 records out
+997 bytes (997 B) copied, 0.000274426 s, 3.6 MB/s
+
+# 仔细的看一下，因为我没有设定 bs ，所以默认是 512 bytes 为一个单位(即ibs 和 obs 默认都为 512bytes)，
+# 因此，上面那个 1+1 表示有 1 个完整的 512 bytes，以及未满 512 bytes 的另一个 block 的意思啦！
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# dd if=/dev/sr0 of=/tmp/system.iso
+1350656+0 records in
+1350656+0 records out
+691535872 bytes (692 MB) copied, 29.1693 s, 23.7 MB/s
+
+[root@basic ~]# sync
+
+---------------------------------------------------------------------------------------------------
+[root@basic ~]# dd if=/dev/zero of=/dev/sdb   # 擦除 磁盘 /dev/sdb 上的所有内容
+
+[root@basic ~]# dd if=/dev/zero of=/dev/sdb status=progress   #  status=progress 用户 显示进度
+4214915584 bytes (4.2 GB) copied, 73.090351 s, 57.7 MB/s
+dd: writing to ‘/dev/sdb’: No space left on device
+8388609+0 records in
+8388608+0 records out
+4294967296 bytes (4.3 GB) copied, 74.0235 s, 58.0 MB/s
+
+[root@basic ~]# sync
+
+[root@basic ~]# dd bs=4M if=/tmp/system.iso of=/dev/sdb status=progress oflag=sync   #  oflag=sync  # Use synchronized I/O for both data and metadata.
+633339904 bytes (633 MB) copied, 32.664020 s, 19.4 MB/s
+164+1 records in
+164+1 records out
+691535872 bytes (692 MB) copied, 33.6144 s, 20.6 MB/s
+
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# dd if=/dev/sda1 | gzip -c > hdadisk.img.gz # 创建压缩的镜像文件
+409600+0 records in
+409600+0 records out
+209715200 bytes (210 MB) copied, 5.45724 s, 38.4 MB/s
+
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+
+        关于dd命令的资料:
+            https://unix.stackexchange.com/questions/121865/create-random-data-with-dd-and-get-partial-read-warning-is-the-data-after-the
+            https://www.linuxnix.com/what-you-should-know-about-linux-dd-command/
+            https://linoxide.com/linux-command/linux-dd-command-create-1gb-file/
+            https://superuser.com/questions/470949/how-do-i-create-a-1gb-random-file-in-linux
+            https://unix.stackexchange.com/questions/32988/why-does-dd-from-dev-random-give-different-file-sizes
+            https://unix.stackexchange.com/questions/17295/when-is-dd-suitable-for-copying-data-or-when-are-read-and-write-partial
+
+            http://pubs.opengroup.org/onlinepubs/9699919799//utilities/dd.html
+         快速创建大文件:
+            https://stackoverflow.com/questions/257844/quickly-create-a-large-file-on-a-linux-system
+
+            https://en.wikipedia.org/wiki//dev/zero
+            https://en.wikipedia.org/wiki/Sparse_file
+            https://baike.baidu.com/item/%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/1600319?fr=aladdin
+
+         利用 dd 制作 usb 启动盘:
+            https://www.ostechnix.com/how-to-create-bootable-usb-drive-using-dd-command/
+            https://wiki.archlinux.org/index.php/USB_flash_installation_media
+            https://www.cyberciti.biz/faq/linux-copy-clone-usb-stick-including-partitions/
+            https://askubuntu.com/questions/512059/using-dd-command-to-create-bootable-usb-stick
+            https://askubuntu.com/questions/372607/how-to-create-a-bootable-ubuntu-usb-flash-drive-from-terminal
+
+         wipefs 工具:
+            https://www.cyberciti.biz/faq/howto-use-wipefs-to-wipe-a-signature-from-disk-on-linux/
+
+        关于 signature:
+            https://en.wikipedia.org/wiki/Design_of_the_FAT_file_system
+            https://www.lifewire.com/what-is-a-disk-signature-2625851
+            https://blogs.technet.microsoft.com/markrussinovich/2011/11/06/fixing-disk-signature-collisions/
+
+        file signature:
+            https://en.wikipedia.org/wiki/File_format#Magic_number
+            https://www.lsoft.net/blog-file-signature-recovery.aspx
+            https://en.wikipedia.org/wiki/List_of_file_signatures
+
+
