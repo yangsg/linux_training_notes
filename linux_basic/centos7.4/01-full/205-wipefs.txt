@@ -119,6 +119,7 @@ offset               type
 
 ---------------------------------------------------------------------------------------------------
 网上资料:
+  注: 可能 wipefs 的版本的差异, 所以网上的 wipefs 和 centos7.4自带的 wipefs 某些选项 有不同.
     https://wiki.archlinux.org/index.php/USB_flash_installation_media
     https://www.cyberciti.biz/faq/howto-use-wipefs-to-wipe-a-signature-from-disk-on-linux/
     https://www.systutorials.com/docs/linux/man/8-wipefs/
