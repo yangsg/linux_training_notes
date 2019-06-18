@@ -1,0 +1,135 @@
+
+
+# keyword cpio
+
+man cpio
+
+作用: cpio - copy files to and from archives
+
+语法:
+       Copy-out mode
+
+       In copy-out mode, cpio copies files into an archive.  It reads a list of filenames, one per line, on the standard input, and writes the archive onto the standard output.  A typ‐
+       ical way to generate the list of filenames is with the find command; you should give find the -depth option to minimize problems with permissions on directories that are unread‐
+       able.  see “Options”.
+
+       cpio  {-o|--create}  [-0acvABLV]  [-C  bytes]  [-H  format]  [-M  message] [-O [[user@]host:]archive] [-F [[user@]host:]archive] [--file=[[user@]host:]archive] [--format=format]
+       [--warning=FLAG] [--message=message][--null] [--reset-access-time] [--verbose] [--dot] [--append] [--block-size=blocks] [--dereference] [--io-size=bytes] [--rsh-command=command]
+       [--license] [--usage] [--help] [--version] < name-list [> archive]
+
+       Copy-in mode
+
+       In  copy-in  mode,  cpio  copies files out of an archive or lists the archive contents.  It reads the archive from the standard input.  Any non-option command line arguments are
+       shell globbing patterns; only files in the archive whose names match one or more of those patterns are copied from the archive.  Unlike in the shell, an initial `.' in  a  file‐
+       name does match a wildcard at the start of a pattern, and a `/' in a filename can match wildcards.  If no patterns are given, all files are extracted.  see “Options”.
+
+       cpio   {-i|--extract}  [-bcdfmnrtsuvBSV]  [-C  bytes]  [-E  file]  [-H  format]  [-M  message]  [-R  [user][:.][group]]  [-I  [[user@]host:]archive]  [-F  [[user@]host:]archive]
+       [--file=[[user@]host:]archive] [--make-directories] [--nonmatching] [--preserve-modification-time] [--numeric-uid-gid] [--rename]  [-t|--list]  [--swap-bytes]  [--swap]  [--dot]
+       [--warning=FLAG]  [--unconditional]  [--verbose]  [--block-size=blocks]  [--swap-halfwords] [--io-size=bytes] [--pattern-file=file] [--format=format] [--owner=[user][:.][group]]
+       [--no-preserve-owner] [--message=message] [--force-local] [--no-absolute-filenames] [--absolute-filenames] [--sparse]  [--only-verify-crc]  [--to-stdout]  [--quiet]  [--rsh-com‐
+       mand=command] [--license] [--usage] [--help] [--version] [pattern...] [< archive]
+
+       Copy-pass mode
+
+       In  copy-pass mode, cpio copies files from one directory tree to another, combining the copy-out and copy-in steps without actually using an archive.  It reads the list of files
+       to copy from the standard input; the directory into which it will copy them is given as a non-option argument.  see “Options”.
+
+       cpio {-p|--pass-through} [-0adlmuvLV] [-R [user][:.][group]] [--null] [--reset-access-time] [--make-directories] [--link]  [--quiet]  [--preserve-modification-time]  [--uncondi‐
+       tional]  [--verbose]  [--dot]  [--warning=FLAG] [--dereference] [--owner=[user][:.][group]] [--no-preserve-owner] [--sparse]  [--license] [--usage] [--help] [--version] destina‐
+       tion-directory < name-list
+
+说明:
+       GNU cpio is a tool for creating and extracting archives, or copying files from one place to another.  It handles a number of cpio formats as well  as  reading  and  writing  tar
+       files.
+
+       Following  archive formats are supported: binary, old ASCII, new ASCII, crc, HPUX binary, HPUX old ASCII, old tar, and POSIX.1 tar.  The tar format is provided for compatibility
+       with the tar program. By default, cpio creates binary format archives, for compatibility with older cpio programs.  When extracting from archives, cpio automatically  recognizes
+       which kind of archive it is reading and can read archives created on machines with a different byte-order.
+
+
+---------------------------------------------------------------------------------------------------
+
+       `-o, --create'
+              Run in copy-out mode.  see “Copy-out mode”.
+
+       `-v, --verbose'
+              List the files processed, or with `-t', give an `ls -l' style table of contents listing.  In a verbose table of contents of a ustar archive, user and group names  in  the
+              archive that do not exist on the local system are replaced by the names that correspond locally to the numeric UID and GID stored in the archive.
+
+       `-F, --file=archive'
+              Archive filename to use instead of standard input or output.  To use a tape drive on another machine as the archive, use a filename that  starts  with  `HOSTNAME:'.   The
+              hostname  can  be  preceded  by  a  username  and  an `@' to access the remote tape drive as that user, if you have permission to do so (typically an entry in that user's
+              `~/.rhosts' file).
+
+
+       `-c'   Identical to “-H newc”, use the new (SVR4) portable format.  If you wish the old portable (ASCII) archive format, use “-H odc” instead.
+
+
+       `-B'   Set the I/O block size to 5120 bytes.  Initially the block size is 512 bytes.
+
+
+[root@basic ~]# tree dir01
+dir01
+├── a.txt
+├── b.txt
+└── subdir
+    ├── d.txt
+    └── e.txt
+
+1 directory, 4 files
+
+
+[root@basic ~]# find dir01 -depth -print | cpio -ov > dir01_tree.cpio
+
+
+
+---------------------------------------------------------------------------------------------------
+
+
+       `-i, --extract'
+              Run in copy-in mode.  see “Copy-in mode”.
+
+       `-d, --make-directories'
+              Create leading directories where needed.
+
+       `-u, --unconditional'
+              Replace all files, without asking whether to replace existing newer files with older files.
+
+
+
+[root@basic ~]# mkdir workdir
+[root@basic ~]# cd workdir/
+
+[root@basic dir02]#   cpio -iv < dir01.cpio     # 对于普通文件可以使用此命令(该命令不创建目录,也不会覆盖)
+[root@basic workdir]# cpio -ivd < ~/dir01_tree.cpio    # -d, --make-directories  : 需要时创建目录
+[root@basic workdir]# cpio -ivdu < ~/dir01_tree.cpio   # -u, --unconditional : 无条件替换(覆盖)
+
+
+
+       `-t, --list'
+                     Print a table of contents of the input.
+
+[root@basic ~]# cpio -ivt < dir01_tree.cpio     # -t, --list : 测试(test), 显示 内容
+-rw-r--r--   1 root     root            0 Jun 18 07:43 dir01/a.txt
+-rw-r--r--   1 root     root            0 Jun 18 07:43 dir01/b.txt
+-rw-r--r--   1 root     root            0 Jun 18 07:43 dir01/subdir/d.txt
+-rw-r--r--   1 root     root            0 Jun 18 07:43 dir01/subdir/e.txt
+drwxr-xr-x   2 root     root            0 Jun 18 07:43 dir01/subdir
+drwxr-xr-x   3 root     root            0 Jun 18 07:43 dir01
+1 block
+
+
+---------------------------------------------------------------------------------------------------
+       `-p, --pass-through'
+              Run in copy-pass mode.  see “Copy-pass mode”.
+
+       `-0, --null'
+              Read a list of filenames terminated by a null character, instead of a newline, so that files whose names contain newlines can be archived.  GNU find is one way to produce
+              a list of null-terminated filenames.  This option may be used in copy-out and copy-pass modes.
+
+
+[root@basic ~]# find dir01 -depth -print0 | cpio --null -pvd workdir
+
+
+---------------------------------------------------------------------------------------------------
+
