@@ -1,0 +1,63 @@
+
+# keyword iconv
+
+linux 的 iconv 的 man page 见如下:
+    http://man7.org/linux/man-pages/man1/iconv.1.html
+
+
+作用: iconv - convert text from one character encoding to another
+
+语法: iconv [options] [-f from-encoding] [-t to-encoding] [inputfile]...
+
+说明:
+       The  iconv  program reads in text in one encoding and outputs the text in another encoding.  If no input files are given, or if it
+       is given as a dash (-), iconv reads from standard input.  If no output file is given, iconv writes to standard output.
+
+       If no from-encoding is given, the default is derived from the current locale's character encoding.  If no  to-encoding  is  given,
+
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# iconv -l   # -l, --list: List all known character set encodings.
+
+---------------------------------------------------------------------------------------------------
+示例: 将 gb2312 编码 的文件 转换为 utf8 编码 的文件
+
+[root@basic ~]# iconv -f GB2312 -t UTF-8 input.gb2312.txt -o output.utf8.txt
+[root@basic ~]# iconv -f GB2312 -t UTF-8 input.gb2312.txt > output.utf8.txt
+
+---------------------------------------------------------------------------------------------------
+示例: utf8的中文繁体字 转换为 utf8 的中文简体字
+
+[root@basic ~]# vim vi.utf8
+繁體
+
+[root@basic ~]# iconv -f UTF-8 -t BIG5 vi.utf8 | iconv -f BIG5 -t GB2312 | iconv -f GB2312 -t UTF-8 -o vi.gb.utf8  # utf8的中文繁体字 转换为 utf8 的中文简体字
+
+[root@basic ~]# cat vi.gb.utf8
+繁体
+
+---------------------------------------------------------------------------------------------------
+[root@basic ~]# echo abc ß α € àḃç | iconv -f UTF-8 -t ASCII//TRANSLIT   # converts from UTF-8 to ASCII, transliterating when possible
+abc ss ? EUR abc
+
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+
+    http://cn.linux.vbird.org/linux_basic/0310vi.php#iconv
+
+    https://www.cnblogs.com/shujuxiong/p/8990452.html
+
+    big5 编码: 大五码, 用于繁体中文
+        https://baike.baidu.com/item/%E5%A4%A7%E4%BA%94%E7%A0%81/2413431?fromtitle=BIG5%E7%A0%81&fromid=4153989&fr=aladdin
+
+
+    https://unix.stackexchange.com/questions/186963/what-is-the-proper-encoding-name-to-use-in-locale-for-utf-8
+
+        [root@basic ~]# ldd /usr/bin/iconv
+                linux-vdso.so.1 =>  (0x00007fff21fc6000)
+                libc.so.6 => /lib64/libc.so.6 (0x00007fc93085e000)  <----- 观察
+                /lib64/ld-linux-x86-64.so.2 (0x000055dc14c71000)
+
+
