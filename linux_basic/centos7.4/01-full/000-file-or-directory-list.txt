@@ -10,7 +10,9 @@ CentOS Linux release 7.4.1708 (Core)
 
 
 
+/etc/hostname  # man hostname
 /etc/hosts  注: windows 操作系统上的 hosts 文件路径为 C:\Windows\System32\drivers\etc\hosts
+/etc/resolv.conf
 
 /usr/share/doc/
 /usr/share/doc/grub2-common-2.02/
