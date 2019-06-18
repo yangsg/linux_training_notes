@@ -30,7 +30,7 @@ CentOS Linux release 7.4.1708 (Core)
 
 /etc/issue  # man 5 issue # man agetty
 /etc/issue.net
-/etc/motd
+/etc/motd   # message of the day
 
 
 /etc/os-release
