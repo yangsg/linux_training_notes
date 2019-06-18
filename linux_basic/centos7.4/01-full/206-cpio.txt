@@ -132,4 +132,15 @@ drwxr-xr-x   3 root     root            0 Jun 18 07:43 dir01
 
 
 ---------------------------------------------------------------------------------------------------
+网上资料:
+
+  示例:
+      https://www.thegeekstuff.com/2010/08/cpio-utility/
+      https://www.geeksforgeeks.org/cpio-command-in-linux-with-examples/
+      https://www.cyberciti.biz/faq/how-do-i-use-cpio-command-under-linux/
+  中文示例:
+      https://www.cnblogs.com/Andy-Lv/p/5304247.html
+      https://www.jianshu.com/p/d222e00faae1
+      https://www.wyxxw.cn/blog-detail-22-25-650.html
+      https://blog.csdn.net/frank_abagnale/article/details/78628375
 
