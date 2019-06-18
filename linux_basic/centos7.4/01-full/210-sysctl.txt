@@ -1,0 +1,179 @@
+
+
+# keyword sysctl
+
+man sysctl
+man 5 sysctl.conf
+
+man 7 regex
+
+man proc
+
+
+https://elixir.bootlin.com/linux/latest/source/Documentation/sysctl/vm.txt
+https://elixir.bootlin.com/linux/latest/source/Documentation/filesystems/proc.txt
+
+
+作用: sysctl - configure kernel parameters at runtime
+
+语法: sysctl [options] [variable[=value]] [...]
+语法: sysctl -p [file or regexp] [...]
+
+说明:
+       sysctl  is  used  to  modify  kernel  parameters at runtime.  The parameters available are those listed under /proc/sys/.  Procfs is
+       required for sysctl support in Linux.  You can use sysctl to both read and write sysctl data.
+
+参数:
+       variable
+              The name of a key to read from.  An example is kernel.ostype.  The '/' separator is also accepted in place of a '.'.
+
+       variable=value
+              To set a key, use the form variable=value where variable is the key and value is the value to set it to.  If the  value  con‐
+              tains  quotes or characters which are parsed by the shell, you may need to enclose the value in double quotes.  This requires
+              the -w parameter to use.
+
+EXAMPLES
+       /sbin/sysctl -a
+       /sbin/sysctl -n kernel.hostname
+       /sbin/sysctl -w kernel.domainname="example.com"
+       /sbin/sysctl -p/etc/sysctl.conf
+       /sbin/sysctl -a --pattern forward
+       /sbin/sysctl -a --pattern forward$
+       /sbin/sysctl -a --pattern 'net.ipv4.conf.(eth|wlan)0.arp'
+       /sbin/sysctl --system --pattern '^net.ipv6'
+
+FILES
+       /proc/sys
+       /etc/sysctl.conf
+
+---------------------------------------------------------------------------------------------------
+示例: 显示 参数 当前的有效 值
+
+       -a, --all
+              Display all values currently available.
+
+[root@localhost ~]# sysctl -a | less    # 显示当前所有 有效值
+[root@basic ~]# sysctl -aN      # 仅显示当前所有参数的 name, 而不显示其 value
+[root@basic ~]# sysctl -a --deprecated   # 显示所有参数(包括那些废弃的参数)
+
+[root@basic ~]# sysctl -a | grep ip_forward
+net.ipv4.ip_forward = 0            <-------- 观察
+net.ipv4.ip_forward_use_pmtu = 0
+sysctl: reading key "net.ipv6.conf.all.stable_secret"     <---- 这些信息可以忽略, 如 `sysctl -a 2> /dev/null | grep ip_forward`
+sysctl: reading key "net.ipv6.conf.default.stable_secret"
+sysctl: reading key "net.ipv6.conf.ens33.stable_secret"
+sysctl: reading key "net.ipv6.conf.lo.stable_secret"
+
+
+       -r, --pattern pattern
+              Only apply settings that match pattern.  The pattern uses extended regular expression syntax.
+
+[root@basic ~]# sysctl -a -r '.*ip_for.*'       #-r  指定扩展风格的正则表达式
+net.ipv4.ip_forward = 0
+net.ipv4.ip_forward_use_pmtu = 0
+
+
+[root@basic ~]# sysctl  net.ipv4.ip_forward   # 显示参数 net.ipv4.ip_forward 的值 (以键值对方式显示)
+net.ipv4.ip_forward = 0
+
+       -n, --values
+              Use this option to disable printing of the key name when printing values.
+
+
+[root@basic ~]# sysctl -n net.ipv4.ip_forward   # 显示参数 net.ipv4.ip_forward 的 值
+0
+
+---------------------------------------------------------------------------------------------------
+示例: 临时设置 参数值
+
+[root@basic ~]# cat /proc/sys/net/ipv4/ip_forward
+0
+[root@basic ~]# sysctl -w net.ipv4.ip_forward=1    # 等价于` echo 1 > /proc/sys/net/ipv4/ip_forward `
+net.ipv4.ip_forward = 1
+
+[root@basic ~]# cat /proc/sys/net/ipv4/ip_forward
+1
+
+[root@basic ~]# echo 0 > /proc/sys/net/ipv4/ip_forward
+
+[root@basic ~]# cat /proc/sys/net/ipv4/ip_forward
+0
+
+
+---------------------------------------------------------------------------------------------------
+示例: 持久化 修改 参数值
+
+       -p[FILE], --load[=FILE]
+              Load in sysctl settings from the file specified or /etc/sysctl.conf if none given.  Specifying - as filename means  read‐
+              ing  data  from  standard  input.  Using this option will mean arguments to sysctl are files, which are read in the order
+              they are specified.  The file argument may be specified as regular expression.
+
+[root@basic ~]# vim /etc/sysctl.conf
+net.ipv4.ip_forward=1
+
+[root@basic ~]# sysctl -p    #  当-p没有接文件路径时，则默认加载文件/etc/sysctl.conf中的配置
+net.ipv4.ip_forward = 1
+
+语法: sysctl -p  /path/to/xxx.conf   #加载指定文件中的配置
+
+
+---------------------------------------------------------------------------------------------------
+示例: 加载所有系统配置文件中的设置
+
+       --system
+              Load settings from all system configuration files. Files are read from directories in the following list in  given  order
+              from  top  to  bottom.  Once a file of a given filename is loaded, any file of the same name in subsequent directories is
+              ignored.
+              /run/sysctl.d/*.conf
+              /etc/sysctl.d/*.conf
+              /usr/local/lib/sysctl.d/*.conf
+              /usr/lib/sysctl.d/*.conf
+              /lib/sysctl.d/*.conf
+              /etc/sysctl.conf
+
+
+[root@basic ~]# sysctl --system    # 加载所有系统配置文件中的设置
+* Applying /usr/lib/sysctl.d/00-system.conf ...
+* Applying /usr/lib/sysctl.d/10-default-yama-scope.conf ...
+kernel.yama.ptrace_scope = 0
+* Applying /usr/lib/sysctl.d/50-default.conf ...
+kernel.sysrq = 16
+kernel.core_uses_pid = 1
+net.ipv4.conf.default.rp_filter = 1
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.accept_source_route = 0
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv4.conf.default.promote_secondaries = 1
+net.ipv4.conf.all.promote_secondaries = 1
+fs.protected_hardlinks = 1
+fs.protected_symlinks = 1
+* Applying /etc/sysctl.d/99-sysctl.conf ...
+net.ipv4.ip_forward = 1
+* Applying /etc/sysctl.conf ...
+net.ipv4.ip_forward = 1
+
+
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+
+      https://www.tecmint.com/change-modify-linux-kernel-runtime-parameters/
+      https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/s1-proc-sysctl
+      https://wiki.archlinux.org/index.php/Sysctl
+      http://go2linux.garron.me/linux/2011/02/introduction-and-how-sysctl-linux-900/
+      https://en.wikipedia.org/wiki/Sysctl
+
+yum -y install kernel-doc
+    /usr/share/doc/kernel-doc-3.10.0/Documentation/filesystems/proc.txt
+    /usr/share/doc/kernel-doc-3.10.0/Documentation/sysctl/vm.txt
+
+
+    在线文档(注意版本):
+        https://elixir.bootlin.com/linux/latest/source/Documentation/sysctl/vm.txt
+        https://elixir.bootlin.com/linux/latest/source/Documentation/filesystems/proc.txt
+
+        https://github.com/torvalds/linux/blob/master/Documentation/filesystems/proc.txt
+        https://github.com/torvalds/linux/blob/master/Documentation/sysctl/vm.txt
+
+    https://www.kernel.org/doc/html/latest/
+
