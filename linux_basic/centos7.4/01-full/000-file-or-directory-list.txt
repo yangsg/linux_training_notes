@@ -26,6 +26,18 @@ CentOS Linux release 7.4.1708 (Core)
 /etc/login.defs       # man 5 login.defs
 /etc/skel/      'skel' 简写自单词 ‘skeleton’  骨架
 
+/etc/pam.d/*
+/etc/pam.d/passwd
+/etc/pam.d/system-auth   # man system-auth  # man pam
+/etc/pam.d/login
+
+/lib64/security/   # PAM 模块档案的实际放置目录
+/etc/security/*    # 其他 PAM 环境的配置文件
+/usr/share/doc/pam-*/  # 详细的 PAM 说明文件
+
+/etc/security/limits.conf  # 该文件的设置对 通过PAM的登录用户起作用, 对 system services 的 资源限制没有影响.
+/var/log/secure
+/var/log/messages
 
 
 
@@ -33,6 +45,8 @@ CentOS Linux release 7.4.1708 (Core)
 /etc/issue  # man 5 issue # man agetty
 /etc/issue.net
 /etc/motd   # message of the day
+
+/etc/nologin.txt  # man nologin
 
 
 /etc/os-release
