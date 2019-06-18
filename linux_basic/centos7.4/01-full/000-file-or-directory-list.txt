@@ -87,6 +87,8 @@ CentOS Linux release 7.4.1708 (Core)
 /etc/sysctl.conf           # /usr/lib/systemd/system/systemd-sysctl.service
 /etc/sysctl.d/*.conf
 
+/etc/security/limits.conf  # 该文件的设置对 通过PAM的登录用户起作用, 对 system services 的 资源限制没有影响.
+
 /etc/sysconfig/authconfig  # man authconfig
 /etc/sysconfig/cpupower    # man cpupower
 /etc/sysconfig/firewalld   # man firewalld
