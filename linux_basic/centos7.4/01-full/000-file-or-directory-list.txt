@@ -39,6 +39,7 @@ CentOS Linux release 7.4.1708 (Core)
 /var/log/secure
 /var/log/messages
 
+/var/log/maillog
 
 
 
