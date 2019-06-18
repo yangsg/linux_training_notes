@@ -46,6 +46,7 @@ abc ss ? EUR abc
 网上资料:
 
     http://cn.linux.vbird.org/linux_basic/0310vi.php#iconv
+    https://www.tecmint.com/convert-files-to-utf-8-encoding-in-linux/
 
     https://www.cnblogs.com/shujuxiong/p/8990452.html
 
