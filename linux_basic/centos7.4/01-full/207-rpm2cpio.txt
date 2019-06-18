@@ -1,0 +1,24 @@
+
+# keyword rpm2cpio
+
+man rpm2cpio
+
+作用:
+       rpm2cpio - Extract cpio archive from RPM Package Manager (RPM) package.
+
+语法: rpm2cpio [filename]
+
+说明:
+       rpm2cpio converts the .rpm file specified as a single argument to a cpio archive on standard out. If a '-' argument is given, an rpm stream is read from standard in.
+
+       rpm2cpio rpm-1.1-1.i386.rpm
+       rpm2cpio - < glint-1.0-1.i386.rpm
+       rpm2cpio glint-1.0-1.i386.rpm | cpio -dium
+
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+        https://blog.packagecloud.io/eng/2015/10/13/inspect-extract-contents-rpm-packages/
+
+        https://www.jianshu.com/p/9844def089f3
+
