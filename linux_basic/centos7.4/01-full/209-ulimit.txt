@@ -148,6 +148,19 @@ unlimited
       https://www.ibm.com/support/knowledgecenter/en/SSEP7J_11.0.0/com.ibm.swg.ba.cognos.inst_cr_winux.doc/c_inst_ulimitsettingsonunixandlinuxoperatingsystems.html
       http://www.landoflinux.com/linux_ulimit_command.html
 
+---------------------------------------------------------------------------------------------------
+其他:
+
+[root@basic ~]# cat /proc/sys/fs/file-max    # 查看系统上所有进程总共能打开的文件数量, 见 man proc
+95856
+
+注: 这里只是想演示 kernel 参数的修改方法, 具体各参数修改需要注意的事项 和 细节还需要参看 文档
+[root@basic ~]# sysctl -w fs.file-max=500000   # 临时更改 /proc/sys/fs/file-max 中的值, 等价于 `echo  500000 > /proc/sys/fs/file-max`
+fs.file-max = 500000
+
+[root@basic ~]# cat /proc/sys/fs/file-max
+500000
+
 
 
 
