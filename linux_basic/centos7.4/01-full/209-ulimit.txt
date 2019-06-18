@@ -4,7 +4,7 @@
 man bash    #/ulimit
 help ulimit
 
-man limits.conf
+man limits.conf   #相关文件 /etc/security/limits.conf 和 相关目录 /etc/security/limits.d
 
 
        ulimit [-HSTabcdefilmnpqrstuvx [limit]]
@@ -147,9 +147,10 @@ unlimited
       http://www.linuxhowtos.org/tips%20and%20tricks/ulimit.htm
       https://www.ibm.com/support/knowledgecenter/en/SSEP7J_11.0.0/com.ibm.swg.ba.cognos.inst_cr_winux.doc/c_inst_ulimitsettingsonunixandlinuxoperatingsystems.html
       http://www.landoflinux.com/linux_ulimit_command.html
+      https://zhangxugg-163-com.iteye.com/blog/1108402
 
 ---------------------------------------------------------------------------------------------------
-其他:
+系统范围的修改(全局修改)
 
 [root@basic ~]# cat /proc/sys/fs/file-max    # 查看系统上所有进程总共能打开的文件数量, 见 man proc
 95856
@@ -161,7 +162,20 @@ fs.file-max = 500000
 [root@basic ~]# cat /proc/sys/fs/file-max
 500000
 
+持久化修改内核参数:
+[root@basic ~]# vim /etc/sysctl.conf
+fs.file-max=500000
 
+[root@basic ~]# sysctl -p
+fs.file-max = 500000
 
+---------------------------------------------------------------------------------------------------
+用户级别的修改
+
+[root@basic ~]# vim /etc/security/limits.conf  # 该文件的设置对 通过PAM的登录用户起作用, 对 system services 的 资源限制没有影响.
+## Example hard limit for max opened files
+marin        hard nofile 4096
+## Example soft limit for max opened files
+marin        soft nofile 1024
 
 
