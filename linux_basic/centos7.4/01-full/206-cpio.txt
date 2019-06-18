@@ -95,6 +95,9 @@ dir01
        `-u, --unconditional'
               Replace all files, without asking whether to replace existing newer files with older files.
 
+       `-m, --preserve-modification-time'
+              Retain previous file modification times when creating files.
+
 
 
 [root@basic ~]# mkdir workdir
@@ -143,4 +146,8 @@ drwxr-xr-x   3 root     root            0 Jun 18 07:43 dir01
       https://www.jianshu.com/p/d222e00faae1
       https://www.wyxxw.cn/blog-detail-22-25-650.html
       https://blog.csdn.net/frank_abagnale/article/details/78628375
+
+
+  rpm2cpio 与 cpio 的使用:
+      https://blog.packagecloud.io/eng/2015/10/13/inspect-extract-contents-rpm-packages/
 
