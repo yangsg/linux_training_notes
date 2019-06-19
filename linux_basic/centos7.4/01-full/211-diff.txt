@@ -105,6 +105,7 @@ I need to get the dog detailed.
     diff:
         https://www.computerhope.com/unix/udiff.htm
         https://unix.stackexchange.com/questions/34874/diff-output-line-numbers
+        https://www.lifewire.com/compare-two-text-files-linux-3861434
 
     git diff:
         https://www.atlassian.com/git/tutorials/saving-changes/git-diff
