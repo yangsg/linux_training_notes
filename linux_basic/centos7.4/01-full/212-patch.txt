@@ -1,0 +1,290 @@
+
+# keyword patch
+
+man patch
+
+注: 使用 patch 之前, 可以考虑 使用 git 等版本控制工具 是否更好一些
+
+作用: patch - apply a diff file to an original
+
+语法:
+       patch [options] [originalfile [patchfile]]
+
+       but usually just
+
+       patch -pnum <patchfile
+
+
+说明:
+       patch  takes  a  patch  file  patchfile containing a difference listing produced by the diff program and applies those differences to one or more
+       original files, producing patched versions.  Normally the patched versions are put in place of the originals.  Backups can be made; see the -b or
+       --backup  option.   The names of the files to be patched are usually taken from the patch file, but if there's just one file to be patched it can
+       be specified on the command line as originalfile.
+
+       Upon startup, patch attempts to determine the type of the diff listing, unless overruled by a -c (--context), -e (--ed),  -n  (--normal),  or  -u
+       (--unified)  option.   Context diffs (old-style, new-style, and unified) and normal diffs are applied by the patch program itself, while ed diffs
+       are simply fed to the ed(1) editor via a pipe.
+
+       patch tries to skip any leading garbage, apply the diff, and then skip any trailing garbage.  Thus you could feed an article or message  contain‐
+       ing  a  diff  listing to patch, and it should work.  If the entire diff is indented by a consistent amount, if lines end in CRLF, or if a diff is
+       encapsulated one or more times by prepending "- " to lines starting with "-" as specified by Internet RFC 934, this is taken into account.  After
+       removing indenting or encapsulation, lines beginning with # are ignored, as they are considered to be comments.
+
+       With  context  diffs,  and to a lesser extent with normal diffs, patch can detect when the line numbers mentioned in the patch are incorrect, and
+       attempts to find the correct place to apply each hunk of the patch.  As a first guess, it takes the line number mentioned for the hunk,  plus  or
+       minus  any  offset  used  in  applying the previous hunk.  If that is not the correct place, patch scans both forwards and backwards for a set of
+       lines matching the context given in the hunk.  First patch looks for a place where all lines of the context match.  If no such  place  is  found,
+       and  it's a context diff, and the maximum fuzz factor is set to 1 or more, then another scan takes place ignoring the first and last line of con‐
+       text.  If that fails, and the maximum fuzz factor is set to 2 or more, the first two and last two lines of context are ignored, and another  scan
+       is made.  (The default maximum fuzz factor is 2.)
+
+       Hunks  with  less  prefix  context than suffix context (after applying fuzz) must apply at the start of the file if their first line number is 1.
+       Hunks with more prefix context than suffix context (after applying fuzz) must apply at the end of the file.
+
+       If patch cannot find a place to install that hunk of the patch, it puts the hunk out to a reject file, which normally is the name of  the  output
+       file  plus  a .rej suffix, or # if .rej would generate a file name that is too long (if even appending the single character # makes the file name
+       too long, then # replaces the file name's last character).
+
+       The rejected hunk comes out in unified or context diff format.  If the input was a normal diff, many of the contexts are simply null.   The  line
+       numbers  on  the  hunks in the reject file may be different than in the patch file: they reflect the approximate location patch thinks the failed
+       hunks belong in the new file rather than the old one.
+
+       As each hunk is completed, you are told if the hunk failed, and if so which line (in the new file) patch thought the hunk should go on.   If  the
+       hunk  is  installed  at a different line from the line number specified in the diff, you are told the offset.  A single large offset may indicate
+       that a hunk was installed in the wrong place.  You are also told if a fuzz factor was used to make the match, in which case you  should  also  be
+       slightly suspicious.  If the --verbose option is given, you are also told about hunks that match exactly.
+
+       If  no  original  file origfile is specified on the command line, patch tries to figure out from the leading garbage what the name of the file to
+       edit is, using the following rules.
+
+       First, patch takes an ordered list of candidate file names as follows:
+
+        · If the header is that of a context diff, patch takes the old and new file names in the header.  A name is ignored if it does not  have  enough
+          slashes to satisfy the -pnum or --strip=num option.  The name /dev/null is also ignored.
+
+        · If  there  is  an  Index:  line in the leading garbage and if either the old and new names are both absent or if patch is conforming to POSIX,
+          patch takes the name in the Index: line.
+
+        · For the purpose of the following rules, the candidate file names are considered to be in the order (old, new, index), regardless of the  order
+          that they appear in the header.
+
+       Then patch selects a file name from the candidate list as follows:
+
+        · If some of the named files exist, patch selects the first name if conforming to POSIX, and the best name otherwise.
+
+        · If  patch  is  not  ignoring  RCS,  ClearCase,  Perforce,  and SCCS (see the -g num or --get=num option), and no named files exist but an RCS,
+          ClearCase, Perforce, or SCCS master is found, patch selects the first named file with an RCS, ClearCase, Perforce, or SCCS master.
+
+        · If no named files exist, no RCS, ClearCase, Perforce, or SCCS master was found, some names are given, patch is not conforming  to  POSIX,  and
+          the patch appears to create a file, patch selects the best name requiring the creation of the fewest directories.
+
+        · If no file name results from the above heuristics, you are asked for the name of the file to patch, and patch selects that name.
+
+       To  determine  the best of a nonempty list of file names, patch first takes all the names with the fewest path name components; of those, it then
+       takes all the names with the shortest basename; of those, it then takes all the shortest names; finally, it takes the first remaining name.
+
+       Additionally, if the leading garbage contains a Prereq: line, patch takes the first word from the prerequisites line (normally a version  number)
+       and checks the original file to see if that word can be found.  If not, patch asks for confirmation before proceeding.
+
+       The upshot of all this is that you should be able to say, while in a news interface, something like the following:
+
+          | patch -d /usr/src/local/blurfl
+
+       and patch a file in the blurfl directory directly from the article containing the patch.
+
+       If  the  patch file contains more than one patch, patch tries to apply each of them as if they came from separate patch files.  This means, among
+       other things, that it is assumed that the name of the file to patch must be determined for each diff listing, and that the  garbage  before  each
+       diff listing contains interesting things such as file names and revision level, as mentioned previously.
+
+---------------------------------------------------------------------------------------------------
+
+OPTIONS
+       -b  or  --backup
+          Make  backup  files.  That is, when patching a file, rename or copy the original instead of removing it.  When backing up a file that does not
+          exist, an empty, unreadable backup file is created as a placeholder to represent the nonexistent file.  See the -V or --version-control option
+          for details about how backup file names are determined.
+
+       -d dir  or  --directory=dir
+          Change to the directory dir immediately, before doing anything else.
+
+       --dry-run
+          Print the results of applying the patches without actually changing any files.
+
+       -R  or  --reverse
+          Assume  that  this  patch  was created with the old and new files swapped.  (Yes, I'm afraid that does happen occasionally, human nature being
+          what it is.)  patch attempts to swap each hunk around before applying it.  Rejects come out in the swapped format.  The  -R  option  does  not
+          work with ed diff scripts because there is too little information to reconstruct the reverse operation.
+
+          If  the  first  hunk  of a patch fails, patch reverses the hunk to see if it can be applied that way.  If it can, you are asked if you want to
+          have the -R option set.  If it can't, the patch continues to be applied normally.  (Note: this method cannot detect a reversed patch if it  is
+          a  normal  diff and if the first command is an append (i.e. it should have been a delete) since appends always succeed, due to the fact that a
+          null context matches anywhere.  Luckily, most patches add or change lines rather than delete them, so most reversed normal diffs begin with  a
+          delete, which fails, triggering the heuristic.)
+
+       -i patchfile  or  --input=patchfile
+          Read the patch from patchfile.  If patchfile is -, read from standard input, the default.
+
+       -pnum  or  --strip=num
+          Strip  the  smallest  prefix  containing  num leading slashes from each file name found in the patch file.  A sequence of one or more adjacent
+          slashes is counted as a single slash.  This controls how file names found in the patch file are treated, in case you keep your files in a dif‐
+          ferent directory than the person who sent out the patch.  For example, supposing the file name in the patch file was
+
+             /u/howard/src/blurfl/blurfl.c
+
+          setting -p0 gives the entire file name unmodified, -p1 gives
+
+             u/howard/src/blurfl/blurfl.c
+
+          without the leading slash, -p4 gives
+
+             blurfl/blurfl.c
+
+          and  not  specifying -p at all just gives you blurfl.c.  Whatever you end up with is looked for either in the current directory, or the direc‐
+          tory specified by the -d option.
+
+       --verbose
+          Output extra information about the work being done.
+
+       -z suffix  or  --suffix=suffix
+          Use  the  simple  method  to determine backup file names (see the -V method or --version-control method option), and use suffix as the suffix.
+          For example, with -z - the backup file name for src/patch/util.c is src/patch/util.c-.
+
+
+---------------------------------------------------------------------------------------------------
+NOTES FOR PATCH SENDERS
+       There are several things you should bear in mind if you are going to be sending out patches.
+
+       Create  your  patch systematically.  A good method is the command diff -Naur old new where old and new identify the old and new directories.  The
+       names old and new should not contain any slashes.  The diff command's headers should have dates and times in  Universal  Time  using  traditional
+       Unix format, so that patch recipients can use the -Z or --set-utc option.  Here is an example command, using Bourne shell syntax:
+
+          LC_ALL=C TZ=UTC0 diff -Naur gcc-2.7 gcc-2.8
+
+       Tell  your recipients how to apply the patch by telling them which directory to cd to, and which patch options to use.  The option string -Np1 is
+       recommended.  Test your procedure by pretending to be a recipient and applying your patch to a copy of the original files.
+
+       You can save people a lot of grief by keeping a patchlevel.h file which is patched to increment the patch level as the first diff  in  the  patch
+       file you send out.  If you put a Prereq: line in with the patch, it won't let them apply patches out of order without some warning.
+
+       You  can  create  a file by sending out a diff that compares /dev/null or an empty file dated the Epoch (1970-01-01 00:00:00 UTC) to the file you
+       want to create.  This only works if the file you want to create doesn't exist already in the target directory.  Conversely, you can remove a file
+       by  sending out a context diff that compares the file to be deleted with an empty file dated the Epoch.  The file will be removed unless patch is
+       conforming to POSIX and the -E or --remove-empty-files option is not given.  An easy way to generate patches that create and remove files  is  to
+       use GNU diff's -N or --new-file option.
+
+       If the recipient is supposed to use the -pN option, do not send output that looks like this:
+
+          diff -Naur v2.0.29/prog/README prog/README
+          --- v2.0.29/prog/README   Mon Mar 10 15:13:12 1997
+          +++ prog/README   Mon Mar 17 14:58:22 1997
+
+       because  the  two  file  names have different numbers of slashes, and different versions of patch interpret the file names differently.  To avoid
+       confusion, send output that looks like this instead:
+
+          diff -Naur v2.0.29/prog/README v2.0.30/prog/README
+          --- v2.0.29/prog/README   Mon Mar 10 15:13:12 1997
+          +++ v2.0.30/prog/README   Mon Mar 17 14:58:22 1997
+
+       Avoid sending patches that compare backup file names like README.orig, since this might confuse patch into patching a backup file instead of  the
+       real file.  Instead, send patches that compare the same base file names in different directories, e.g. old/README and new/README.
+
+       Take care not to send out reversed patches, since it makes people wonder whether they already applied the patch.
+
+       Try  not  to have your patch modify derived files (e.g. the file configure where there is a line configure: configure.in in your makefile), since
+       the recipient should be able to regenerate the derived files anyway.  If you must send diffs of derived files, generate the diffs using UTC, have
+       the  recipients apply the patch with the -Z or --set-utc option, and have them remove any unpatched files that depend on patched files (e.g. with
+       make clean).
+
+       While you may be able to get away with putting 582 diff listings into one file, it may be wiser to group related patches into separate  files  in
+       case something goes haywire.
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# yum -y install patch
+[root@basic ~]# whereis patch
+patch: /usr/bin/patch /usr/share/man/man1/patch.1.gz /usr/share/man/man1p/patch.1p.gz
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# vim file_v1
+[root@basic ~]# echo one > file_v1
+[root@basic ~]# cp file_v1 file_v2
+[root@basic ~]# echo two >> file_v2
+[root@basic ~]# cat file_v1
+one
+[root@basic ~]# cat file_v2
+one
+two
+[root@basic ~]# diff -Nrau file_v1 file_v2
+--- file_v1     2019-06-19 13:14:35.709038306 +0800
++++ file_v2     2019-06-19 13:14:48.061039258 +0800
+@@ -1 +1,2 @@
+ one
++two
+[root@basic ~]# diff -Nrau file_v1 file_v2 > file_v1_to_v2.patch   # 制作 file_v1 到 file_v2 的补丁
+
+[root@basic ~]# file file_v1_to_v2.patch
+file_v1_to_v2.patch: unified diff output, ASCII text
+[root@basic ~]# patch < file_v1_to_v2.patch   # 将 补丁 应用到 file_v1 上, 即让 file_v1 变成 file_v2 的样子
+patching file file_v1
+[root@basic ~]# cat  file_v1  # 查看应用补丁后的效果
+one
+two  <--- 观察
+[root@basic ~]# patch -R < file_v1_to_v2.patch  # -R  or  --reverse : (后悔了), 将打上的补丁 去掉, 还原成原来的样子(undo a patch)
+patching file file_v1
+[root@basic ~]# cat file_v1
+one
+
+[root@basic ~]# patch --dry-run < file_v1_to_v2.patch  # 验证 补丁的有效性,看是否报错 而 不会实际应用补丁 (dry run -> 干跑 -> 排练,演习)
+checking file file_v1
+
+[root@basic ~]# patch -b < file_v1_to_v2.patch    # 应用补丁前, 先对其进行备份
+patching file file_v1
+[root@basic ~]# ls file_v*
+file_v1  file_v1.orig  file_v1_to_v2.patch  file_v2
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# cd /
+[root@basic /]# mkdir -p /root/web/{html,css}
+[root@basic /]# echo index.html > /root/web/html/index.html
+[root@basic /]# echo index.css  > /root/web/css/index.css
+[root@basic /]# cp -r /root/web/ /root/web_new
+[root@basic /]# echo new.html >> /root/web_new/html/index.html
+[root@basic /]# echo new.css  >> /root/web_new/css/index.css
+
+[root@basic /]# diff -Nrau /root/web /root/web_new > web_to_new.patch    # 为目录树创建补丁
+
+[root@basic /]# cat web_to_new.patch   # 查看补丁内容
+diff -Nrau /root/web/css/index.css /root/web_new/css/index.css
+--- /root/web/css/index.css     2019-06-19 13:46:24.510185366 +0800
++++ /root/web_new/css/index.css 2019-06-19 13:47:51.746192087 +0800
+@@ -1 +1,2 @@
+ index.css
++new.css
+diff -Nrau /root/web/html/index.html /root/web_new/html/index.html
+--- /root/web/html/index.html   2019-06-19 13:46:06.805184002 +0800
++++ /root/web_new/html/index.html       2019-06-19 13:47:36.257190894 +0800
+@@ -1 +1,2 @@
+ index.html
++new.html
+[root@basic /]#
+
+[root@basic /]# cd /root/        # 切换目录
+[root@basic ~]# patch -p2 < /web_to_new.patch   # 应用补丁, 使用 -p2 选项去除补丁内容 路径中的 '/root/'
+patching file web/css/index.css
+patching file web/html/index.html
+
+[root@basic ~]# cat web/html/index.html  # 查看打上补丁后的效果
+index.html
+new.html
+[root@basic ~]# cat web/css/index.css  # 查看打上补丁后的效果
+index.css
+new.css
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+    https://www.cyberciti.biz/faq/appy-patch-file-using-patch-command/
+    https://www.thegeekstuff.com/2014/12/patch-command-examples
+    https://linuxacademy.com/blog/linux/introduction-using-diff-and-patch/
+
