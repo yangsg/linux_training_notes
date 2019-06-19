@@ -1,0 +1,124 @@
+
+# keyword diff
+
+man diff
+
+        注: 对开发者来说, 有时候 借助 git-difftool 配合 专业的 Beyond Compare 图形比较工具 可能更方便
+
+
+作用: diff - compare files line by line
+
+语法: diff [OPTION]... FILES
+
+说明: Compare FILES line by line.
+
+常用选项:
+       -q, --brief
+              report only when files differ
+
+       -u, -U NUM, --unified[=NUM]
+              output NUM (default 3) lines of unified context
+
+       -r, --recursive
+              recursively compare any subdirectories found
+
+       -N, --new-file
+              treat absent files as empty
+
+       -a, --text
+              treat all files as text
+
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# cat file1.txt     # 查看 file1.txt 内容
+I need to buy apples.
+I need to run the laundry.
+I need to wash the dog.
+I need to get the car detailed.
+[root@basic ~]# cat file2.txt     # 查看 file2.txt 内容
+I need to buy apples.
+I need to do the laundry.
+I need to wash the car.
+I need to get the dog detailed.
+[root@basic ~]#
+
+[root@basic ~]# diff file1.txt file2.txt   # 默认的 diff 输出便于计算机读取, 但不便于 人 的理解
+2,4c2,4
+< I need to run the laundry.
+< I need to wash the dog.
+< I need to get the car detailed.
+---
+> I need to do the laundry.
+> I need to wash the car.
+> I need to get the dog detailed.
+[root@basic ~]#
+
+
+[root@basic ~]# diff -c file1.txt file2.txt            # 以上下文的方式输出 diff 结果
+*** file1.txt   2019-06-18 21:15:43.140926570 +0800
+--- file2.txt   2019-06-18 21:16:15.086929031 +0800
+***************
+*** 1,4 ****
+  I need to buy apples.
+! I need to run the laundry.
+! I need to wash the dog.
+! I need to get the car detailed.
+--- 1,4 ----
+  I need to buy apples.
+! I need to do the laundry.
+! I need to wash the car.
+! I need to get the dog detailed.
+[root@basic ~]#
+
+// 推荐方式
+[root@basic ~]# diff -u file1.txt file2.txt              # (推荐)以 同一 的 上下文方式 输出 diff 结果 (此与 git diff 默认的输出格式类似)
+--- file1.txt   2019-06-18 21:15:43.140926570 +0800
++++ file2.txt   2019-06-18 21:16:15.086929031 +0800
+@@ -1,4 +1,4 @@
+ I need to buy apples.
+-I need to run the laundry.
+-I need to wash the dog.
+-I need to get the car detailed.
++I need to do the laundry.
++I need to wash the car.
++I need to get the dog detailed.
+[root@basic ~]#
+
+
+[root@basic ~]# diff -Nrau file1.txt file2.txt >  diff_file1_file2.patch
+
+[root@basic ~]# vim -R diff_file1_file2.patch         # 借助 vim , 可以在 显示 diff 结果时 提供 颜色
+
+[root@basic ~]# vimdiff -u NONE file1.txt file2.txt   # 使用 vimdiff 来 比较文件的差异
+[root@basic ~]# vim -d -u NONE file1.txt file2.txt    # 同上
+
+[root@basic ~]# git diff --no-index dir01 dir02
+
+// 注: 选项 -rq 和 -Nrq 对于 列出的 文件列表 还是有区别的 (例如 hello.c 仅存在与 dir02 时, 且 hello.c 为 empty file 或 不为 empty file 时效果都不同)
+[root@basic ~]# diff -rq dir01 dir02
+[root@basic ~]# diff -Nrq dir01 dir02
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+    diff:
+        https://www.computerhope.com/unix/udiff.htm
+        https://unix.stackexchange.com/questions/34874/diff-output-line-numbers
+
+    git diff:
+        https://www.atlassian.com/git/tutorials/saving-changes/git-diff
+        https://stackoverflow.com/questions/24455377/git-diff-with-line-numbers-git-log-with-line-numbers
+        https://askubuntu.com/questions/421712/comparing-the-contents-of-two-directories
+
+    patch:
+        https://docs.moodle.org/dev/How_to_create_a_patch
+
+    color:
+        https://stackoverflow.com/questions/8800578/how-to-colorize-diff-on-the-command-line
+
+    vimdiff:
+        https://www.cnblogs.com/motoyang/p/6091281.html
+        https://www.ibm.com/developerworks/cn/linux/l-vimdiff/
+        http://www.voidcn.com/article/p-alzbyglb-op.html
+
+
