@@ -98,7 +98,23 @@ null (4)             - data sink
 [root@basic ~]# mandb
 # 旧版的 Linux 这个指令是使用 makewhatis 喔！这一版开使用 mandb 了！
 
+---------------------------------------------------------------------------------------------------
+查找 man page 文件路径:
+       -w, --where, --path, --location
+              Don't actually display the manual pages, but do print the location(s) of the source nroff files that would be formatted.
 
+       -a, --all
+              By default, man will exit after displaying the most suitable manual page it finds.  Using this option forces man to display all the manual pages with names that match the
+              search criteria.
+
+[root@basic ~]# man --where --all patch
+/usr/share/man/man1/patch.1.gz
+/usr/share/man/man1p/patch.1p.gz
+
+[root@basic ~]# whereis patch
+patch: /usr/bin/patch /usr/share/man/man1/patch.1.gz /usr/share/man/man1p/patch.1p.gz
+
+---------------------------------------------------------------------------------------------------
 其他参考:
     有时系统自带的man page 也不一定就包含了完整详细的信息(如centos7.4 中 man find #/-size n 就缺少某些信息)，
     所以有时还可以去在线的man page去查找资料, 在线资料如下:
@@ -106,5 +122,8 @@ null (4)             - data sink
     http://www.man7.org/linux/man-pages/index.html
     http://man7.org/linux/man-pages/dir_section_1.html
     http://man7.org/linux/man-pages/man1/find.1.html
+
+    man page 文件路径:
+        https://superuser.com/questions/318555/where-are-man-pages-stored-in-ubuntu
 
 
