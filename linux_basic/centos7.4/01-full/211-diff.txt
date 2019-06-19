@@ -2,6 +2,7 @@
 # keyword diff
 
 man diff
+info diff
 
         注: 对开发者来说, 有时候 借助 git-difftool 配合 专业的 Beyond Compare 图形比较工具 可能更方便
 
