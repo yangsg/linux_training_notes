@@ -32,4 +32,18 @@ Can I make friends with you.
 TODO
 
 
+---------------------------------------------------------------------------------------------------
+网上资料:
+
+    https://tecadmin.net/ways-to-send-email-from-linux-command-line/
+    https://www.binarytides.com/linux-mail-command-examples/
+    https://www.interserver.net/tips/kb/linux-mail-command-usage-examples/
+
+    postfix 内部将大写的用户民自动转换为小写的问题:
+      https://blog.csdn.net/peterhao89/article/details/86918473
+      https://www.howtoforge.com/community/threads/postfix-says-unknown-user.38541/
+      https://unix.stackexchange.com/questions/89838/sendmail-cant-find-local-users-with-uppercase-letters/89840
+
+
+
 
