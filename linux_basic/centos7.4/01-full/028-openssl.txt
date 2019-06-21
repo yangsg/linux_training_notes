@@ -11,10 +11,7 @@ man version
 
 /etc/pki/tls/openssl.cnf
 
-注: 1024 位 的 非对称加密算法 已经不安全, 所以最好使用 2048 位的
-
-
-TODO
+注: 1024 位 的 RSA非对称加密算法 已经不安全, 所以最好使用 2048 位的
 ---------------------------------------------------------------------------------------------------
 
 [root@basic ~]# yum -y update openssl
@@ -22,10 +19,66 @@ TODO
 [root@basic ~]# rpm -q openssl
     openssl-1.0.2k-16.el7_6.1.x86_64
 
+---------------------------------------------------------------------------------------------------
+示例: 一步到位 快速生成 自签名的证书 (包括生成 私钥)
+
+[root@basic ~]# openssl req -x509 -nodes -days 3650 -sha256 -newkey rsa:2048 -keyout mycert.pem -out mycert.pem
+
+    -x509:   生成自签名的证书 而非 生成证书请求
+    -nodes:  不为 private key 设密码
+    -days n:   证书的有效天数
+    -newkey rsa:2048  生成一个新的 证书请求 和 私钥, rsa:2048 表示 2048 bits 的 rsa 私钥
+    -keyout filename  将新生成的 私钥 存放在 filename 对应的文件中
+    -out filename     此例 中 指的是 自签名的证书 存放的文件 (因为此例中明确使用了选项 -x509 来生成自签名证书)
+    -[digest]         签名 证书请求的 摘要算法, 此例为 -sha256, 用于覆盖默认的对应设置(其实当前 /etc/pki/tls/openssl.cnf 中默认也是 sha256)
+
+  此例中 将 私钥 和 证书 存放在了同一个文件中, 所有 如果将 文件的后缀名 命名为 .crt 或 .key 都不太 合适,
+  所以命令为了 .pem , 因为 .pem 文件 可以同时包含 证书 和 私钥.
+
+---------------------------------------------------------------------------------------------------
+示例: 分步骤 生成 私钥, 证书请求 和 自签名证书文件
+
+     注: 实际还应考虑 为 相关目录 和 生成文件 设置合适的权限
+
+[root@basic ~]# mkdir -p /etc/nginx/ssl/private
+
+// 01: 生成 私钥文件
+[root@basic ~]# openssl genrsa 2048 > /etc/nginx/ssl/private/server.key
+
+// 02: 生成 证书请求 文件
+[root@basic ~]# openssl req -new -key /etc/nginx/ssl/private/server.key > /etc/nginx/ssl/server.csr
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [XX]:CN   <======= 国家
+State or Province Name (full name) []:Chongqing   <========= 省份
+Locality Name (eg, city) [Default City]:Jiulongpo  <======== 城市
+Organization Name (eg, company) [Default Company Ltd]:Chongqing XinTian Network Co Ltd  <========= 公司名
+Organizational Unit Name (eg, section) []:XinTian   <========= 单位名
+Common Name (eg, your name or your server's hostname) []:xintian.com   <============= 域名
+Email Address []:admin@163.com  <========== 邮箱地址
+
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:   <======== 直接回车
+An optional company name []: <======== 直接回车
+
+// 03: 生成 自签名 证书
+[root@basic ~]# openssl req -x509 -days 3650 -key /etc/nginx/ssl/private/server.key -in /etc/nginx/ssl/server.csr > /etc/nginx/ssl/server.crt
 
 ---------------------------------------------------------------------------------------------------
 
-[root@basic ~]# openssl version -a
+// 查看 openssl 版本
+[root@basic ~]# openssl version
+OpenSSL 1.0.2k-fips  26 Jan 2017
+
+
+// 显示 openssl 的 所有 version 信息
+[root@basic ~]# openssl version -a    # 获取更详细的信息
 OpenSSL 1.0.2k-fips  26 Jan 2017
 built on: reproducible build, date unspecified
 platform: linux-x86_64
@@ -35,12 +88,54 @@ OPENSSLDIR: "/etc/pki/tls"
 engines:  rdrand dynamic
 
 
+// 显示 openssl 目录
 [root@basic ~]# openssl version -d
 OPENSSLDIR: "/etc/pki/tls"
 
+---------------------------------------------------------------------------------------------------
 
+// 显示可用的 命令列表 (非常规的技巧: 这里使用的是一个非法的 help 命令 或 -h 选项, 通过 stderr 显示所有的 有效命令)
+[root@basic ~]# openssl help
+openssl:Error: 'help' is an invalid command.
 
+Standard commands
+asn1parse         ca                ciphers           cms
+crl               crl2pkcs7         dgst              dh
+dhparam           dsa               dsaparam          ec
+ecparam           enc               engine            errstr
+gendh             gendsa            genpkey           genrsa
+nseq              ocsp              passwd            pkcs12
+pkcs7             pkcs8             pkey              pkeyparam
+pkeyutl           prime             rand              req
+rsa               rsautl            s_client          s_server
+s_time            sess_id           smime             speed
+spkac             ts                verify            version
+x509
 
+Message Digest commands (see the `dgst' command for more details)
+md2               md4               md5               rmd160
+sha               sha1
+
+Cipher commands (see the `enc' command for more details)
+aes-128-cbc       aes-128-ecb       aes-192-cbc       aes-192-ecb
+aes-256-cbc       aes-256-ecb       base64            bf
+bf-cbc            bf-cfb            bf-ecb            bf-ofb
+camellia-128-cbc  camellia-128-ecb  camellia-192-cbc  camellia-192-ecb
+camellia-256-cbc  camellia-256-ecb  cast              cast-cbc
+cast5-cbc         cast5-cfb         cast5-ecb         cast5-ofb
+des               des-cbc           des-cfb           des-ecb
+des-ede           des-ede-cbc       des-ede-cfb       des-ede-ofb
+des-ede3          des-ede3-cbc      des-ede3-cfb      des-ede3-ofb
+des-ofb           des3              desx              idea
+idea-cbc          idea-cfb          idea-ecb          idea-ofb
+rc2               rc2-40-cbc        rc2-64-cbc        rc2-cbc
+rc2-cfb           rc2-ecb           rc2-ofb           rc4
+rc4-40            rc5               rc5-cbc           rc5-cfb
+rc5-ecb           rc5-ofb           seed              seed-cbc
+seed-cfb          seed-ecb          seed-ofb          zlib
+
+// 类似的技巧(trick):
+[root@basic ~]# openssl dgst -h
 
 
 ---------------------------------------------------------------------------------------------------
@@ -50,6 +145,7 @@ OPENSSLDIR: "/etc/pki/tls"
     https://serverfault.com/questions/9708/what-is-a-pem-file-and-how-does-it-differ-from-other-openssl-generated-key-file
     https://crypto.stackexchange.com/questions/43697/what-is-the-difference-between-pem-csr-key-and-crt
     https://www.madboa.com/geek/openssl/
+    https://www.shellhacks.com/openssl-find-ssl-key-length-linux-command-line/
 
 
     https://www.digicert.com/ssl-certificate-country-codes.htm
@@ -66,21 +162,18 @@ OPENSSLDIR: "/etc/pki/tls"
     私钥位置:
         https://serverfault.com/questions/259302/best-location-for-ssl-certificate-and-private-keys-on-ubuntu
 
+    HTTPS 安全最佳实践:
+          https://blog.myssl.com/ssl-and-tls-deployment-best-practices/
+          https://blog.myssl.com/https-security-best-practices/
+          https://blog.myssl.com/https-security-best-practices-2/
+
+
 中文:
     https://www.cnblogs.com/hnxxcxg/p/7610582.html
     https://www.cnblogs.com/gordon0918/p/5409286.html
     https://www.cnblogs.com/f-ck-need-u/p/7113610.html?utm_source=itdadao&utm_medium=referral
 
-
-
-
-
-
-
-
-
-
-
-
+    DES、AES、RSA等常用加密算法介绍与比较
+        https://yq.aliyun.com/articles/156277
 
 
