@@ -53,7 +53,7 @@ man version
 // 01: 生成 私钥文件
 [root@basic ~]# openssl genrsa 2048 > /etc/nginx/ssl/private/server.key
 
-// 02: 生成 证书请求 文件
+// 02: 生成 证书请求 文件 (利用 已存在的 私钥文件)
 [root@basic ~]# openssl req -new -key /etc/nginx/ssl/private/server.key > /etc/nginx/ssl/server.csr
 You are about to be asked to enter information that will be incorporated
 into your certificate request.
@@ -87,6 +87,91 @@ An optional company name []: <======== 直接回车
 
 // 03: 生成 自签名 证书
 [root@basic ~]# openssl req -x509 -days 3650 -key /etc/nginx/ssl/private/server.key -in /etc/nginx/ssl/server.csr > /etc/nginx/ssl/server.crt
+
+---------------------------------------------------------------------------------------------------
+示例: 测试新证书: (本例假设 私钥 和 证书 都存放在 mycert.pem 文件中, 且 basic 主机的 ip 为 192.168.175.10)
+[root@basic ~]# openssl s_server -cert mycert.pem -www  # 启动 test 服务, 则默认监听在 4433 端口, 注: 使用选项 -accept port 可以使其监听在 其他指定的 端口(port) 上
+
+[root@basic ~]# netstat -anptu | grep openssl
+tcp6       0      0 :::4433                 :::*                    LISTEN      1764/openssl
+
+    然后打开浏览器, 访问 https://192.168.175.10:4433
+    则可以看到 各种可用的 ciphers 和 一些 connection 的统计信息
+
+    如下这行命令时是 证书 和 私钥 不再同一文件中的例子:
+    [root@basic ~]# openssl s_server -cert /etc/nginx/ssl/server.crt  -key /etc/nginx/ssl/private/server.key  -www -accept 4433
+
+// 提取 远程 证书
+[root@basic ~]# echo | openssl s_client -connect 192.168.175.10:4433 2>&1 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'
+-----BEGIN CERTIFICATE-----
+MIIEITCCAwmgAwIBAgIJAKwaZGMXubRmMA0GCSqGSIb3DQEBCwUAMIGmMQswCQYD
+VQQGEwJDTjESMBAGA1UECAwJQ2hvbmdxaW5nMRIwEAYDVQQHDAlKaXVsb25ncG8x
+KTAnBgNVBAoMIENob25ncWluZyBYaW5UaWFuIE5ldHdvcmsgQ28gTHRkMRAwDgYD
+VQQLDAdYaW5UaWFuMRQwEgYDVQQDDAt4aW50aWFuLmNvbTEcMBoGCSqGSIb3DQEJ
+ARYNYWRtaW5AMTYzLmNvbTAeFw0xOTA2MjExMTMzMThaFw0yOTA2MTgxMTMzMTha
+MIGmMQswCQYDVQQGEwJDTjESMBAGA1UECAwJQ2hvbmdxaW5nMRIwEAYDVQQHDAlK
+aXVsb25ncG8xKTAnBgNVBAoMIENob25ncWluZyBYaW5UaWFuIE5ldHdvcmsgQ28g
+THRkMRAwDgYDVQQLDAdYaW5UaWFuMRQwEgYDVQQDDAt4aW50aWFuLmNvbTEcMBoG
+CSqGSIb3DQEJARYNYWRtaW5AMTYzLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEP
+ADCCAQoCggEBANBSOwvHK6LP2Mi831nU3OxANLC/s0E+cduugUxuyCBWgu+xtj3/
+kb2JFVTZwd6unt0u64mfAML+m34yHdNQ4DWoXDrxXaFd8BIhsNrp1jXbgcNny3El
+i7ccufOvDO1tHXWA2fvTD8LMigrUMwmtcNLN4oay9AjSvxqjvkAjSdZ8qGOB8NJS
+Up4aKWr90cjzoQGIvIVepWOqpUluCDX1N1BMZCnL31VRnHhyt+rOWnl1rGc2Vl8A
+fMmgLjB2HtyuhDNmdIcpF2koz0+mQ+X6km8KFrOGjIH6nlzIKglOnCnQe1efRdXy
+yZ7lGkDm5N83u7fth0MqTtg+8Ni9okWkBOMCAwEAAaNQME4wHQYDVR0OBBYEFCLX
+1iO/s4uf4YEYfFRwOF4kYzWEMB8GA1UdIwQYMBaAFCLX1iO/s4uf4YEYfFRwOF4k
+YzWEMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAHFqGar8mi3t4riy
+qtZAOSSZwzhJT9twtsgb7MQKLAb4Ebh9BSXLSD+ZfoBPsMnjwR0SQVPNaFvjo2s6
+yvNYnx2qmfVuyf6+i0DVABQgMZkjXE0hQsRDaunqOJ8/xmSXEHyju+1jnm/y4ALr
+CDy28PRNVTpWC8wIC8BlvMl8fNx/fTJlKBZs9YDAHMR+6y4u+LKQ830XGEJbnXyB
+titeOn7lE65Eb7gjhQFcHQFcDXr/mUHwdwVEa4+R/zp5jxMe9+XYwi9FMpp2gOZ5
+xmoeq0aFu/9iyquFDkuzy/sq2g8bdsVb2oVQmbuRq2ECtSNDqGlHRCd+EwmUaZkA
+9cto/Nw=
+-----END CERTIFICATE-----
+
+// 检查 证书 有效 期限
+[root@basic ~]# echo | openssl s_client -connect 192.168.175.10:4433 2>&1 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | openssl x509 -noout -subject -dates
+subject= /C=CN/ST=Chongqing/L=Jiulongpo/O=Chongqing XinTian Network Co Ltd/OU=XinTian/CN=xintian.com/emailAddress=admin@163.com
+notBefore=Jun 21 11:33:18 2019 GMT
+notAfter=Jun 18 11:33:18 2029 GMT
+
+---------------------------------------------------------------------------------------------------
+示例: x509 命令的 作用之一 是 显示 证书 信息, 所以可以用它 来 提取出 某些 证书信息
+
+
+[root@basic ~]# openssl x509 -text -in mycert.pem     # 显示 证书所有信息
+
+[root@basic ~]# openssl x509 -noout -in mycert.pem -issuer   # 谁办法的证书?
+issuer= /C=CN/ST=Chongqing/L=Jiulongpo/CN=xintian.com     <---- 自己给自己颁发的证书
+
+[root@basic ~]# openssl x509 -noout -in mycert.pem -subject  # 颁发给谁的证书?
+subject= /C=CN/ST=Chongqing/L=Jiulongpo/CN=xintian.com   <------- 颁发给自己的证书
+
+[root@basic ~]# openssl x509 -noout -in mycert.pem -dates    # 证书的有效期限?
+notBefore=Jun 21 10:50:54 2019 GMT
+notAfter=Jun 18 10:50:54 2029 GMT
+
+[root@basic ~]# openssl x509 -noout -in mycert.pem -issuer -subject -dates   # 一次性显示 如上提到的 多个信息
+issuer= /C=CN/ST=Chongqing/L=Jiulongpo/CN=xintian.com
+subject= /C=CN/ST=Chongqing/L=Jiulongpo/CN=xintian.com
+notBefore=Jun 21 10:50:54 2019 GMT
+notAfter=Jun 18 10:50:54 2029 GMT
+
+[root@basic ~]# openssl x509 -noout -in mycert.pem -hash   # what is its hash value?
+e126bc89
+
+[root@basic ~]# openssl x509 -noout -in mycert.pem -fingerprint   # what is its MD5 fingerprint?
+SHA1 Fingerprint=70:DC:C7:0D:45:73:08:1D:85:F6:5C:F7:33:E9:73:A6:02:2E:22:AC
+
+---------------------------------------------------------------------------------------------------
+示例: 导出 或 导入 PKCS#12 证书 (export or import a PKCS#12 certificate)
+    关于 PKCS#12 的网上资料:
+        https://baike.baidu.com/item/PKCS%2312/3158673?fr=aladdin
+        https://www.ibm.com/support/knowledgecenter/zh/SSMNED_5.0.0/com.ibm.apic.apionprem.doc/task_apionprem_generate_pkcs_certificate.html
+        https://baike.baidu.com/item/PKCS/1042350
+        https://blog.csdn.net/github_37567324/article/details/79883685
+
+
 
 ---------------------------------------------------------------------------------------------------
 
