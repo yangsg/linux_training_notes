@@ -35,6 +35,14 @@ man version
   此例中 将 私钥 和 证书 存放在了同一个文件中, 所有 如果将 文件的后缀名 命名为 .crt 或 .key 都不太 合适,
   所以命令为了 .pem , 因为 .pem 文件 可以同时包含 证书 和 私钥.
 
+
+-----------
+示例: 一步到位 快速生成 自签名的证书 (包括生成 私钥), 且 直接通过 选项 -subj 来指定 DN (即 Distinguished Name) 而 无需进入交互模式
+[root@basic ~]# openssl req  -x509 -nodes -days 3650 -sha256 \
+                 -subj '/C=CN/ST=Chongqing/L=Jiulongpo/CN=xintian.com' \
+                 -newkey rsa:2048 -keyout mycert.pem -out mycert.pem
+
+
 ---------------------------------------------------------------------------------------------------
 示例: 分步骤 生成 私钥, 证书请求 和 自签名证书文件
 
@@ -66,6 +74,16 @@ Please enter the following 'extra' attributes
 to be sent with your certificate request
 A challenge password []:   <======== 直接回车
 An optional company name []: <======== 直接回车
+
+    ------------------------------
+    可选操作(检查):
+             验证 签名:
+                [root@basic ~]# openssl req  -in /etc/nginx/ssl/server.csr -noout -verify -key /etc/nginx/ssl/private/server.key
+                verify OK
+              检查 证书请求 中的 信息:
+                [root@basic ~]# openssl req -in /etc/nginx/ssl/server.csr -noout -text
+
+    ------------------------------
 
 // 03: 生成 自签名 证书
 [root@basic ~]# openssl req -x509 -days 3650 -key /etc/nginx/ssl/private/server.key -in /etc/nginx/ssl/server.csr > /etc/nginx/ssl/server.crt
