@@ -208,7 +208,7 @@ MAC verified OK
 // 获取根证书 (注: 验证用的证书必须是 pem 格式的)
         https://support.globalsign.com/customer/portal/articles/1426602-globalsign-root-certificates
 
-[root@basic ~]# vim Root-R1.crt     # 这里直接复制保存 根证书信息(GlobalSign Root CA)
+[root@basic ~]# vim Root-R1.crt     # 这里直接复制保存 根证书信息(GlobalSign Root CA), 其实可以在文件 /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem 中找到
 -----BEGIN CERTIFICATE-----
 MIIDdTCCAl2gAwIBAgILBAAAAAABFUtaw5QwDQYJKoZIhvcNAQEFBQAwVzELMAkG
 A1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNVBAsTB1Jv
@@ -271,7 +271,7 @@ globalsign.crt: OK
 [root@basic ~]# openssl verify -CAfile <(cat Root-R1.crt globalsign.crt) taobao.crt   # 验证淘宝证书
 taobao.crt: OK
 
-              // 利用 -CApath direcotry 选项来 验证淘宝证书
+              // 利用 -CApath directory 选项来 验证淘宝证书
               [root@basic ~]# yum -y install openssl-perl    # 安装包含 c_rehash 命令 的 package
               [root@basic ~]# mkdir dir01
               [root@basic ~]# cp Root-R1.crt globalsign.crt dir01/
@@ -279,13 +279,43 @@ taobao.crt: OK
               Doing ./dir01/
               [root@basic ~]# tree dir01/
                     dir01/
-                    ├── 5ad8a5d6.0 -> Root-R1.crt    <------ 观察
+                    ├── 5ad8a5d6.0 -> Root-R1.crt    <------ 观察, 查看证书文件对应的hash值可用 `openssl x509 -noout -hash -in Root-R1.crt`
                     ├── b85455c4.0 -> globalsign.crt <------ 观察
                     ├── globalsign.crt
                     └── Root-R1.crt
 
               [root@basic ~]# openssl verify -CApath dir01/ taobao.crt  # 使用选项 -CApath 指定目录 来 验证 taobao.crt
               taobao.crt: OK
+
+              [root@basic ~]# openssl x509 -noout -hash -in Root-R1.crt   # 查看 证书 Root-R1.crt 对应的 hash 值
+              5ad8a5d6
+
+---------------------------------------------------------------------------------------------------
+OpenSSL 所识别的 certificate authorities
+
+[root@basic ~]# openssl version -d
+OPENSSLDIR: "/etc/pki/tls"  <------- system 信任的 证书颁发机构 信息 所在目录
+
+[root@basic ~]# tree /etc/pki/tls/
+/etc/pki/tls/
+├── cert.pem -> /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem   <----该文件包含了被识别的许多权威认证机构的 证书的集合
+├── certs
+│   ├── ca-bundle.crt -> /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+│   ├── ca-bundle.trust.crt -> /etc/pki/ca-trust/extracted/openssl/ca-bundle.trust.crt
+│   ├── localhost.crt
+│   ├── make-dummy-cert
+│   ├── Makefile
+│   └── renew-dummy-cert
+├── misc
+│   ├── CA
+│   ├── c_hash
+│   ├── c_info
+│   ├── c_issuer
+│   └── c_name
+├── openssl.cnf
+└── private
+    └── localhost.key
+
 
 ---------------------------------------------------------------------------------------------------
 
