@@ -11,6 +11,8 @@ man version
 
 /etc/pki/tls/openssl.cnf
 
+man update-ca-trust
+
 注: RSA非对称加密算法的 1024 位 key 已经不那么安全了, 所以最好使用 2048 位的
 ---------------------------------------------------------------------------------------------------
 
@@ -291,7 +293,7 @@ taobao.crt: OK
               5ad8a5d6
 
 ---------------------------------------------------------------------------------------------------
-OpenSSL 所识别的 certificate authorities
+OpenSSL 所识别的 certificate authorities, 详细信息见 https://www.madboa.com/geek/openssl/#what-certificate-authorities-does-openssl-recognize
 
 [root@basic ~]# openssl version -d
 OPENSSLDIR: "/etc/pki/tls"  <------- system 信任的 证书颁发机构 信息 所在目录
@@ -317,6 +319,33 @@ OPENSSLDIR: "/etc/pki/tls"  <------- system 信任的 证书颁发机构 信息 
     └── localhost.key
 
 
+---------------------------------------------------------------------------------------------------
+添加信任证书:
+
+https://stackoverflow.com/questions/37043442/how-to-add-certificate-authority-file-in-centos-7
+https://www.happyassassin.net/2015/01/14/trusting-additional-cas-in-fedora-rhel-centos-dont-append-to-etcpkitlscertsca-bundle-crt-or-etcpkitlscert-pem/
+
+https://access.redhat.com/errata/RHEA-2013:1596
+https://fedoraproject.org/wiki/Features/SharedSystemCertificates
+
+
+https://manuals.gfi.com/en/kerio/connect/content/server-configuration/ssl-certificates/adding-trusted-root-certificates-to-the-server-1605.html
+
+
+How to reset the list of trusted CA certificates in RHEL 6 & RHEL 7
+https://access.redhat.com/solutions/1549003
+
+
+[root@basic ~]# rpm -q ca-certificates
+ca-certificates-2017.2.14-71.el7.noarch
+
+/etc/pki/ca-trust/source        <--- 包含一些子目录, 其中存放了 系统特定的认证机构的证书和 信任设置, 且格式为 pem 的文件 (其优先级更高)
+/usr/share/pki/ca-trust-source  <--- 包含一些子目录, 其中存放了 系统默认的认证机构的证书和 信任设置, 且格式为 pem 的文件 (其优先级更低)
+
+/etc/pki/ca-trust/extracted  <---- 该目录下存放了 update-ca-trust 或 `ca-certificates extract` 命令从其他 资源目录下的配置文件中 动态提取生成的 配置文件
+
+命令 update-ca-trust 与 命令 `ca-certificates extract` 的作用相同, 只是 update-ca-trust 的警告信息会少一些,
+因为其 会在 rpm package 安装时被执行,此时非致命的警告通常是不期望被看到的.
 ---------------------------------------------------------------------------------------------------
 
 // 查看 openssl 版本
@@ -431,6 +460,8 @@ seed-cfb          seed-ecb          seed-ofb          zlib
     https://help.aliyun.com/document_detail/28543.html?spm=a2c4g.11186623.6.549.10b4549corXfhy
     https://www.alphassl.com/ssl-certificates/
 
+.pem SSL Creation Instructions
+    https://www.digicert.com/ssl-support/pem-ssl-creation.htm
 
 中文:
     https://www.cnblogs.com/hnxxcxg/p/7610582.html
