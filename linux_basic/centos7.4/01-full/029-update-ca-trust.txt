@@ -3,6 +3,9 @@
 
 man update-ca-trust
 
+https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/01-full/028-openssl.txt
+
+
 作用: update-ca-trust - manage consolidated and dynamic configuration of CA certificates and associated trust
 
 语法: update-ca-trust [COMMAND]
