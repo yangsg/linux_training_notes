@@ -1,0 +1,127 @@
+
+# keyword update-ca-trust
+
+man update-ca-trust
+
+作用: update-ca-trust - manage consolidated and dynamic configuration of CA certificates and associated trust
+
+语法: update-ca-trust [COMMAND]
+
+
+[root@basic ~]# rpm -q ca-certificates
+ca-certificates-2017.2.14-71.el7.noarch
+
+
+---------------------------------------------------------------------------------------------------
+资源配置 SOURCE CONFIGURATION
+
+/usr/share/pki/ca-trust-source/ 的子目录下的文件包含了 pem 格式的 认证机构 和 信任设置, 其优先级低, 通常当做默认的设置
+
+/etc/pki/ca-trust/source/ 的子目录下的文件包含了 pem 格式的 认证机构 和 信任设置, 其优先级高,通常其被用于系统特定的设置, 从而覆盖默认的 设置
+
+
+---------------------------------------------------------------------------------------------------
+       快速帮助 1: To add a certificate in the simple PEM or DER file formats to the list of CAs trusted on the system:
+
+       ·   add it as a new file to directory /etc/pki/ca-trust/source/anchors/
+
+       ·   run update-ca-trust extract
+
+---------------------------------------------------------------------------------------------------
+       快速帮助 2: If your certificate is in the extended BEGIN TRUSTED file format (which may contain distrust/blacklist trust flags,
+                   or trust flags for usages other than TLS) then:
+
+       ·   add it as a new file to directory /etc/pki/ca-trust/source/
+
+       ·   run update-ca-trust extract
+
+---------------------------------------------------------------------------------------------------
+
+       In order to offer simplicity and flexibility, the way certificate files are treated depends on the subdirectory they are installed to.
+
+       ·   simple trust anchors subdirectory: /usr/share/pki/ca-trust-source/anchors/ or /etc/pki/ca-trust/source/anchors/
+
+       ·   simple blacklist (distrust) subdirectory: /usr/share/pki/ca-trust-source/blacklist/ or /etc/pki/ca-trust/source/blacklist/
+
+       ·   extended format directory: /usr/share/pki/ca-trust-source/ or /etc/pki/ca-trust/source/
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# tree /etc/pki/ca-trust/source/
+/etc/pki/ca-trust/source/   <------- 存放 具有 trust flag 的扩展格式的证书文件, .p11-kit 格式的文件 或 'pem 或 der 格式,但视为中立的 证书文件'
+├── anchors     <------- 可理解为 白名单目录, 存放 trusted 的 证书
+├── blacklist   <------- 可理解为 黑名单目录, 存放 distrusted 的证书
+├── ca-bundle.legacy.crt -> /usr/share/pki/ca-trust-legacy/ca-bundle.legacy.default.crt
+└── README
+
+记住: 只要对目录 /usr/share/pki/ca-trust-source/ 或 /etc/pki/ca-trust/source/ 或 其子目录中的 任何文件 做了 何种变更(如 修改, 添加 或 删除 文件),
+都必须执行  `update-ca-trust extract` 命令来 更新重新生成 /etc/pki/ca-trust/extracted/ 中的 consolidated files.
+
+
+---------------------------------------------------------------------------------------------------
+提取的配置 EXTRACTED CONFIGURATION
+
+[root@basic ~]# tree /etc/pki/ca-trust/extracted/
+/etc/pki/ca-trust/extracted/
+├── java
+│   ├── cacerts
+│   └── README
+├── openssl
+│   ├── ca-bundle.trust.crt
+│   └── README
+├── pem
+│   ├── email-ca-bundle.pem
+│   ├── objsign-ca-bundle.pem
+│   ├── README
+│   └── tls-ca-bundle.pem
+└── README
+
+目录 /etc/pki/ca-trust/extracted/ 包含了 通过 基于 SOURCE CONFIGURATION 的命令 `update-ca-trust extract` 来
+生成的 或 更新的  CA certificate bundle files,
+
+请永远不要 手动 修改 目录 /etc/pki/ca-trust/extracted/ 写的任何文件, 因为如果 手动修改,
+那么 执行命令 `update-ca-trust extract` 后, 你所 做的修改 都会被 自动的 丢失 或 覆盖.
+
+       The directory /etc/pki/ca-trust/extracted/java/ contains a CA certificate bundle in the java keystore file format. Distrust information cannot be
+       represented in this file format, and distrusted certificates are missing from these files. File cacerts contains CA certificates trusted for TLS
+       server authentication.
+
+       The directory /etc/pki/ca-trust/extracted/openssl/ contains CA certificate bundle files in the extended BEGIN/END TRUSTED CERTIFICATE file format, as
+       described in the x509(1) manual page. File ca-bundle.trust.crt contains the full set of all trusted or distrusted certificates, including the
+       associated trust flags.
+
+       The directory /etc/pki/ca-trust/extracted/pem/ contains CA certificate bundle files in the simple BEGIN/END CERTIFICATE file format, as described in
+       the x509(1) manual page. Distrust information cannot be represented in this file format, and distrusted certificates are missing from these files.
+       File tls-ca-bundle.pem contains CA certificates trusted for TLS server authentication. File email-ca-bundle.pem contains CA certificates trusted for
+       E-Mail protection. File objsign-ca-bundle.pem contains CA certificates trusted for code signing.
+
+---------------------------------------------------------------------------------------------------
+FILES
+       /etc/pki/tls/certs/ca-bundle.crt
+           Classic filename, file contains a list of CA certificates trusted for TLS server authentication usage, in the simple BEGIN/END CERTIFICATE file
+           format, without distrust information. This file is a symbolic link that refers to the consolidated output created by the update-ca-trust command.
+
+       /etc/pki/tls/certs/ca-bundle.trust.crt
+           Classic filename, file contains a list of CA certificates in the extended BEGIN/END TRUSTED CERTIFICATE file format, which includes trust (and/or
+           distrust) flags specific to certificate usage. This file is a symbolic link that refers to the consolidated output created by the update-ca-trust
+           command.
+
+       /etc/pki/java/cacerts
+           Classic filename, file contains a list of CA certificates trusted for TLS server authentication usage, in the Java keystore file format, without
+           distrust information. This file is a symbolic link that refers to the consolidated output created by the update-ca-trust command.
+
+       /usr/share/pki/ca-trust-source
+           Contains multiple, low priority source configuration files as explained in section SOURCE CONFIGURATION. Please pay attention to the specific
+           meanings of the respective subdirectories.
+
+       /etc/pki/ca-trust/source
+           Contains multiple, high priority source configuration files as explained in section SOURCE CONFIGURATION. Please pay attention to the specific
+           meanings of the respective subdirectories.
+
+       /etc/pki/ca-trust/extracted
+           Contains consolidated and automatically generated configuration files for consumption by applications, which are created using the
+           update-ca-trust extract command. Don’t edit files in this directory, because they will be overwritten. See section EXTRACTED CONFIGURATION for
+           additional details.
+
+---------------------------------------------------------------------------------------------------
+
