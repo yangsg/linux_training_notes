@@ -172,6 +172,120 @@ SHA1 Fingerprint=70:DC:C7:0D:45:73:08:1D:85:F6:5C:F7:33:E9:73:A6:02:2E:22:AC
         https://blog.csdn.net/github_37567324/article/details/79883685
 
 
+// 创建 私钥 和 自签名证书 (导出 PKCS#12 文件所需要)
+[root@basic ~]# openssl req -x509 -sha256 -nodes -days 3650 -newkey rsa:2048 -keyout server.key -out server.crt
+
+// 利用 证书 和 私钥 导出(创建) pkcs12 文件(即 server.pfx 文件)
+[root@basic ~]# openssl pkcs12 -export -out server.pfx -in server.crt -inkey server.key -name "xintian Certificate"
+Enter Export Password:    <============== 直接回车, 不需要 password
+Verifying - Enter Export Password: <============== 直接回车, 不需要 password
+
+// 利用 mycert.pem (该文件同时包含 私钥 和 证书) 导出(创建) 为 pkcs12 文件(没有 passphrase)
+[root@basic ~]# openssl pkcs12 -export -out mycert.pfx -in mycert.pem -name "My Certificate"
+Enter Export Password: <============== 直接回车, 不需要 password
+Verifying - Enter Export Password: <============== 直接回车, 不需要 password
+
+
+// 利用 pkcs12 文件 导出 创建 pem 文件(同时包含 证书 和 私钥)
+[root@basic ~]# openssl pkcs12 -in mycert.pfx -out mycert.pem -nodes
+Enter Import Password:  <====== 直接回车
+MAC verified OK
+
+
+---------------------------------------------------------------------------------------------------
+示例:
+      使用 openssl 校验证书链 (以 淘宝 证书为例)
+      参考:  https://blog.51cto.com/ipcpu/1982109
+             https://raymii.org/s/articles/OpenSSL_manually_verify_a_certificate_against_a_CRL.html
+             https://stackoverflow.com/questions/25482199/verify-a-certificate-chain-using-openssl-verify
+
+
+// 取得淘宝证书信息
+[root@basic ~]# openssl s_client -showcerts -connect www.taobao.com:443
+
+// 分析淘宝的证书信息, 提取相应的证书 (注: 但是根证书需要自己从网上下载)
+
+// 获取根证书 (注: 验证用的证书必须是 pem 格式的)
+        https://support.globalsign.com/customer/portal/articles/1426602-globalsign-root-certificates
+
+[root@basic ~]# vim Root-R1.crt     # 这里直接复制保存 根证书信息(GlobalSign Root CA)
+-----BEGIN CERTIFICATE-----
+MIIDdTCCAl2gAwIBAgILBAAAAAABFUtaw5QwDQYJKoZIhvcNAQEFBQAwVzELMAkG
+A1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNVBAsTB1Jv
+b3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw05ODA5MDExMjAw
+MDBaFw0yODAxMjgxMjAwMDBaMFcxCzAJBgNVBAYTAkJFMRkwFwYDVQQKExBHbG9i
+YWxTaWduIG52LXNhMRAwDgYDVQQLEwdSb290IENBMRswGQYDVQQDExJHbG9iYWxT
+aWduIFJvb3QgQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDaDuaZ
+jc6j40+Kfvvxi4Mla+pIH/EqsLmVEQS98GPR4mdmzxzdzxtIK+6NiY6arymAZavp
+xy0Sy6scTHAHoT0KMM0VjU/43dSMUBUc71DuxC73/OlS8pF94G3VNTCOXkNz8kHp
+1Wrjsok6Vjk4bwY8iGlbKk3Fp1S4bInMm/k8yuX9ifUSPJJ4ltbcdG6TRGHRjcdG
+snUOhugZitVtbNV4FpWi6cgKOOvyJBNPc1STE4U6G7weNLWLBYy5d4ux2x8gkasJ
+U26Qzns3dLlwR5EiUWMWea6xrkEmCMgZK9FGqkjWZCrXgzT/LCrBbBlDSgeF59N8
+9iFo7+ryUp9/k5DPAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNVHRMBAf8E
+BTADAQH/MB0GA1UdDgQWBBRge2YaRQ2XyolQL30EzTSo//z9SzANBgkqhkiG9w0B
+AQUFAAOCAQEA1nPnfE920I2/7LqivjTFKDK1fPxsnCwrvQmeU79rXqoRSLblCKOz
+yj1hTdNGCbM+w6DjY1Ub8rrvrTnhQ7k4o+YviiY776BQVvnGCv04zcQLcFGUl5gE
+38NflNUVyRRBnMRddWQVDf9VMOyGj/8N7yy5Y0b2qvzfvGn9LhJIZJrglfCm7ymP
+AbEVtQwdpf5pLGkkeB6zpxxxYu7KyJesF12KwvhHhm4qxFYxldBniYUr+WymXUad
+DKqC5JlR3XC321Y9YeRq4VzW9v493kHMB65jUr9TU/Qr6cf9tveCX4XSQRjbgbME
+HMUfpIBvFSDJ3gyICh3WZlXi/EjJKSZp4A==
+-----END CERTIFICATE-----
+
+// 保存 GlobalSign Organization Validation CA 的证书
+[root@basic ~]# vim globalsign.crt
+-----BEGIN CERTIFICATE-----
+MIIEaTCCA1GgAwIBAgILBAAAAAABRE7wQkcwDQYJKoZIhvcNAQELBQAwVzELMAkG
+A1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNVBAsTB1Jv
+b3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xNDAyMjAxMDAw
+MDBaFw0yNDAyMjAxMDAwMDBaMGYxCzAJBgNVBAYTAkJFMRkwFwYDVQQKExBHbG9i
+YWxTaWduIG52LXNhMTwwOgYDVQQDEzNHbG9iYWxTaWduIE9yZ2FuaXphdGlvbiBW
+YWxpZGF0aW9uIENBIC0gU0hBMjU2IC0gRzIwggEiMA0GCSqGSIb3DQEBAQUAA4IB
+DwAwggEKAoIBAQDHDmw/I5N/zHClnSDDDlM/fsBOwphJykfVI+8DNIV0yKMCLkZc
+C33JiJ1Pi/D4nGyMVTXbv/Kz6vvjVudKRtkTIso21ZvBqOOWQ5PyDLzm+ebomchj
+SHh/VzZpGhkdWtHUfcKc1H/hgBKueuqI6lfYygoKOhJJomIZeg0k9zfrtHOSewUj
+mxK1zusp36QUArkBpdSmnENkiN74fv7j9R7l/tyjqORmMdlMJekYuYlZCa7pnRxt
+Nw9KHjUgKOKv1CGLAcRFrW4rY6uSa2EKTSDtc7p8zv4WtdufgPDWi2zZCHlKT3hl
+2pK8vjX5s8T5J4BO/5ZS5gIg4Qdz6V0rvbLxAgMBAAGjggElMIIBITAOBgNVHQ8B
+Af8EBAMCAQYwEgYDVR0TAQH/BAgwBgEB/wIBADAdBgNVHQ4EFgQUlt5h8b0cFilT
+HMDMfTuDAEDmGnwwRwYDVR0gBEAwPjA8BgRVHSAAMDQwMgYIKwYBBQUHAgEWJmh0
+dHBzOi8vd3d3Lmdsb2JhbHNpZ24uY29tL3JlcG9zaXRvcnkvMDMGA1UdHwQsMCow
+KKAmoCSGImh0dHA6Ly9jcmwuZ2xvYmFsc2lnbi5uZXQvcm9vdC5jcmwwPQYIKwYB
+BQUHAQEEMTAvMC0GCCsGAQUFBzABhiFodHRwOi8vb2NzcC5nbG9iYWxzaWduLmNv
+bS9yb290cjEwHwYDVR0jBBgwFoAUYHtmGkUNl8qJUC99BM00qP/8/UswDQYJKoZI
+hvcNAQELBQADggEBAEYq7l69rgFgNzERhnF0tkZJyBAW/i9iIxerH4f4gu3K3w4s
+32R1juUYcqeMOovJrKV3UPfvnqTgoI8UV6MqX+x+bRDmuo2wCId2Dkyy2VG7EQLy
+XN0cvfNVlg/UBsD84iOKJHDTu/B5GqdhcIOKrwbFINihY9Bsrk8y1658GEV1BSl3
+30JAZGSGvip2CTFvHST0mdCF/vIhCPnG9vHQWe3WVjwIKANnuvD58ZAWR65n5ryA
+SOlCdjSXVWkkDoPWoC209fN5ikkodBpBocLTJIg1MGCUF7ThBCIxPTsvFwayuJ2G
+K1pp74P1S8SqtCr4fKGxhZSM9AyHDPSsQPhZSZg=
+-----END CERTIFICATE-----
+
+[root@basic ~]# echo | openssl s_client -connect www.taobao.com:443 2>&1 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'  > taobao.crt
+
+[root@basic ~]# openssl verify Root-R1.crt   # 验证根证书
+Root-R1.crt: OK
+
+[root@basic ~]# openssl verify -CAfile Root-R1.crt globalsign.crt   # 验证 GlobalSign Organization Validation CA 的证书
+globalsign.crt: OK
+
+[root@basic ~]# openssl verify -CAfile <(cat Root-R1.crt globalsign.crt) taobao.crt   # 验证淘宝证书
+taobao.crt: OK
+
+              // 利用 -CApath direcotry 选项来 验证淘宝证书
+              [root@basic ~]# yum -y install openssl-perl    # 安装包含 c_rehash 命令 的 package
+              [root@basic ~]# mkdir dir01
+              [root@basic ~]# cp Root-R1.crt globalsign.crt dir01/
+              [root@basic ~]# c_rehash ./dir01/  # 扫描并创建 filename 为 hash value 的 文件(其实是对原本证书的符号链接)
+              Doing ./dir01/
+              [root@basic ~]# tree dir01/
+                    dir01/
+                    ├── 5ad8a5d6.0 -> Root-R1.crt    <------ 观察
+                    ├── b85455c4.0 -> globalsign.crt <------ 观察
+                    ├── globalsign.crt
+                    └── Root-R1.crt
+
+              [root@basic ~]# openssl verify -CApath dir01/ taobao.crt  # 使用选项 -CApath 指定目录 来 验证 taobao.crt
+              taobao.crt: OK
 
 ---------------------------------------------------------------------------------------------------
 
@@ -269,6 +383,23 @@ seed-cfb          seed-ecb          seed-ofb          zlib
           https://blog.myssl.com/ssl-and-tls-deployment-best-practices/
           https://blog.myssl.com/https-security-best-practices/
           https://blog.myssl.com/https-security-best-practices-2/
+
+    使用 openssl 校验证书链
+          https://blog.51cto.com/ipcpu/1982109
+          https://raymii.org/s/articles/OpenSSL_manually_verify_a_certificate_against_a_CRL.html
+          https://stackoverflow.com/questions/25482199/verify-a-certificate-chain-using-openssl-verify
+
+
+关于证书类型: AlphaSSL, DomainSSL, OrganizationSSL, ExtendedSSL
+    https://www.fodytechnologies.com/ssl-certificates/alphassl/
+    https://www.globalsign.com/en/ssl-information-center/types-of-ssl-certificate/
+
+
+    https://www.sslcertificateshop.com/brands/digicert/
+    https://www.fodytechnologies.com/ssl-certificates/overview/
+    https://help.aliyun.com/document_detail/28548.html?spm=5176.7968328.1266638.5.35321232zS9vAk
+    https://help.aliyun.com/document_detail/28543.html?spm=a2c4g.11186623.6.549.10b4549corXfhy
+    https://www.alphassl.com/ssl-certificates/
 
 
 中文:
