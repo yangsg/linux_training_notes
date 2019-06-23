@@ -124,7 +124,6 @@ man urandom
       https://www.certdepot.net/rhel7-get-started-random-number-generator/
       https://unix.stackexchange.com/questions/346040/gpg-key-generator-does-not-use-entropy
       https://www.digitalocean.com/community/tutorials/how-to-setup-additional-entropy-for-cloud-servers-using-haveged
-      https://unix.stackexchange.com/questions/346040/gpg-key-generator-does-not-use-entropy
       https://qiita.com/kanatatsu64/items/c6f612b34ec69809fbb6
       https://serverfault.com/questions/214605/gpg-does-not-have-enough-entropy
       https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/security_guide/sect-security_guide-encryption-using_the_random_number_generator
