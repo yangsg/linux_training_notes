@@ -14,6 +14,25 @@ man version
 man update-ca-trust
 
 注: RSA非对称加密算法的 1024 位 key 已经不那么安全了, 所以最好使用 2048 位的
+
+注: openssl 中 list-message-digest-commands 命令已经过时了, 所以最好避免使用这种命令
+
+      https://www.madboa.com/geek/openssl/
+
+---------------------------------------------------------------------------------------------------
+// 利用 rsa 私钥 导出 rsa 公钥
+[root@basic ~]# openssl rsa -in /etc/nginx/ssl/private/server.key -pubout
+writing RSA key
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv73oQwe5hZXYxgobGVWS
+Z+zq2s24q3C2stX8ZMrZ4Kk4aCnzZbftTWcJ53kf77Kc6gFyZU2FMB8AQ2MgM9C8
+sAH3vWZaF2q+OdmtJz/riyeHVQ9jK10wv3JCeT9VwTSHtYKX1w9hZAmHnmf9j0/z
+G0llRMy0dzAh4b08gBDYxm2zupR1f76w7IB6OfXX0VcO9dHog+ltKUhNAFNp6iD2
+et8TzOsNpQ1VakUFJg0nZpgG06DxdARDcuBzESVBWFK9P/+VG58L8IHegqNrcBjz
+4Nb8sSnLOckUB+biM86pwHNlQN2o2VS6evcpLKfUR5kr/y8/G2iHL6eMQJcqoni8
+0QIDAQAB
+-----END PUBLIC KEY-----
+
 ---------------------------------------------------------------------------------------------------
 
 [root@basic ~]# yum -y update openssl
@@ -353,6 +372,266 @@ OPENSSLDIR: "/etc/pki/tls"  <------- system 信任的 证书颁发机构 信息 
                一定要执行命令 `ca-certificates extract` 使这些修改被自动更新到目录 /etc/pki/ca-trust/extracted 下 自动生成的 各文件中
 
 ---------------------------------------------------------------------------------------------------
+
+// 连接使用了 SNI(即 Server Name Indication) 的 web 服务器 (通过 -servername name 选项指定 host)
+[root@basic ~]# openssl s_client -connect www.massivehost.com:443 -servername www.myhost.com
+
+
+---------------------------------------------------------------------------------------------------
+摘要 Digests
+
+// 查看实际 可用 的摘要 算法
+[root@basic ~]# openssl dgst -h
+unknown option '-h'
+options are
+-c              to output the digest with separating colons
+-r              to output the digest in coreutils format
+-d              to output debug info
+-hex            output as hex dump
+-binary         output in binary form
+-hmac arg       set the HMAC key to arg
+-non-fips-allow allow use of non FIPS digest
+-sign   file    sign digest using private key in file
+-verify file    verify a signature using public key in file
+-prverify file  verify a signature using private key in file
+-keyform arg    key file format (PEM or ENGINE)
+-out filename   output to filename rather than stdout
+-signature file signature to verify
+-sigopt nm:v    signature parameter
+-hmac key       create hashed MAC with key
+-mac algorithm  create MAC (not neccessarily HMAC)
+-macopt nm:v    MAC algorithm parameters or key
+-engine e       use engine e, possibly a hardware device.
+-md4            to use the md4 message digest algorithm
+-md5            to use the md5 message digest algorithm
+-ripemd160      to use the ripemd160 message digest algorithm
+-sha            to use the sha message digest algorithm
+-sha1           to use the sha1 message digest algorithm
+-sha224         to use the sha224 message digest algorithm
+-sha256         to use the sha256 message digest algorithm
+-sha384         to use the sha384 message digest algorithm
+-sha512         to use the sha512 message digest algorithm
+-whirlpool      to use the whirlpool message digest algorithm
+
+// MD5 digest
+[root@basic ~]# openssl dgst -md5 /etc/fstab
+MD5(/etc/fstab)= cc030f399acf8caaecf2c66958475304
+
+// SHA1 digest
+[root@basic ~]# openssl dgst -sha1 /etc/fstab
+SHA1(/etc/fstab)= 3503b404be99e5e8ffd0e6208389777a8808205f
+
+// SHA256 digest
+[root@basic ~]# openssl dgst -sha256 /etc/fstab
+SHA256(/etc/fstab)= de5b5a1ab3ffc3f78fa6c73a8c66e0c216efa11f378da6a49e1def425b131fb5
+
+# 其实命令 md5sum 和 命令 `openssl dgst -md5` 命令求值的结果是一样的, 只是输出格式不同而已
+[root@basic ~]# md5sum /etc/fstab
+cc030f399acf8caaecf2c66958475304  /etc/fstab
+
+# 其实命令 sha1sum 和 命令 `openssl dgst -sha1` 命令求值的结果是一样的, 只是输出格式不同而已
+[root@basic ~]# sha1sum /etc/fstab
+3503b404be99e5e8ffd0e6208389777a8808205f  /etc/fstab
+
+-----
+// 使用 私钥 对 文件的 摘要 进行签名
+[root@basic ~]# openssl dgst -sha256 -sign my.key -out fstab.sha1 /etc/fstab
+
+// 查看 fstab.sha1 的文件类型
+[root@basic ~]# file fstab.sha1
+fstab.sha1: data
+
+// 利用 rsa 的私钥 生成 rsa 的公钥
+[root@basic ~]# openssl rsa -in my.key -pubout >  pubkey.pem
+writing RSA key
+
+// 利用 对应的 公钥 验证 签名的 指摘
+[root@basic ~]# openssl dgst -sha256 -verify pubkey.pem -signature fstab.sha1 /etc/fstab
+Verified OK
+
+
+---------------------------------------------------------------------------------------------------
+(对称)加密/解密  Encryption/Decryption
+
+[root@basic ~]# echo helloworld > a.txt
+
+// 使用 base64 对 a.txt 文件内容进行编码
+[root@basic ~]# openssl enc -base64 -in a.txt
+aGVsbG93b3JsZAo=
+
+// 同上, 使用 base64 对 a.txt 文件内容进行编码, 当将结果保存到指定文件中
+[root@basic ~]# openssl enc -base64 -in a.txt -out a.txt.enc
+
+// 直接对字符换进行编码
+[root@basic ~]# echo "encode me" | openssl enc -base64     # 注意 echo 默认会自动在 最后加 '\n' 字符.
+ZW5jb2RlIG1lCg==
+
+[root@basic ~]# echo -n "encode me" | openssl enc -base64  # 使用 echo -n 避免 echo 自动在 结尾加 '\n' 字符\n
+ZW5jb2RlIG1l
+
+// 使用 -d (decode) 选项执行逆向操作 (即 解码)
+[root@basic ~]# echo "ZW5jb2RlIG1lCg==" | openssl enc -base64 -d
+encode me
+
+---------------------------------------------------------------------------------------------------
+// encrypt a.txt to a.enc using 256-bit AES in CBC mode
+[root@basic ~]# openssl enc -aes-256-cbc -salt -in a.txt -out a.enc
+enter aes-256-cbc encryption password:
+Verifying - enter aes-256-cbc encryption password:
+[root@basic ~]# file a.enc
+a.enc: data  <----- 观察: 二进制文件
+
+// the same, only the output is base64 encoded for, e.g., e-mail (先加密,在以 base64 编码, 便于直接邮件传输)
+[root@basic ~]# openssl enc -aes-256-cbc -base64 -salt -in a.txt -out a.enc
+enter aes-256-cbc encryption password:
+Verifying - enter aes-256-cbc encryption password:
+[root@basic ~]# file a.enc
+a.enc: ASCII text <---- 观察: 字符编码文件
+
+要解密,需要 记住 加密算法 和 加密口令
+
+// decrypt binary a.enc (解密 二进制文件)
+[root@basic ~]# openssl enc -d -aes-256-cbc -in a.enc
+enter aes-256-cbc decryption password:
+helloworld
+
+// decrypt base64-encoded version (解密 base64 编码的文件)
+[root@basic ~]# openssl enc -d -aes-256-cbc -base64 -in a.enc
+enter aes-256-cbc decryption password:
+helloworld
+
+
+// 加密时 可以直接在 命令行 中 提供口令 (通过使用 -pass arg 参数选项指定), 更多详细信息见 man openssl #/^PASS PHRASE ARGUMENTS
+[root@basic ~]# openssl enc -aes-256-cbc -salt -in a.txt -out file.enc -pass pass:1234567
+
+
+---------------------------------------------------------------------------------------------------
+错误: error, 将 日志 中的 error code 解释为 可读性更好的 error message
+
+如有日志:
+  sshd[31784]: error: RSA_public_decrypt failed: error:0407006A:lib(4):func(112):reason(106)
+
+[root@basic ~]# openssl errstr 0407006A
+error:0407006A:rsa routines:RSA_padding_check_PKCS1_type_1:block type is not 01
+
+
+
+---------------------------------------------------------------------------------------------------
+去除口令密钥中的 口令 (remove a passphrase from a key)
+
+// 创建一个 带口令的 rsa 密钥
+[root@basic ~]# openssl genrsa -des3 -out key.pem 2048
+Generating RSA private key, 2048 bit long modulus
+................+++
+.+++
+e is 65537 (0x10001)
+Enter pass phrase for key.pem:
+Verifying - Enter pass phrase for key.pem:
+
+// 删除 带口令的 rsa 密钥 中的口令 (即利用 带口令的 rsa 密钥版本生成一个新的 无口令的 rsa 密钥版本)
+[root@basic ~]# openssl rsa -in key.pem -out newkey.pem
+Enter pass phrase for key.pem:
+writing RSA key
+
+// 针对 同时包含 私钥(带口令) 和 证书的 mycert.pem 文件, 利用如下 2 条命令生成器对应的 不带口令的 版本
+
+[root@basic ~]# openssl rsa -in mycert.pem -out newcert.pem   # 提取出 不带口令的 私钥
+Enter pass phrase for mycert.pem:
+writing RSA key
+[root@basic ~]# openssl x509 -in mycert.pem >>newcert.pem     # 提取出 证书
+
+
+---------------------------------------------------------------------------------------------------
+密码散列 Password hashes
+
+使用 passwd 选项, 你能够生成 与 传统的 /etc/passwd 文件, 新风格的 /etc/shadow 文件 以及 Apache 密码问价 交互的 password hashes.
+
+// 生成 crypt 风格的 password hash
+[root@basic ~]# openssl passwd MySecret
+c72ERLtONIsE.
+
+
+// 生成 指定盐(salt) 的 crypt 风格的 password hash
+[root@basic ~]# openssl passwd -salt 8E MySecret
+8E4vqBR4UOYF.
+
+----------------
+生成 shadow 风格的 password hash
+Newer Unix systems use a more secure MD5-based hashing mechanism that uses an eight-character salt
+(as compared to the two-character salt in traditional crypt()-style hashes).
+Generating them is still straightforward using the -1 option:
+
+// 生成 基于 md5 的 password hash
+[root@basic ~]# openssl passwd -1 MySecret
+$1$rLo7u2Up$HjIAU7.iFM8tJlPqo.9kt0
+
+// 生成 指定盐(salt) 的 基于 md5 的 password hash
+[root@basic ~]# openssl passwd -1 -salt sXiKzkus MySecret
+$1$sXiKzkus$haDZ9JpVrRHBznY5OxB82.
+
+
+---------------------------------------------------------------------------------------------------
+素数(质素) prime   始于 openssl 的 0.9.7e 版本
+[root@basic ~]# openssl  prime -h
+Unknown option '-h'
+options are
+-hex           hex
+-checks <n>    number of checks
+
+[root@basic ~]# openssl prime 13  # 测试 13 是否是 素数
+D is prime  <-------- 注意: 这里返回的是其 hex(16进制) 形式
+[root@basic ~]# openssl prime 16  # 测试 16 是否是 素数
+10 is not prime <-------- 注意: 这里返回的是其 hex(16进制) 形式
+
+// 如下 的 使用方式 始于 openssl 的 1.0.0 版本
+[root@basic ~]# openssl prime -hex D   # 直接传递 hex 形式的 number
+D is prime
+[root@basic ~]# openssl prime -hex 10  # 直接传递 hex 形式的 number
+10 is not prime
+
+[root@basic ~]# openssl prime -generate -bits 64   # 生成 长度 为 64 bits 的 素数, 结果以 十进制 表示
+17861720624648851109
+[root@basic ~]# openssl prime -generate -bits 64 -hex # 生成 长度 为 64 bits 的 素数, 结果以 十六进制 表示
+E1919671DE6C04D3
+
+
+---------------------------------------------------------------------------------------------------
+随机数据 Random data
+
+  使用 rand 选项 能够 生成 binary 或 base64-encoded 的 data
+
+// 生成 长度为 128 的随机 bytes, 并 进过 base64 编码后输出
+[root@basic ~]# openssl rand -base64 128
+6CIanSgvJ5K/rghYXw8MM2ny8ZnMRug8EnaBwOmXKT66A3io5qco6tHHK8lTK02l
+JZSS0wXjCvphA+0uygKAwnqfxze4gIEatWcUVIIBCa7uFOnRNzvgayhfvCd4Vuki
+PjO1pq0aKOGl/H6CmtcRCa4mF06BVJMoosR39pfjNEc=
+
+ // 生成 长度为 1024 的随机 bytes 并 写入到 指定 文件中
+[root@basic ~]# openssl rand -out random-data.bin 1024
+
+On a Unix box with a /dev/urandom device and a copy of GNU head, or
+a recent version of BSD head, you can achieve a similar effect, often with better entropy:
+
+// 使用 head 从 /dev/urandom 中获取 32 bytes, 并 使用 base64 对其 编码
+[root@basic ~]# head -c 32 /dev/urandom | openssl enc -base64
+XgTacolm8FEE2YoDK3W2baJdOfLMoLHALwaa4Y+xHGc=
+
+
+You can get a wider variety of characters than what’s offered using Base64 encoding by using strings:o
+// get 32 bytes from /dev/urandom, grab printable characters, and
+// strip whitespace. using echo and the shell's command substitution
+// will nicely strip out newlines.
+[root@basic ~]# echo $(head -c 32 /dev/urandom | strings -1) | sed 's/[[:space:]]//g'
+C4E<Yo+Sft\
+
+与随机数相关的设备文件有 /dev/random  /dev/urandom
+---------------------------------------------------------------------------------------------------
+关于 S/MIME 的 处理 见 https://www.madboa.com/geek/openssl/#s-mime
+
+man smime
+
+---------------------------------------------------------------------------------------------------
+
 
 // 查看 openssl 版本
 [root@basic ~]# openssl version
