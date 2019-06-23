@@ -1,0 +1,34 @@
+
+# keyword gpg
+
+man gpg
+
+作用: gpg2 - OpenPGP encryption and signing tool
+
+语法: gpg2 [--homedir dir] [--options file] [options] command [args]
+
+
+
+[root@basic ~]# yum -y install rng-tools
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+
+    https://www.madboa.com/geek/gpg-quickstart/
+    https://www.gnupg.org/
+
+    http://www.ruanyifeng.com/blog/2013/07/gpg.html
+    http://www.178linux.com/50307
+    https://yq.aliyun.com/articles/486695
+
+    随机数生成器(random number generator):
+      https://www.certdepot.net/rhel7-get-started-random-number-generator/
+      https://serverfault.com/questions/214605/gpg-does-not-have-enough-entropy
+
+
+
+
+
+
+
+
