@@ -1,0 +1,67 @@
+
+# keyword rngd
+
+man rngd
+
+
+作用: rngd - Check and feed random data from hardware device to kernel random device
+
+语法:
+       rngd  [-b,  --background]  [-f,  --foreground] [-d, --debug] [-l, --list] [-x, --exclude] [-i, --ignorefail] [-o, --random-device=file]
+       [-p, --pid-file=file] [-r, --rng-device=file] [-s, --random-step=nnn] [-W, --fill-watermark=nnn] [-q, --quiet] [-?, --help] [-V, --ver‐
+       sion]
+
+说明:
+       This  daemon  feeds  data  from  a random number generator to the kernel's random number entropy pool, after first checking the data to
+       ensure that it is properly random.
+
+       The -f or --foreground options can be used to tell rngd to avoid forking on startup.  This is typically used for debugging.  The -b  or
+       --background options, which fork and put rngd into the background automatically, are the default.
+
+       The -r or --rng-device options can be used to select an alternate source of input, besides the default /dev/hwrng.  The -o or --random-
+       device options can be used to select an alternate entropy output device, besides the default /dev/random.  Note that this  device  must
+       support the Linux kernel /dev/random ioctl API.
+
+---------------------------------------------------------------------------------------------------
+观察熵池 当前 大小
+[root@basic ~]# cat /proc/sys/kernel/random/entropy_avail
+
+
+// 安装 随机数生成器 相关的工具
+[root@basic ~]# yum -y install rng-tools   # Random number generator related utilities
+
+[root@basic ~]# rpm -ql rng-tools
+/usr/bin/rngtest
+/usr/lib/systemd/system/rngd.service
+/usr/sbin/rngd
+/usr/share/doc/rng-tools-6.3.1
+/usr/share/doc/rng-tools-6.3.1/AUTHORS
+/usr/share/doc/rng-tools-6.3.1/COPYING
+/usr/share/doc/rng-tools-6.3.1/ChangeLog
+/usr/share/doc/rng-tools-6.3.1/NEWS
+/usr/share/doc/rng-tools-6.3.1/README
+/usr/share/man/man1/rngtest.1.gz
+/usr/share/man/man8/rngd.8.gz
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+
+      https://www.certdepot.net/rhel7-get-started-random-number-generator/
+      https://unix.stackexchange.com/questions/346040/gpg-key-generator-does-not-use-entropy
+      https://www.digitalocean.com/community/tutorials/how-to-setup-additional-entropy-for-cloud-servers-using-haveged
+      https://qiita.com/kanatatsu64/items/c6f612b34ec69809fbb6
+      https://serverfault.com/questions/214605/gpg-does-not-have-enough-entropy
+      https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/security_guide/sect-security_guide-encryption-using_the_random_number_generator
+      https://software.intel.com/en-us/articles/intel-digital-random-number-generator-drng-software-implementation-guide
+
+   熵(Entropy):
+      https://en.wikipedia.org/wiki/Entropy_%28computing%29
+
+      https://unix.stackexchange.com/questions/346040/gpg-key-generator-does-not-use-entropy
+      https://www.digitalocean.com/community/tutorials/how-to-setup-additional-entropy-for-cloud-servers-using-haveged
+
+
+   虚拟机的随机数生成器问题:
+      https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-Guest_virtual_machine_device_configuration-Random_number_generator_device
+
+
