@@ -1,0 +1,149 @@
+
+# keyword haveged
+
+man haveged
+
+
+作用: haveged - Generate random numbers and feed linux random device.
+
+语法: haveged [options]
+
+说明:
+       haveged  generates an unpredictable stream of random numbers harvested from the indirect effects of hardware events on hidden processor state (caches, branch
+       predictors, memory translation tables, etc) using the HAVEGE (HArdware Volatile Entropy Gathering and Expansion) algorithm. The algorithm  operates  in  user
+       space, no special privilege is required for file system access to the output stream.
+
+       Linux  pools  randomness  for distribution by the /dev/random and /dev/urandom device interfaces. The standard mechanisms of filling the /dev/random pool may
+       not be sufficient to meet demand on systems with high needs or limited user interaction. In those circumstances, haveged may be run as a privileged daemon to
+       fill the /dev/random pool whenever the supply of random bits in /dev/random falls below the low water mark of the device.
+
+       haveged  tunes  itself to its environment and provides the same built-in test suite for the output stream as used on certified hardware security devices. See
+       NOTES below for further information.
+
+
+熵池中 熵 不足 可能会导致 相应的消费程序 因等待 可用的 熵 而 pause, 从而使该服务响应客户端会发生 delay.
+
+注: 现在看起来,  haveged 是除 其他 专用的提供 高质量的 entropy 物理设备 之外 最好的解决方案了.
+
+---------------------------------------------------------------------------------------------------
+
+[root@basic ~]# yum -y install haveged
+
+[root@basic ~]# rpm -ql haveged
+/usr/lib/systemd/system/haveged.service
+/usr/lib64/libhavege.so.1
+/usr/lib64/libhavege.so.1.1.0
+/usr/sbin/haveged
+/usr/share/doc/haveged
+/usr/share/doc/haveged/AUTHORS
+/usr/share/doc/haveged/COPYING
+/usr/share/doc/haveged/ChangeLog
+/usr/share/doc/haveged/README
+/usr/share/doc/haveged/havege_sample.c
+/usr/share/man/man8/haveged.8.gz
+
+
+[root@basic ~]# cat /usr/lib/systemd/system/haveged.service
+[Unit]
+Description=Entropy Daemon based on the HAVEGE algorithm
+Documentation=man:haveged(8) http://www.issihosts.com/haveged/
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/haveged -w 1024 -v 1 --Foreground
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+// 启动 haveged 服务 并 设置为 开机自启
+[root@basic ~]# systemctl start haveged.service
+[root@basic ~]# systemctl enable haveged.service
+
+---------------------------------------------------------------------------------------------------
+测试：
+
+因为测试用到了命令 rngtest, 所有需要先安装 rng-tools
+[root@basic ~]# yum -y install rng-tools
+
+[root@basic ~]# watch -n 1 cat /proc/sys/kernel/random/entropy_avail
+
+[root@basic ~]# cat /dev/random | rngtest -c 1000
+rngtest 6
+Copyright (c) 2004 by Henrique de Moraes Holschuh
+This is free software; see the source for copying conditions.  There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+rngtest: starting FIPS tests...
+rngtest: bits received from input: 20000032
+rngtest: FIPS 140-2 successes: 999
+rngtest: FIPS 140-2 failures: 1
+rngtest: FIPS 140-2(2001-10-10) Monobit: 0
+rngtest: FIPS 140-2(2001-10-10) Poker: 0
+rngtest: FIPS 140-2(2001-10-10) Runs: 0
+rngtest: FIPS 140-2(2001-10-10) Long run: 1
+rngtest: FIPS 140-2(2001-10-10) Continuous run: 0
+rngtest: input channel speed: (min=2.131; avg=15.002; max=21.029)Mibits/s
+rngtest: FIPS tests speed: (min=65.320; avg=149.487; max=158.946)Mibits/s
+rngtest: Program run time: 1400376 microseconds
+
+
+---------------------------------------------------------------------------------------------------
+# keyword urandom
+
+man urandom
+
+作用: random, urandom - kernel random number source devices 内核随机数资源设备
+
+
+说明:
+    特殊的 字符设备文件 /dev/random 和 /dev/urandom 提供了 一种 到 内核随机数生成器(the kernel's random number generator) 的 interface.
+    它们的 主设备号 都是 1, 而 /dev/random 的次设备号 是 8, /dev/urandom 的此设备号是 9.
+
+    The random number generator 采集 device drivers 和 other sources 的 environmental noise 到 熵池(entropy pool)中.
+    该 generator 还会 保持 entropy pool 中 noise 的 bits 数 的 评估(estimate). 从该 entropy pool 中 产生 random numbers.
+
+    当 read 的时候, /dev/random 设备 仅会 返回 entropy pool 中 the estimated number of bits of noise 之内 的 random bytes.
+    /dev/random 应该适合于 需要 很高质量的 randomness 的使用情况(如 one-time pad or key generation). 当 entropy pool 为 empty 时,
+    从 /dev/random 中 read 会产生 阻塞(block) 直到 additional environmental noise 被 采集到.
+
+    从 /dev/urandom 设备 read 不会 发生 阻塞 去 等待 更多 entropy 的 行为. 其结果就是, 如果 entropy pool 中 没有 足够的 entropy,
+    其返回的值在理论上 容易受到 driver 使用的 算法 的 密码攻击(cryptographic attack). 当前的 非保密的 文献 还没有 关于 如何 做到这一点的知识,
+    但是 这种 攻击 的 存在 在理论上 是 可能的. 如果你的 application 担心这个问题, 则应 替换从而使用 /dev/random.
+
+    向 /dev/random 和 /dev/urandom 写入 会用 写入的数据 更新 entropy pool. 但是 这不会导致 a higher entropy count.
+    这意味着 这种写入行为 会 影响 从 这两个 设备文件中 读取的 contents, 但不会 使从 /dev/random 读取的 速度 变得更快.
+
+
+    /dev/urandom 不应该用于 长期使用的 GPG/SSL/SSH keys
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+
+      https://www.certdepot.net/rhel7-get-started-random-number-generator/
+      https://unix.stackexchange.com/questions/346040/gpg-key-generator-does-not-use-entropy
+      https://www.digitalocean.com/community/tutorials/how-to-setup-additional-entropy-for-cloud-servers-using-haveged
+      https://unix.stackexchange.com/questions/346040/gpg-key-generator-does-not-use-entropy
+      https://qiita.com/kanatatsu64/items/c6f612b34ec69809fbb6
+      https://serverfault.com/questions/214605/gpg-does-not-have-enough-entropy
+      https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/security_guide/sect-security_guide-encryption-using_the_random_number_generator
+      https://software.intel.com/en-us/articles/intel-digital-random-number-generator-drng-software-implementation-guide
+
+   熵(Entropy):
+      https://en.wikipedia.org/wiki/Entropy_%28computing%29
+
+      https://unix.stackexchange.com/questions/346040/gpg-key-generator-does-not-use-entropy
+      https://www.digitalocean.com/community/tutorials/how-to-setup-additional-entropy-for-cloud-servers-using-haveged
+
+
+   虚拟机的随机数生成器问题:
+      https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-Guest_virtual_machine_device_configuration-Random_number_generator_device
+
+
+
+
+
+
+
+
