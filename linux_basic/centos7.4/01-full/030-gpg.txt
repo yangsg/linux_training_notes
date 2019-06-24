@@ -33,7 +33,126 @@ Available and enabled entropy sources:
 // 再观察一下熵池大小
 [root@basic ~]# cat /proc/sys/kernel/random/entropy_avail
 3090  <------ 可发现, 现在已经 3000 多了
+
 ---------------------------------------------------------------------------------------------------
+示例: 创建密钥对 Private and public keys
+
+// 生成 key pairs, 即 一对 私钥 和 公钥
+[root@basic ~]# gpg --gen-key
+gpg (GnuPG) 2.0.22; Copyright (C) 2013 Free Software Foundation, Inc.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+Please select what kind of key you want:
+   (1) RSA and RSA (default)
+   (2) DSA and Elgamal
+   (3) DSA (sign only)
+   (4) RSA (sign only)
+Your selection?  <=================== 直接回车, 即选择 默认的 '(1) RSA and RSA (default)'
+RSA keys may be between 1024 and 4096 bits long.
+What keysize do you want? (2048) <================== 直接回车, 即选择默认的 2048
+Requested keysize is 2048 bits
+Please specify how long the key should be valid.
+         0 = key does not expire
+      <n>  = key expires in n days
+      <n>w = key expires in n weeks
+      <n>m = key expires in n months
+      <n>y = key expires in n years
+Key is valid for? (0) <================ 直接回车, 即选择默认的 '0 = key does not expire'
+Key does not expire at all
+Is this correct? (y/N) y  <============= 键入 'y', 即回答 yes
+
+GnuPG needs to construct a user ID to identify your key.
+
+Real name: QiaoFeng  <================ 输入真实名
+Email address: qiaofeng@qq.com  <============= 输入邮箱地址
+Comment: <=========== 直接回车, 表无 comment
+You selected this USER-ID:
+    "QiaoFeng <qiaofeng@qq.com>"
+
+Change (N)ame, (C)omment, (E)mail or (O)kay/(Q)uit? O   <============= 键入 'O', 即选择 Okay
+
+// 在弹出的对话框中输入口令
+┌─────────────────────────────────────────────────────┐
+│ Enter passphrase                                    │
+│                                                     │
+│                                                     │
+│ Passphrase *********_______________________________ │
+│                                                     │
+│       <OK>                             <Cancel>     │
+└─────────────────────────────────────────────────────┘
+// 重新输入以确认口令
+┌─────────────────────────────────────────────────────┐
+│ Please re-enter this passphrase                     │
+│                                                     │
+│ Passphrase *********_______________________________ │
+│                                                     │
+│       <OK>                             <Cancel>     │
+└─────────────────────────────────────────────────────┘
+
+You need a Passphrase to protect your secret key.   <-------- 因为前面已经解决了熵池的问题,所以这里无需再做其他操作.还有其他临时解决熵池问题的方法,如 dd if=/dev/sda of=/dev/null 等
+
+We need to generate a lot of random bytes. It is a good idea to perform
+some other action (type on the keyboard, move the mouse, utilize the
+disks) during the prime generation; this gives the random number
+generator a better chance to gain enough entropy.
+We need to generate a lot of random bytes. It is a good idea to perform
+some other action (type on the keyboard, move the mouse, utilize the
+disks) during the prime generation; this gives the random number
+generator a better chance to gain enough entropy.
+gpg: /root/.gnupg/trustdb.gpg: trustdb created
+gpg: key 743DFDCD marked as ultimately trusted
+public and secret key created and signed.
+
+gpg: checking the trustdb
+gpg: 3 marginal(s) needed, 1 complete(s) needed, PGP trust model
+gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
+pub   2048R/743DFDCD 2019-06-24
+      Key fingerprint = BDFD EB80 57DD EF29 8812  59C3 ACD8 8CCE 743D FDCD
+uid                  QiaoFeng <qiaofeng@qq.com>
+sub   2048R/D81F86B3 2019-06-24
+
+
+[root@basic ~]# tree /root/.gnupg/
+/root/.gnupg/
+├── gpg.conf
+├── private-keys-v1.d
+├── pubring.gpg
+├── pubring.gpg~
+├── random_seed
+├── secring.gpg
+├── S.gpg-agent
+└── trustdb.gpg
+
+1 directory, 7 files
+[root@basic ~]#
+
+
+// 列出公钥
+[root@basic ~]# gpg --list-public-keys
+/root/.gnupg/pubring.gpg
+------------------------
+pub   2048R/743DFDCD 2019-06-24
+uid                  QiaoFeng <qiaofeng@qq.com>
+sub   2048R/D81F86B3 2019-06-24
+
+// 列出公钥 (使用 --with-colons 的输出 可以用于脚本中)
+[root@basic ~]# gpg --list-keys  --with-colons
+tru::1:1561352632:0:3:1:5
+pub:u:2048:1:ACD88CCE743DFDCD:1561352632:::u:::scESC:
+uid:u::::1561352632::28B81BBBEC433A540A38848B78ADD327141244D5::QiaoFeng <qiaofeng@qq.com>:
+sub:u:2048:1:06E4ED97D81F86B3:1561352632::::::e:
+
+// 列出私钥
+[root@basic ~]# gpg --list-secret-keys
+/root/.gnupg/secring.gpg
+------------------------
+sec   2048R/743DFDCD 2019-06-24
+uid                  QiaoFeng <qiaofeng@qq.com>
+ssb   2048R/D81F86B3 2019-06-24
+
+
+
 
 
 
@@ -41,6 +160,7 @@ Available and enabled entropy sources:
 ---------------------------------------------------------------------------------------------------
 网上资料:
 
+    http://futureboy.us/pgp.html
     https://www.madboa.com/geek/gpg-quickstart/
     https://www.gnupg.org/
     https://www.golinuxcloud.com/tutorial-encrypt-decrypt-sign-file-gpg-key-linux/
