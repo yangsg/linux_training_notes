@@ -8,8 +8,35 @@ man gpg
 语法: gpg2 [--homedir dir] [--options file] [options] command [args]
 
 
+---------------------------------------------------------------------------------------------------
+gpg2 的 某些操作(如 生成密钥对) 需要较大的熵池, 所以先使用 rngd 来 解决这一问题
 
 [root@basic ~]# yum -y install rng-tools
+
+[root@basic ~]# rngd --list   # List the indexes and names of available entropy sources
+Entropy sources that are available but disabled
+1: TPM RNG Device
+4: NIST Network Entropy Beacon
+Available and enabled entropy sources:
+2: Intel RDRAND Instruction RNG
+5: JITTER Entropy generator
+
+
+// 先观察一下熵池大小
+[root@basic ~]# cat /proc/sys/kernel/random/entropy_avail
+744
+
+// 启动 rngd 服务 并 设置为 开机自启
+[root@basic ~]# systemctl start rngd
+[root@basic ~]# systemctl enable rngd
+
+// 再观察一下熵池大小
+[root@basic ~]# cat /proc/sys/kernel/random/entropy_avail
+3090  <------ 可发现, 现在已经 3000 多了
+---------------------------------------------------------------------------------------------------
+
+
+
 
 ---------------------------------------------------------------------------------------------------
 网上资料:
