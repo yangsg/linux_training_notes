@@ -100,6 +100,7 @@ Available and enabled entropy sources:
       https://www.cnblogs.com/jessezeng/p/7325070.html
       https://cryptotronix.com/2014/08/28/tpm-rng/
       https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/7.4_release_notes/new_features_kernel#BZ1270982
+      https://security.stackexchange.com/questions/194181/rng-tools-entropy-sources
 
    熵(Entropy):
       https://en.wikipedia.org/wiki/Entropy_%28computing%29
