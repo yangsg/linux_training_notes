@@ -23,8 +23,6 @@ man haveged
 
 熵池中 熵 不足 可能会导致 相应的消费程序 因等待 可用的 熵 而 pause, 从而使该服务响应客户端会发生 delay.
 
-注: 现在看起来,  haveged 是除 其他 专用的提供 高质量的 entropy 物理设备 之外 最好的解决方案了.
-
 ---------------------------------------------------------------------------------------------------
 
 [root@basic ~]# yum -y install haveged
@@ -59,8 +57,8 @@ WantedBy=multi-user.target
 
 
 // 启动 haveged 服务 并 设置为 开机自启
-[root@basic ~]# systemctl start haveged.service
-[root@basic ~]# systemctl enable haveged.service
+[root@basic ~]# systemctl start haveged
+[root@basic ~]# systemctl enable haveged
 
 ---------------------------------------------------------------------------------------------------
 测试：
@@ -116,7 +114,14 @@ man urandom
     这意味着 这种写入行为 会 影响 从 这两个 设备文件中 读取的 contents, 但不会 使从 /dev/random 读取的 速度 变得更快.
 
 
-    /dev/urandom 不应该用于 长期使用的 GPG/SSL/SSH keys
+---------------------------------------------------------------------------------------------------
+
+      /dev/urandom 不应该用于 长期使用的 GPG/SSL/SSH keys
+
+       The kernel random-number generator is designed to produce a small amount of high-quality seed material to seed a cryptographic  pseudo-ran‐
+       dom  number  generator  (CPRNG).   It is designed for security, not speed, and is poorly suited to generating large amounts of random data.
+       Users should be very economical in the amount of seed material that they read from /dev/urandom (and  /dev/random);  unnecessarily  reading
+       large quantities of data from this device will have a negative impact on other users of the device.
 
 ---------------------------------------------------------------------------------------------------
 网上资料:
@@ -128,6 +133,12 @@ man urandom
       https://serverfault.com/questions/214605/gpg-does-not-have-enough-entropy
       https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/security_guide/sect-security_guide-encryption-using_the_random_number_generator
       https://software.intel.com/en-us/articles/intel-digital-random-number-generator-drng-software-implementation-guide
+      https://security.stackexchange.com/questions/3936/is-a-rand-from-dev-urandom-secure-for-a-login-key/3939#3939
+      https://unix.stackexchange.com/questions/324209/when-to-use-dev-random-vs-dev-urandom
+      https://blog.csdn.net/ITzaibadong/article/details/91872127
+      https://www.cnblogs.com/jessezeng/p/7325070.html
+      https://cryptotronix.com/2014/08/28/tpm-rng/
+      https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/7.4_release_notes/new_features_kernel#BZ1270982
 
    熵(Entropy):
       https://en.wikipedia.org/wiki/Entropy_%28computing%29
@@ -138,11 +149,13 @@ man urandom
 
    虚拟机的随机数生成器问题:
       https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-Guest_virtual_machine_device_configuration-Random_number_generator_device
+      https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/virtualization_administration_guide/sect-guest_virtual_machine_device_configuration-random_number_generator_device
 
 
-
-
-
+    关于 PRNG, CSPRNG, CPRNG,  RdRand
+    https://en.wikipedia.org/wiki/Pseudorandom_number_generator
+    https://en.wikipedia.org/wiki/Cryptographically_secure_pseudorandom_number_generator
+    https://en.wikipedia.org/wiki/RdRand
 
 
 
