@@ -22,6 +22,7 @@ man rngd
        device options can be used to select an alternate entropy output device, besides the default /dev/random.  Note that this  device  must
        support the Linux kernel /dev/random ioctl API.
 
+
 ---------------------------------------------------------------------------------------------------
 观察熵池 当前 大小
 [root@basic ~]# cat /proc/sys/kernel/random/entropy_avail
@@ -29,6 +30,8 @@ man rngd
 
 // 安装 随机数生成器 相关的工具
 [root@basic ~]# yum -y install rng-tools   # Random number generator related utilities
+[root@basic ~]# rpm -q rng-tools
+rng-tools-6.3.1-3.el7.x86_64
 
 [root@basic ~]# rpm -ql rng-tools
 /usr/bin/rngtest
@@ -43,6 +46,39 @@ man rngd
 /usr/share/man/man1/rngtest.1.gz
 /usr/share/man/man8/rngd.8.gz
 
+
+
+[root@basic ~]# cat /usr/lib/systemd/system/rngd.service
+[Unit]
+Description=Hardware RNG Entropy Gatherer Daemon
+
+[Service]
+ExecStart=/sbin/rngd -f
+
+[Install]
+WantedBy=multi-user.target
+
+
+查看cpu 是否支持 DRNG 特性
+[root@basic ~]# cat /proc/cpuinfo | grep rdrand
+
+[root@basic ~]# rngd --list   # List the indexes and names of available entropy sources
+Entropy sources that are available but disabled
+1: TPM RNG Device
+4: NIST Network Entropy Beacon
+Available and enabled entropy sources:
+2: Intel RDRAND Instruction RNG  <----- 观察, 此处
+5: JITTER Entropy generator
+
+---------------------------------------------------------------------------------------------------
+直接使用的方式:  见 https://blog.csdn.net/ITzaibadong/article/details/91872127
+[root@basic ~]# systemctl start rngd
+[root@basic ~]# systemctl enable rngd
+
+观察熵池大小:
+[root@basic ~]# cat  /proc/sys/kernel/random/entropy_avail
+3099
+
 ---------------------------------------------------------------------------------------------------
 网上资料:
 
@@ -53,6 +89,12 @@ man rngd
       https://serverfault.com/questions/214605/gpg-does-not-have-enough-entropy
       https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/security_guide/sect-security_guide-encryption-using_the_random_number_generator
       https://software.intel.com/en-us/articles/intel-digital-random-number-generator-drng-software-implementation-guide
+      https://security.stackexchange.com/questions/3936/is-a-rand-from-dev-urandom-secure-for-a-login-key/3939#3939
+      https://unix.stackexchange.com/questions/324209/when-to-use-dev-random-vs-dev-urandom
+      https://blog.csdn.net/ITzaibadong/article/details/91872127
+      https://www.cnblogs.com/jessezeng/p/7325070.html
+      https://cryptotronix.com/2014/08/28/tpm-rng/
+      https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/7.4_release_notes/new_features_kernel#BZ1270982
 
    熵(Entropy):
       https://en.wikipedia.org/wiki/Entropy_%28computing%29
@@ -63,5 +105,14 @@ man rngd
 
    虚拟机的随机数生成器问题:
       https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-Guest_virtual_machine_device_configuration-Random_number_generator_device
+      https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/virtualization_administration_guide/sect-guest_virtual_machine_device_configuration-random_number_generator_device
+
+
+    关于 PRNG, CSPRNG, CPRNG,  RdRand
+    https://en.wikipedia.org/wiki/Pseudorandom_number_generator
+    https://en.wikipedia.org/wiki/Cryptographically_secure_pseudorandom_number_generator
+    https://en.wikipedia.org/wiki/RdRand
+
+
 
 
