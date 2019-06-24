@@ -748,6 +748,10 @@ seed-cfb          seed-ecb          seed-ofb          zlib
 .pem SSL Creation Instructions
     https://www.digicert.com/ssl-support/pem-ssl-creation.htm
 
+
+    gpg, openssh, openssl:
+    http://sysmic.org/dotclear/index.php?post/2010/03/24/Convert-keys-betweens-GnuPG%2C-OpenSsh-and-OpenSSL
+
 中文:
     https://www.cnblogs.com/hnxxcxg/p/7610582.html
     https://www.cnblogs.com/gordon0918/p/5409286.html
