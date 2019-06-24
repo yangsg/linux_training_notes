@@ -16,6 +16,7 @@ man gpg
 
     https://www.madboa.com/geek/gpg-quickstart/
     https://www.gnupg.org/
+    https://www.golinuxcloud.com/tutorial-encrypt-decrypt-sign-file-gpg-key-linux/
 
     http://www.ruanyifeng.com/blog/2013/07/gpg.html
     http://www.178linux.com/50307
@@ -24,6 +25,10 @@ man gpg
     随机数生成器(random number generator):
       https://www.certdepot.net/rhel7-get-started-random-number-generator/
       https://serverfault.com/questions/214605/gpg-does-not-have-enough-entropy
+      https://serverfault.com/questions/471412/gpg-gen-key-hangs-at-gaining-enough-entropy-on-centos-6
+
+      https://www.2uo.de/myths-about-urandom/
+      https://www.howtoforge.com/helping-the-random-number-generator-to-gain-enough-entropy-with-rng-tools-debian-lenny
 
 
 
