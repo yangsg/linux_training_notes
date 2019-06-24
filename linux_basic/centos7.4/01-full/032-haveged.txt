@@ -23,6 +23,9 @@ man haveged
 
 熵池中 熵 不足 可能会导致 相应的消费程序 因等待 可用的 熵 而 pause, 从而使该服务响应客户端会发生 delay.
 
+
+在较新的 cpu(支持 DRNG 特性) 和 centos7.4(引入 Jitter Entropy RNG) 以上版本, 可以优先考虑使用 rngd 而非 haveged
+
 ---------------------------------------------------------------------------------------------------
 
 [root@basic ~]# yum -y install haveged
