@@ -23,6 +23,11 @@ man rngd
        support the Linux kernel /dev/random ioctl API.
 
 
+熵池中 熵 不足 可能会导致 相应的消费程序 因等待 可用的 熵 而 pause, 从而使该服务响应客户端会发生 delay.
+
+
+在较新的 cpu(支持 DRNG 特性) 和 centos7.4(引入 Jitter Entropy RNG) 以上版本, 可以优先考虑使用 rngd 而非 haveged
+
 ---------------------------------------------------------------------------------------------------
 观察熵池 当前 大小
 [root@basic ~]# cat /proc/sys/kernel/random/entropy_avail
@@ -67,7 +72,7 @@ Entropy sources that are available but disabled
 1: TPM RNG Device
 4: NIST Network Entropy Beacon
 Available and enabled entropy sources:
-2: Intel RDRAND Instruction RNG  <----- 观察, 此处
+2: Intel RDRAND Instruction RNG
 5: JITTER Entropy generator
 
 ---------------------------------------------------------------------------------------------------
