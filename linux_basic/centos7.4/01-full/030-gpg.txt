@@ -8,6 +8,7 @@ man gpg
 语法: gpg2 [--homedir dir] [--options file] [options] command [args]
 
 
+TODO
 ---------------------------------------------------------------------------------------------------
 gpg2 的 某些操作(如 生成密钥对) 需要较大的熵池, 所以先使用 rngd 来 解决这一问题
 
@@ -128,6 +129,7 @@ sub   2048R/D81F86B3 2019-06-24
 [root@basic ~]#
 
 
+---------------------------------------------------------------------------------------------------
 // 列出公钥
 [root@basic ~]# gpg --list-public-keys
 /root/.gnupg/pubring.gpg
@@ -151,6 +153,18 @@ sec   2048R/743DFDCD 2019-06-24
 uid                  QiaoFeng <qiaofeng@qq.com>
 ssb   2048R/D81F86B3 2019-06-24
 
+
+---------
+
+       --keyid-format short|0xshort|long|0xlong
+// 以 long format 显示 keyid
+[root@basic ~]# gpg --keyid-format long --list-keys qiaofeng@qq.com
+pub   2048R/ACD88CCE743DFDCD 2019-06-24
+uid                          QiaoFeng <qiaofeng@qq.com>
+sub   2048R/06E4ED97D81F86B3 2019-06-24
+
+
+---------------------------------------------------------------------------------------------------
 
 
 
@@ -178,6 +192,8 @@ ssb   2048R/D81F86B3 2019-06-24
       https://www.howtoforge.com/helping-the-random-number-generator-to-gain-enough-entropy-with-rng-tools-debian-lenny
 
 
+    gpg, openssh, openssl:
+    http://sysmic.org/dotclear/index.php?post/2010/03/24/Convert-keys-betweens-GnuPG%2C-OpenSsh-and-OpenSSL
 
 
 
