@@ -309,8 +309,5 @@ man ca
 
       https://blog.csdn.net/Eumenides_s/article/details/78040787
       https://jamielinux.com/docs/openssl-certificate-authority/index.html
-
-
-
-
+      https://raymii.org/s/tutorials/OpenSSL_command_line_Root_and_Intermediate_CA_including_OCSP_CRL%20and_revocation.html
 
