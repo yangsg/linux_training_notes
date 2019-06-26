@@ -15,6 +15,10 @@ man firewalld.richlanguage
        This page describes the rich language used in the command line client and D-Bus interface. For information about the rich language representation used in
        the zone configuration files, please have a look at firewalld.zone(5).
 
+      -------------------
+      中文注释:
+              A rule 是 a zone 的 部分. 一个 zone 可以 包含 多个 rules. 如果某些 rules 相互作用或冲突矛盾, 则 第一个 匹配的 rule 获胜.
+      -------------------
        A rule is part of a zone. One zone can contain several rules. If some rules interact/contradict, the first rule that matches "wins".
 
        General rule structure
@@ -27,9 +31,13 @@ man firewalld.richlanguage
              [audit]
              [accept|reject|drop|mark]
 
+      -------------------
+      中文注释:
+              完整的 rule 作为 a single line string 被提供. 此处 的 destination 只要 不和 a service 的 destination 冲突 其就是被 允许的.
+      -------------------
        The complete rule is provided as a single line string. A destination is allowed here as long as it does not conflict with the destination of a service.
 
-       Rule structure for source black or white listing
+       Rule structure for source black or white listing (关于 source 的白名单 或 黑名单)
 
            rule
              source
@@ -47,7 +55,7 @@ man firewalld.richlanguage
 
        If the rule family is provided, it can be either "ipv4" or "ipv6", which limits the rule to IPv4 or IPv6. If the rule family is not provided, the rule
        will be added for IPv4 and IPv6. If source or destination addresses are used in a rule, then the rule family need to be provided. This is also the case
-       for port/packet forwarding.
+       for port/packet forwarding.  // 如果使用了 source 和 destination 地址, 那么 需要提供 the rule family. 这同样适用于 port/packet forwarding 的情况.
 
    Source
            source [not] address="address[/mask]"|mac="mac-address"|ipset="ipset"
@@ -72,6 +80,11 @@ man firewalld.richlanguage
        The service service name will be added to the rule. The service name is one of the firewalld provided services. To get a list of the supported services,
        use firewall-cmd --get-services.
 
+      -------------------
+      中文注释:
+              如果 a service 提供了 a destination address, 其将与 该 rule 中的 a destination address 冲突 从而 导致 an error. 内部使用了 destination addresses
+              的 services 大多数 是 使用了 multicast 的 services.
+      -------------------
        If a service provides a destination address, it will conflict with a destination address in the rule and will result in an error. The services using
        destination addresses internally are mostly services using multicast.
 
@@ -80,7 +93,7 @@ man firewalld.richlanguage
 
        The port port value can either be a single port number portid or a port range portid-portid. The protocol can either be tcp or udp.
 
-   Protocol
+   Protocol   (被允许的 protocol entries 见 /etc/protocols)
            protocol value="protocol value"
 
        The protocol value can be either a protocol id number or a protocol name. For allowed protocol entries, please have a look at /etc/protocols.
@@ -140,11 +153,11 @@ man firewalld.richlanguage
 
            accept [limit value="rate/duration"]
 
-           reject [type="reject type"] [limit value="rate/duration"]
+           reject [type="reject type"] [limit value="rate/duration"]            (注: 合法的 reject types 见 iptables-extensions(8) 的 --reject-with)
 
            drop [limit value="rate/duration"]
 
-           mark set="mark[/mask]" [limit value="rate/duration"]
+           mark set="mark[/mask]" [limit value="rate/duration"]                 (注: 打标的 坐标为 mangle table 的 PREROUTING chain)
 
        With accept all new connection attempts will be granted. With reject they will not be accepted and their source will get a reject ICMP(v6) message. The
        reject type can be set to specify appropriate ICMP(v6) error message. For valid reject types see --reject-with type in iptables-extensions(8) man page.
@@ -165,15 +178,15 @@ man firewalld.richlanguage
 
        The rules or parts of them are placed in separate chains according to the action of the rule:
 
-           zone_log
-           zone_deny
-           zone_allow
+           zone_log      <---- zone_log   chain 放置 所有 logging rules
+           zone_deny     <---- zone_deny  chain 放置 所有 reject and drop rules
+           zone_allow    <---- zone_allow chain 放置 所有 accept rules
 
        Then all logging rules will be placed in the zone_log chain, which will be walked first. All reject and drop rules will be placed in the zone_deny chain,
        which will be walked after the log chain. All accept rules will be placed in the zone_allow chain, which will be walked after the deny chain. If a rule
        contains log and also deny or allow actions, the parts are placed in the matching chains.
 
-EXAMPLES
+EXAMPLES(示例)
        These are examples of how to specify rich language rules. This format (i.e. one string that specifies whole rule) uses for example firewall-cmd
        --add-rich-rule (see firewall-cmd(1)) as well as D-Bus interface.
 
