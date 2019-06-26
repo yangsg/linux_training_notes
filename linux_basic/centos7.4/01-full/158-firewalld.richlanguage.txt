@@ -225,6 +225,7 @@ EXAMPLES
 网上资料:
         http://www.firewalld.org
         https://fedoraproject.org/wiki/Firewalld?rd=FirewallD
+        https://fedoraproject.org/wiki/Features/FirewalldRichLanguage
 
         https://www.linuxjournal.com/content/understanding-firewalld-multi-zone-configurations
         https://www.lisenet.com/2016/firewalld-rich-and-direct-rules-setup-rhel-7-server-as-a-router/
