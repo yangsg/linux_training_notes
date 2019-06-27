@@ -6,57 +6,62 @@
 // 更新 openssl
 [root@vpnserver ~]# yum -y update openssl
 [root@vpnserver ~]# rpm -q openssl
-openssl-1.0.2k-16.el7_6.1.x86_64
-
+        openssl-1.0.2k-16.el7_6.1.x86_64
 
 
 // 安装 openvpn 和  easy-rsa, 其中 easy-rsa 是一些小的基于 openssl 的 RSA key 管理包. 主要用于 SSL VPN 应用, 当然其也可用于构建 web 的证书 
 [root@vpnserver ~]# yum install -y openvpn easy-rsa
 [root@vpnserver ~]# rpm -q openvpn easy-rsa
-openvpn-2.4.7-1.el7.x86_64
-easy-rsa-3.0.3-1.el7.noarch
+        openvpn-2.4.7-1.el7.x86_64
+        easy-rsa-3.0.3-1.el7.noarch
+
 
 // 查看 一下 easy-rsa 中相关的文件
 [root@vpnserver ~]# rpm -ql easy-rsa
-/usr/share/doc/easy-rsa-3.0.3
-/usr/share/doc/easy-rsa-3.0.3/COPYING.md
-/usr/share/doc/easy-rsa-3.0.3/ChangeLog
-/usr/share/doc/easy-rsa-3.0.3/README.quickstart.md    <----- 可查看基本的使用指南
-/usr/share/doc/easy-rsa-3.0.3/vars.example
-/usr/share/easy-rsa
-/usr/share/easy-rsa/3
-/usr/share/easy-rsa/3.0
-/usr/share/easy-rsa/3.0.3
-/usr/share/easy-rsa/3.0.3/easyrsa
-/usr/share/easy-rsa/3.0.3/openssl-1.0.cnf
-/usr/share/easy-rsa/3.0.3/x509-types
-/usr/share/easy-rsa/3.0.3/x509-types/COMMON
-/usr/share/easy-rsa/3.0.3/x509-types/ca
-/usr/share/easy-rsa/3.0.3/x509-types/client
-/usr/share/easy-rsa/3.0.3/x509-types/san
-/usr/share/easy-rsa/3.0.3/x509-types/server
-/usr/share/licenses/easy-rsa-3.0.3
-/usr/share/licenses/easy-rsa-3.0.3/gpl-2.0.txt
+        /usr/share/doc/easy-rsa-3.0.3
+        /usr/share/doc/easy-rsa-3.0.3/COPYING.md
+        /usr/share/doc/easy-rsa-3.0.3/ChangeLog
+        /usr/share/doc/easy-rsa-3.0.3/README.quickstart.md    <----- 可查看基本的使用指南
+        /usr/share/doc/easy-rsa-3.0.3/vars.example
+        /usr/share/easy-rsa
+        /usr/share/easy-rsa/3
+        /usr/share/easy-rsa/3.0
+        /usr/share/easy-rsa/3.0.3
+        /usr/share/easy-rsa/3.0.3/easyrsa
+        /usr/share/easy-rsa/3.0.3/openssl-1.0.cnf
+        /usr/share/easy-rsa/3.0.3/x509-types
+        /usr/share/easy-rsa/3.0.3/x509-types/COMMON
+        /usr/share/easy-rsa/3.0.3/x509-types/ca
+        /usr/share/easy-rsa/3.0.3/x509-types/client
+        /usr/share/easy-rsa/3.0.3/x509-types/san
+        /usr/share/easy-rsa/3.0.3/x509-types/server
+        /usr/share/licenses/easy-rsa-3.0.3
+        /usr/share/licenses/easy-rsa-3.0.3/gpl-2.0.txt
+
+
+
 
 // 查看 一下目录 /usr/share/easy-rsa/
 [root@vpnserver ~]# ls -lAh /usr/share/easy-rsa/
-total 0
-lrwxrwxrwx 1 root root  5 Jun 26 12:13 3 -> 3.0.3
-lrwxrwxrwx 1 root root  5 Jun 26 12:13 3.0 -> 3.0.3
-drwxr-xr-x 3 root root 62 Jun 26 12:13 3.0.3
+        total 0
+        lrwxrwxrwx 1 root root  5 Jun 27 18:49 3 -> 3.0.3
+        lrwxrwxrwx 1 root root  5 Jun 27 18:49 3.0 -> 3.0.3
+        drwxr-xr-x 3 root root 62 Jun 27 18:49 3.0.3
+
 
 // 查看 目录 /etc/openvpn/
 [root@vpnserver ~]# ls /etc/openvpn/
-client  server
+        client  server
+
 
 
 配置 Easy-RSA 3-----------------------------
+[root@vpnserver ~]# cp -r /usr/share/easy-rsa /etc/openvpn/
+[root@vpnserver ~]# ls /etc/openvpn/
+        client  easy-rsa  server
 
-[root@vpnserver ~]# cd /etc/openvpn/
-[root@vpnserver openvpn]# cp -r /usr/share/easy-rsa /etc/openvpn/
-[root@vpnserver openvpn]# ls
-client  easy-rsa  server
 
+[root@vpnserver ~]# cp /usr/share/doc/easy-rsa-3.0.3/vars.example /etc/openvpn/easy-rsa/3/vars
 
 // 创建文件 /etc/openvpn/easy-rsa/3/vars 配置 easy-rsa, 关于配置详细描述见 /usr/share/doc/easy-rsa-3.0.3/vars.example
 [root@vpnserver ~]# vim /etc/openvpn/easy-rsa/3/vars
