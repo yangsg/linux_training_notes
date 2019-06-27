@@ -61,235 +61,268 @@
         client  easy-rsa  server
 
 
-[root@vpnserver ~]# cp /usr/share/doc/easy-rsa-3.0.3/vars.example /etc/openvpn/easy-rsa/3/vars
+// 查看一下 默认的 openvpn 的默认设置 (即 /usr/share/doc/easy-rsa-3.0.3/vars.example 中以字符串 ‘#set_var’ 开始的注释行)
+[root@vpnserver ~]# grep set_var  /usr/share/doc/easy-rsa-3.0.3/vars.example
+          # 'set_var' -- this means any set_var command that is uncommented has been
+          #set_var EASYRSA        "$PWD"
+          #set_var EASYRSA_OPENSSL        "openssl"
+          #set_var EASYRSA_OPENSSL        "C:/Program Files/OpenSSL-Win32/bin/openssl.exe"
+          #set_var EASYRSA_PKI            "$EASYRSA/pki"
+          #set_var EASYRSA_DN     "cn_only"
+          #set_var EASYRSA_REQ_COUNTRY    "US"
+          #set_var EASYRSA_REQ_PROVINCE   "California"
+          #set_var EASYRSA_REQ_CITY       "San Francisco"
+          #set_var EASYRSA_REQ_ORG        "Copyleft Certificate Co"
+          #set_var EASYRSA_REQ_EMAIL      "me@example.net"
+          #set_var EASYRSA_REQ_OU         "My Organizational Unit"
+          #set_var EASYRSA_KEY_SIZE       2048
+          #set_var EASYRSA_ALGO           rsa
+          #set_var EASYRSA_CURVE          secp384r1
+          #set_var EASYRSA_CA_EXPIRE      3650
+          #set_var EASYRSA_CERT_EXPIRE    3650
+          #set_var EASYRSA_CRL_DAYS       180
+          #set_var EASYRSA_NS_SUPPORT     "no"
+          #set_var EASYRSA_NS_COMMENT     "Easy-RSA Generated Certificate"
+          #set_var EASYRSA_TEMP_FILE      "$EASYRSA_PKI/extensions.temp"
+          #set_var EASYRSA_EXT_DIR        "$EASYRSA/x509-types"
+          #set_var EASYRSA_SSL_CONF       "$EASYRSA/openssl-1.0.cnf"
+          #set_var EASYRSA_REQ_CN         "ChangeMe"
+          #set_var EASYRSA_DIGEST         "sha256"
+          #set_var EASYRSA_BATCH          ""
 
-// 创建文件 /etc/openvpn/easy-rsa/3/vars 配置 easy-rsa, 关于配置详细描述见 /usr/share/doc/easy-rsa-3.0.3/vars.example
-[root@vpnserver ~]# vim /etc/openvpn/easy-rsa/3/vars
-## 注: 如下以字符串 '#set_var' 开始的注释行 其实是 EASYRSA 的默认值, 保持默认值的项维持注释状态即可.
-##     要想 获取 默认值, 执行命令 `grep set_var  /usr/share/doc/easy-rsa-3.0.3/vars.example` 即可
-#set_var EASYRSA        "$PWD"
-#set_var EASYRSA_OPENSSL        "openssl"
-#set_var EASYRSA_OPENSSL        "C:/Program Files/OpenSSL-Win32/bin/openssl.exe"
-#set_var EASYRSA_PKI            "$EASYRSA/pki"
-#set_var EASYRSA_DN     "cn_only"
-set_var EASYRSA_REQ_COUNTRY    "CN"
-set_var EASYRSA_REQ_PROVINCE   "Chongqing"
-set_var EASYRSA_REQ_CITY       "Jiulongpo"
-set_var EASYRSA_REQ_ORG        "xintian"
-set_var EASYRSA_REQ_EMAIL      "admin@163.com"
-set_var EASYRSA_REQ_OU         "IT"
-#set_var EASYRSA_KEY_SIZE       2048
-#set_var EASYRSA_ALGO           rsa
-#set_var EASYRSA_CURVE          secp384r1
-#set_var EASYRSA_CA_EXPIRE      3650
-#set_var EASYRSA_CERT_EXPIRE    3650
-#set_var EASYRSA_CRL_DAYS       180
-#set_var EASYRSA_NS_SUPPORT     "no"
-#set_var EASYRSA_NS_COMMENT     "Easy-RSA Generated Certificate"
-#set_var EASYRSA_TEMP_FILE      "$EASYRSA_PKI/extensions.temp"
-#set_var EASYRSA_EXT_DIR        "$EASYRSA/x509-types"
-#set_var EASYRSA_SSL_CONF       "$EASYRSA/openssl-1.0.cnf"
-#set_var EASYRSA_REQ_CN         "ChangeMe"
-#set_var EASYRSA_DIGEST         "sha256"
-#set_var EASYRSA_BATCH          ""
+
+// 创建文件 /etc/openvpn/easy-rsa/3/vars 配置 easy-rsa, 关于配置详细描述见 /usr/share/doc/easy-rsa-3.0.3/vars.example 以及 man openvpn
+[root@vpnserver ~]# cp /usr/share/doc/easy-rsa-3.0.3/vars.example /etc/openvpn/easy-rsa/3/vars
+[root@vpnserver ~]# vim /etc/openvpn/easy-rsa/3/vars    # 实际中也许还有其他 感兴趣的 需要修改的 字段
+          set_var EASYRSA_REQ_COUNTRY "CN"
+          set_var EASYRSA_REQ_PROVINCE  "Chongqing"
+          set_var EASYRSA_REQ_CITY  "Jiulongpo"
+          set_var EASYRSA_REQ_ORG "xintian"
+          set_var EASYRSA_REQ_EMAIL "xintain@xintain.com"
+          set_var EASYRSA_REQ_OU    "xintian EASY CA"
+
 
 
 // 查看目录 /etc/openvpn/easy-rsa/3/
 [root@vpnserver ~]# ls /etc/openvpn/easy-rsa/3/
-easyrsa  openssl-1.0.cnf  vars  x509-types
+        easyrsa  openssl-1.0.cnf  vars  x509-types
+
 
 
 构建 OpenVPN Keys-----------------------------
    基于如上 创建的 /etc/openvpn/easy-rsa/3/vars 文件 来构建 the CA key, Server 和 Client keys, DH 和 CRL PEM file.
    所有这些文件都使用 目录 /etc/openvpn/easy-rsa/3 下的 easyrsa 命令脚本 来创建.
 
-
+// 切换工作目录
 [root@vpnserver ~]# cd /etc/openvpn/easy-rsa/3/
 
-[root@vpnserver 3]# ./easyrsa init-pki   # 初始化 pki 目录
+// 初始化 pki 目录
+[root@vpnserver 3]# ./easyrsa init-pki
 
-      Note: using Easy-RSA configuration from: ./vars
+        Note: using Easy-RSA configuration from: ./vars
 
-      init-pki complete; you may now create a CA or requests.
-      Your newly created PKI dir is: /etc/openvpn/easy-rsa/3/pki
-
-
-[root@vpnserver 3]# ./easyrsa build-ca   # 创建 ca 的 密钥 和 证书
-
-Note: using Easy-RSA configuration from: ./vars
-Generating a 2048 bit RSA private key
-........+++
-.................................................................................+++
-writing new private key to '/etc/openvpn/easy-rsa/3/pki/private/ca.key.UTTViZ2yO5'
-Enter PEM pass phrase:   <============== 输入口令
-Verifying - Enter PEM pass phrase:  <=============== 输入口令
------
-You are about to be asked to enter information that will be incorporated
-into your certificate request.
-What you are about to enter is what is called a Distinguished Name or a DN.
-There are quite a few fields but you can leave some blank
-For some fields there will be a default value,
-If you enter '.', the field will be left blank.
------
-Common Name (eg: your user, host, or server name) [Easy-RSA CA]: <========= 直接回车
-
-CA creation complete and you may now import and sign cert requests.
-Your new CA certificate file for publishing is at:
-/etc/openvpn/easy-rsa/3/pki/ca.crt
-
-// 创建 vpn server 的 私钥 和 证书
-[root@vpnserver 3]# ./easyrsa gen-req vpn-server nopass
-
-Note: using Easy-RSA configuration from: ./vars
-Generating a 2048 bit RSA private key
-..................+++
-......+++
-writing new private key to '/etc/openvpn/easy-rsa/3/pki/private/vpn-server.key.O0aBe2vohL'
------
-You are about to be asked to enter information that will be incorporated
-into your certificate request.
-What you are about to enter is what is called a Distinguished Name or a DN.
-There are quite a few fields but you can leave some blank
-For some fields there will be a default value,
-If you enter '.', the field will be left blank.
------
-Common Name (eg: your user, host, or server name) [vpn-server]:
-
-Keypair and certificate request completed. Your files are:
-req: /etc/openvpn/easy-rsa/3/pki/reqs/vpn-server.req
-key: /etc/openvpn/easy-rsa/3/pki/private/vpn-server.key
+        init-pki complete; you may now create a CA or requests.
+        Your newly created PKI dir is: /etc/openvpn/easy-rsa/3/pki
 
 
-// 利用 CA 证书 vpn-server 生成 证书
-[root@vpnserver 3]# ./easyrsa sign-req server vpn-server
+// 创建 ca 的 密钥 和 证书  (注: 如果不想为 ca 证书生成 口令, 则执行 命令 `./easyrsa build-ca nopass` 即可)
+[root@vpnserver 3]# ./easyrsa build-ca
 
-Note: using Easy-RSA configuration from: ./vars
+          Note: using Easy-RSA configuration from: ./vars
+          Generating a 2048 bit RSA private key
+          ................................................................+++
+          ...................+++
+          writing new private key to '/etc/openvpn/easy-rsa/3/pki/private/ca.key.OGaUQKnV63'
+          Enter PEM pass phrase:   <========= 输入口令 (以后为其他证书请求颁发证书时使用)
+          Verifying - Enter PEM pass phrase:  <======== 输入口令
+          -----
+          You are about to be asked to enter information that will be incorporated
+          into your certificate request.
+          What you are about to enter is what is called a Distinguished Name or a DN.
+          There are quite a few fields but you can leave some blank
+          For some fields there will be a default value,
+          If you enter '.', the field will be left blank.
+          -----
+          Common Name (eg: your user, host, or server name) [Easy-RSA CA]:  <=========== 直接回车
 
-
-You are about to sign the following certificate.
-Please check over the details shown below for accuracy. Note that this request
-has not been cryptographically verified. Please be sure it came from a trusted
-source or that you have verified the request checksum with the sender.
-
-Request subject, to be signed as a server certificate for 3650 days:
-
-subject=
-    commonName                = vpn-server
-
-
-Type the word 'yes' to continue, or any other input to abort.
-  Confirm request details: yes
-Using configuration from ./openssl-1.0.cnf
-Enter pass phrase for /etc/openvpn/easy-rsa/3/pki/private/ca.key:
-Check that the request matches the signature
-Signature ok
-The Subject's Distinguished Name is as follows
-commonName            :ASN.1 12:'vpn-server'
-Certificate is to be certified until Jun 23 06:29:51 2029 GMT (3650 days)
-
-Write out database with 1 new entries
-Data Base Updated
-
-Certificate created at: /etc/openvpn/easy-rsa/3/pki/issued/vpn-server.crt
+          CA creation complete and you may now import and sign cert requests.
+          Your new CA certificate file for publishing is at:
+          /etc/openvpn/easy-rsa/3/pki/ca.crt
 
 
-// 验证证书 vpn-server.crt
-[root@vpnserver 3]# openssl verify -CAfile pki/ca.crt pki/issued/vpn-server.crt
-pki/issued/vpn-server.crt: OK
+// 查看 一下 CA 证书 和 私钥 的位置
+[root@vpnserver 3]# find /etc/openvpn/easy-rsa/3/pki/ | grep ca
+          /etc/openvpn/easy-rsa/3/pki/private/ca.key
+          /etc/openvpn/easy-rsa/3/pki/ca.crt
 
-// 查看 vpn-server 相关证书 等 文件位置
-[root@vpnserver 3]# find /etc/openvpn/easy-rsa/3/pki/ | grep vpn-server
-/etc/openvpn/easy-rsa/3/pki/private/vpn-server.key
-/etc/openvpn/easy-rsa/3/pki/reqs/vpn-server.req
-/etc/openvpn/easy-rsa/3/pki/issued/vpn-server.crt
+
+
+// 生成 vpn server 的 私钥 和 证书请求
+[root@vpnserver 3]# ./easyrsa gen-req vpnserver nopass
+
+          Note: using Easy-RSA configuration from: ./vars
+          Generating a 2048 bit RSA private key
+          ...+++
+          .............................................................................................................................+++
+          writing new private key to '/etc/openvpn/easy-rsa/3/pki/private/vpnserver.key.4bgj2BG1M1'
+          -----
+          You are about to be asked to enter information that will be incorporated
+          into your certificate request.
+          What you are about to enter is what is called a Distinguished Name or a DN.
+          There are quite a few fields but you can leave some blank
+          For some fields there will be a default value,
+          If you enter '.', the field will be left blank.
+          -----
+          Common Name (eg: your user, host, or server name) [vpnserver]:  <======= 直接回车
+
+          Keypair and certificate request completed. Your files are:
+          req: /etc/openvpn/easy-rsa/3/pki/reqs/vpnserver.req
+          key: /etc/openvpn/easy-rsa/3/pki/private/vpnserver.key
+
+
+
+// 利用 CA 证书 为 vpnserver 签署证书请求, 即 生成证书
+[root@vpnserver 3]# ./easyrsa sign-req server vpnserver
+
+          Note: using Easy-RSA configuration from: ./vars
+
+
+          You are about to sign the following certificate.
+          Please check over the details shown below for accuracy. Note that this request
+          has not been cryptographically verified. Please be sure it came from a trusted
+          source or that you have verified the request checksum with the sender.
+
+          Request subject, to be signed as a server certificate for 3650 days:
+
+          subject=
+              commonName                = vpnserver
+
+
+          Type the word 'yes' to continue, or any other input to abort.
+            Confirm request details: yes    <============== 输入 'yes'
+          Using configuration from ./openssl-1.0.cnf
+          Enter pass phrase for /etc/openvpn/easy-rsa/3/pki/private/ca.key: <======== 输入 CA 口令
+          Check that the request matches the signature
+          Signature ok
+          The Subject's Distinguished Name is as follows
+          commonName            :ASN.1 12:'vpnserver'
+          Certificate is to be certified until Jun 24 11:51:22 2029 GMT (3650 days)
+
+          Write out database with 1 new entries
+          Data Base Updated
+
+          Certificate created at: /etc/openvpn/easy-rsa/3/pki/issued/vpnserver.crt
+
+
+
+// 验证 一下 证书 vpnserver.crt
+[root@vpnserver 3]# openssl verify -CAfile pki/ca.crt pki/issued/vpnserver.crt
+          pki/issued/vpnserver.crt: OK
+
+
+// 查看 一下  vpnserver.key 相关证书 等 文件位置
+[root@vpnserver 3]# find /etc/openvpn/easy-rsa/3/pki/ | grep vpnserver
+          /etc/openvpn/easy-rsa/3/pki/private/vpnserver.key
+          /etc/openvpn/easy-rsa/3/pki/reqs/vpnserver.req
+          /etc/openvpn/easy-rsa/3/pki/issued/vpnserver.crt
+
 
 
 构建Client Key-----------------------------
 
-// 生成 'client01' key
-[root@vpnserver 3]# ./easyrsa gen-req client01 nopass
+// 生成 'vpnclient01' 的 证书请求
+[root@vpnserver 3]# ./easyrsa gen-req vpnclient01 nopass
 
-Note: using Easy-RSA configuration from: ./vars
-Generating a 2048 bit RSA private key
-.................+++
-..............................................................+++
-writing new private key to '/etc/openvpn/easy-rsa/3/pki/private/client01.key.owiOCCuPrx'
------
-You are about to be asked to enter information that will be incorporated
-into your certificate request.
-What you are about to enter is what is called a Distinguished Name or a DN.
-There are quite a few fields but you can leave some blank
-For some fields there will be a default value,
-If you enter '.', the field will be left blank.
------
-Common Name (eg: your user, host, or server name) [client01]:
+        Note: using Easy-RSA configuration from: ./vars
+        Generating a 2048 bit RSA private key
+        ..............................................+++
+        .......+++
+        writing new private key to '/etc/openvpn/easy-rsa/3/pki/private/vpnclient01.key.6SgtC64G1K'
+        -----
+        You are about to be asked to enter information that will be incorporated
+        into your certificate request.
+        What you are about to enter is what is called a Distinguished Name or a DN.
+        There are quite a few fields but you can leave some blank
+        For some fields there will be a default value,
+        If you enter '.', the field will be left blank.
+        -----
+        Common Name (eg: your user, host, or server name) [vpnclient01]:  <========== 直接回车
 
-Keypair and certificate request completed. Your files are:
-req: /etc/openvpn/easy-rsa/3/pki/reqs/client01.req
-key: /etc/openvpn/easy-rsa/3/pki/private/client01.key
+        Keypair and certificate request completed. Your files are:
+        req: /etc/openvpn/easy-rsa/3/pki/reqs/vpnclient01.req
+        key: /etc/openvpn/easy-rsa/3/pki/private/vpnclient01.key
+
 
 // 使用 CA 证书 为 client01 办法证书
-[root@vpnserver 3]# ./easyrsa sign-req client client01
+[root@vpnserver 3]# ./easyrsa sign-req client vpnclient01
 
-Note: using Easy-RSA configuration from: ./vars
-
-
-You are about to sign the following certificate.
-Please check over the details shown below for accuracy. Note that this request
-has not been cryptographically verified. Please be sure it came from a trusted
-source or that you have verified the request checksum with the sender.
-
-Request subject, to be signed as a client certificate for 3650 days:
-
-subject=
-    commonName                = client01
+        Note: using Easy-RSA configuration from: ./vars
 
 
-Type the word 'yes' to continue, or any other input to abort.
-  Confirm request details: yes
-Using configuration from ./openssl-1.0.cnf
-Enter pass phrase for /etc/openvpn/easy-rsa/3/pki/private/ca.key:
-Check that the request matches the signature
-Signature ok
-The Subject's Distinguished Name is as follows
-commonName            :ASN.1 12:'client01'
-Certificate is to be certified until Jun 23 06:57:22 2029 GMT (3650 days)
+        You are about to sign the following certificate.
+        Please check over the details shown below for accuracy. Note that this request
+        has not been cryptographically verified. Please be sure it came from a trusted
+        source or that you have verified the request checksum with the sender.
 
-Write out database with 1 new entries
-Data Base Updated
+        Request subject, to be signed as a client certificate for 3650 days:
 
-Certificate created at: /etc/openvpn/easy-rsa/3/pki/issued/client01.crt
+        subject=
+            commonName                = vpnclient01
 
 
-// 验证 证书 client01.crt
-[root@vpnserver 3]# openssl verify -CAfile pki/ca.crt pki/issued/client01.crt
-pki/issued/client01.crt: OK
+        Type the word 'yes' to continue, or any other input to abort.
+          Confirm request details: yes   <========== 输入 'yes'
+        Using configuration from ./openssl-1.0.cnf
+        Enter pass phrase for /etc/openvpn/easy-rsa/3/pki/private/ca.key: <========== 输入 ca 口令
+        Check that the request matches the signature
+        Signature ok
+        The Subject's Distinguished Name is as follows
+        commonName            :ASN.1 12:'vpnclient01'
+        Certificate is to be certified until Jun 24 12:04:06 2029 GMT (3650 days)
+
+        Write out database with 1 new entries
+        Data Base Updated
+
+        Certificate created at: /etc/openvpn/easy-rsa/3/pki/issued/vpnclient01.crt
+
+
+
+// 验证 一下 证书 vpnclient01.crt
+[root@vpnserver 3]# openssl verify -CAfile pki/ca.crt pki/issued/vpnclient01.crt
+        pki/issued/vpnclient01.crt: OK
+
 
 
 // 生成 Diffie-Hellman 密钥交换协议参数 ( p 和 g )
-[root@vpnserver 3]# ./easyrsa gen-dh
+[root@vpnserver 3]# ./easyrsa gen-dh       # 该命令执行会花几秒中时间(主要与熵池有关), 如果觉得慢,可以用 rng-tools 来解决熵池的问题
 
-Note: using Easy-RSA configuration from: ./vars
-Generating DH parameters, 2048 bit long safe prime, generator 2
-This is going to take a long time
-...................................................................................................................................................+...................................................+...........................................................................................+...............................+............................................................+........................................................................................................................................................................................................................+.......................................................................................+........................................................+.......................................................................+.................................................+............................................................................+...................................................+.............+.++*++*
+        Note: using Easy-RSA configuration from: ./vars
+        Generating DH parameters, 2048 bit long safe prime, generator 2
+        This is going to take a long time
+        ..............................................................................................................................+..................................+.....................................................................................................+......................................+........+...............................................................................................................................................................................................................................................................+...........+...............................................................................+.........................................................................................................................................................+..........................................................+........................................+..................................+..................................................................................................+...........................................................................+..+...+........................................+....................................................................................................+.............+.....................................................+.............................+...........................+.................................................................................................................................+...........................................................................................................................................................................................................................................+.........................+.............................+.............................................................................................................................................................................................................................................+................................+..........................................................................................................................................................+................................................................................................................................................................+...........................+.....................+................................................................+.................................+....................................................................................................................................................................................................+................................................................................................................+.......................................+...............................................................................................................................................+........................................+.......................+.....................................++*++*
 
-DH parameters of size 2048 created at /etc/openvpn/easy-rsa/3/pki/dh.pem
+        DH parameters of size 2048 created at /etc/openvpn/easy-rsa/3/pki/dh.pem
+
+
+
 
 (可选操作)生成证书吊销列表 crl (见 /usr/share/doc/easy-rsa-3.0.3/README.quickstart.md ) -----------------------------
 
-// 生成 证书吊销列表
+
+// 生成 证书吊销列表 (如果不执行此操作, 后面 vpn server 的配置中也不用对其配置了)
 [root@vpnserver 3]# ./easyrsa gen-crl
 
-Note: using Easy-RSA configuration from: ./vars
-Using configuration from ./openssl-1.0.cnf
-Enter pass phrase for /etc/openvpn/easy-rsa/3/pki/private/ca.key:
+        Note: using Easy-RSA configuration from: ./vars
+        Using configuration from ./openssl-1.0.cnf
+        Enter pass phrase for /etc/openvpn/easy-rsa/3/pki/private/ca.key:  <======== 输入 ca 口令
 
-An updated CRL has been created.
-CRL file: /etc/openvpn/easy-rsa/3/pki/crl.pem
+        An updated CRL has been created.
+        CRL file: /etc/openvpn/easy-rsa/3/pki/crl.pem
 
 
-copy 证书文件-----------------------------
+
+
+copy 证书文件 到 openvpn server 的相应目录-----------------------------
 
 // copy server 证书
 [root@vpnserver 3]# cp pki/ca.crt /etc/openvpn/server/
