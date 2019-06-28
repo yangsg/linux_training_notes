@@ -1,4 +1,26 @@
 
+---------------------------------------------------------------------------------------------------
+主机ip概要: 其中 网段 192.168.175.0/24 可以连接外网, 而 192.168.10.0/24 无法访问外网
+
+ssh_server:        192.168.175.20/24  <--- ssh_server 与 vpnserver 服务搭建 并没有什么关系, 仅为演示效果用
+vpnserver:  ens33: 192.168.175.110/24
+            ens37: 192.168.10.110/24
+vpnclient:         192.168.10.20/24
+
+---------------------------------------------------------------------------------------------------
+(可选)配置 ssh_server 路由信息:
+[root@ssh_server ~]# vim /etc/sysconfig/network-scripts/route-ens33
+[root@ssh_server ~]# cat /etc/sysconfig/network-scripts/route-ens33
+        10.8.0.0/24 via 192.168.175.110
+
+[root@ssh_server ~]# nmcli conn reload
+[root@ssh_server ~]# nmcli conn up ens33
+[root@ssh_server ~]# route -n
+        Kernel IP routing table
+        Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+        10.8.0.0        192.168.175.110 255.255.255.0   UG    100    0        0 ens33  <--- 注: 要能响应 虚拟网络的 主机, ssh_server 需要知道如果知道到虚拟网段的路由
+        192.168.175.0   0.0.0.0         255.255.255.0   U     100    0        0 ens33
+
 
 ---------------------------------------------------------------------------------------------------
 server side:
@@ -353,13 +375,13 @@ copy 证书文件 到 openvpn server 的相应目录----------------------------
 [root@vpnserver 3]# cd
 
 [root@vpnserver ~]# rpm -ql openvpn | grep server
-/etc/openvpn/server
-/run/openvpn-server
-/usr/lib/systemd/system/openvpn-server@.service
-/usr/share/doc/openvpn-2.4.7/sample/sample-config-files/loopback-server
-/usr/share/doc/openvpn-2.4.7/sample/sample-config-files/roadwarrior-server.conf
-/usr/share/doc/openvpn-2.4.7/sample/sample-config-files/server.conf   <--------- 注意该示例配置文件
-/usr/share/doc/openvpn-2.4.7/sample/sample-config-files/xinetd-server-config
+        /etc/openvpn/server
+        /run/openvpn-server
+        /usr/lib/systemd/system/openvpn-server@.service
+        /usr/share/doc/openvpn-2.4.7/sample/sample-config-files/loopback-server
+        /usr/share/doc/openvpn-2.4.7/sample/sample-config-files/roadwarrior-server.conf
+        /usr/share/doc/openvpn-2.4.7/sample/sample-config-files/server.conf   <--------- 注意该示例配置文件
+        /usr/share/doc/openvpn-2.4.7/sample/sample-config-files/xinetd-server-config
 
 // 先 看一看 默认的 设置 (后续再根据需要 修改 或 补充, 参数的叫详细解释 见 man openvpn 或 其他参考资料)
 [root@vpnserver ~]# grep -E '^[^#;]' /usr/share/doc/openvpn-2.4.7/sample/sample-config-files/server.conf
@@ -490,19 +512,40 @@ copy 证书文件 到 openvpn server 的相应目录----------------------------
 
 // 查看 一下 网络端口
 [root@vpnserver ~]# netstat -anptu | grep openvpn
-udp        0      0 0.0.0.0:1194            0.0.0.0:*                           2016/openvpn
+      udp        0      0 0.0.0.0:1194            0.0.0.0:*                           2016/openvpn
 
 // 查看 自动 新添加的 网卡
 [root@vpnserver 01-openvpn-basic]# ip addr show tun0
-4: tun0: <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UNKNOWN qlen 100
-    link/none
-    inet 10.8.0.1 peer 10.8.0.2/32 scope global tun0
-       valid_lft forever preferred_lft forever
-    inet6 fe80::80f5:305c:acc5:63bd/64 scope link flags 800
-       valid_lft forever preferred_lft forever
+      4: tun0: <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UNKNOWN qlen 100
+          link/none
+          inet 10.8.0.1 peer 10.8.0.2/32 scope global tun0
+             valid_lft forever preferred_lft forever
+          inet6 fe80::80f5:305c:acc5:63bd/64 scope link flags 800
+             valid_lft forever preferred_lft forever
 
 
+---------------------------------------------------------------------------------------------------
+vpnserver 的 网络配置
 
+// 启用 路由 转发功能
+[root@vpnserver ~]# vim /etc/sysctl.conf
+      net.ipv4.ip_forward = 1
+[root@vpnserver ~]# sysctl -p   # 加载配置文件 /etc/sysctl.conf
+      net.ipv4.ip_forward = 1
+
+# 查看 路由转发设置 结果
+[root@vpnserver ~]# cat /proc/sys/net/ipv4/ip_forward
+      1
+
+# ping 一下 百度
+[root@vpnclient ~]# ping www.baidu.com
+PING www.baidu.com (61.135.169.121) 56(84) bytes of data.
+64 bytes from www.baidu.com (61.135.169.121): icmp_seq=2 ttl=127 time=5.19 ms
+64 bytes from www.baidu.com (61.135.169.121): icmp_seq=3 ttl=127 time=4.55 ms
+
+
+# 配置 snat ( 其实 MASQUERADE 就是 动态的 snat)
+[root@vpnserver ~]# iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -j MASQUERADE   #注: TODO: 记得持久化 设置 snat (这里我偷懒 就暂时 不设置了)
 
 ---------------------------------------------------------------------------------------------------
 client side (此例为 centos7 作为客户端, 不同的 linux 解决 pull dns 问题时 up 和 down 的配置文件路径可能不同):
@@ -646,6 +689,23 @@ client side (此例为 centos7 作为客户端, 不同的 linux 解决 pull dns 
 
 
 
+---------------------------------------------------------------------------------------------------
+测试:
+
+// 测试: ping 一下 ssh_server
+[root@vpnclient ~]# ping 192.168.175.20
+        PING 192.168.175.20 (192.168.175.20) 56(84) bytes of data.
+        64 bytes from 192.168.175.20: icmp_seq=1 ttl=63 time=1.04 ms
+        64 bytes from 192.168.175.20: icmp_seq=2 ttl=63 time=0.742 ms
+
+// ssh 远程 连接 ssh_server 试试
+[root@vpnclient ~]# ssh root@192.168.175.20
+
+// 查看 ssh_server 的网络连接信息
+[root@ssh_server ~]# netstat -anptu | grep sshd
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      868/sshd
+tcp        0      0 192.168.175.20:22       10.8.0.6:55234          ESTABLISHED 1280/sshd: root@pts <--------- 注意使用的是 vpnclient 的虚拟 ip: 10.8.0.6
+tcp6       0      0 :::22                   :::*                    LISTEN      868/sshd
 
 
 
@@ -691,7 +751,7 @@ Diffie-Hellman密钥交换协议/算法
 https://openvpn.net/
 
 
-
+------------------------------------------
 troubleshoot:
     linux 的 client 对于服务器端 push 的 dns 需要 额外的处理:
       http://blog.claves.me/2015/11/22/openvpn-push-dns-to-linux-client/
@@ -699,16 +759,24 @@ troubleshoot:
       https://serverfault.com/questions/590706/openvpn-client-force-dns-server
       centos7 解决办法:
             [root@basic ~]# rpm -ql openvpn | grep client | grep pull
-            /usr/share/doc/openvpn-2.4.7/contrib/pull-resolv-conf/client.down
-            /usr/share/doc/openvpn-2.4.7/contrib/pull-resolv-conf/client.up
+                    /usr/share/doc/openvpn-2.4.7/contrib/pull-resolv-conf/client.down
+                    /usr/share/doc/openvpn-2.4.7/contrib/pull-resolv-conf/client.up
+
+            [root@vpnclient ~]# cp /usr/share/doc/openvpn-2.4.7/contrib/pull-resolv-conf/client.up    /etc/openvpn/
+            [root@vpnclient ~]# cp /usr/share/doc/openvpn-2.4.7/contrib/pull-resolv-conf/client.down  /etc/openvpn/
+            [root@vpnclient ~]# chmod +x /etc/openvpn/client.up
+            [root@vpnclient ~]# chmod +x /etc/openvpn/client.down
 
 
+            [root@vpnclient ~]# vim /etc/openvpn/client.conf
 
+                    # 如下 3 行 设置是为解决 centos7 作为 openvpn 客户端 的 pull dns 的问题 (linux作为客户端基本都存在这种问题)
+                    # 注: 这里没有使用
+                    # plugin openvpn-plugin-down-root.so  "/etc/openvpn/client.down" 以及 user nobody 和 group nobody 的设置,
+                    # 因为 实际测试 在 centos7 中 openvpn-plugin-down-root.so 并没有起效果(从而导致无法还原 DNS 设置)
+                    script-security 2
+                    up /etc/openvpn/client.up
+                    down /etc/openvpn/client.down
 
-
-
-
-
-
-
+------------------------------------------
 
