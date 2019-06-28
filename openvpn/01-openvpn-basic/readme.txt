@@ -319,6 +319,9 @@
         An updated CRL has been created.
         CRL file: /etc/openvpn/easy-rsa/3/pki/crl.pem
 
+// 生成 一段 随机秘钥 作为共享密钥(增强信道安全性), 该文件需要 使用预先存在的安全信道(如 scp, rsync工具拷贝)与 对等方(peer) 共享此文件
+[root@vpnserver ~]# openvpn --genkey --secret /etc/openvpn/myvpn_shared_secret_key.tlsauth
+
 
 
 
@@ -326,18 +329,22 @@ copy 证书文件 到 openvpn server 的相应目录----------------------------
 
 // copy server 证书
 [root@vpnserver 3]# cp pki/ca.crt /etc/openvpn/server/
+[root@vpnserver ~]# cp /etc/openvpn/myvpn_shared_secret_key.tlsauth  /etc/openvpn/server/
 [root@vpnserver 3]# cp pki/issued/vpnserver.crt /etc/openvpn/server/
 [root@vpnserver 3]# cp pki/private/vpnserver.key /etc/openvpn/server/
 
 
 // copy client 证书
 [root@vpnserver 3]# cp pki/ca.crt /etc/openvpn/client/
+[root@vpnserver ~]# cp /etc/openvpn/myvpn_shared_secret_key.tlsauth  /etc/openvpn/client/
 [root@vpnserver 3]# cp pki/issued/vpnclient01.crt /etc/openvpn/client/
 [root@vpnserver 3]# cp pki/private/vpnclient01.key /etc/openvpn/client/
 
 // copy DH and CRL Key.
 [root@vpnserver 3]# cp pki/dh.pem /etc/openvpn/server/
 [root@vpnserver 3]# cp pki/crl.pem /etc/openvpn/server/
+
+
 
 
 
@@ -353,9 +360,30 @@ copy 证书文件 到 openvpn server 的相应目录----------------------------
 /usr/share/doc/openvpn-2.4.7/sample/sample-config-files/server.conf   <--------- 注意该示例配置文件
 /usr/share/doc/openvpn-2.4.7/sample/sample-config-files/xinetd-server-config
 
+// 先 看一看 默认的 设置 (后续再根据需要 修改 或 补充, 参数的叫详细解释 见 man openvpn 或 其他参考资料)
+[root@vpnserver ~]# grep -E '^[^#;]' /usr/share/doc/openvpn-2.4.7/sample/sample-config-files/server.conf
+          port 1194
+          proto udp
+          dev tun
+          ca ca.crt
+          cert server.crt
+          key server.key  # This file should be kept secret
+          dh dh2048.pem
+          server 10.8.0.0 255.255.255.0
+          ifconfig-pool-persist ipp.txt
+          keepalive 10 120
+          tls-auth ta.key 0 # This file is secret
+          cipher AES-256-CBC
+          persist-key
+          persist-tun
+          status openvpn-status.log
+          verb 3
+          explicit-exit-notify 1
 
+
+// 创建 /etc/openvpn/server.conf 并 根据需要对其设置 进行 修改 和 补充
 [root@vpnserver ~]# cp /usr/share/doc/openvpn-2.4.7/sample/sample-config-files/server.conf  /etc/openvpn/server.conf
-
+[root@vpnserver ~]# vim /etc/openvpn/server.conf
 
 
 
