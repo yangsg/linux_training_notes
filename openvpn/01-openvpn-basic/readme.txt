@@ -385,6 +385,40 @@ copy 证书文件 到 openvpn server 的相应目录----------------------------
 [root@vpnserver ~]# cp /usr/share/doc/openvpn-2.4.7/sample/sample-config-files/server.conf  /etc/openvpn/server.conf
 [root@vpnserver ~]# vim /etc/openvpn/server.conf
 
+      ca /etc/openvpn/server/ca.crt
+      cert /etc/openvpn/server/vpnserver.crt
+      key /etc/openvpn/server/vpnserver.key  # This file should be kept secret
+
+      dh /etc/openvpn/server/dh.pem
+
+      ## 证书吊销列表
+      crl-verify /etc/openvpn/server/crl.pem
+
+      server 10.8.0.0 255.255.255.0   # 注: 不能与内网现有的任何网段冲突
+
+      push "route 0.0.0.0 0.0.0.0"  # 指定 client 端允许访问那些网段的主机(此例中允许其访问所有网段)
+
+      push "redirect-gateway def1 bypass-dhcp"
+
+      push "dhcp-option DNS 8.8.8.8"  # 指定 client端使用的主 DNS, 此例中为 Google提供的免费DNS服务器: 主: 8.8.8.8, 备用: 8.8.4.4
+      push "dhcp-option DNS 8.8.4.4"  # 指定 client端使用的备份 DNS
+
+      ;tls-auth ta.key 0 # This file is secret
+      tls-crypt /etc/openvpn/server/myvpn_shared_secret_key.tlsauth  #(增强安全性) 加密和认证 所有控制 信道的 packets. 比起 tls-auth, tls-crypt 增加了加密 TLS control channel的功能
+
+      compress lz4-v2         # 启用服务器端在 vpn 链路 上的 lz4-v2 压缩功能, 该功能需要 openvpn v2.4+ 的支持
+      push "compress lz4-v2"  # 同时将 lz4-v2 压缩功能的启用设置 推送给 client端, 该功能需要 openvpn v2.4+ 的支持
+
+      user nobody    # 在 初始化 之后 以 非特权user 'nobody' 运行
+      group nobody   # 在 初始化 之后 以 非特权group 'nobody' 运行
+
+      log-append  /var/log/openvpn.log   # 记录日志, 选项 log-append 用于每次启动 openvpn后 追加 log 信息, 而不是像选项 log 那样先 truncate 再写入
+
+
+
+
+
+
 
 
 
