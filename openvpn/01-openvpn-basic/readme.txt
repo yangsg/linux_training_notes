@@ -539,9 +539,9 @@ vpnserver 的 网络配置
 
 # ping 一下 百度
 [root@vpnclient ~]# ping www.baidu.com
-PING www.baidu.com (61.135.169.121) 56(84) bytes of data.
-64 bytes from www.baidu.com (61.135.169.121): icmp_seq=2 ttl=127 time=5.19 ms
-64 bytes from www.baidu.com (61.135.169.121): icmp_seq=3 ttl=127 time=4.55 ms
+        PING www.baidu.com (61.135.169.121) 56(84) bytes of data.
+        64 bytes from www.baidu.com (61.135.169.121): icmp_seq=2 ttl=127 time=5.19 ms
+        64 bytes from www.baidu.com (61.135.169.121): icmp_seq=3 ttl=127 time=4.55 ms
 
 
 # 配置 snat ( 其实 MASQUERADE 就是 动态的 snat)
@@ -703,9 +703,9 @@ client side (此例为 centos7 作为客户端, 不同的 linux 解决 pull dns 
 
 // 查看 ssh_server 的网络连接信息
 [root@ssh_server ~]# netstat -anptu | grep sshd
-tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      868/sshd
-tcp        0      0 192.168.175.20:22       10.8.0.6:55234          ESTABLISHED 1280/sshd: root@pts <--------- 注意使用的是 vpnclient 的虚拟 ip: 10.8.0.6
-tcp6       0      0 :::22                   :::*                    LISTEN      868/sshd
+      tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      868/sshd
+      tcp        0      0 192.168.175.20:22       10.8.0.6:55234          ESTABLISHED 1280/sshd: root@pts <--------- 注意使用的是 vpnclient 的虚拟 ip: 10.8.0.6
+      tcp6       0      0 :::22                   :::*                    LISTEN      868/sshd
 
 
 
