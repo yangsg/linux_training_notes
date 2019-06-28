@@ -326,25 +326,31 @@ copy 证书文件 到 openvpn server 的相应目录----------------------------
 
 // copy server 证书
 [root@vpnserver 3]# cp pki/ca.crt /etc/openvpn/server/
-[root@vpnserver 3]# cp pki/issued/vpn-server.crt /etc/openvpn/server/
-[root@vpnserver 3]# cp pki/private/vpn-server.key /etc/openvpn/server/
+[root@vpnserver 3]# cp pki/issued/vpnserver.crt /etc/openvpn/server/
+[root@vpnserver 3]# cp pki/private/vpnserver.key /etc/openvpn/server/
+
 
 // copy client 证书
 [root@vpnserver 3]# cp pki/ca.crt /etc/openvpn/client/
-[root@vpnserver 3]# cp pki/issued/client01.crt /etc/openvpn/client/
-[root@vpnserver 3]# cp pki/private/client01.key /etc/openvpn/client/
+[root@vpnserver 3]# cp pki/issued/vpnclient01.crt /etc/openvpn/client/
+[root@vpnserver 3]# cp pki/private/vpnclient01.key /etc/openvpn/client/
 
 // copy DH and CRL Key.
 [root@vpnserver 3]# cp pki/dh.pem /etc/openvpn/server/
 [root@vpnserver 3]# cp pki/crl.pem /etc/openvpn/server/
 
 
+
 配置 Configure OpenVPN-----------------------------
 [root@vpnserver 3]# cd
 
-[root@vpnserver ~]# rpm -ql openvpn | grep server.conf
+[root@vpnserver ~]# rpm -ql openvpn | grep server
+/etc/openvpn/server
+/run/openvpn-server
+/usr/lib/systemd/system/openvpn-server@.service
+/usr/share/doc/openvpn-2.4.7/sample/sample-config-files/loopback-server
 /usr/share/doc/openvpn-2.4.7/sample/sample-config-files/roadwarrior-server.conf
-/usr/share/doc/openvpn-2.4.7/sample/sample-config-files/server.conf  <--------- 注意该配置文件
+/usr/share/doc/openvpn-2.4.7/sample/sample-config-files/server.conf   <--------- 注意该示例配置文件
 /usr/share/doc/openvpn-2.4.7/sample/sample-config-files/xinetd-server-config
 
 
@@ -360,6 +366,8 @@ copy 证书文件 到 openvpn server 的相应目录----------------------------
 网上资料:
 
     https://baike.baidu.com/item/%E8%99%9A%E6%8B%9F%E4%B8%93%E7%94%A8%E7%BD%91%E7%BB%9C/8747869?fromtitle=VPN&fromid=382304&fr=aladdin
+    https://baike.baidu.com/item/ssl/320778?fr=aladdin
+    https://baike.baidu.com/item/TLS/2979545?fr=aladdin
 
 
 各种安装 openvpn 的资料:
