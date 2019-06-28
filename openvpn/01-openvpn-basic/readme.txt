@@ -531,6 +531,14 @@ client side:
         ca.crt  myvpn_shared_secret_key.tlsauth  vpnclient01.crt  vpnclient01.key
 
 
+// centos7 作为 openvpn 客户端时 需要执行如下 4 行 命令(因为要解决 pull dns 的问题)
+[root@vpnclient ~]# cp /usr/share/doc/openvpn-2.4.7/contrib/pull-resolv-conf/client.up    /etc/openvpn/
+[root@vpnclient ~]# cp /usr/share/doc/openvpn-2.4.7/contrib/pull-resolv-conf/client.down  /etc/openvpn/
+[root@vpnclient ~]# chmod +x /etc/openvpn/client.up
+[root@vpnclient ~]# chmod +x /etc/openvpn/client.down
+
+
+
 // 查看下一 openvpn 示例 客户端 配置文件 的默认设置
 [root@vpnclient ~]# grep -E '^[^#;]' /usr/share/doc/openvpn-2.4.7/sample/sample-config-files/client.conf
           client
