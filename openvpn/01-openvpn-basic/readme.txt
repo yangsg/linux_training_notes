@@ -1,6 +1,7 @@
 
 
 ---------------------------------------------------------------------------------------------------
+server side:
 
 安装软件 -----------------------------
 // 更新 openssl
@@ -406,6 +407,8 @@ copy 证书文件 到 openvpn server 的相应目录----------------------------
       ;tls-auth ta.key 0 # This file is secret
       tls-crypt /etc/openvpn/server/myvpn_shared_secret_key.tlsauth  #(增强安全性) 加密和认证 所有控制 信道的 packets. 比起 tls-auth, tls-crypt 增加了加密 TLS control channel的功能
 
+      tls-version-min 1.2  # 设置 tls 的最低版本为 1.2 (因为其最低版本默认值为 1)
+
       compress lz4-v2         # 启用服务器端在 vpn 链路 上的 lz4-v2 压缩功能, 该功能需要 openvpn v2.4+ 的支持
       push "compress lz4-v2"  # 同时将 lz4-v2 压缩功能的启用设置 推送给 client端, 该功能需要 openvpn v2.4+ 的支持
 
@@ -489,7 +492,67 @@ copy 证书文件 到 openvpn server 的相应目录----------------------------
 [root@vpnserver ~]# netstat -anptu | grep openvpn
 udp        0      0 0.0.0.0:1194            0.0.0.0:*                           2016/openvpn
 
+// 查看 自动 新添加的 网卡
+[root@vpnserver 01-openvpn-basic]# ip addr show tun0
+4: tun0: <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UNKNOWN qlen 100
+    link/none
+    inet 10.8.0.1 peer 10.8.0.2/32 scope global tun0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::80f5:305c:acc5:63bd/64 scope link flags 800
+       valid_lft forever preferred_lft forever
 
+
+
+
+---------------------------------------------------------------------------------------------------
+client side:
+
+[root@vpnclient ~]# yum -y install openvpn
+[root@vpnclient ~]# rpm -q openvpn
+      openvpn-2.4.7-1.el7.x86_64
+
+
+// 查看一下 openvpn 总 与 client 相关的文件
+[root@vpnclient ~]# rpm -ql openvpn | grep client
+/etc/openvpn/client
+/run/openvpn-client
+/usr/lib/systemd/system/openvpn-client@.service
+/usr/share/doc/openvpn-2.4.7/contrib/pull-resolv-conf/client.down  <-------
+/usr/share/doc/openvpn-2.4.7/contrib/pull-resolv-conf/client.up    <-------
+/usr/share/doc/openvpn-2.4.7/sample/sample-config-files/client.conf  <------
+/usr/share/doc/openvpn-2.4.7/sample/sample-config-files/loopback-client
+/usr/share/doc/openvpn-2.4.7/sample/sample-config-files/roadwarrior-client.conf
+/usr/share/doc/openvpn-2.4.7/sample/sample-config-files/xinetd-client-config
+
+
+// copy  client 端相关 的 证书文件 到其 相应的目录下
+[root@vpnserver ~]# rsync -av /etc/openvpn/client/{ca.crt,vpnclient01.crt,vpnclient01.key,myvpn_shared_secret_key.tlsauth} root@192.168.10.20:/etc/openvpn/client/
+[root@vpnclient ~]# ls /etc/openvpn/client
+        ca.crt  myvpn_shared_secret_key.tlsauth  vpnclient01.crt  vpnclient01.key
+
+
+// 查看下一 openvpn 示例 客户端 配置文件 的默认设置
+[root@vpnclient ~]# grep -E '^[^#;]' /usr/share/doc/openvpn-2.4.7/sample/sample-config-files/client.conf
+          client
+          dev tun
+          proto udp
+          remote my-server-1 1194
+          resolv-retry infinite
+          nobind
+          persist-key
+          persist-tun
+          ca ca.crt
+          cert client.crt
+          key client.key
+          remote-cert-tls server
+          tls-auth ta.key 1
+          cipher AES-256-CBC
+          verb 3
+
+
+
+// 创建 openvpn 的 client 端配置文件 /etc/openvpn/client.conf  并 根据需要 对其中的某些 设置进行 修改 或 补充
+[root@vpnclient ~]# cp /usr/share/doc/openvpn-2.4.7/sample/sample-config-files/client.conf  /etc/openvpn/client.conf
 
 
 
