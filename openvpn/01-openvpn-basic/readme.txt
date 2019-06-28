@@ -416,6 +416,79 @@ copy 证书文件 到 openvpn server 的相应目录----------------------------
 
 
 
+// 查看一下 openvpn 提供的 systemd unit service file 文件
+[root@vpnserver ~]# rpm -ql openvpn | grep service
+        /usr/lib/systemd/system/openvpn-client@.service
+        /usr/lib/systemd/system/openvpn-server@.service
+        /usr/lib/systemd/system/openvpn@.service
+
+
+// 查看一下 文件 /usr/lib/systemd/system/openvpn@.service 的内容
+[root@vpnserver ~]# cat /usr/lib/systemd/system/openvpn@.service
+          [Unit]
+          Description=OpenVPN Robust And Highly Flexible Tunneling Application On %I
+          After=network.target
+
+          [Service]
+          Type=notify
+          PrivateTmp=true
+          ExecStart=/usr/sbin/openvpn --cd /etc/openvpn/ --config %i.conf
+
+          [Install]
+          WantedBy=multi-user.target
+
+// 启动 openvpn 服务 并 设置为 开机自启
+[root@vpnserver ~]# systemctl start openvpn@server
+[root@vpnserver ~]# systemctl enable openvpn@server
+        Created symlink from /etc/systemd/system/multi-user.target.wants/openvpn@server.service to /usr/lib/systemd/system/openvpn@.service.
+
+
+
+
+// 查看一下 启动 unit service 的状态信息
+[root@vpnserver ~]# systemctl status openvpn@server
+        ● openvpn@server.service - OpenVPN Robust And Highly Flexible Tunneling Application On server
+           Loaded: loaded (/usr/lib/systemd/system/openvpn@.service; enabled; vendor preset: disabled)
+           Active: active (running) since Fri 2019-06-28 14:00:02 CST; 4min 55s ago
+         Main PID: 2016 (openvpn)
+           Status: "Initialization Sequence Completed"
+           CGroup: /system.slice/system-openvpn.slice/openvpn@server.service
+                   └─2016 /usr/sbin/openvpn --cd /etc/openvpn/ --config server.conf
+
+        Jun 28 14:00:02 vpnserver.xintian.com systemd[1]: Starting OpenVPN Robust And Highly Flexible Tunneling Application On server...
+        Jun 28 14:00:02 vpnserver.xintian.com systemd[1]: Started OpenVPN Robust And Highly Flexible Tunneling Application On server.
+
+
+// 查看 一下 日志信息:
+[root@vpnserver ~]# cat /var/log/openvpn.log
+      Fri Jun 28 14:00:02 2019 OpenVPN 2.4.7 x86_64-redhat-linux-gnu [Fedora EPEL patched] [SSL (OpenSSL)] [LZO] [LZ4] [EPOLL] [PKCS11] [MH/PKTINFO] [AEAD] built on Feb 20 2019
+      Fri Jun 28 14:00:02 2019 library versions: OpenSSL 1.0.2k-fips  26 Jan 2017, LZO 2.06
+      Fri Jun 28 14:00:02 2019 Diffie-Hellman initialized with 2048 bit key
+      Fri Jun 28 14:00:02 2019 Outgoing Control Channel Encryption: Cipher 'AES-256-CTR' initialized with 256 bit key
+      Fri Jun 28 14:00:02 2019 Outgoing Control Channel Encryption: Using 256 bit message hash 'SHA256' for HMAC authentication
+      Fri Jun 28 14:00:02 2019 Incoming Control Channel Encryption: Cipher 'AES-256-CTR' initialized with 256 bit key
+      Fri Jun 28 14:00:02 2019 Incoming Control Channel Encryption: Using 256 bit message hash 'SHA256' for HMAC authentication
+      Fri Jun 28 14:00:02 2019 ROUTE_GATEWAY 192.168.175.2/255.255.255.0 IFACE=ens33 HWADDR=00:0c:29:82:ac:0f
+      Fri Jun 28 14:00:02 2019 TUN/TAP device tun0 opened
+      Fri Jun 28 14:00:02 2019 TUN/TAP TX queue length set to 100
+      Fri Jun 28 14:00:02 2019 /sbin/ip link set dev tun0 up mtu 1500
+      Fri Jun 28 14:00:02 2019 /sbin/ip addr add dev tun0 local 10.8.0.1 peer 10.8.0.2
+      Fri Jun 28 14:00:02 2019 /sbin/ip route add 10.8.0.0/24 via 10.8.0.2
+      Fri Jun 28 14:00:02 2019 Could not determine IPv4/IPv6 protocol. Using AF_INET
+      Fri Jun 28 14:00:02 2019 Socket Buffers: R=[212992->212992] S=[212992->212992]
+      Fri Jun 28 14:00:02 2019 UDPv4 link local (bound): [AF_INET][undef]:1194
+      Fri Jun 28 14:00:02 2019 UDPv4 link remote: [AF_UNSPEC]
+      Fri Jun 28 14:00:02 2019 GID set to nobody
+      Fri Jun 28 14:00:02 2019 UID set to nobody
+      Fri Jun 28 14:00:02 2019 MULTI: multi_init called, r=256 v=256
+      Fri Jun 28 14:00:02 2019 IFCONFIG POOL: base=10.8.0.4 size=62, ipv6=0
+      Fri Jun 28 14:00:02 2019 IFCONFIG POOL LIST
+      Fri Jun 28 14:00:02 2019 Initialization Sequence Completed
+
+// 查看 一下 网络端口
+[root@vpnserver ~]# netstat -anptu | grep openvpn
+udp        0      0 0.0.0.0:1194            0.0.0.0:*                           2016/openvpn
+
 
 
 
