@@ -739,12 +739,12 @@ client size (win7 操作系统), 假设 openvpn-install-2.4.3-I601.exe 安装路
 // 将 vpnclient(centos7的 openvpn 客户端) 上的 /etc/openvpn/client.conf 修改 后 copy 到 win7 系统 openvpn 安装目录下的 config 目录,
    并将其 更名 为 client.ovpn, 注: 修改的内容如下:
                     # 删除(或注释)如下 几行配置即可,因为相对于centos7 vpnclient 而言, win7 vpnclient 不需要这几行配置
-                    script-security 2             <---- win7 不需要
-                    up /etc/openvpn/client.up     <---- win7 不需要
-                    down /etc/openvpn/client.down <---- win7 不需要
+                    ;script-security 2             <---- win7 不需要
+                    ;up /etc/openvpn/client.up     <---- win7 不需要
+                    ;down /etc/openvpn/client.down <---- win7 不需要
 
-                    user nobody    # 在 初始化 之后 以 非特权user 'nobody' 运行  <---- win7 不需要
-                    group nobody   # 在 初始化 之后 以 非特权group 'nobody' 运行 <---- win7 不需要
+                    ;user nobody    # 在 初始化 之后 以 非特权user 'nobody' 运行  <---- win7 不需要
+                    ;group nobody   # 在 初始化 之后 以 非特权group 'nobody' 运行 <---- win7 不需要
 
                     (可选)如果愿意, 可以使用 unix2dos 命令将 client.ovpn 转换一下再放到 win7 对应的目录下, 方便 win7 的记事本文本编辑器打开查看
 
