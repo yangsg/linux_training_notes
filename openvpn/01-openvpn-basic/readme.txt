@@ -556,8 +556,14 @@ vpnserver 的 网络配置
         64 bytes from www.baidu.com (61.135.169.121): icmp_seq=3 ttl=127 time=4.55 ms
 
 
-# 配置 snat ( 其实 MASQUERADE 就是 动态的 snat)
-[root@vpnserver ~]# iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -j MASQUERADE   #注: TODO: 记得持久化 设置 snat (这里我偷懒 就暂时 不设置了)
+# (比例使用iptables) 配置 snat ( 其实 MASQUERADE 就是 动态的 snat)
+[root@vpnserver ~]# iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -j MASQUERADE
+[root@vpnserver ~]# iptables-save > /etc/iptables-save.rules
+[root@vpnserver ~]# cat /etc/rc.d/rc.local
+        /usr/sbin/iptables-restore < /etc/iptables-save.rules
+
+[root@vpnserver ~]# chmod +x /etc/rc.d/rc.local
+
 
 ---------------------------------------------------------------------------------------------------
 client side (此例为 centos7 作为客户端, 不同的 linux 解决 pull dns 问题时 up 和 down 的配置文件路径可能不同):
