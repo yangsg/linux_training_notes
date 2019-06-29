@@ -1,5 +1,17 @@
 
 ---------------------------------------------------------------------------------------------------
+关于 win7 操作系统的 openvpn 客户端软件版本兼容问题:
+
+经实际试验,
+openvpn-install-2.4.3-I601.exe 在 win7 上能正常工作,
+openvpn-install-2.4.7-I606-Win7.exe 在 win7 上无法正常工作 (日志总报错: 'CreateFile failed on TAP device' 和 'OpenVPN: All TAP-Windows adapters on this system are currently in use')
+
+所以 win7 上应使用 openvpn-install-2.4.3-I601.exe, 存了一份到百度网盘, 更名为 win7-vpn-install-2.4.3-I601.exe(因百度认为open是个敏感词汇)
+    下载链接: https://pan.baidu.com/s/1RUCGxxmMriMdTuecrxZArA
+    提取码:   xpw5
+
+---------------------------------------------------------------------------------------------------
+
 主机ip概要: 其中 网段 192.168.175.0/24 可以连接外网, 而 192.168.10.0/24 无法访问外网
 
 ssh_server:        192.168.175.20/24  <--- ssh_server 与 vpnserver 服务搭建 并没有什么关系, 仅为演示效果用
@@ -21,17 +33,6 @@ vpnclient:         192.168.10.20/24
         10.8.0.0        192.168.175.110 255.255.255.0   UG    100    0        0 ens33  <--- 注: 要能响应 虚拟网络的 主机, ssh_server 需要知道如果知道到虚拟网段的路由
         192.168.175.0   0.0.0.0         255.255.255.0   U     100    0        0 ens33
 
-
----------------------------------------------------------------------------------------------------
-关于 win7 操作系统的 openvpn 客户端软件版本兼容问题:
-
-经实际试验,
-openvpn-install-2.4.3-I601.exe 在 win7 上能正常工作,
-openvpn-install-2.4.7-I606-Win7.exe 在 win7 上无法正常工作 (日志总报错: 'CreateFile failed on TAP device' 和 'OpenVPN: All TAP-Windows adapters on this system are currently in use')
-
-所以 win7 上应使用 openvpn-install-2.4.3-I601.exe, 存了一份到百度网盘, 更名为 win7-vpn-install-2.4.3-I601.exe(因百度认为open是个敏感词汇)
-    下载链接: https://pan.baidu.com/s/1RUCGxxmMriMdTuecrxZArA
-    提取码:   xpw5
 
 ---------------------------------------------------------------------------------------------------
 server side:
