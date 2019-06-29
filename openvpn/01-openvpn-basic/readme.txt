@@ -1,6 +1,17 @@
 
 
 ---------------------------------------------------------------------------------------------------
+关于 win7 操作系统的 openvpn 客户端软件版本兼容问题:
+
+经实际试验,
+openvpn-install-2.4.3-I601.exe 在 win7 上能正常工作,
+openvpn-install-2.4.7-I606-Win7.exe 在 win7 上无法正常工作 (日志总报错: 'CreateFile failed on TAP device' 和 'OpenVPN: All TAP-Windows adapters on this system are currently in use')
+
+所以 win7 上应使用 openvpn-install-2.4.3-I601.exe, 存了一份到百度网盘, 更名为 win7-vpn-install-2.4.3-I601.exe(因百度认为open是个敏感词汇)
+    下载链接: https://pan.baidu.com/s/1RUCGxxmMriMdTuecrxZArA
+    提取码:   xpw5
+
+---------------------------------------------------------------------------------------------------
 server side:
 
 安装软件 -----------------------------
