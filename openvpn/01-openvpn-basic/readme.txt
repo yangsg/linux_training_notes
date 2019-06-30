@@ -559,7 +559,7 @@ vpnserver 的 网络配置
         64 bytes from www.baidu.com (61.135.169.121): icmp_seq=3 ttl=127 time=4.55 ms
 
 
-# (比例使用iptables) 配置 snat ( 其实 MASQUERADE 就是 动态的 snat)
+# (此例使用iptables) 配置 snat ( 其实 MASQUERADE 就是 动态的 snat)
 [root@vpnserver ~]# iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -j MASQUERADE
 [root@vpnserver ~]# iptables-save > /etc/iptables-save.rules
 [root@vpnserver ~]# cat /etc/rc.d/rc.local
