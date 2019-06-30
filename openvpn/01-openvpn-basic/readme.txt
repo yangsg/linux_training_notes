@@ -581,8 +581,8 @@ client side (此例为 centos7 作为客户端, 不同的 linux 解决 pull dns 
 /etc/openvpn/client
 /run/openvpn-client
 /usr/lib/systemd/system/openvpn-client@.service
-/usr/share/doc/openvpn-2.4.7/contrib/pull-resolv-conf/client.down  <-------
-/usr/share/doc/openvpn-2.4.7/contrib/pull-resolv-conf/client.up    <-------
+/usr/share/doc/openvpn-2.4.7/contrib/pull-resolv-conf/client.down  <------- centos7作为openvpn客户端时需要, windows操作系统不需要
+/usr/share/doc/openvpn-2.4.7/contrib/pull-resolv-conf/client.up    <------- centos7作为openvpn客户端时需要, windows操作系统不需要
 /usr/share/doc/openvpn-2.4.7/sample/sample-config-files/client.conf  <------
 /usr/share/doc/openvpn-2.4.7/sample/sample-config-files/loopback-client
 /usr/share/doc/openvpn-2.4.7/sample/sample-config-files/roadwarrior-client.conf
