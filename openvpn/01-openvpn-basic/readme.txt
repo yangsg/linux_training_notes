@@ -26,7 +26,6 @@ vpnclient:         192.168.10.20/24
 ---------------------------------------------------------------------------------------------------
 (可选)配置 ssh_server 路由信息:
 [root@ssh_server ~]# vim /etc/sysconfig/network-scripts/route-ens33
-[root@ssh_server ~]# cat /etc/sysconfig/network-scripts/route-ens33
         10.8.0.0/24 via 192.168.175.110
 
 [root@ssh_server ~]# nmcli conn reload
