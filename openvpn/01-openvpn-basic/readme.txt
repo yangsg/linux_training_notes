@@ -10,6 +10,10 @@ openvpn-install-2.4.7-I606-Win7.exe 在 win7 上无法正常工作 (日志总报
     下载链接: https://pan.baidu.com/s/1RUCGxxmMriMdTuecrxZArA
     提取码:   xpw5
 
+openvpn-install-2.4.7-I606-Win10.exe 下载地址:
+    下载链接：https://pan.baidu.com/s/1aCM7yJStxfw3NIjcLGTO_Q
+    提取码：q3ot
+
 ---------------------------------------------------------------------------------------------------
 
 主机ip概要: 其中 网段 192.168.175.0/24 可以连接外网, 而 192.168.10.0/24 无法访问外网
