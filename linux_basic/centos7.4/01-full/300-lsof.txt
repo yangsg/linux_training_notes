@@ -1,0 +1,382 @@
+
+# keyword lsof
+
+man lsof
+
+
+作用: lsof - list open files
+
+语法: lsof  [ -?abChlnNOPRtUvVX ] [ -A A ] [ -c c ] [ +c c ] [ +|-d d ] [ +|-D D ] [ +|-e s ] [ +|-f [cfgGn] ] [ -F [f] ] [ -g [s] ] [ -i [i] ] [ -k k ] [ -K k ] [
+       +|-L [l] ] [ +|-m m ] [ +|-M ] [ -o [o] ] [ -p s ] [ +|-r [t[m<fmt>]] ] [ -s [p:s] ] [ -S [t] ] [ -T [t] ] [ -u s ] [ +|-w ] [ -x [fl] ] [ -z [z] ] [ -Z  [Z] ]
+       [ -- ] [names]
+
+说明:
+       Lsof revision 4.87 lists on its standard output file information about files opened by processes for the following UNIX dialects:
+
+            Apple Darwin 9 and Mac OS X 10.[567]
+            FreeBSD 4.9 and 6.4 for x86-based systems
+            FreeBSD 8.2, 9.0 and 10.0 for AMD64-based systems
+            Linux 2.1.72 and above for x86-based systems
+            Solaris 9, 10 and 11
+
+       (See the DISTRIBUTION section of this manual page for information on how to obtain the latest lsof revision.)
+
+       An  open  file may be a regular file, a directory, a block special file, a character special file, an executing text reference, a library, a stream or a
+       network file (Internet socket, NFS file or UNIX domain socket.)  A specific file or all the files in a file system may be selected by path.
+
+       Instead of a formatted display, lsof will produce output that can be parsed by other programs.  See the -F, option description, and the OUTPUT FOR OTHER PRO‐
+       GRAMS section for more information.
+
+       In  addition to producing a single output list, lsof will run in repeat mode.  In repeat mode it will produce output, delay, then repeat the output operation
+       until stopped with an interrupt or quit signal.  See the +|-r [t[m<fmt>]] option description for more information.
+
+
+OPTIONS
+        --------------------------
+        中文注释:
+                如果没有指定任何选项, 则 lsof 会列出 所有 active processes 的所有的 open files.
+        --------------------------
+       In the absence of any options, lsof lists all open files belonging to all active processes.
+
+        --------------------------
+        中文注释:
+                如果 any list request option 被指定, 则 other list 的 requests 必须被明确地 requested.
+                (注: 就是说 指定了 任何显示 list 的选项, 如果还想同时显示其它的 list, 则还需要同时提供其它 list 所对应的选项)
+        --------------------------
+       If any list request option is specified, other list requests must be specifically requested - e.g., if -U is specified for the listing of UNIX socket  files,
+       NFS files won't be listed unless -N is also specified; or if a user list is specified with the -u option, UNIX domain socket files, belonging to users not in
+       the list, won't be listed unless the -U option is also specified.
+
+        --------------------------
+        中文注释:
+                通常 被明确说明的 list options 表示 or 的关系(可理解为对选择条件进行 or 运算). 除了一些特例.
+        --------------------------
+       Normally list options that are specifically stated are ORed - i.e., specifying the -i option without an address and the -ufoo option produces  a  listing  of
+       all network files OR files belonging to processes owned by user ``foo''.  The exceptions are:
+
+       1) the `^' (negated) login name or user ID (UID), specified with the -u option;  (符号 `^' 此处 表示 取反 操作 或 取反运算)
+
+       2) the `^' (negated) process ID (PID), specified with the -p option;
+
+       3) the `^' (negated) process group ID (PGID), specified with the -g option;
+
+       4) the `^' (negated) command, specified with the -c option;
+
+       5) the (`^') negated TCP or UDP protocol state names, specified with the -s [p:s] option.
+
+        --------------------------
+        中文注释:
+                因为它们表示排除(指 '^' 代表的取反操作), 因此它们 不会与 ORing 或 ANDing 一起应用 且 在任何 其他 selection criteria 被应用之前 起作用.
+        --------------------------
+       Since they represent exclusions, they are applied without ORing or ANDing and take effect before any other selection criteria are applied.
+
+        --------------------------
+        中文注释:
+                -a 选项 用于 and 选择 (可理解为对 选择条件 进行 and 运算)
+        --------------------------
+       The  -a option may be used to AND the selections.  For example, specifying -a, -U, and -ufoo produces a listing of only UNIX socket files that belong to pro‐
+       cesses owned by user ``foo''.
+
+        --------------------------
+        中文注释:
+                小心: 选项 -a 会使 所有的 list selection options 进行 and 操作, 不论其 在 命令行中的 位置如何.
+        --------------------------
+       Caution: the -a option causes all list selection options to be ANDed; it can't be used to cause ANDing of selected pairs of selection options by  placing  it
+       between them, even though its placement there is acceptable.  Wherever -a is placed, it causes the ANDing of all selection options.
+
+        --------------------------
+        中文注释:
+                相同 selection set 的 Items, 如 command names, file descriptors, network addresses, process identifiers, user identifiers, zone names, security contexts,
+                会 先被 joined 为 一个整体的 ORed set 并 应用, 然后 作为该 结果的 整体的 ORed set 才会去 参与 and 运算.
+        --------------------------
+       Items  of the same selection set - command names, file descriptors, network addresses, process identifiers, user identifiers, zone names, security contexts -
+       are joined in a single ORed set and applied before the result participates in  ANDing.   Thus,  for  example,  specifying  -i@aaa.bbb,  -i@ccc.ddd,  -a,  and
+       -ufff,ggg will select the listing of files that belong to either login ``fff'' OR ``ggg'' AND have network connections to either host aaa.bbb OR ccc.ddd.
+
+
+        --------------------------
+        中文注释:
+                虽然 单个字符的选项 可以 凑在一起组合着写, 但前提是 不要 引起 歧义, 否则就应该分开 单独写.
+        --------------------------
+       Options  may  be  grouped  together following a single prefix -- e.g., the option set ``-a -b -C'' may be stated as -abC.  However, since values are optional
+       following +|-f, -F, -g, -i, +|-L, -o, +|-r, -s, -S, -T, -x and -z.  when you have no values for them be careful that the following character isn't ambiguous.
+       For  example,  -Fn  might represent the -F and -n options, or it might represent the n field identifier character following the -F option.  When ambiguity is
+       possible, start a new option with a `-' character - e.g., ``-F -n''.  If the next option is a file name, follow the possibly ambiguous option with  ``--''  -
+       e.g., ``-F -- name''.
+
+        --------------------------
+        中文注释:
+                前缀 '+' 和 `-' 对于某些 选项有 单独特殊的 含义, 所以使用时 也要注意不要 引起 歧义.
+        --------------------------
+       Either  the  `+'  or  the  `-' prefix may be applied to a group of options.  Options that don't take on separate meanings for each prefix - e.g., -i - may be
+       grouped under either prefix.  Thus, for example, ``+M -i'' may be stated as ``+Mi'' and the group means the same as the separate options.  Be careful of pre‐
+       fix  grouping  when one or more options in the group does take on separate meanings under different prefixes - e.g., +|-M; ``-iM'' is not the same request as
+       ``-i +M''.  When in doubt, use separate options with appropriate prefixes.
+
+
+
+
+[root@dbserver ~]# yum -y install lsof   # 安装 lsof
+
+[root@dbserver ~]# lsof  # 如果没有指定任何选项, 则 lsof 会显示 所有 active processes 的所有的 open files.
+
+---------------------------------------------------------------------------------------------------
+
+       -u s     selects the listing of files for the user whose login names or user ID numbers are in the comma-separated set s - e.g.,  ``abe'',  or  ``548,root''.
+                (There should be no spaces in the set.)
+
+                Multiple login names or user ID numbers are joined in a single ORed set before participating in AND option selection.
+
+                If  a  login name or user ID is preceded by a `^', it becomes a negation - i.e., files of processes owned by the login name or user ID will never be
+                listed.  A negated login name or user ID selection is neither ANDed nor ORed with other selections; it is applied before all  other  selections  and
+                absolutely  excludes  the  listing  of the files of the process.  For example, to direct lsof to exclude the listing of files belonging to root pro‐
+                cesses, specify ``-u^root'' or ``-u^0''.
+
+[root@dbserver ~]# grep -E 'postfix|mysql' /etc/passwd
+postfix:x:89:89::/var/spool/postfix:/sbin/nologin
+mysql:x:1001:1001::/home/mysql:/sbin/nologin
+
+
+[root@dbserver ~]# lsof -u mysql    # 列出由用户 'mysql' 的所有进程 打开的所有 files.
+[root@dbserver ~]# lsof -u postfix,mysql   # 列出有 用户 postfix 或用户 mysql 的所有进程 打开的所有 files.
+[root@dbserver ~]# lsof -u 89,mysql        # 同上 (因为此处 用户 postfix 对应的 uid 就是 89)
+
+[root@dbserver ~]# lsof -u ^root    # 列出 除 用户 root 外的所有用户的所有进程打开的 files.
+[root@dbserver ~]# lsof -u ^root,^mysql # 列出 除 用户 root 和 用户 mysql  外的所有用户的所有进程打开的 files.
+
+---------------------------------------------------------------------------------------------------
+
+       -n       inhibits the conversion of network numbers to host names for network files.  Inhibiting conversion may make lsof run faster.  It is also useful when
+                host name lookup is not working properly.
+
+       -c c     selects  the  listing  of files for processes executing the command that begins with the characters of c.  Multiple commands may be specified, using
+                multiple -c options.  They are joined in a single ORed set before participating in AND option selection.
+
+                If c begins with a `^', then the following characters specify a command name whose processes are to be ignored (excluded.)
+
+                If c begins and ends with a slash ('/'), the characters between the slashes are interpreted as a regular expression.  Shell meta-characters  in  the
+                regular expression must be quoted to prevent their interpretation by the shell.  The closing slash may be followed by these modifiers:
+
+                     b    the regular expression is a basic one.
+                     i    ignore the case of letters.
+                     x    the regular expression is an extended one
+                          (default).
+
+                See the lsof FAQ (The FAQ section gives its location.)  for more information on basic and extended regular expressions.
+
+                The  simple  command specification is tested first.  If that test fails, the command regular expression is applied.  If the simple command test suc‐
+                ceeds, the command regular expression test isn't made.  This may result in ``no command found for regex:'' messages when lsof's -V option is  speci‐
+                fied.
+
+
+[root@dbserver ~]# lsof -nc mysqld  # 列出 执行的 command 以字符串 'mysqld' 开始 的 进程 所 打开的所有 files.
+[root@dbserver ~]# lsof -n  -c mysqld -c vim  # 列出 执行的 command 以字符串 'mysqld' 或 以 字符串 'vim' 开始的 进程 所打开的所有 files.
+
+[root@dbserver ~]# lsof -nc mysqld | grep -vE '(.so(..*)?$|.frm|.MY?|.ibd|ib_logfile|ibdata|TCP)'
+
+[root@dbserver ~]# lsof -n -c ^mysqld  # 列出 执行的 command 不是以字符串 'mysqld' 开始 的 进程 所 打开的所有 files.
+
+[root@dbserver ~]# lsof -nc /vim'|'mysqld/   # 这里使用了正则表达式 /expression/, 默认是扩展的正则表达式, 注意 shell meta-characters 为了避免被shell解释 应该被引起来
+[root@dbserver ~]# lsof -nc /'vim|mysqld'/x  # 同上
+
+---------------------------------------------------------------------------------------------------
+
+       -p s     excludes or selects the listing of files for the processes whose optional process IDentification (PID) numbers are in the comma-separated  set  s  -
+                e.g., ``123'' or ``123,^456''.  (There should be no spaces in the set.)
+
+                PID numbers that begin with `^' (negation) represent exclusions.
+
+                Multiple process ID numbers are joined in a single ORed set before participating in AND option selection.  However, PID exclusions are applied with‐
+                out ORing or ANDing and take effect before other selection criteria are applied.
+
+       -R       directs lsof to list the Parent Process IDentification number in the PPID column.
+
+
+[root@dbserver ~]# lsof -p 38808       # 查看 PID 为 38808 的进程所 打开的 files
+[root@dbserver ~]# lsof -p 38808,902   # 查看 PID 为 38808 或 902 的 进程 所打开的 files
+
+[root@dbserver ~]# lsof -p 38808 -R | head -n 3    # 选项 -R 用于 增加显示 PPID 列
+      COMMAND   PID  PPID  USER   FD   TYPE             DEVICE  SIZE/OFF     NODE NAME
+      mysqld  38808 38642 mysql  cwd    DIR              253,0       201 35234620 /mydata/data
+      mysqld  38808 38642 mysql  rtd    DIR              253,0       269       64 /
+
+---------------------------------------------------------------------------------------------------
+
+       -i [i]   selects  the listing of files any of whose Internet address matches the address specified in i.  If no address is specified, this option selects the
+                listing of all Internet and x.25 (HP-UX) network files.
+
+                If -i4 or -i6 is specified with no following address, only files of the indicated IP version, IPv4 or IPv6, are displayed.  (An  IPv6  specification
+                may  be used only if the dialects supports IPv6, as indicated by ``[46]'' and ``IPv[46]'' in lsof's -h or -?  output.)  Sequentially specifying -i4,
+                followed by -i6 is the same as specifying -i, and vice-versa.  Specifying -i4, or -i6 after -i is the same as specifying -i4 or -i6 by itself.
+
+                Multiple addresses (up to a limit of 100) may be specified with multiple -i options.  (A port number  or  service  name  range  is  counted  as  one
+                address.)  They are joined in a single ORed set before participating in AND option selection.
+
+                An Internet address is specified in the form (Items in square brackets are optional.):
+
+                [46][protocol][@hostname|hostaddr][:service|port]
+
+                where:
+                     46 specifies the IP version, IPv4 or IPv6
+                          that applies to the following address.
+                          '6' may be be specified only if the UNIX
+                          dialect supports IPv6.  If neither '4' nor
+                          '6' is specified, the following address
+                          applies to all IP versions.
+                     protocol is a protocol name - TCP, UDP
+                     hostname is an Internet host name.  Unless a
+                          specific IP version is specified, open
+                          network files associated with host names
+                          of all versions will be selected.
+                     hostaddr is a numeric Internet IPv4 address in
+                          dot form; or an IPv6 numeric address in
+                          colon form, enclosed in brackets, if the
+                          UNIX dialect supports IPv6.  When an IP
+                          version is selected, only its numeric
+                          addresses may be specified.
+                     service is an /etc/services name - e.g., smtp -
+                          or a list of them.
+                     port is a port number, or a list of them.
+
+
+                IPv6  options  may  be  used only if the UNIX dialect supports IPv6.  To see if the dialect supports IPv6, run lsof and specify the -h or -?  (help)
+                option.  If the displayed description of the -i option contains ``[46]'' and ``IPv[46]'', IPv6 is supported.
+
+                IPv4 host names and addresses may not be specified if network file selection is limited to IPv6 with -i 6.  IPv6 host names and addresses may not be
+                specified  if  network file selection is limited to IPv4 with -i 4.  When an open IPv4 network file's address is mapped in an IPv6 address, the open
+                file's type will be IPv6, not IPv4, and its display will be selected by '6', not '4'.
+
+                At least one address component - 4, 6, protocol, hostname, hostaddr, or service - must be supplied.  The `@' character, leading the host  specifica‐
+                tion,  is always required; as is the `:', leading the port specification.  Specify either hostname or hostaddr.  Specify either service name list or
+                port number list.  If a service name list is specified, the protocol may also need to be specified if the TCP, UDP and UDPLITE port numbers for  the
+                service name are different.  Use any case - lower or upper - for protocol.
+
+                Service  names  and  port  numbers  may be combined in a list whose entries are separated by commas and whose numeric range entries are separated by
+                minus signs.  There may be no embedded spaces, and all service names must belong to the specified protocol.  Since service names may contain  embed‐
+                ded minus signs, the starting entry of a range can't be a service name; it can be a port number, however.
+
+                Here are some sample addresses:
+
+                     -i6 - IPv6 only
+                     TCP:25 - TCP and port 25
+                     @1.2.3.4 - Internet IPv4 host address 1.2.3.4
+                     @[3ffe:1ebc::1]:1234 - Internet IPv6 host address
+                          3ffe:1ebc::1, port 1234
+                     UDP:who - UDP who service port
+                     TCP@lsof.itap:513 - TCP, port 513 and host name lsof.itap
+                     tcp@foo:1-10,smtp,99 - TCP, ports 1 through 10,
+                          service name smtp, port 99, host name foo
+                     tcp@bar:1-smtp - TCP, ports 1 through smtp, host bar
+                     :time - either TCP, UDP or UDPLITE time service port
+
+[root@dbserver ~]# lsof -i   # 列出所有的 Internet 和 x.25 (HP-UX) network files
+
+
+       -P       inhibits the conversion of port numbers to port names for network files.  Inhibiting the conversion may make lsof run a little faster.  It  is  also
+                useful when port name lookup is not working properly.
+
+
+[root@dbserver ~]# lsof -i -P   # -P: 端口 以 Port number 的形式显示
+
+[root@dbserver ~]# lsof -i 4    # 显示 ipv4 的 所有 network files.
+
+
+    注: lsof 命令 的 -i 可以 指定的 network address 格式为:  [46][protocol][@hostname|hostaddr][:service|port]
+
+[root@dbserver ~]# lsof -i 4TCP@localhost
+      COMMAND PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+      master  980 root   13u  IPv4  19155      0t0  TCP localhost:smtp (LISTEN)
+
+[root@dbserver ~]# lsof -i4tcp@192.168.175.40:22
+[root@dbserver ~]# lsof -i4tcp@192.168.175.40:ssh
+[root@dbserver ~]# lsof -i4tcp@192.168.175.40:ssh -P
+
+[root@dbserver ~]# lsof -i tcp:22 -P     # 列出 其 网络地址 能与 tcp:22 匹配 的 文件
+[root@dbserver ~]# lsof -i tcp:ssh -P
+
+[root@dbserver ~]# lsof -i :mysql
+[root@dbserver ~]# lsof -i :3306
+      COMMAND   PID  USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+      mysqld  38808 mysql   16u  IPv6  51416      0t0  TCP *:mysql (LISTEN)
+
+[root@dbserver ~]# lsof -i :3000-4000,smtp,99
+      COMMAND   PID  USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+      master    980  root   13u  IPv4  19155      0t0  TCP localhost:smtp (LISTEN)
+      master    980  root   14u  IPv6  19156      0t0  TCP localhost:smtp (LISTEN)
+      mysqld  38808 mysql   16u  IPv6  51416      0t0  TCP *:mysql (LISTEN)
+
+
+
+---------------------------------------------------------------------------------------------------
+
+       -t       specifies  that lsof should produce terse output with process identifiers only and no header - e.g., so that the output may be piped to kill(1).  -t
+                selects the -w option.
+
+
+       +|-w     Enables (+) or disables (-) the suppression of warning messages.
+
+                The lsof builder may choose to have warning messages disabled or enabled by default.  The default warning message state is indicated in  the  output
+                of the -h or -?  option.  Disabling warning messages when they are already disabled or enabling them when already enabled is acceptable.
+
+                The -t option selects the -w option.
+
+
+[root@dbserver ~]# lsof -t /usr/lib64/libblkid.so.1.1.0   # 显示打开了 文件 /usr/lib64/libblkid.so.1.1.0 的 processes 的进程 id # -t : 简介输出 (terse output)
+      1
+      485
+      498
+      641
+      657
+      903
+
+[root@dbserver ~]# lsof -t -i tcp:22
+      902
+      1238
+      1402
+      1426
+      39307
+
+---------------------------------------------------------------------------------------------------
+
+       +D D     causes lsof to search for all open instances of directory D and all the files and directories it contains to its complete depth.
+
+                Processing  of  the  +D option does not follow symbolic links within D unless the -x or -x  l option is also specified.  Nor does it search for open
+                files on file system mount points on subdirectories of D unless the -x or -x  f option is also specified.
+
+                Note: the authority of the user of this option limits it to searching for files that the user has permission to  examine  with  the  system  stat(2)
+                function.
+
+                Further note: lsof may process this option slowly and require a large amount of dynamic memory to do it.  This is because it must descend the entire
+                directory tree, rooted at D, calling stat(2) for each file and directory, building a list of all the files it finds, and searching that list  for  a
+                match with every open file.  When directory D is large, these steps can take a long time, so use this option prudently.
+
+
+[root@dbserver ~]# lsof +D /mydata/data/    # +D D : causes lsof to search for all open instances of directory D and all the files and directories it contains to its complete depth.
+      COMMAND   PID  USER   FD   TYPE DEVICE SIZE/OFF     NODE NAME
+      mysqld  38808 mysql  cwd    DIR  253,0      201 35234620 /mydata/data
+      mysqld  38808 mysql    1w   REG  253,0     3882 34811945 /mydata/data/dbserver.err
+      mysqld  38808 mysql    2w   REG  253,0     3882 34811945 /mydata/data/dbserver.err
+      mysqld  38808 mysql    3uW  REG  253,0 50331648 34811939 /mydata/data/ib_logfile0
+      mysqld  38808 mysql    8uW  REG  253,0 50331648 34811940 /mydata/data/ib_logfile1
+      mysqld  38808 mysql    9uW  REG  253,0 12582912 34811937 /mydata/data/ibdata1
+      mysqld  38808 mysql   10uW  REG  253,0 12582912 34811946 /mydata/data/ibtmp1
+      mysqld  38808 mysql   12uW  REG  253,0    98304 55964759 /mydata/data/mysql/plugin.ibd
+      mysqld  38808 mysql   13uW  REG  253,0    98304 50944453 /mydata/data/mysql/innodb_table_stats.ibd
+
+
+---------------------------------------------------------------------------------------------------
+
+网上资料:
+
+        https://www.howtoforge.com/linux-lsof-command/
+
+
+
+
+
+
+
+
+
+
+
