@@ -1,7 +1,7 @@
 
 # keyword lsof
 
-man lsof
+man lsof   #/EXAMPLES    #/^OUTPUT
 
 
 作用: lsof - list open files
@@ -116,9 +116,62 @@ OPTIONS
 
 
 
+       --       The double minus sign option is a marker that signals the end of the keyed options.  It may be used, for example, when  the  first
+                file  name  begins with a minus sign.  It may also be used when the absence of a value for the last keyed option must be signified
+                by the presence of a minus sign in the following option and before the start of the file names.
+
+
+       names    These are path names of specific files to list.  Symbolic links are resolved before use.  The first name may be separated from the
+                preceding options with the ``--'' option.
+
+                If  a name is the mounted-on directory of a file system or the device of the file system, lsof will list all the files open on the
+                file system.  To be considered a file system, the name must match a mounted-on directory name in mount(8)  output,  or  match  the
+                name  of a block device associated with a mounted-on directory name.  The +|-f option may be used to force lsof to consider a name
+                a file system identifier (+f) or a simple file (-f).
+
+                If name is a path to a directory that is not the mounted-on directory name of a file system, it is treated just as a regular  file
+                is  treated - i.e., its listing is restricted to processes that have it open as a file or as a process-specific directory, such as
+                the root or current working directory.  To request that lsof look for open files inside a directory name, use the +d s  and  +D  D
+                options.
+
+                If  a  name is the base name of a family of multiplexed files - e. g, AIX's /dev/pt[cs] - lsof will list all the associated multi‐
+                plexed files on the device that are open - e.g., /dev/pt[cs]/1, /dev/pt[cs]/2, etc.
+
+                If a name is a UNIX domain socket name, lsof will usually search for it by the characters of the name alone -  exactly  as  it  is
+                specified  and  is  recorded  in  the  kernel socket structure.  (See the next paragraph for an exception to that rule for Linux.)
+                Specifying a relative path - e.g., ./file - in place of the file's absolute path - e.g., /tmp/file - won't work because lsof  must
+                match the characters you specify with what it finds in the kernel UNIX domain socket structures.
+
+                If  a  name is a Linux UNIX domain socket name, in one case lsof is able to search for it by its device and inode number, allowing
+                name to be a relative path.  The case requires that the absolute path -- i.e., one beginning with a slash ('/')  be  used  by  the
+                process  that  created the socket, and hence be stored in the /proc/net/unix file; and it requires that lsof be able to obtain the
+                device and node numbers of both the absolute path in /proc/net/unix and name via successful stat(2) system calls.  When those con‐
+                ditions  are  met, lsof will be able to search for the UNIX domain socket when some path to it is is specified in name.  Thus, for
+                example, if the path is /dev/log, and an lsof search is initiated when the working directory is /dev, then name could be ./log.
+
+                If a name is none of the above, lsof will list any open files whose device and inode match that of the specified path name.
+
+                If you have also specified the -b option, the only names you may safely specify are file systems for which your mount  table  sup‐
+                plies alternate device numbers.  See the AVOIDING KERNEL BLOCKS and ALTERNATE DEVICE NUMBERS sections for more information.
+
+                Multiple file names are joined in a single ORed set before participating in AND option selection.
+
+
+
+---------------------------------------------------------------------------------------------------
+
 [root@dbserver ~]# yum -y install lsof   # 安装 lsof
 
 [root@dbserver ~]# lsof  # 如果没有指定任何选项, 则 lsof 会显示 所有 active processes 的所有的 open files.
+
+[root@dbserver ~]# lsof /var/log/secure    # 列出普通文件 /var/log/secure 的 open instances
+      COMMAND  PID USER   FD   TYPE DEVICE SIZE/OFF     NODE NAME
+      rsyslogd 637 root    8w   REG  253,0     7041 18827112 /var/log/secure
+
+[root@dbserver ~]# lsof /var/log/messages /var/log/secure   # 列出多个文件(此例为 /var/log/messages 和 /var/log/secure) 的 open instances
+      COMMAND  PID USER   FD   TYPE DEVICE SIZE/OFF     NODE NAME
+      rsyslogd 637 root    4w   REG  253,0   281621 18827111 /var/log/messages
+      rsyslogd 637 root    8w   REG  253,0     7041 18827112 /var/log/secure
 
 ---------------------------------------------------------------------------------------------------
 
@@ -306,6 +359,58 @@ mysql:x:1001:1001::/home/mysql:/sbin/nologin
       mysqld  38808 mysql   16u  IPv6  51416      0t0  TCP *:mysql (LISTEN)
 
 
+[root@dbserver ~]# lsof /dev/pts  # 此命令 会 列出 关联到 /dev/pts 上的所有的 multiplexed files
+
+---------------------------------------------------------------------------------------------------
+
+       -s [p:s] s  alone directs lsof to display file size at all times.  It causes the SIZE/OFF output column title to be changed to SIZE.  If the file
+                does not have a size, nothing is displayed.
+
+                The optional -s p:s form is available only for selected dialects, and only when the -h or -?  help output lists it.
+
+                When the optional form is available, the s may be followed by a protocol name (p), either TCP or UDP, a colon (`:')  and  a  comma-sepa‐
+                rated  protocol state name list, the option causes open TCP and UDP files to be excluded if their state name(s) are in the list (s) pre‐
+                ceded by a `^'; or included if their name(s) are not preceded by a `^'.
+
+                When an inclusion list is defined, only network files with state names in the list will be present in the lsof output.  Thus, specifying
+                one state name means that only network files with that lone state name will be listed.
+
+                Case  is unimportant in the protocol or state names, but there may be no spaces and the colon (`:') separating the protocol name (p) and
+                the state name list (s) is required.
+
+                If only TCP and UDP files are to be listed, as controlled by the specified exclusions and inclusions, the -i option must  be  specified,
+                too.  If only a single protocol's files are to be listed, add its name as an argument to the -i option.
+
+                For example, to list only network files with TCP state LISTEN, use:
+
+                     -iTCP -sTCP:LISTEN
+
+                Or, for example, to list network files with all UDP states except Idle, use:
+
+                     -iUDP -sUDP:Idle
+
+                State  names  vary  with UNIX dialects, so it's not possible to provide a complete list.  Some common TCP state names are: CLOSED, IDLE,
+                BOUND, LISTEN, ESTABLISHED, SYN_SENT, SYN_RCDV, ESTABLISHED, CLOSE_WAIT, FIN_WAIT1, CLOSING, LAST_ACK, FIN_WAIT_2, and  TIME_WAIT.   Two
+                common UDP state names are Unbound and Idle.
+
+                See  the  lsof  FAQ  (The  FAQ  section gives its location.)  for more information on how to use protocol state exclusion and inclusion,
+                including examples.
+
+                The -o (without a following decimal digit count) and -s option (without a following protocol and state name list)  are  mutually  exclu‐
+                sive;  they  can't  both  be  specified.   When neither is specified, lsof displays whatever value - size or offset - is appropriate and
+                available for the type of file.
+
+
+[root@dbserver ~]# lsof -i tcp -s tcp:listen  # to list only network files with TCP state LISTEN (注: 此处 the protocol or state names 的大小写是不重要的)
+      COMMAND  PID  USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+      sshd     880  root    3u  IPv4  18829      0t0  TCP *:ssh (LISTEN)
+      sshd     880  root    4u  IPv6  18838      0t0  TCP *:ssh (LISTEN)
+      mysqld  1075 mysql   31u  IPv6  19099      0t0  TCP *:mysql (LISTEN)
+
+[root@dbserver ~]# lsof -i tcp -s tcp:^listen   # 此例中 符号 '^' 表示 取反 操作
+      COMMAND  PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+      sshd    1169 root    3u  IPv4  19316      0t0  TCP dbserver:ssh->192.168.175.1:orion (ESTABLISHED)
+      sshd    1394 root    3u  IPv4  21996      0t0  TCP dbserver:ssh->192.168.175.1:qip-qdhcp (ESTABLISHED)
 
 ---------------------------------------------------------------------------------------------------
 
@@ -350,6 +455,8 @@ mysql:x:1001:1001::/home/mysql:/sbin/nologin
                 directory tree, rooted at D, calling stat(2) for each file and directory, building a list of all the files it finds, and searching that list  for  a
                 match with every open file.  When directory D is large, these steps can take a long time, so use this option prudently.
 
+// 注: 选项 +D s 和 +d s 的区别:
+//     +d s 不会 深入 目录 s 的除 子 files 外的 其他 后代 files, 而 +D s 会 深入 整个 以 目录 s 为 root 的 directory tree
 
 [root@dbserver ~]# lsof +D /mydata/data/    # +D D : causes lsof to search for all open instances of directory D and all the files and directories it contains to its complete depth.
       COMMAND   PID  USER   FD   TYPE DEVICE SIZE/OFF     NODE NAME
@@ -366,17 +473,152 @@ mysql:x:1001:1001::/home/mysql:/sbin/nologin
 
 ---------------------------------------------------------------------------------------------------
 
+       +d s     causes lsof to search for all open instances of directory s and the files and directories it contains at its top  level.   +d  does  NOT
+                descend  the directory tree, rooted at s.  The +D D option may be used to request a full-descent directory tree search, rooted at direc‐
+                tory D.
+
+                Processing of the +d option does not follow symbolic links within s unless the -x or -x  l option is also specified.  Nor does it search
+                for open files on file system mount points on subdirectories of s unless the -x or -x  f option is also specified.
+
+                Note:  the authority of the user of this option limits it to searching for files that the user has permission to examine with the system
+                stat(2) function.
+
+
+// 注: 选项 +D s 和 +d s 的区别:
+//     +d s 不会 深入 目录 s 的除 子 files 外的 其他 后代 files, 而 +D s 会 深入 整个 以 目录 s 为 root 的 directory tree
+
+[root@dbserver ~]# lsof +d /var/log    # 显示 目录 /var/log 本身 和 其 包含的 top level 的 files 的 所有 open instances. +d 不会 descend  the directory tree
+        COMMAND   PID USER   FD   TYPE DEVICE SIZE/OFF     NODE NAME
+        rsyslogd  637 root    4w   REG  253,0   281488 18827111 /var/log/messages
+        rsyslogd  637 root    7w   REG  253,0     3344 18827109 /var/log/cron
+        rsyslogd  637 root    8w   REG  253,0     7041 18827112 /var/log/secure
+        VGAuthSer 648 root    2w   REG  253,0     7571 17173967 /var/log/vmware-vgauthsvc.log.0
+        VGAuthSer 648 root    4w   REG  253,0     7571 17173967 /var/log/vmware-vgauthsvc.log.0
+        vmtoolsd  649 root    3w   REG  253,0     9161 17173969 /var/log/vmware-vmsvc.log
+
+
+---------------------------------------------------------------------------------------------------
+
+       +|-f [cfgGn]
+                f by itself clarifies how path name arguments are to be interpreted.  When followed by c, f, g, G, or  n  in  any  combination  it
+                specifies that the listing of kernel file structure information is to be enabled (`+') or inhibited (`-').
+
+                Normally a path name argument is taken to be a file system name if it matches a mounted-on directory name reported by mount(8), or
+                if it represents a block device, named in the mount output and associated with a mounted directory name.  When  +f  is  specified,
+                all  path  name  arguments  will be taken to be file system names, and lsof will complain if any are not.  This can be useful, for
+                example, when the file system name (mounted-on device) isn't a block device.  This happens for some CD-ROM file systems.
+
+                When -f is specified by itself, all path name arguments will be taken to be simple files.  Thus,  for  example,  the  ``-f --  /''
+                arguments direct lsof to search for open files with a `/' path name, not all open files in the `/' (root) file system.
+
+                Be  careful  to  make  sure +f and -f are properly terminated and aren't followed by a character (e.g., of the file or file system
+                name) that might be taken as a parameter.  For example, use ``--'' after +f and -f as in these examples.
+
+                     $ lsof +f -- /file/system/name
+                     $ lsof -f -- /file/name
+
+                The listing of information from kernel file structures, requested with the +f [cfgGn] option form, is normally inhibited,  and  is
+                not  available  in whole or part for some dialects - e.g., /proc-based Linux kernels below 2.6.22.  When the prefix to f is a plus
+                sign (`+'), these characters request file structure information:
+
+                     c    file structure use count (not Linux)
+                     f    file structure address (not Linux)
+                     g    file flag abbreviations (Linux 2.6.22 and up)
+                     G    file flags in hexadecimal (Linux 2.6.22 and up)
+                     n    file structure node address (not Linux)
+
+                When the prefix is minus (`-') the same characters disable the listing of the indicated values.
+
+                File structure addresses, use counts, flags, and node addresses may be used to detect more readily identical  files  inherited  by
+                child processes and identical files in use by different processes.  Lsof column output can be sorted by output columns holding the
+                values and listed to identify identical file use, or lsof field output can be parsed by an AWK or Perl post-filter script, or by a
+                C program.
+
+
+
+[root@dbserver ~]# mount | grep proc
+proc on /proc type proc (rw,nosuid,nodev,noexec,relatime)
+systemd-1 on /proc/sys/fs/binfmt_misc type autofs (rw,relatime,fd=24,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=12872)
+
+[root@dbserver ~]# lsof  /proc      # 因为 /proc 是 命令 mount(8) 输出结果中的一个挂载点, 所以此时 /proc 被视为 a file system name
+[root@dbserver ~]# lsof +f -- /proc   # 强制 将 /proc 视为 filesystem name  # 注: 这里 /proc 作为 name 参数时前面必须加 '--'
+[root@dbserver ~]# lsof -f -- /proc   # 强制 将 /proc 视为 简单的 file. 即此处 为 /proc 这个目录文件本身  # 注: 这里 /proc 作为 name 参数时前面必须加 '--'
+
+---------------------------------------------------------------------------------------------------
+
+       +|-r [t[m<fmt>]]
+                puts  lsof  in  repeat mode.  There lsof lists open files as selected by other options, delays t seconds (default fifteen), then repeats
+                the listing, delaying and listing repetitively until stopped by a condition defined by the prefix to the option.
+
+                If the prefix is a `-', repeat mode is endless.  Lsof must be terminated with an interrupt or quit signal.
+
+                If the prefix is `+', repeat mode will end the first cycle no open files are listed - and of course when lsof is stopped with an  inter‐
+                rupt  or quit signal.  When repeat mode ends because no files are listed, the process exit code will be zero if any open files were ever
+                listed; one, if none were ever listed.
+
+                Lsof marks the end of each listing: if field output is in progress (the -F, option has been specified), the default marker is `m';  oth‐
+                erwise the default marker is ``========''.  The marker is followed by a NL character.
+
+                The  optional  "m<fmt>" argument specifies a format for the marker line.  The <fmt> characters following `m' are interpreted as a format
+                specification to the strftime(3) function, when both it and the localtime(3) function are available in the dialect's C library.  Consult
+                the  strftime(3)  documentation  for  what may appear in its format specification.  Note that when field output is requested with the -F
+                option, <fmt> cannot contain the NL format, ``%n''.  Note also that when <fmt> contains spaces  or  other  characters  that  affect  the
+                shell's interpretation of arguments, <fmt> must be quoted appropriately.
+
+                Repeat  mode reduces lsof startup overhead, so it is more efficient to use this mode than to call lsof repetitively from a shell script,
+                for example.
+
+                To use repeat mode most efficiently, accompany +|-r with specification of other lsof selection options, so the amount of  kernel  memory
+                access  lsof  does  will be kept to a minimum.  Options that filter at the process level - e.g., -c, -g, -p, -u - are the most efficient
+                selectors.
+
+                Repeat mode is useful when coupled with field output (see the -F, option description) and a supervising awk or Perl script, or a C  pro‐
+                gram.
+
+
+
+[root@dbserver ~]# lsof -r -i :22    # -r 默认 延迟 15 seconds
+        COMMAND  PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+        sshd     880 root    3u  IPv4  18829      0t0  TCP *:ssh (LISTEN)
+        sshd     880 root    4u  IPv6  18838      0t0  TCP *:ssh (LISTEN)
+        sshd    1169 root    3u  IPv4  19316      0t0  TCP dbserver:ssh->192.168.175.1:orion (ESTABLISHED)
+        sshd    1394 root    3u  IPv4  21996      0t0  TCP dbserver:ssh->192.168.175.1:qip-qdhcp (ESTABLISHED)
+        =======
+        COMMAND  PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+        sshd     880 root    3u  IPv4  18829      0t0  TCP *:ssh (LISTEN)
+        sshd     880 root    4u  IPv6  18838      0t0  TCP *:ssh (LISTEN)
+        sshd    1169 root    3u  IPv4  19316      0t0  TCP dbserver:ssh->192.168.175.1:orion (ESTABLISHED)
+        sshd    1394 root    3u  IPv4  21996      0t0  TCP dbserver:ssh->192.168.175.1:qip-qdhcp (ESTABLISHED)
+        =======
+        ^C
+
+[root@dbserver ~]# lsof -r 1 -i :22    # 每 1 秒 显示 一次
+
+[root@dbserver ~]# lsof -r "1m==== %T ====" -i :22    # 每1秒显示一次 且 指定 marker 为 ==== %T ====
+        COMMAND  PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+        sshd     880 root    3u  IPv4  18829      0t0  TCP *:ssh (LISTEN)
+        sshd     880 root    4u  IPv6  18838      0t0  TCP *:ssh (LISTEN)
+        sshd    1169 root    3u  IPv4  19316      0t0  TCP dbserver:ssh->192.168.175.1:orion (ESTABLISHED)
+        sshd    1394 root    3u  IPv4  21996      0t0  TCP dbserver:ssh->192.168.175.1:qip-qdhcp (ESTABLISHED)
+        ==== 09:58:34 ====
+        COMMAND  PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+        sshd     880 root    3u  IPv4  18829      0t0  TCP *:ssh (LISTEN)
+        sshd     880 root    4u  IPv6  18838      0t0  TCP *:ssh (LISTEN)
+        sshd    1169 root    3u  IPv4  19316      0t0  TCP dbserver:ssh->192.168.175.1:orion (ESTABLISHED)
+        sshd    1394 root    3u  IPv4  21996      0t0  TCP dbserver:ssh->192.168.175.1:qip-qdhcp (ESTABLISHED)
+        ==== 09:58:35 ====
+
+
+[root@dbserver ~]# lsof +r 1 -i :22  # 选项 r 的前缀 - 和 + 的区别是: -r 表示 endless mode, 而 +r 为在第一次没有列出 open files 的循环时终止.(两者都可以被 interrupt 和发信号 退出)
+
+
+---------------------------------------------------------------------------------------------------
+
 网上资料:
 
         https://www.howtoforge.com/linux-lsof-command/
-
-
-
-
-
-
-
-
-
+        https://www.tecmint.com/10-lsof-command-examples-in-linux/
+        https://www.howtogeek.com/426031/how-to-use-the-linux-lsof-command/
+        https://catonmat.net/unix-utilities-lsof
 
 
