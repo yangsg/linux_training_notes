@@ -8,47 +8,253 @@ man 7 pcap-filter
 tcpdump -i ens33 -nn -s0 -v port 80 -w test.pcap
 
 
+作用: tcpdump - dump traffic on a network
+
+语法: tcpdump [ -AbdDefhHIJKlLnNOpqStuUvxX# ] [ -B buffer_size ]
+               [ -c count ]
+               [ -C file_size ] [ -G rotate_seconds ] [ -F file ]
+               [ -i interface ] [ -j tstamp_type ] [ -m module ] [ -M secret ]
+               [ --number ] [ -Q|-P in|out|inout ]
+               [ -r file ] [ -V file ] [ -s snaplen ] [ -T type ] [ -w file ]
+               [ -W filecount ]
+               [ -E spi@ipaddr algo:secret,...  ]
+               [ -y datalinktype ] [ -z postrotate-command ] [ -Z user ]
+               [ --time-stamp-precision=tstamp_precision ]
+               [ --immediate-mode ] [ --version ]
+               [ expression ]
+
+说明:
+       Tcpdump prints out a description of the contents of packets on a network interface that match the boolean expression; the description is
+       preceded by a time stamp, printed, by default, as hours, minutes, seconds, and fractions of a second since midnight.  It can also be run
+       with the -w flag, which causes it to save the packet data to a file for later analysis, and/or with the -r flag, which causes it to read
+       from a saved packet file rather than to read packets from a network interface.  It can also be run with the -V flag, which causes it  to
+       read a list of saved packet files. In all cases, only packets that match expression will be processed by tcpdump.
+
+       Tcpdump  will,  if not run with the -c flag, continue capturing packets until it is interrupted by a SIGINT signal (generated, for exam‐
+       ple, by typing your interrupt character, typically control-C) or a SIGTERM signal (typically generated with the kill(1) command); if run
+       with  the -c flag, it will capture packets until it is interrupted by a SIGINT or SIGTERM signal or the specified number of packets have
+       been processed.
+
+       When tcpdump finishes capturing packets, it will report counts of:
+
+              packets ``captured'' (this is the number of packets that tcpdump has received and processed);
+
+              packets ``received by filter'' (the meaning of this depends on the OS on which you're running tcpdump, and possibly  on  the  way
+              the  OS was configured - if a filter was specified on the command line, on some OSes it counts packets regardless of whether they
+              were matched by the filter expression and, even if they were matched by the filter expression, regardless of whether tcpdump  has
+              read  and  processed  them  yet,  on  other  OSes it counts only packets that were matched by the filter expression regardless of
+              whether tcpdump has read and processed them yet, and on other OSes it counts only packets that were matched by the filter expres‐
+              sion and were processed by tcpdump);
+
+              packets ``dropped by kernel'' (this is the number of packets that were dropped, due to a lack of buffer space, by the packet cap‐
+              ture mechanism in the OS on which tcpdump is running, if the OS reports that information to applications;  if  not,  it  will  be
+              reported as 0).
+
+       On platforms that support the SIGINFO signal, such as most BSDs (including Mac OS X) and Digital/Tru64 UNIX, it will report those counts
+       when it receives a SIGINFO signal (generated, for example, by typing your ``status'' character, typically control-T,  although  on  some
+       platforms,  such  as  Mac  OS X, the ``status'' character is not set by default, so you must set it with stty(1) in order to use it) and
+       will continue capturing packets. On platforms that do not support the SIGINFO signal, the same can be achieved by using the SIGUSR1 sig‐
+       nal.
+
+       Reading packets from a network interface may require that you have special privileges; see the pcap (3PCAP) man page for details.  Read‐
+       ing a saved packet file doesn't require special privileges.
+
+---------------------------------------------------------------------------------------------------
+
 [root@dbserver ~]# yum -y install tcpdump
 
+---------------------------------------------------------------------------------------------------
+
+       -w file
+              Write the raw packets to file rather than parsing and printing them out.  They can later be printed with the -r option.  Standard
+              output is used if file is ``-''.
+
+              This  output will be buffered if written to a file or pipe, so a program reading from the file or pipe may not see packets for an
+              arbitrary amount of time after they are received.  Use the -U flag to cause packets to be written as soon as they are received.
+
+              The MIME type application/vnd.tcpdump.pcap has been registered with IANA for pcap files. The filename extension .pcap appears  to
+              be  the  most  commonly  used along with .cap and .dmp. Tcpdump itself doesn't check the extension when reading capture files and
+              doesn't add an extension when writing them (it uses magic numbers in the file header instead). However,  many  operating  systems
+              and applications will use the extension if it is present and adding one (e.g. .pcap) is recommended.
+
+              See pcap-savefile(5) for a description of the file format.
+
+
+       -r file
+              Read packets from file (which was created with the -w option or by other tools that write pcap or pcap-ng files).  Standard input
+              is used if file is ``-''.
+
+       -U
+       --packet-buffered
+              If  the  -w option is not specified, make the printed packet output ``packet-buffered''; i.e., as the description of the contents
+              of each packet is printed, it will be written to the standard output, rather than, when not writing to a terminal, being  written
+              only when the output buffer fills.
+
+              If  the  -w  option is specified, make the saved raw packet output ``packet-buffered''; i.e., as each packet is saved, it will be
+              written to the output file, rather than being written only when the output buffer fills.
+
+              The -U flag will not be supported if tcpdump was built with an older version of libpcap that lacks  the  pcap_dump_flush()  func‐
+              tion.
+
+       -s snaplen
+       --snapshot-length=snaplen
+              Snarf  snaplen  bytes  of  data from each packet rather than the default of 262144 bytes.  Packets truncated because of a limited
+              snapshot are indicated in the output with ``[|proto]'', where proto is the name of the protocol level at which the truncation has
+              occurred.   Note  that  taking  larger  snapshots both increases the amount of time it takes to process packets and, effectively,
+              decreases the amount of packet buffering.  This may cause packets to be lost.  You should limit snaplen to  the  smallest  number
+              that  will  capture  the  protocol  information you're interested in.  Setting snaplen to 0 sets it to the default of 262144, for
+              backwards compatibility with recent older versions of tcpdump.
+
+
+       -nn    Don't convert protocol and port numbers etc. to names either.
+
+
+
+       -v     When  parsing  and printing, produce (slightly more) verbose output.  For example, the time to live, identification, total length
+              and options in an IP packet are printed.  Also enables additional packet integrity checks such  as  verifying  the  IP  and  ICMP
+              header checksum.
+
+              When writing to a file with the -w option, report, every 10 seconds, the number of packets captured.
+
+       -vv    Even more verbose output.  For example, additional fields are printed from NFS reply packets, and SMB packets are fully decoded.
+
+       -vvv   Even  more verbose output.  For example, telnet SB ... SE options are printed in full.  With -X Telnet options are printed in hex
+              as well.
+
+
+       -i interface
+       --interface=interface
+              Listen on interface.  If unspecified, tcpdump searches the system interface list for the lowest numbered, configured up interface
+              (excluding loopback), which may turn out to be, for example, ``eth0''.
+
+              On  Linux systems with 2.2 or later kernels, an interface argument of ``any'' can be used to capture packets from all interfaces.
+              Note that captures on the ``any'' device will not be done in promiscuous mode.
+
+              If the -D flag is supported, an interface number as printed by that flag can be used as the interface argument, if  no  interface
+              on the system has that number as a name.
+
+
+       -c count
+              Exit after receiving count packets.
+
+       -l     Make stdout line buffered.  Useful if you want to see the data while capturing it.  E.g.,
+
+                     tcpdump -l | tee dat
+
+              or
+
+                     tcpdump -l > dat & tail -f dat
+
+              Note that on Windows,``line buffered'' means ``unbuffered'', so that WinDump will write each character individually if -l is specified.
+
+              -U  is similar to -l in its behavior, but it will cause output to be ``packet-buffered'', so that the output is written to stdout at the end of each packet rather than at
+              the end of each line; this is buffered on all platforms, including Windows.
+
+
+        expression
+              selects which packets will be dumped.  If no expression is given, all packets on the net will be dumped.  Otherwise, only packets
+              for which expression is `true' will be dumped.
+
+              For the expression syntax, see pcap-filter(7).
+
+              The expression argument can be passed to tcpdump as either a single Shell argument, or as multiple Shell arguments, whichever  is
+              more  convenient.  Generally, if the expression contains Shell metacharacters, such as backslashes used to escape protocol names,
+              it is easier to pass it as a single, quoted argument rather than to escape the Shell metacharacters.  Multiple arguments are con‐
+              catenated with spaces before being parsed.
+
+---------------------------------------------------------------------------------------------------
+
+[root@dbserver ~]# tcpdump -i ens33 -nn -vv src net 192.168.175.0/24 and tcp dst port 22
+
+
+[root@dbserver ~]# tcpdump -i ens33 -nn -vv src net 192.168.175.0/24 and \(tcp dst port 22 or tcp dst port 80\)  # 使用了 slash '\' 对 括号'()'转义,因'()' 对 shell 有 特殊含义(元字符) 
+[root@dbserver ~]# tcpdump -i ens33 -nn -vv 'src net 192.168.175.0/24 and (tcp dst port 22 or tcp dst port 80)'  # 作用同上, 这里使用的 引号避免了shell对'()'解释,所以此处无需再转义
+
+---------------------------------------------------------------------------------------------------
+
+示例: 将 捕获的 packet 写入 到 file (以后还可 利用 wireshark 工具 打开该 文件)
+
+[root@dbserver ~]# tcpdump -i ens33 -s0 -nn -c 1000 -w tcpdump.pcap   # -w file : Write the raw packets to file  # -c count : 收到 count 个 packets 就结束
+[root@dbserver ~]# tcpdump -i ens33 -s0 -nn -c 1000 -r tcpdump.pcap   # -r file : Read packets from file
+
+[root@dbserver ~]# tcpdump -i ens33 -s0 -nn -c 1000 -w tcpdump.pcap -U # -U 选项导致 收到 packets 后 立刻被 写入文件, 不缓冲
+
+---------------------------------------------------------------------------------------------------
+
+示例: 基于 协议 捕获
+
+[root@dbserver ~]# tcpdump -i ens33 -nn -vv tcp      # 捕获 interface ens33 上 tcp 协议的 packet
+[root@dbserver ~]# tcpdump -i ens33 -nn -vv proto 6  # 同上
+
+---------------------------------------------------------------------------------------------------
+
+示例: 基于 ip address 捕获 host 的数据包
+
+[root@dbserver ~]# tcpdump -i ens33 -nn -vv host 192.168.175.1      # 捕获 主机 192.168.175.1 进出 interface ens33 的 packets
+[root@dbserver ~]# tcpdump -i ens33 -nn -vv src host 192.168.175.1  # 捕获 主机 192.168.175.1 进入 interface ens33 的 packets
+
+---------------------------------------------------------------------------------------------------
+
+示例: 利用选项 -l  输出按 line 被缓冲 (即凑够一行就输出一行)。该特性对 管道(pipe) 和 重定向(redirect) 处理 很有用
+
+[root@dbserver ~]# tcpdump -i ens33 -nn -vv tcp port 22 -l | grep tos   # -l     Make stdout line buffered.
+
+---------------------------------------------------------------------------------------------------
+
+其他更多实际的例子见:
+
+    https://hackertarget.com/tcpdump-examples/
+    man tcpdump
+    man 7 pcap-filter
+
+---------------------------------------------------------------------------------------------------
+EXAMPLES
+       To print all packets arriving at or departing from sundown:
+              tcpdump host sundown
+
+       To print traffic between helios and either hot or ace:
+              tcpdump host helios and \( hot or ace \)
+
+       To print all IP packets between ace and any host except helios:
+              tcpdump ip host ace and not helios
+
+       To print all traffic between local hosts and hosts at Berkeley:
+              tcpdump net ucb-ether
+
+       To print all ftp traffic through internet gateway snup: (note that the expression is quoted to prevent the shell from (mis-)interpreting
+       the parentheses):
+              tcpdump 'gateway snup and (port ftp or ftp-data)'
+
+       To print traffic neither sourced from nor destined for local hosts (if you gateway to one other net, this stuff  should  never  make  it
+       onto your local net).
+              tcpdump ip and not net localnet
+
+       To print the start and end packets (the SYN and FIN packets) of each TCP conversation that involves a non-local host.
+              tcpdump 'tcp[tcpflags] & (tcp-syn|tcp-fin) != 0 and not src and dst net localnet'
+
+       To print all IPv4 HTTP packets to and from port 80, i.e. print only packets that contain data, not, for example, SYN and FIN packets and
+       ACK-only packets.  (IPv6 is left as an exercise for the reader.)
+              tcpdump 'tcp port 80 and (((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp[12]&0xf0)>>2)) != 0)'
+
+       To print IP packets longer than 576 bytes sent through gateway snup:
+              tcpdump 'gateway snup and ip[2:2] > 576'
+
+       To print IP broadcast or multicast packets that were not sent via Ethernet broadcast or multicast:
+              tcpdump 'ether[0] & 1 = 0 and ip[16] >= 224'
+
+       To print all ICMP packets that are not echo requests/replies (i.e., not ping packets):
+              tcpdump 'icmp[icmptype] != icmp-echo and icmp[icmptype] != icmp-echoreply'
 
 
 ---------------------------------------------------------------------------------------------------
+
 网上资料:
 
     https://hackertarget.com/tcpdump-examples/
+    http://www.man7.org/linux/man-pages/man1/tcpdump.1.html
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    pcap-filter 在线 man page:
+        http://www.manpagez.com/man/7/pcap-filter/
+        https://www.wireshark.org/docs/man-pages/pcap-filter.html
 
 
