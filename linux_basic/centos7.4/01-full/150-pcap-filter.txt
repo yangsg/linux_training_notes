@@ -7,7 +7,7 @@ man 7 pcap-filter
 注: tcpdump 和 wireshark 都依赖 libpcap  库, 但 语法上 还有 有些不同
 
 
-作用: pcap-filter - packet filter syntax
+作用: pcap-filter - packet filter syntax  (packet capture filter)
 
 
 说明:
