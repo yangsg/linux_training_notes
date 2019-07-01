@@ -232,6 +232,8 @@ mysql:x:1001:1001::/home/mysql:/sbin/nologin
 [root@dbserver ~]# lsof -nc /vim'|'mysqld/   # 这里使用了正则表达式 /expression/, 默认是扩展的正则表达式, 注意 shell meta-characters 为了避免被shell解释 应该被引起来
 [root@dbserver ~]# lsof -nc /'vim|mysqld'/x  # 同上
 
+[root@dbserver ~]# lsof -nc /^mysqld$/ # 列出 执行的 command 为 'mysqld' 的 进程 所 打开的所有 files.
+
 ---------------------------------------------------------------------------------------------------
 
        -p s     excludes or selects the listing of files for the processes whose optional process IDentification (PID) numbers are in the comma-separated  set  s  -
