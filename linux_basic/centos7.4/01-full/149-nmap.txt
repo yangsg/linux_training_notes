@@ -33,6 +33,391 @@ man nmap
 
        Example 1. A representative Nmap scan
 
+           # nmap -A -T4 scanme.nmap.org
+
+---------------------------------------------------------------------------------------------------
+OPTIONS SUMMARY
+       This options summary is printed when Nmap is run with no arguments, and the latest version is always available at
+       https://svn.nmap.org/nmap/docs/nmap.usage.txt. It helps people remember the most common options, but is no substitute for the
+       in-depth documentation in the rest of this manual. Some obscure options aren't even included here.
+
+           Nmap 6.40 ( http://nmap.org )
+           Usage: nmap [Scan Type(s)] [Options] {target specification}
+           TARGET SPECIFICATION:
+             Can pass hostnames, IP addresses, networks, etc.
+             Ex: scanme.nmap.org, 192.168.0.1; 10.0.0-255.1-254
+             -iL <inputfilename>: Input from list of hosts/networks
+             -iR <num hosts>: Choose random targets
+             --exclude <host1[,host2][,host3],...>: Exclude hosts/networks
+             --excludefile <exclude_file>: Exclude list from file
+           HOST DISCOVERY:
+             -sL: List Scan - simply list targets to scan
+             -sn: Ping Scan - disable port scan
+             -Pn: Treat all hosts as online -- skip host discovery
+             -PS/PA/PU/PY[portlist]: TCP SYN/ACK, UDP or SCTP discovery to given ports
+             -PE/PP/PM: ICMP echo, timestamp, and netmask request discovery probes
+             -PO[protocol list]: IP Protocol Ping
+             -n/-R: Never do DNS resolution/Always resolve [default: sometimes]
+             --dns-servers <serv1[,serv2],...>: Specify custom DNS servers
+             --system-dns: Use OS's DNS resolver
+             --traceroute: Trace hop path to each host
+           SCAN TECHNIQUES:
+             -sS/sT/sA/sW/sM: TCP SYN/Connect()/ACK/Window/Maimon scans
+             -sU: UDP Scan
+             -sN/sF/sX: TCP Null, FIN, and Xmas scans
+             --scanflags <flags>: Customize TCP scan flags
+             -sI <zombie host[:probeport]>: Idle scan
+             -sY/sZ: SCTP INIT/COOKIE-ECHO scans
+             -sO: IP protocol scan
+             -b <FTP relay host>: FTP bounce scan
+           PORT SPECIFICATION AND SCAN ORDER:
+             -p <port ranges>: Only scan specified ports
+               Ex: -p22; -p1-65535; -p U:53,111,137,T:21-25,80,139,8080,S:9
+             -F: Fast mode - Scan fewer ports than the default scan
+             -r: Scan ports consecutively - don't randomize
+             --top-ports <number>: Scan <number> most common ports
+             --port-ratio <ratio>: Scan ports more common than <ratio>
+           SERVICE/VERSION DETECTION:
+             -sV: Probe open ports to determine service/version info
+             --version-intensity <level>: Set from 0 (light) to 9 (try all probes)
+             --version-light: Limit to most likely probes (intensity 2)
+             --version-all: Try every single probe (intensity 9)
+             --version-trace: Show detailed version scan activity (for debugging)
+           SCRIPT SCAN:
+             -sC: equivalent to --script=default
+             --script=<Lua scripts>: <Lua scripts> is a comma separated list of
+                      directories, script-files or script-categories
+             --script-args=<n1=v1,[n2=v2,...]>: provide arguments to scripts
+             --script-args-file=filename: provide NSE script args in a file
+             --script-trace: Show all data sent and received
+             --script-updatedb: Update the script database.
+             --script-help=<Lua scripts>: Show help about scripts.
+                      <Lua scripts> is a comma separated list of script-files or
+                      script-categories.
+           OS DETECTION:
+             -O: Enable OS detection
+             --osscan-limit: Limit OS detection to promising targets
+             --osscan-guess: Guess OS more aggressively
+           TIMING AND PERFORMANCE:
+             Options which take <time> are in seconds, or append 'ms' (milliseconds),
+             's' (seconds), 'm' (minutes), or 'h' (hours) to the value (e.g. 30m).
+             -T<0-5>: Set timing template (higher is faster)
+             --min-hostgroup/max-hostgroup <size>: Parallel host scan group sizes
+             --min-parallelism/max-parallelism <numprobes>: Probe parallelization
+             --min-rtt-timeout/max-rtt-timeout/initial-rtt-timeout <time>: Specifies
+                 probe round trip time.
+             --max-retries <tries>: Caps number of port scan probe retransmissions.
+             --host-timeout <time>: Give up on target after this long
+             --scan-delay/--max-scan-delay <time>: Adjust delay between probes
+             --min-rate <number>: Send packets no slower than <number> per second
+             --max-rate <number>: Send packets no faster than <number> per second
+           FIREWALL/IDS EVASION AND SPOOFING:
+             -f; --mtu <val>: fragment packets (optionally w/given MTU)
+             -D <decoy1,decoy2[,ME],...>: Cloak a scan with decoys
+             -S <IP_Address>: Spoof source address
+             -e <iface>: Use specified interface
+             -g/--source-port <portnum>: Use given port number
+             --data-length <num>: Append random data to sent packets
+             --ip-options <options>: Send packets with specified ip options
+             --ttl <val>: Set IP time-to-live field
+             --spoof-mac <mac address/prefix/vendor name>: Spoof your MAC address
+             --badsum: Send packets with a bogus TCP/UDP/SCTP checksum
+           OUTPUT:
+             -oN/-oX/-oS/-oG <file>: Output scan in normal, XML, s|<rIpt kIddi3,
+                and Grepable format, respectively, to the given filename.
+             -oA <basename>: Output in the three major formats at once
+             -v: Increase verbosity level (use -vv or more for greater effect)
+             -d: Increase debugging level (use -dd or more for greater effect)
+             --reason: Display the reason a port is in a particular state
+             --open: Only show open (or possibly open) ports
+             --packet-trace: Show all packets sent and received
+             --iflist: Print host interfaces and routes (for debugging)
+             --log-errors: Log errors/warnings to the normal-format output file
+             --append-output: Append to rather than clobber specified output files
+             --resume <filename>: Resume an aborted scan
+             --stylesheet <path/URL>: XSL stylesheet to transform XML output to HTML
+             --webxml: Reference stylesheet from Nmap.Org for more portable XML
+             --no-stylesheet: Prevent associating of XSL stylesheet w/XML output
+           MISC:
+             -6: Enable IPv6 scanning
+             -A: Enable OS detection, version detection, script scanning, and traceroute
+             --datadir <dirname>: Specify custom Nmap data file location
+             --send-eth/--send-ip: Send using raw ethernet frames or IP packets
+             --privileged: Assume that the user is fully privileged
+             --unprivileged: Assume the user lacks raw socket privileges
+             -V: Print version number
+             -h: Print this help summary page.
+           EXAMPLES:
+             nmap -v -A scanme.nmap.org
+             nmap -v -sn 192.168.0.0/16 10.0.0.0/8
+             nmap -v -iR 10000 -Pn -p 80
+           SEE THE MAN PAGE (http://nmap.org/book/man.html) FOR MORE OPTIONS AND EXAMPLES
+
+
+--------------------------------------------------------------------------------------------
+
+       -A (Aggressive scan options) .
+           This option enables additional advanced and aggressive options. I haven't decided exactly which it stands for yet. Presently
+           this enables OS detection (-O), version scanning (-sV), script scanning (-sC) and traceroute (--traceroute)..  More features
+           may be added in the future. The point is to enable a comprehensive set of scan options without people having to remember a
+           large set of flags. However, because script scanning with the default set is considered intrusive, you should not use -A
+           against target networks without permission. This option only enables features, and not timing options (such as -T4) or
+           verbosity options (-v) that you might want as well.
+
+
+       -T paranoid|sneaky|polite|normal|aggressive|insane (Set a timing template) .
+           While the fine-grained timing controls discussed in the previous section are powerful and effective, some people find them
+           confusing. Moreover, choosing the appropriate values can sometimes take more time than the scan you are trying to optimize. So
+           Nmap offers a simpler approach, with six timing templates. You can specify them with the -T option and their number (0–5) or
+           their name. The template names are paranoid (0), sneaky (1), polite (2), normal (3), aggressive (4), and insane (5). The first
+           two are for IDS evasion. Polite mode slows down the scan to use less bandwidth and target machine resources. Normal mode is the
+           default and so -T3 does nothing. Aggressive mode speeds scans up by making the assumption that you are on a reasonably fast and
+           reliable network. Finally insane mode.  assumes that you are on an extraordinarily fast network or are willing to sacrifice
+           some accuracy for speed.
+
+           These templates allow the user to specify how aggressive they wish to be, while leaving Nmap to pick the exact timing values.
+           The templates also make some minor speed adjustments for which fine-grained control options do not currently exist. For
+           example, -T4.  prohibits the dynamic scan delay from exceeding 10 ms for TCP ports and -T5 caps that value at 5 ms. Templates
+           can be used in combination with fine-grained controls, and the fine-grained controls will you specify will take precedence over
+           the timing template default for that parameter. I recommend using -T4 when scanning reasonably modern and reliable networks.
+           Keep that option even when you add fine-grained controls so that you benefit from those extra minor optimizations that it
+           enables.
+
+           If you are on a decent broadband or ethernet connection, I would recommend always using -T4. Some people love -T5 though it is
+           too aggressive for my taste. People sometimes specify -T2 because they think it is less likely to crash hosts or because they
+           consider themselves to be polite in general. They often don't realize just how slow -T polite.  really is. Their scan may take
+           ten times longer than a default scan. Machine crashes and bandwidth problems are rare with the default timing options (-T3) and
+           so I normally recommend that for cautious scanners. Omitting version detection is far more effective than playing with timing
+           values at reducing these problems.
+
+           While -T0.  and -T1.  may be useful for avoiding IDS alerts, they will take an extraordinarily long time to scan thousands of
+           machines or ports. For such a long scan, you may prefer to set the exact timing values you need rather than rely on the canned
+           -T0 and -T1 values.
+
+           The main effects of T0 are serializing the scan so only one port is scanned at a time, and waiting five minutes between sending
+           each probe.  T1 and T2 are similar but they only wait 15 seconds and 0.4 seconds, respectively, between probes.  T3 is Nmap's
+           default behavior, which includes parallelization..  does the equivalent of --max-rtt-timeout 1250ms --initial-rtt-timeout 500ms
+           --max-retries 6 and sets the maximum TCP scan delay to 10 milliseconds.  T5 does the equivalent of --max-rtt-timeout 300ms
+           --min-rtt-timeout 50ms --initial-rtt-timeout 250ms --max-retries 2 --host-timeout 15m as well as setting the maximum TCP scan
+           delay to 5 ms.
+
+
+      -A (Aggressive scan options)
+      -T paranoid|sneaky|polite|normal|aggressive|insane (Set a timing template) .
+          时间模板:  -T0 和 -T1 可避免 IDS alerts, 通常 使用 默认的 -T3 或 较快一点的 -T4 paranoid (0)
+                sneaky (1)
+                polite (2)  <---- 速度较慢
+                normal (3) (默认 即:-T3)
+                aggressive (4)
+                and insane (5)
+
+
+    注: By default, Nmap scans the most common 1,000 ports for each protocol.
+
+[root@basic ~]# nmap 192.168.175.40
+
+[root@basic ~]# nmap -A -T4 192.168.175.40
+
+      Starting Nmap 6.40 ( http://nmap.org ) at 2019-07-02 11:15 CST
+      Nmap scan report for 192.168.175.40
+      Host is up (0.00073s latency).
+      Not shown: 998 closed ports
+      PORT     STATE SERVICE VERSION
+      22/tcp   open  ssh     OpenSSH 7.4 (protocol 2.0)
+      | ssh-hostkey: 2048 e9:d3:88:2e:8e:39:1b:78:6d:af:7f:5f:50:b3:eb:0e (RSA)
+      |_256 04:0d:cf:28:f8:41:17:2e:b3:03:cc:68:4c:26:2c:3f (ECDSA)
+      3306/tcp open  mysql   MySQL (unauthorized)
+      MAC Address: 00:0C:29:B9:5F:25 (VMware)
+      No exact OS matches for host (If you know what OS is running on it, see http://nmap.org/submit/ ).
+      TCP/IP fingerprint:
+      OS:SCAN(V=6.40%E=4%D=7/2%OT=22%CT=1%CU=36936%PV=Y%DS=1%DC=D%G=Y%M=000C29%TM
+      OS:=5D1ACC5F%P=x86_64-redhat-linux-gnu)SEQ(SP=106%GCD=1%ISR=10B%TI=Z%TS=A)O
+      OS:PS(O1=M5B4ST11NW7%O2=M5B4ST11NW7%O3=M5B4NNT11NW7%O4=M5B4ST11NW7%O5=M5B4S
+      OS:T11NW7%O6=M5B4ST11)WIN(W1=7120%W2=7120%W3=7120%W4=7120%W5=7120%W6=7120)E
+      OS:CN(R=Y%DF=Y%T=40%W=7210%O=M5B4NNSNW7%CC=Y%Q=)T1(R=Y%DF=Y%T=40%S=O%A=S+%F
+      OS:=AS%RD=0%Q=)T2(R=N)T3(R=N)T4(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=)T5
+      OS:(R=Y%DF=Y%T=40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)T6(R=Y%DF=Y%T=40%W=0%S=A%A=Z
+      OS:%F=R%O=%RD=0%Q=)T7(R=Y%DF=Y%T=40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)U1(R=Y%DF=
+      OS:N%T=40%IPL=164%UN=0%RIPL=G%RID=G%RIPCK=G%RUCK=G%RUD=G)IE(R=Y%DFI=N%T=40%
+      OS:CD=S)
+
+      Network Distance: 1 hop
+
+      TRACEROUTE
+      HOP RTT     ADDRESS
+      1   0.73 ms 192.168.175.40
+
+      OS and Service detection performed. Please report any incorrect results at http://nmap.org/submit/ .
+      Nmap done: 1 IP address (1 host up) scanned in 12.15 seconds
+
+
+
+
+---------------------------------------------------------------------------------------------------
+示例: 扫描 指定的 端口 port
+
+       -p port ranges (Only scan specified ports) .
+           This option specifies which ports you want to scan and overrides the default. Individual port numbers are OK, as are ranges
+           separated by a hyphen (e.g.  1-1023). The beginning and/or end values of a range may be omitted, causing Nmap to use 1 and
+           65535, respectively. So you can specify -p- to scan ports from 1 through 65535. Scanning port zero.  is allowed if you
+           specify it explicitly. For IP protocol scanning (-sO), this option specifies the protocol numbers you wish to scan for
+           (0–255).
+
+           When scanning a combination of protocols (e.g. TCP and UDP), you can specify a particular protocol by preceding the port
+           numbers by T: for TCP, U: for UDP, S: for SCTP, or P: for IP Protocol. The qualifier lasts until you specify another
+           qualifier. For example, the argument -p U:53,111,137,T:21-25,80,139,8080 would scan UDP ports 53, 111,and 137, as well as
+           the listed TCP ports. Note that to scan both UDP and TCP, you have to specify -sU and at least one TCP scan type (such as
+           -sS, -sF, or -sT). If no protocol qualifier is given, the port numbers are added to all protocol lists.  Ports can also be
+           specified by name according to what the port is referred to in the nmap-services. You can even use the wildcards * and ?
+           with the names. For example, to scan FTP and all ports whose names begin with “http”, use -p ftp,http*. Be careful about
+           shell expansions and quote the argument to -p if unsure.
+
+           Ranges of ports can be surrounded by square brackets to indicate ports inside that range that appear in nmap-services. For
+           example, the following will scan all ports in nmap-services equal to or below 1024: -p [-1024]. Be careful with shell
+           expansions and quote the argument to -p if unsure.
+
+
+[root@basic ~]# nmap -p 22 192.168.175.40   # 扫描 指定的 port tcp/22 (注: 默认 nmap 仅 扫描 tcp ports)
+
+      协议字母:
+          T: tcp
+          U: udp
+          S: sctp
+          P: ip protocol
+
+ 注: 如果 -p 后接的 port 没有指定 protocol qualifier, 则 port numbers 会被加入到 all protocol lists
+
+
+// 扫描 udp 端口(53,111,137), tcp 端口(21-25,80,139,8080), 因为这里扫描了 tcp 和 udp 端口,所以同时指定了选项 -sT 和 选项 -sU
+[root@basic ~]# nmap -sT -sU -p U:53,111,137,T:21-25,80,139,8080 192.168.175.40
+
+[root@basic ~]# nmap -sT -sU -p U:53,T:22 192.168.175.40   # 扫描 udp/53 和 tcp/22 端口
+
+[root@basic ~]# nmap -sU -p U:53 192.168.175.40     # 扫描 udp/53 端口
+
+
+// port 的 range 表示 [begin-end], 默认(缺省) 值为: begin->1, end->65535
+[root@basic ~]# nmap -p T:1-65535 192.168.175.40
+[root@basic ~]# nmap -p- 192.168.175.40            # 同上
+[root@basic ~]# nmap -p T:1-  192.168.175.40       # 同上
+[root@basic ~]# nmap -p T:-65535  192.168.175.40   # 同上
+
+
+
+---------------------------------------------------------------------------------------------------
+
+       -sn (No port scan) .
+           This option tells Nmap not to do a port scan after host discovery, and only print out the available hosts that responded to
+           the scan. This is often known as a “ping scan”, but you can also request that traceroute and NSE host scripts be run. This
+           is by default one step more intrusive than the list scan, and can often be used for the same purposes. It allows light
+           reconnaissance of a target network without attracting much attention. Knowing how many hosts are up is more valuable to
+           attackers than the list provided by list scan of every single IP and host name.
+
+           Systems administrators often find this option valuable as well. It can easily be used to count available machines on a
+           network or monitor server availability. This is often called a ping sweep, and is more reliable than pinging the broadcast
+           address because many hosts do not reply to broadcast queries.
+
+           The default host discovery done with -sn consists of an ICMP echo request, TCP SYN to port 443, TCP ACK to port 80, and an
+           ICMP timestamp request by default. When executed by an unprivileged user, only SYN packets are sent (using a connect call)
+           to ports 80 and 443 on the target. When a privileged user tries to scan targets on a local ethernet network, ARP requests
+           are used unless --send-ip was specified. The -sn option can be combined with any of the discovery probe types (the -P*
+           options, excluding -Pn) for greater flexibility. If any of those probe type and port number options are used, the default
+           probes are overridden. When strict firewalls are in place between the source host running Nmap and the target network,
+           using those advanced techniques is recommended. Otherwise hosts could be missed when the firewall drops probes or their
+           responses.
+
+           In previous releases of Nmap, -sn was known as -sP..
+
+
+[root@basic ~]# nmap -sn 192.168.175.0/24
+
+        Starting Nmap 6.40 ( http://nmap.org ) at 2019-07-02 15:31 CST
+        Nmap scan report for 192.168.175.1
+        Host is up (0.00018s latency).
+        MAC Address: 00:50:56:C0:00:08 (VMware)
+        Nmap scan report for 192.168.175.2
+        Host is up (0.00011s latency).
+        MAC Address: 00:50:56:E2:17:D5 (VMware)
+        Nmap scan report for 192.168.175.40
+        Host is up (0.00031s latency).
+        MAC Address: 00:0C:29:B9:5F:25 (VMware)
+        Nmap scan report for 192.168.175.254
+        Host is up (0.00012s latency).
+        MAC Address: 00:50:56:E3:75:2A (VMware)
+        Nmap scan report for 192.168.175.10
+        Host is up.
+        Nmap done: 256 IP addresses (5 hosts up) scanned in 2.02 seconds
+
+
+---------------------------------------------------------------------------------------------------
+
+       --traceroute (Trace path to host) .
+           Traceroutes are performed post-scan using information from the scan results to determine the port and protocol most likely
+           to reach the target. It works with all scan types except connect scans (-sT) and idle scans (-sI). All traces use Nmap's
+           dynamic timing model and are performed in parallel.
+
+           Traceroute works by sending packets with a low TTL (time-to-live) in an attempt to elicit ICMP Time Exceeded messages from
+           intermediate hops between the scanner and the target host. Standard traceroute implementations start with a TTL of 1 and
+           increment the TTL until the destination host is reached. Nmap's traceroute starts with a high TTL and then decrements the
+           TTL until it reaches zero. Doing it backwards lets Nmap employ clever caching algorithms to speed up traces over multiple
+           hosts. On average Nmap sends 5–10 fewer packets per host, depending on network conditions. If a single subnet is being
+           scanned (i.e. 192.168.0.0/24) Nmap may only have to send two packets to most hosts.
+
+[root@basic ~]# nmap --traceroute 192.168.175.1
+
+---------------------------------------------------------------------------------------------------
+       -sV (Version detection) .
+           Enables version detection, as discussed above. Alternatively, you can use -A, which enables version detection among other
+           things.
+
+           -sR.  is an alias for -sV. Prior to March 2011, it was used to active the RPC grinder separately from version detection,
+           but now these options are always combined.
+
+
+// 启用 探测 service/version 信息 功能
+[root@basic ~]# nmap -sV 192.168.175.40   # 包括探测 service/version info
+
+      Starting Nmap 6.40 ( http://nmap.org ) at 2019-07-02 15:09 CST
+      Nmap scan report for 192.168.175.40
+      Host is up (0.00012s latency).
+      Not shown: 997 closed ports
+      PORT     STATE SERVICE VERSION
+      21/tcp   open  ftp     vsftpd 3.0.2
+      22/tcp   open  ssh     OpenSSH 7.4 (protocol 2.0)
+      3306/tcp open  mysql   MySQL (unauthorized)
+      MAC Address: 00:0C:29:B9:5F:25 (VMware)
+      Service Info: OS: Unix
+
+      Service detection performed. Please report any incorrect results at http://nmap.org/submit/ .
+      Nmap done: 1 IP address (1 host up) scanned in 13.19 seconds
+
+
+---------------------------------------------------------------------------------------------------
+
+示例: 扫描防火墙
+
+       -sA (TCP ACK scan) .
+           This scan is different than the others discussed so far in that it never determines open (or even open|filtered) ports. It is
+           used to map out firewall rulesets, determining whether they are stateful or not and which ports are filtered.
+
+           The ACK scan probe packet has only the ACK flag set (unless you use --scanflags). When scanning unfiltered systems, open and
+           closed ports will both return a RST packet. Nmap then labels them as unfiltered, meaning that they are reachable by the ACK
+           packet, but whether they are open or closed is undetermined. Ports that don't respond, or send certain ICMP error messages back
+           (type 3, code 1, 2, 3, 9, 10, or 13), are labeled filtered.
+
+
+[root@basic ~]# nmap -sA 192.168.175.40
+
+      Starting Nmap 6.40 ( http://nmap.org ) at 2019-07-02 12:11 CST
+      Nmap scan report for 192.168.175.40
+      Host is up (0.00029s latency).
+      Not shown: 999 filtered ports
+      PORT   STATE      SERVICE
+      22/tcp unfiltered ssh
+      MAC Address: 00:0C:29:B9:5F:25 (VMware)
+
+      Nmap done: 1 IP address (1 host up) scanned in 18.12 seconds
+
 ---------------------------------------------------------------------------------------------------
 
 // 安装 nmap
@@ -41,17 +426,109 @@ man nmap
 // 同时安装 nmap 和 其 图形化工具
 [root@dbserver ~]# yum install -y nmap nmap-frontend
 
----------------------------------------------------------------------------------------------------
-
-
-
-
-
+[root@basic ~]# rpm -q nmap
+nmap-6.40-16.el7.x86_64
 
 ---------------------------------------------------------------------------------------------------
+示例: scan hostname, ip 或 多个 ip 对应的 host 开放的 port, service 和 mac address (注:有时可能无法获取 mac address)
+
+// 通过 hostname 扫描 host
+[root@basic ~]# nmap www.baidu.com
+
+// 通过 ip address 扫描 host
+[root@basic ~]# nmap 192.168.175.40 # scan ip 对应的主机 开放的 port, service 和 mac address
+
+        Starting Nmap 6.40 ( http://nmap.org ) at 2019-07-02 08:41 CST
+        Nmap scan report for 192.168.175.40
+        Host is up (0.00019s latency).
+        Not shown: 998 closed ports
+        PORT     STATE SERVICE
+        22/tcp   open  ssh
+        3306/tcp open  mysql
+        MAC Address: 00:0C:29:B9:5F:25 (VMware)
+
+        Nmap done: 1 IP address (1 host up) scanned in 0.14 seconds
+
+
+// 扫描 multiple hosts
+[root@basic ~]# nmap 192.168.175.10 192.168.175.40
+
+        Starting Nmap 6.40 ( http://nmap.org ) at 2019-07-02 08:52 CST
+        Nmap scan report for 192.168.175.10
+        Host is up (0.0000030s latency).
+        Not shown: 999 closed ports
+        PORT   STATE SERVICE
+        22/tcp open  ssh
+
+        Nmap scan report for 192.168.175.40
+        Host is up (0.00013s latency).
+        Not shown: 998 closed ports
+        PORT     STATE SERVICE
+        22/tcp   open  ssh
+        3306/tcp open  mysql
+        MAC Address: 00:0C:29:B9:5F:25 (VMware)
+
+        Nmap done: 2 IP addresses (2 hosts up) scanned in 0.21 seconds
+
+// 扫描  192.168.175.1 192.168.175.10 192.168.175.40
+[root@basic ~]# nmap 192.168.175.{1,10,40}
+[root@basic ~]# nmap 192.168.175.1,10,40   # 同上
+
+---------------------------------------------------------------------------------------------------
+示例：读取 file 中的 host 或 network 列表 并 进行扫描
+
+[root@basic ~]# vim nmaptest.txt
+      192.168.175.10
+      192.168.175.40
+
+[root@basic ~]# nmap -iL nmaptest.txt   # -iL <inputfilename>: Input from list of hosts/networks
+
+---------------------------------------------------------------------------------------------------
+示例: 扫描整个子网
+
+// 扫描整个子网 (利用通配符 * )
+[root@basic ~]# nmap '192.168.175.*'  # 注: 这里安全的做法是用引号将 '*' 引起来, 避免 shell 对其 解释
+
+---------------------------------------------------------------------------------------------------
+示例: 扫描 ip range
+
+[root@basic ~]# nmap 192.168.175.10-40
+
+---------------------------------------------------------------------------------------------------
+示例: 扫描网段, 但 exclude 指定的主机
+
+[root@basic ~]# nmap '192.168.175.*' --exclude 192.168.175.40
+
+----------------------------------------------------------------------------------------------------------
+示例: 显示 由 Nmap 检测的 interface 列表 和 系统路由
+
+
+       --iflist (List interfaces and routes) .
+           Prints the interface list and system routes as detected by Nmap. This is useful for debugging routing problems or device
+           mischaracterization (such as Nmap treating a PPP connection as ethernet).
+
+
+[root@basic ~]# nmap --iflist
+
+          Starting Nmap 6.40 ( http://nmap.org ) at 2019-07-02 13:12 CST
+          ************************INTERFACES************************
+          DEV   (SHORT) IP/MASK           TYPE     UP MTU   MAC
+          lo    (lo)    127.0.0.1/8       loopback up 65536
+          lo    (lo)    ::1/128           loopback up 65536
+          ens33 (ens33) 192.168.175.10/24 ethernet up 1500  00:0C:29:F6:F0:83
+
+          **************************ROUTES**************************
+          DST/MASK         DEV   METRIC GATEWAY
+          192.168.175.0/24 ens33 100
+          0.0.0.0/0        ens33 100    192.168.175.2
+          ::1/128          lo    0
+
+----------------------------------------------------------------------------------------------------------
 网上资料:
 
     https://www.tecmint.com/nmap-command-examples/
     https://phoenixnap.com/kb/nmap-command-linux-examples
+
+    https://nmap.org/
 
 
