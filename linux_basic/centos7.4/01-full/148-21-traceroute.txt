@@ -1,0 +1,48 @@
+
+
+# keyword traceroute
+
+man traceroute
+
+
+
+
+---------------------------------------------------------------------------------------------------
+练习环境:
+
+   node01   --------   router01  ------------ router02 --------- node02
+  175.20  ------ [175.110   10.110 ] ---- [10.20   20.110] ------ 20.20
+
+---------------------------------------------------------------------------------------------------
+
+[root@node01 ~]# traceroute -n 192.168.20.20
+      traceroute to 192.168.20.20 (192.168.20.20), 30 hops max, 60 byte packets
+       1  192.168.175.110  0.268 ms  0.263 ms  0.273 ms
+       2  192.168.10.20  1.357 ms  1.331 ms  1.299 ms
+       3  192.168.20.20  2.086 ms  2.016 ms  2.049 ms
+
+
+
+
+---------------------------------------------------------------------------------------------------
+
+[root@node01 ~]# traceroute -n 192.168.20.20
+      traceroute to 192.168.20.20 (192.168.20.20), 30 hops max, 60 byte packets
+       1  192.168.175.110  0.231 ms  0.177 ms  0.139 ms
+       2  * * *
+       3  * * *
+       4  * * *
+       5  * * *
+       6  * * *
+       7  *^C
+
+
+---------------------------------------------------------------------------------------------------
+
+网上资料:
+
+        https://shapeshed.com/unix-traceroute/
+        https://www.rosehosting.com/blog/use-traceroute-to-identify-network-problems-in-linux/
+        https://www.thegeekstuff.com/2012/05/traceroute-examples/
+        https://unix.stackexchange.com/questions/47009/how-to-use-traceroute-command-in-unix
+
