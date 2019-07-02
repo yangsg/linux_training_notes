@@ -1,0 +1,110 @@
+
+# keyword ping
+
+man ping
+
+作用:
+       ping - send ICMP ECHO_REQUEST to network hosts
+
+语法: ping  [-aAbBdDfhLnOqrRUvV46]  [-c  count] [-F flowlabel] [-i interval] [-I interface] [-l preload] [-m mark] [-M pmtudisc_option] [-N nodeinfo_option]
+            [-w deadline] [-W timeout] [-p pattern] [-Q tos] [-s packetsize] [-S sndbuf] [-t ttl] [-T timestamp option] [hop ...] destination
+
+说明:
+       ping  uses  the ICMP protocol's mandatory ECHO_REQUEST datagram to elicit an ICMP ECHO_RESPONSE from a host or gateway.  ECHO_REQUEST data‐
+       grams (``pings'') have an IP and ICMP header, followed by a struct timeval and then an arbitrary number of ``pad'' bytes used to  fill  out
+       the packet.
+
+       ping works with both IPv4 and IPv6. Using only one of them explicitly can be enforced by specifying -4 or -6.
+
+       ping  can  also send IPv6 Node Information Queries (RFC4620).  Intermediate hops may not be allowed, because IPv6 source routing was depre‐
+       cated (RFC5095).
+
+
+---------------------------------------------------------------------------------------------------
+练习环境:
+
+   node01   --------   router01  ------------ router02 --------- node02
+  175.20  ------ [175.110   10.110 ] ---- [10.20   20.110] ------ 20.20
+
+---------------------------------------------------------------------------------------------------
+
+[root@node01 ~]# ping 192.168.20.20
+        PING 192.168.20.20 (192.168.20.20) 56(84) bytes of data.
+        64 bytes from 192.168.20.20: icmp_seq=1 ttl=62 time=2.60 ms
+        64 bytes from 192.168.20.20: icmp_seq=2 ttl=62 time=4.17 ms
+
+---------------------------------------------------------------------------------------------------
+
+       -c count
+              Stop after sending count ECHO_REQUEST packets. With deadline option, ping waits for count  ECHO_REPLY  packets,  until  the  timeout
+              expires.
+
+[root@node01 ~]# ping -c 2 192.168.20.20    # -c count :  发送 count 个 echo_request packets 后 停止
+        PING 192.168.20.20 (192.168.20.20) 56(84) bytes of data.
+        64 bytes from 192.168.20.20: icmp_seq=1 ttl=62 time=0.659 ms
+        64 bytes from 192.168.20.20: icmp_seq=2 ttl=62 time=0.618 ms
+
+        --- 192.168.20.20 ping statistics ---
+        2 packets transmitted, 2 received, 0% packet loss, time 1003ms
+        rtt min/avg/max/mdev = 0.618/0.638/0.659/0.032 ms
+
+---------------------------------------------------------------------------------------------------
+
+       -i interval
+              Wait  interval  seconds  between sending each packet.  The default is to wait for one second between each packet normally, or not to
+              wait in flood mode. Only super-user may set interval to values less 0.2 seconds.
+
+
+[root@node01 ~]# ping -i 2 www.baidu.com    #  -i interval: 每隔 interval 秒 发送一个 packet. (默认为每隔 1 秒)
+[root@node01 ~]# ping -i 0.2 www.baidu.com  # 每 0.2 秒 发送一个 packet
+[root@node01 ~]# ping -i 0 www.baidu.com    # flood mode (发送的每个 packet 之间没有 等待时间 )
+
+
+---------------------------------------------------------------------------------------------------
+
+       -W timeout
+              Time to wait for a response, in seconds. The option affects only timeout in absence of any responses, otherwise ping waits  for  two
+              RTTs.
+
+
+[root@dbserver ~]# ping -W 5 192.168.175.77   # -W timeout : 等待(wait) response 的超时时间 为 timeout 秒.
+
+---------------------------------------------------------------------------------------------------
+
+       -w deadline
+              Specify a timeout, in seconds, before ping exits regardless of how many packets have been sent or received. In this case  ping  does
+              not stop after count packet are sent, it waits either for deadline expire or until count probes are answered or for some error noti‐
+              fication from network.
+
+[root@dbserver ~]# ping -w 10 www.baidu.com   # -w deadline : ping 退出前 等待(wait) deadline 秒
+
+---------------------------------------------------------------------------------------------------
+
+       -f     Flood  ping. For every ECHO_REQUEST sent a period ``.'' is printed, while for ever ECHO_REPLY received a backspace is printed.  This
+              provides a rapid display of how many packets are being dropped.  If interval is not given, it sets  interval  to  zero  and  outputs
+              packets  as fast as they come back or one hundred times per second, whichever is more.  Only the super-user may use this option with
+              zero interval.
+
+
+[root@dbserver ~]# ping -f www.baidu.com
+        PING www.a.shifen.com (39.156.66.18) 56(84) bytes of data.
+        ..................................................................................^C
+
+---------------------------------------------------------------------------------------------------
+
+       -D     Print timestamp (unix time + microseconds as in gettimeofday) before each line.
+
+[root@node01 ~]# ping -D www.baidu.com
+      PING www.a.shifen.com (39.156.66.14) 56(84) bytes of data.
+      [1562078524.985204] From gateway (192.168.175.110) icmp_seq=1 Destination Net Unreachable
+      [1562078525.986451] From gateway (192.168.175.110) icmp_seq=2 Destination Net Unreachable
+
+
+---------------------------------------------------------------------------------------------------
+网上资源:
+
+      https://www.howtoforge.com/linux-ping-command/
+      https://www.thegeekstuff.com/2009/11/ping-tutorial-13-effective-ping-command-examples
+      https://www.sanfoundry.com/10-ping-command-usage-examples-linux/
+      https://linuxhandbook.com/ping-command/
+
