@@ -1,0 +1,85 @@
+# keyword tracepath
+
+man tracepath
+
+作用: tracepath, tracepath6 - traces path to a network host discovering MTU along this path
+
+语法: tracepath [-n] [-b] [-l pktlen] [-m max_hops] [-p port] destination
+
+说明:
+       It  traces  path  to destination discovering MTU along this path.  It uses UDP port port or some random port.  It is similar to traceroute,
+       only does not require superuser privileges and has no fancy options.
+
+       tracepath6 is good replacement for traceroute6 and classic example of application of Linux error queues.  The situation with IPv4 is worse,
+       because  commercial  IP  routers  do  not  return  enough  information in ICMP error messages.  Probably, it will change, when they will be
+       updated.  For now it uses Van Jacobson's trick, sweeping a range of UDP ports to maintain trace history.
+
+OPTIONS
+       -n     Print primarily IP addresses numerically.
+
+       -b     Print both of host names and IP addresses.
+
+       -l     Sets the initial packet length to pktlen instead of 65535 for tracepath or 128000 for tracepath6.
+
+       -m     Set maximum hops (or maximum TTLs) to max_hops instead of 30.
+
+       -p     Sets the initial destination port to use.
+
+
+OUTPUT
+       root@mops:~ # tracepath6 3ffe:2400:0:109::2
+        1?: [LOCALHOST]                              pmtu 1500
+        1:  dust.inr.ac.ru                   0.411ms
+        2:  dust.inr.ac.ru        asymm  1   0.390ms pmtu 1480
+        2:  3ffe:2400:0:109::2               463.514ms reached
+            Resume: pmtu 1480 hops 2 back 2
+
+       The first column shows TTL of the probe, followed by colon.  Usually value of TTL is obtained from reply from network, but sometimes  reply
+       does not contain necessary information and we have to guess it. In this case the number is followed by ?.
+
+       The  second column shows the network hop, which replied to the probe.  It is either address of router or word [LOCALHOST], if the probe was
+       not sent to the network.
+
+       The rest of line shows miscellaneous information about path to the correspinding network hop. As rule it contains value of RTT.   Addition‐
+       ally,  it  can  show Path MTU, when it changes.  If the path is asymmetric or the probe finishes before it reach prescribed hop, difference
+       between number of hops in forward and backward direction is shown following keyword async. This information  is  not  reliable.   F.e.  the
+       third line shows asymmetry of 1, it is because the first probe with TTL of 2 was rejected at the first hop due to Path MTU Discovery.
+
+       The  last  line summarizes information about all the path to the destination, it shows detected Path MTU, amount of hops to the destination
+       and our guess about amount of hops from the destination to us, which can be different when the path is asymmetric.
+
+
+
+---------------------------------------------------------------------------------------------------
+练习环境:
+
+   node01   --------   router01  ------------ router02 --------- node02
+  175.20  ------ [175.110   10.110 ] ---- [10.20   20.110] ------ 20.20
+
+---------------------------------------------------------------------------------------------------
+
+
+[root@node01 ~]# tracepath -n 192.168.20.20   # -n :    Print primarily IP addresses numerically.
+       1?: [LOCALHOST]                                         pmtu 1500
+       1:  192.168.175.110                                       0.395ms
+       1:  192.168.175.110                                       0.294ms
+       2:  192.168.10.20                                         0.589ms
+       3:  192.168.20.20                                         0.905ms reached
+           Resume: pmtu 1500 hops 3 back 3
+
+---------------------------------------------------------------------------------------------------
+示例: 查看 禁止了 router02 的 路由转发功能后 tracepath 的效果
+
+[root@node01 ~]# tracepath -n 192.168.20.20
+       1?: [LOCALHOST]                                         pmtu 1500
+       1:  192.168.175.110                                       0.410ms
+       1:  192.168.175.110                                       0.297ms
+       2:  no reply
+       3:  no reply
+       4:  no reply
+
+
+---------------------------------------------------------------------------------------------------
+
+
+
