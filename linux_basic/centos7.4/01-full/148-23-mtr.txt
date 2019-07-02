@@ -1,0 +1,94 @@
+
+# keyword mtr
+
+man mtr
+
+        注: 工具 mtr 的 作用 类似于 windows 操作系统上的 工具 pathping 的作用
+
+
+作用: mtr - a network diagnostic tool (My traceroute)
+
+语法:  mtr [-BfhvrctglxspQemniuTP46] [--help] [--version] [--report] [--report-wide] [--report-cycles COUNT] [--curses] [--split] [--raw] [ --xml]
+       [--mpls] [--no-dns] [--show-ips] [--gtk] [--address IP.ADD.RE.SS] [--interval SECONDS] [--max-ttl NUM] [--first-ttl NUM] [--bitpattern NUM]
+       [--tos NUM] [--psize BYTES | -s BYTES] [--tcp] [--udp] [--port PORT] [--timeout SECONDS] HOSTNAME [PACKETSIZE]
+
+说明:
+       mtr combines the functionality of the traceroute and ping programs in a single network diagnostic tool.
+
+       As  mtr  starts,  it  investigates the network connection between the host mtr runs on and HOSTNAME.  by sending packets with purposely low
+       TTLs. It continues to send packets with low TTL, noting the response time of the  intervening  routers.   This  allows  mtr  to  print  the
+       response  percentage  and  response times of the internet route to HOSTNAME.  A sudden increase in packet loss or response time is often an
+       indication of a bad (or simply overloaded) link.
+
+       The results are usually reported as round-trip-response times in miliseconds and the percentage of packetloss.
+
+
+---------------------------------------------------------------------------------------------------
+
+[root@node01 ~]# yum -y install mtr
+
+---------------------------------------------------------------------------------------------------
+练习环境:
+
+   node01   --------   router01  ------------ router02 --------- node02
+  175.20  ------ [175.110   10.110 ] ---- [10.20   20.110] ------ 20.20
+
+---------------------------------------------------------------------------------------------------
+
+
+示例: 网络畅通 情况下 命令 mtr 的示例
+
+      注: 默认 命令 mtr 进入的是 交互式的 窗口
+
+[root@node01 ~]# mtr -n 192.168.20.20
+
+                                                               My traceroute  [v0.85]
+    node01 (0.0.0.0)                                                                                                    Tue Jul  2 23:27:00 2019
+    Keys:  Help   Display mode   Restart statistics   Order of fields   quit
+                                                                                                        Packets               Pings
+     Host                                                                                             Loss%   Snt   Last   Avg  Best  Wrst StDev
+     1. 192.168.175.110                                                                                0.0%    17    0.7   0.6   0.2   1.4   0.0
+     2. 192.168.10.20                                                                                  0.0%    16    3.9   1.1   0.4   3.9   0.9
+     3. 192.168.20.20                                                                                  0.0%    16    1.8   1.3   0.6   3.0   0.6
+
+
+---------------------------------------------------------------------------------------------------
+
+示例: 查看 禁止了 router02 的 路由转发功能后 mtr 的效果
+
+[root@node01 ~]# mtr -n 192.168.20.20
+
+                                                           My traceroute  [v0.85]
+    node01 (0.0.0.0)                                                                                                    Tue Jul  2 23:35:39 2019
+    Keys:  Help   Display mode   Restart statistics   Order of fields   quit
+                                                                                                        Packets               Pings
+     Host                                                                                             Loss%   Snt   Last   Avg  Best  Wrst StDev
+     1. 192.168.175.110                                                                                0.0%    22    0.5   0.6   0.2   2.5   0.4
+     2. ???
+
+
+---------------------------------------------------------------------------------------------------
+
+示例: 查看 某一段时间 禁止了 router02 的 路由转发功能后 mtr 的效果
+
+[root@node01 ~]# mtr -n 192.168.20.20
+
+                                                               My traceroute  [v0.85]
+    node01 (0.0.0.0)                                                                                                    Tue Jul  2 23:42:55 2019
+    Keys:  Help   Display mode   Restart statistics   Order of fields   quit
+                                                                                                        Packets               Pings
+     Host                                                                                             Loss%   Snt   Last   Avg  Best  Wrst StDev
+     1. 192.168.175.110                                                                                0.0%    38    0.8   0.8   0.2   3.4   0.5
+     2. 192.168.10.20                                                                                 50.0%    37    1.7   1.0   0.5   1.9   0.0
+     3. 192.168.20.20                                                                                 50.0%    37    0.7   1.6   0.6   3.7   0.8
+
+
+---------------------------------------------------------------------------------------------------
+
+网上资料:
+
+      https://vitux.com/how-to-use-the-linux-mtr-command/
+      https://www.cyberciti.biz/tips/finding-out-a-bad-or-simply-overloaded-network-link-with-linuxunix-oses.html
+      https://www.linode.com/docs/networking/diagnostics/diagnosing-network-issues-with-mtr/
+      https://www.poftut.com/linux-mtr-command-tutorial-examples-network-diagnostics/
+
