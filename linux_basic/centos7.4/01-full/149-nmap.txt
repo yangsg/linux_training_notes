@@ -353,6 +353,7 @@ OPTIONS SUMMARY
 
 
 ---------------------------------------------------------------------------------------------------
+示例: 演示 nmap 的 traceroute 功能
 
        --traceroute (Trace path to host) .
            Traceroutes are performed post-scan using information from the scan results to determine the port and protocol most likely
@@ -366,7 +367,32 @@ OPTIONS SUMMARY
            hosts. On average Nmap sends 5–10 fewer packets per host, depending on network conditions. If a single subnet is being
            scanned (i.e. 192.168.0.0/24) Nmap may only have to send two packets to most hosts.
 
-[root@basic ~]# nmap --traceroute 192.168.175.1
+                -------------------------
+                练习环境:
+
+                   node01   --------   router01  ------------ router02 --------- node02
+                  175.20  ------ [175.110   10.110 ] ---- [10.20   20.110] ------ 20.20
+
+                -------------------------
+
+// 网络畅通情况下 的效果 (如果网络有可能不畅通, 为了探测网络问题, 最好还是使用其他专用的 如 traceroute, tracepath 或 mtr 工具来诊断问题源)
+[root@node01 ~]# nmap --traceroute 192.168.20.20
+
+                  Starting Nmap 6.40 ( http://nmap.org ) at 2019-07-03 11:15 CST
+                  Nmap scan report for 192.168.20.20
+                  Host is up (0.0016s latency).
+                  Not shown: 999 closed ports
+                  PORT   STATE SERVICE
+                  22/tcp open  ssh
+
+                  TRACEROUTE (using port 23/tcp)
+                  HOP RTT     ADDRESS
+                  1   1.16 ms 192.168.175.110
+                  2   9.33 ms 192.168.10.20
+                  3   4.35 ms 192.168.20.20
+
+                  Nmap done: 1 IP address (1 host up) scanned in 0.18 seconds
+
 
 ---------------------------------------------------------------------------------------------------
        -sV (Version detection) .
