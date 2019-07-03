@@ -84,6 +84,99 @@ man mtr
 
 
 ---------------------------------------------------------------------------------------------------
+示例:
+
+       -c COUNT
+
+       --report-cycles COUNT
+              Use this option to set the number of pings sent to determine both the machines on the network and the reliability of those machines.   Each
+              cycle lasts one second.
+
+       -r
+
+       --report
+              This option puts mtr into report mode.  When in this mode, mtr will run for the number of cycles specified by the -c option, and then print
+              statistics and exit.
+
+              This mode is useful for generating statistics about network quality.  Note that each running instance of mtr generates a significant amount
+              of network traffic.  Using mtr to measure the quality of your network may result in decreased network performance.
+
+
+
+[root@node01 ~]# mtr -n -c 30 -r 192.168.20.20 # -r: report mode(即非交互模式)  # -c COUNT : 循环次数(即 ping send 次数)
+      Start: Wed Jul  3 08:15:18 2019
+      HOST: node01                      Loss%   Snt   Last   Avg  Best  Wrst StDev
+        1.|-- 192.168.175.110            0.0%    30    0.3   0.8   0.2   3.5   0.7
+        2.|-- 192.168.10.20              0.0%    30    0.8   1.5   0.4  17.3   3.0
+        3.|-- 192.168.20.20              0.0%    30    1.6   1.3   0.6   3.5   0.5
+
+---------------------------------------------------------------------------------------------------
+
+       -i SECONDS
+
+       --interval SECONDS
+              Use this option to specify the positive number of seconds between ICMP ECHO requests.  The default value for this parameter is one second.
+
+
+[root@node01 ~]# mtr -n -i 2 192.168.20.20   # -i SECONDS : --interval SECONDS  (ICMP ECHO requests 之间的 时间间隔)
+
+---------------------------------------------------------------------------------------------------
+
+       -a IP.ADD.RE.SS
+
+       --address IP.ADD.RE.SS
+              Use this option to bind outgoing packets' socket to specific interface, so that any packet will be sent through this interface.  NOTE  that
+              this option doesn't apply to DNS requests (which could be and could not be what you want).
+
+[root@node01 ~]# mtr -a 192.168.175.20 192.168.20.20   # -a IP.ADD.RE.SS  # --address IP.ADD.RE.SS
+
+---------------------------------------------------------------------------------------------------
+
+       -Q NUM
+
+       --tos NUM
+              Specifies value for type of service field in IP header. Should be within range 0 - 255.
+
+       -u
+
+       --udp
+              Use UDP datagrams instead of ICMP ECHO.
+
+       -T
+
+       --tcp
+              Use TCP SYN packets instead of ICMP ECHO. PACKETSIZE is ignored, since SYN packets can not contain data.
+
+       -P PORT
+
+       --port PORT
+              The target port number for TCP traces.
+
+
+
+[root@node01 ~]# mtr --tcp --port 22 192.168.20.20
+
+                                                                           My traceroute  [v0.85]
+        node01 (0.0.0.0)                                                                                                                    Wed Jul  3 09:32:21 2019
+        Keys:  Help   Display mode   Restart statistics   Order of fields   quit
+                                                                                                                            Packets               Pings
+         Host                                                                                                             Loss%   Snt   Last   Avg  Best  Wrst StDev
+         1. 192.168.175.110                                                                                                0.0%    14    0.3   0.4   0.3   1.0   0.0
+         2. 192.168.10.20                                                                                                  0.0%    14    0.6   0.6   0.5   0.9   0.0
+         3. 192.168.20.20                                                                                                  0.0%    13  335.8 314.9 201.9 336.5  50.1
+
+[root@dbserver ~]# mtr --udp --port 53 8.8.8.8
+
+---------------------------------------------------------------------------------------------------
+
+       --timeout SECONDS
+              The number of seconds to keep the TCP socket open before giving up on the connection. This will only affect the final hop. Using large val‐
+              ues for this, especially combined with a short interval, will use up a lot of file descriptors.
+
+
+[root@node01 ~]# mtr --timeout 15 --tcp --port 22 192.168.20.20
+
+---------------------------------------------------------------------------------------------------
 
 网上资料:
 
@@ -91,4 +184,7 @@ man mtr
       https://www.cyberciti.biz/tips/finding-out-a-bad-or-simply-overloaded-network-link-with-linuxunix-oses.html
       https://www.linode.com/docs/networking/diagnostics/diagnosing-network-issues-with-mtr/
       https://www.poftut.com/linux-mtr-command-tutorial-examples-network-diagnostics/
+
+      如何使用MTR诊断网络问题
+      https://segmentfault.com/a/1190000017998430
 
