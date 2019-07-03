@@ -3,6 +3,9 @@
 
 man nmap
 
+
+      注: 命令 ping, traceroute, tracepath, mtr, nmap 都提供了 选项 -n 用于 指定显示 或 尽可能显示 Numeric 的 ip address
+
 作用: nmap - Network exploration tool and security / port scanner
 
 语法: nmap [Scan Type...] [Options] {target specification}
