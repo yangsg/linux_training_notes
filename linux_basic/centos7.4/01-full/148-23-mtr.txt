@@ -189,3 +189,11 @@ man mtr
       如何使用MTR诊断网络问题
       https://segmentfault.com/a/1190000017998430
 
+
+其他:
+
+    https://www.ittsystems.com/network-troubleshooting-tools/
+    https://www.tecmint.com/linux-network-configuration-and-troubleshooting-commands/
+
+
+
