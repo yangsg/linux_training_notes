@@ -5,6 +5,47 @@
 man traceroute
 
 
+作用: traceroute - print the route packets trace to network host
+
+语法:  traceroute [-46dFITUnreAV] [-f first_ttl] [-g gate,...]
+               [-i device] [-m max_ttl] [-p port] [-s src_addr]
+               [-q nqueries] [-N squeries] [-t tos]
+               [-l flow_label] [-w waittime] [-z sendwait] [-UL] [-D]
+               [-P proto] [--sport=port] [-M method] [-O mod_options]
+               [--mtu] [--back]
+               host [packet_len]
+       traceroute6  [options]
+
+说明:
+       traceroute  tracks the route packets taken from an IP network on their way to a given host. It utilizes the IP protocol's time to live (TTL) field
+       and attempts to elicit an ICMP TIME_EXCEEDED response from each gateway along the path to the host.
+
+       traceroute6 is equivalent to traceroute -6
+
+       The only required parameter is the name or IP address of the destination host .  The optional packet_len`gth is the  total  size  of  the  probing
+       packet (default 60 bytes for IPv4 and 80 for IPv6). The specified size can be ignored in some situations or increased up to a minimal value.
+
+       This  program  attempts  to  trace  the route an IP packet would follow to some internet host by launching probe packets with a small ttl (time to
+       live) then listening for an ICMP "time exceeded" reply from a gateway.  We start our probes with a ttl of one and increase by one until we get  an
+       ICMP  "port unreachable" (or TCP reset), which means we got to the "host", or hit a max (which defaults to 30 hops). Three probes (by default) are
+       sent at each ttl setting and a line is printed showing the ttl, address of the gateway and round trip time of each probe. The address can be  fol‐
+       lowed  by  additional information when requested. If the probe answers come from different gateways, the address of each responding system will be
+       printed.  If there is no response within a 5.0 seconds (default), an "*" (asterisk) is printed for that probe.
+
+       After the trip time, some additional annotation can be printed: !H, !N, or !P (host, network or protocol unreachable), !S (source  route  failed),
+       !F  (fragmentation  needed),  !X (communication administratively prohibited), !V (host precedence violation), !C (precedence cutoff in effect), or
+       !<num> (ICMP unreachable code <num>).  If almost all the probes result in some kind of unreachable, traceroute will give up and exit.
+
+       We don't want the destination host to process the UDP probe packets, so the destination port is set to an unlikely value (you can change  it  with
+       the -p flag). There is no such a problem for ICMP or TCP tracerouting (for TCP we use half-open technique, which prevents our probes to be seen by
+       applications on the destination host).
+
+       In the modern network environment the traditional traceroute methods can not be always applicable, because of widespread use of  firewalls.   Such
+       firewalls  filter  the  "unlikely" UDP ports, or even ICMP echoes.  To solve this, some additional tracerouting methods are implemented (including
+       tcp), see LIST OF AVAILABLE METHODS below. Such methods try to use particular protocol and source/destination port, in order to  bypass  firewalls
+       (to be seen by firewalls just as a start of allowed type of a network session).
+
+
 
 
 ---------------------------------------------------------------------------------------------------
@@ -14,6 +55,7 @@ man traceroute
   175.20  ------ [175.110   10.110 ] ---- [10.20   20.110] ------ 20.20
 
 ---------------------------------------------------------------------------------------------------
+示例: 网络畅通 情况下 命令 mtr 的示例
 
 [root@node01 ~]# traceroute -n 192.168.20.20
       traceroute to 192.168.20.20 (192.168.20.20), 30 hops max, 60 byte packets
@@ -25,17 +67,68 @@ man traceroute
 
 
 ---------------------------------------------------------------------------------------------------
+示例: 查看 禁止了 router02 的 路由转发功能后 traceroute 的效果
+
+
+       -w waittime, --wait=waittime
+              Set the time (in seconds) to wait for a response to a probe (default 5.0 sec).
 
 [root@node01 ~]# traceroute -n 192.168.20.20
       traceroute to 192.168.20.20 (192.168.20.20), 30 hops max, 60 byte packets
        1  192.168.175.110  0.231 ms  0.177 ms  0.139 ms
-       2  * * *
+       2  * * *  <---- 符号 "*" 表示没有在 相应的时间 收到 response
        3  * * *
        4  * * *
        5  * * *
        6  * * *
        7  *^C
 
+
+---------------------------------------------------------------------------------------------------
+其他有可能感兴趣的选项:
+
+       -n     Do not try to map IP addresses to host names when displaying them.
+
+       -T, --tcp
+              Use TCP SYN for probes
+
+       -U, --udp
+              Use UDP to particular destination port for tracerouting (instead of increasing the port per each probe). Default port is 53 (dns).
+
+       -p port, --port=port
+              For UDP tracing, specifies the destination port base traceroute will use (the destination port number will be incremented by each probe).
+              For ICMP tracing, specifies the initial ICMP sequence value (incremented by each probe too).
+              For TCP and others specifies just the (constant) destination port to connect.
+
+       -t tos, --tos=tos
+              For IPv4, set the Type of Service (TOS) and Precedence value. Useful values are 16 (low delay) and 8 (high throughput). Note that in  order
+              to use some TOS precedence values, you have to be super user.
+              For IPv6, set the Traffic Control value.
+
+       -s source_addr, --source=source_addr
+              Chooses an alternative source address. Note that you must select the address of one of the interfaces.  By default, the address of the out‐
+              going interface is used.
+
+       --sport=port
+              Chooses the source port to use. Implies -N 1.  Normally source ports (if applicable) are chosen by the system.
+
+
+       --mtu  Discover  MTU  along  the path being traced. Implies -F -N 1.  New mtu is printed once in a form of F=NUM at the first probe of a hop which
+              requires such mtu to be reached. (Actually, the correspond "frag needed" icmp message normally is sent by the previous hop).
+
+              Note, that some routers might cache once the seen information on a fragmentation. Thus you can receive the final mtu  from  a  closer  hop.
+              Try to specify an unusual tos by -t , this can help for one attempt (then it can be cached there as well).
+              See -F option for more info.
+
+       -i interface, --interface=interface
+              Specifies the interface through which traceroute should send packets. By default, the interface is selected according to the routing table.
+
+       -z sendwait, --sendwait=sendwait
+              Minimal  time  interval between probes (default 0).  If the value is more than 10, then it specifies a number in milliseconds, else it is a
+              number of seconds (float point values allowed too).  Useful when some routers use rate-limit for ICMP messages.
+
+       --fwmark=mark
+              Set the firewall mark for outgoing packets (since the Linux kernel 2.6.25).
 
 ---------------------------------------------------------------------------------------------------
 
