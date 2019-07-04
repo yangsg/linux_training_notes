@@ -575,22 +575,22 @@ call greeting();
 
 ---------------------------------------------------------------------------------------------------
 
+13.6.4.2 Local Variable Scope and Resolution
+
+https://dev.mysql.com/doc/refman/5.7/en/local-variable-scope.html
 
 
+a local variable 的 scope 是 其 被 declared 所在的 BEGIN ... END 块,
+该 variable 可以在 其 declaring block 的 nested block 中被 引用,
+除非 该 block 定义了 一个 与其 同名 的 一个变量.
 
 
+因为 local variables 仅 存在执行 stored program 的范围内, 所以 不允许 其 在 stored program 内的 prepared statements 中 被 引用.
+Prepared statement 的 scope 为 当前 session, 而非 该 stored program, 因此 该 prepared statement 可以 在 该 stored program 结束
+后 被 执行, 而在 这时 该 variable 已经不再 该 scope 了.
+该 限制 同样对 stored procedure 和 function parameters 适用 .
 
+A local variable should not have the same name as a table column.
 
-
-
-
-
-
-
-
-
-
-
-
-
+---------------------------------------------------------------------------------------------------
 
