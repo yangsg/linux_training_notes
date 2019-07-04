@@ -1,0 +1,265 @@
+
+
+https://dev.mysql.com/doc/refman/5.7/en/user-variables.html
+https://dev.mysql.com/doc/refman/5.7/en/stored-program-variables.html
+https://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html
+https://dev.mysql.com/doc/refman/5.7/en/using-system-variables.html
+
+---------------------------------------------------------------------------------------------------
+9.4 User-Defined Variables
+
+    写作:  @var_name
+
+           var_name 由 alphanumeric characters, ., _, 和 $ 组成
+           当 var_name 被当做 string 或 identifier 引起来时 , 可以包含其他 字符, 如 @'my-var', @"my-var", or @`my-var`
+
+
+          User-defined variables 是 session specific 的, 一个用户无法 看见 或 使用另一个用户的 user variable.
+          一个 client session 的所有 变量 会在 client exit 是 自动释放。
+
+
+          User variable names are not case-sensitive. Names have a maximum length of 64 characters.
+
+
+
+---------------------------------------------------------------------------------------------------
+set 语法:
+mysql> help set
+          Name: 'SET'
+          Description:
+          Syntax:
+          SET variable = expr [, variable = expr] ...
+
+          variable: {
+              user_var_name
+            | param_name
+            | local_var_name
+            | {GLOBAL | @@GLOBAL.} system_var_name
+            | [SESSION | @@SESSION. | @@] system_var_name
+          }
+
+          SET syntax for variable assignment enables you to assign values to
+          different types of variables that affect the operation of the server or
+          clients:
+
+
+对于 set, 赋值运算符 既可以是  =  也可以是  :=
+---------------------------------------------------------------------------------------------------
+
+mysql> SET @v1 = X'41';                      # Hexadecimal or bit values assigned to user variables are treated as binary strings.
+mysql> SET @v2 = X'41'+0;                    # 通过加 0 将 a hexadecimal 或 bit value 当做 number 赋值 给 变量
+mysql> SET @v3 = CAST(X'41' AS UNSIGNED);    # 也可用 函数 cast 将 a hexadecimal 或 bit value 转换为 number
+
+mysql> SELECT @v1, @v2, @v3;
++------+------+------+
+| @v1  | @v2  | @v3  |
++------+------+------+
+| A    |   65 |   65 |
++------+------+------+
+
+mysql> SET @v1 = b'1000001';
+mysql> SET @v2 = b'1000001'+0;
+mysql> SET @v3 = CAST(b'1000001' AS UNSIGNED);
+
+mysql> SELECT @v1, @v2, @v3;
++------+------+------+
+| @v1  | @v2  | @v3  |
++------+------+------+
+| A    |   65 |   65 |
++------+------+------+
+
+
+---------------------------------------------------------------------------------------------------
+If the value of a user variable is selected in a result set, it is returned to the client as a string.
+
+If you refer to a variable that has not been initialized, it has a value of NULL and a type of string.
+
+---------------------------------------------------------------------------------------------------
+user variables 允许使用的上下文:
+
+    User variables 能够 用于  expressions 被 允许的 大多数 上下文中, 
+    但是这其中 不包含 明确要求 a literal value 的 上下文, 例如 select 语句中的 limit 子句,
+    或 LOAD DATA 语句 中的  IGNORE N LINES 子句.
+
+---------------------------------------------------------------------------------------------------
+赋值操作符:   :=   = (注: = 在 非 set 语句中 被视为 比较操作符)
+
+    也可以在 非 set 语句中 对 user variable 进行赋值(该功能在 mysql8.0中已过时 且 可能会在后续 release 中将其删除),
+    在这种情况下 必须使用 操作符 := 而非 = , 因 在非 set 的语句中 = 被视为 comparison operator.
+
+
+mysql> SET @t1=1, @t2=2, @t3:=4;
+mysql> SELECT @t1, @t2, @t3, @t4 := @t1+@t2+@t3;   # <====== 在 select 语句中对 user variable 赋值(注: mysql8.0 是该特性为 deprecated)
++------+------+------+--------------------+
+| @t1  | @t2  | @t3  | @t4 := @t1+@t2+@t3 |
++------+------+------+--------------------+
+|    1 |    2 |    4 |                  7 |
++------+------+------+--------------------+
+
+
+---------------------------------------------------------------------------------------------------
+通用规则(general rule): 在除 set 外的语句中, 永远不要在相同的语句中 同时对 user variable 进行 read 和 assign 操作
+
+   该规则 和 C 或 C++ 中 expression 中的规则类似, 即 不要 在 非赋值的 expression 中 对 变量 同时 进行 读取 和 修改 操作, 否则会导致 undefined 的行为.
+
+mysql> SET @a = @a + 1;     # ok
+
+mysql> SELECT @a, @a:=@a+1; # bad practice(wrong),  原因: 这是一种 undefined 行为, 可能导致 不可预期的结果
+
+---------------------------------------------------------------------------------------------------
+User variables 旨在 提供 data values, 其不能 直接在 语句中 被当做 identifier 或 identifier
+的一部分来使用(如 table name 和 database name 等, 以及保留字(reserved word) 如select 等).
+
+一个例外情况是 构造 后续 执行的 prepared statement, 此时 user variables 可 被用于 provide any part of the statement,
+这用风格的语句有时也被称为'Dynamic SQL', 如下示例:
+
+            mysql> SET @c = "c1";
+            mysql> SET @s = CONCAT("SELECT ", @c, " FROM t");
+            mysql> PREPARE stmt FROM @s;
+            mysql> EXECUTE stmt;
+            +------+
+            | c1   |
+            +------+
+            |    0 |
+            |    1 |
+            +------+
+            2 rows in set (0.00 sec)
+
+            mysql> DEALLOCATE PREPARE stmt;
+
+   预编译语句的更多信息: https://dev.mysql.com/doc/refman/5.7/en/sql-syntax-prepared-statements.html
+
+---------------------------------------------------------------------------------------------------
+
+
+
+
+---------------------------------------------------------------------------------------------------
+5.1.7 Server System Variables
+
+https://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html
+
+查看  system variables 的 names 和 values 的方式:
+
+每个 system variables 都有 a default value
+
+
+// 查看 server 系统变量的值( 基于 编译的 default values 和 其读取的 any option files)
+[root@dbserver ~]# mysqld --verbose --help
+
+// 查看 server 系统变量的值 (仅基于 编译的 default values, 忽略 any option files 中的 settings )
+[root@dbserver ~]# mysqld --no-defaults --verbose --help
+
+// 查看  running server 当前使用的 system variables 的值, 使用  SHOW VARIABLES 或 Performance Schema system variable tables,
+见:
+    https://dev.mysql.com/doc/refman/5.7/en/performance-schema-system-variable-tables.html
+
+          mysql> use performance_schema
+          mysql> show tables like '%vari%';
+          +---------------------------------------+
+          | Tables_in_performance_schema (%vari%) |
+          +---------------------------------------+
+          | global_variables                      |
+          | session_variables                     |
+          | user_variables_by_thread              |
+          | variables_by_thread                   |
+          +---------------------------------------+
+
+
+----------------
+网上资料:
+5.1.4 Server System Variable Reference
+      https://dev.mysql.com/doc/refman/5.7/en/server-system-variable-reference.html
+
+5.1.8 Using System Variables
+      https://dev.mysql.com/doc/refman/5.7/en/using-system-variables.html
+
+25.12.13 Performance Schema System Variable Tables
+      https://dev.mysql.com/doc/refman/5.7/en/performance-schema-system-variable-tables.html
+
+5.1.8.2 Dynamic System Variables
+      https://dev.mysql.com/doc/refman/5.7/en/dynamic-system-variables.html
+
+5.1.1 Configuring the Server
+      https://dev.mysql.com/doc/refman/5.7/en/server-configuration.html
+
+14.14 InnoDB Startup Options and System Variables
+      https://dev.mysql.com/doc/refman/5.7/en/innodb-parameters.html
+
+21.3.3.9 MySQL Server Options and Variables for NDB Cluster
+      https://dev.mysql.com/doc/refman/5.7/en/mysql-cluster-options-variables.html#mysql-cluster-system-variables
+
+16.1.6 Replication and Binary Logging Options and Variables
+      https://dev.mysql.com/doc/refman/5.7/en/replication-options.html
+
+----------------
+注: 在 startup 时 Boolean variables 可以被设置为 ON, TRUE, OFF, 和 FALSE(不分区分大小写) 以及 1 和 0
+
+Note:
+      Some of the following variable descriptions refer to “enabling” or “disabling” a variable.
+      These variables can be enabled with the SET statement by setting them to ON or 1,
+      or disabled by setting them to OFF or 0. Boolean variables can be set at startup
+      to the values ON, TRUE, OFF, and FALSE (not case sensitive),
+      as well as 1 and 0. See Section 4.2.2.4, “Program Option Modifiers”.
+
+4.2.2.4 Program Option Modifiers
+    https://dev.mysql.com/doc/refman/5.7/en/option-modifiers.html
+
+        禁用(disable) column names, 可使用 如下 3 行配置 中 任意一配置(因为这 3 行配置 其的效果 是等价的)
+
+              --disable-column-names
+              --skip-column-names
+              --column-names=0
+
+        The --disable and --skip prefixes and the =0 suffix all have the same effect: They turn the option off.
+
+
+        启用(enable) column names, 可使用 如下 3 行配置 中 任意一配置(因为这 3 行配置 其的效果 是等价的)
+
+              --column-names
+              --enable-column-names
+              --column-names=1
+
+        其他:
+            前缀 --loose 用于 可能 不存在的 options(如在不同的mysql版本中,某些 options 已被删除), 如该 option 不存在, 则 --loose 使其仅报 warning 而非 error.
+            前缀 --maximum 只用 用于 have a session value 的 system variables, 不能用于 has only a global value 的 system variable, 否则报错.
+
+----------------
+
+
+It is also possible that the server will adjust a value upward. For example, if you assign a value of 0 to
+a variable for which the minimal value is 1024, the server will set the value to 1024.
+
+
+变量单位:
+Values for buffer sizes, lengths, and stack sizes are given in bytes unless otherwise specified.
+
+
+变量值中 相对路径 的问题:
+    除非特别指定, 否则默认 relative path name 是 相对于 data directory (如 /var/mysql/data),
+    如需明确指定 location, 请使用 absolute path name
+
+    原文:
+        Some system variables take file name values. Unless otherwise specified, the default file location is the
+        data directory if the value is a relative path name. To specify the location explicitly,
+        use an absolute path name. Suppose that the data directory is /var/mysql/data.
+        If a file-valued variable is given as a relative path name, it will be located under /var/mysql/data.
+        If the value is an absolute path name, its location is as given by the path name.
+
+---------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
