@@ -1,0 +1,153 @@
+
+
+4.2.2.2 Using Option Files
+
+https://dev.mysql.com/doc/refman/5.7/en/option-files.html
+
+    option files 有时也被称为 configuration files
+
+---------------------------------------------------------------------------------------------------
+// 查看 mysql (即 mysql client) 会 读取的配置文件
+[root@dbserver ~]# mysql --help | grep -A12 -B1 /etc/my.cnf
+        Default options are read from the following files in the given order:
+        /etc/my.cnf /etc/mysql/my.cnf /app/mysql/etc/my.cnf ~/.my.cnf
+        The following groups are read: mysql client
+        The following options may be given as the first argument:
+        --print-defaults        Print the program argument list and exit.
+        --no-defaults           Don't read default options from any option file,
+                                except for login file.
+        --defaults-file=#       Only read default options from the given file #.
+        --defaults-extra-file=# Read this file after the global files are read.
+        --defaults-group-suffix=#
+                                Also read groups with concat(group, suffix)
+        --login-path=#          Read this path from the login file.
+
+        Variables (--variable-name=value)
+
+
+
+// 查看 mysqld (即 mysql server) 会读取的 配置文件
+[root@dbserver ~]# mysqld --verbose --help | grep -A5 -B1 /etc/my.cnf
+        Default options are read from the following files in the given order:
+        /etc/my.cnf /etc/mysql/my.cnf /app/mysql/etc/my.cnf ~/.my.cnf
+        The following groups are read: mysqld server mysqld-5.7
+        The following options may be given as the first argument:
+        --print-defaults        Print the program argument list and exit.
+        --no-defaults           Don't read default options from any option file,
+                                except for login file.
+
+
+// 查看 编译进 mysql server 中的 默认值(不包含配置配置文件中的的 settings, 除 .mylogin.cnf 文件)
+[root@dbserver ~]# mysqld  --no-defaults --verbose --help
+
+注: 文件 .mylogin.cnf 是由工具 mysql_config_editor 创建的加密文件, 其包含了 login path options,
+    即仅包含选项: host, user, password, port and socket .
+    Client programs 可使用 --login-path 指定 读取的 .mylogin.cnf
+
+   ---------------------------------------------------------------------------------------------
+    windows 操作系统上 读取的option files 的顺序(如下table),从上到下依次读取,后读取的配置具有高优先级
+   ---------------------------------------------------------------------------------------------
+          Table 4.1 Option Files Read on Windows Systems
+          ------------------------------------|----------------------
+          File Name                           |     Purpose
+          ------------------------------------|----------------------
+          %WINDIR%\my.ini, %WINDIR%\my.cnf    |   Global options
+          ------------------------------------|----------------------
+          C:\my.ini, C:\my.cnf                |   Global options
+          ------------------------------------|----------------------
+          BASEDIR\my.ini, BASEDIR\my.cnf      |   Global options
+          ------------------------------------|----------------------
+          defaults-extra-file                 |   The file specified with --defaults-extra-file, if any
+          ------------------------------------|----------------------
+          %APPDATA%\MySQL\.mylogin.cnf        |   Login path options (clients only)
+          ------------------------------------|----------------------
+
+
+   ---------------------------------------------------------------------------------------------
+    linux 和 unix 操作系统上 读取的option files 的顺序(如下table),从上到下依次读取,后读取的配置具有高优先级
+    仅有一个例外: first 读取的 选项 --user 将被 应用, 这时一种安全预防, 以防止 其 在 an options file 指定的 --user
+    在 command line 上 被覆盖.
+   ---------------------------------------------------------------------------------------------
+          Table 4.2 Option Files Read on Unix and Unix-Like Systems
+          --------------------------|--------------------------------
+          File Name                 |            Purpose
+          --------------------------|--------------------------------
+          /etc/my.cnf               |         Global options
+          --------------------------|--------------------------------
+          /etc/mysql/my.cnf         |         Global options
+          --------------------------|--------------------------------
+          SYSCONFDIR/my.cnf         |         Global options
+          --------------------------|--------------------------------
+          $MYSQL_HOME/my.cnf        |         Server-specific options (server only)
+          --------------------------|--------------------------------
+          defaults-extra-file       |         The file specified with --defaults-extra-file, if any
+          --------------------------|--------------------------------
+          ~/.my.cnf                 |         User-specific options
+          --------------------------|--------------------------------
+          ~/.mylogin.cnf            |         User-specific login path options (clients only)
+          --------------------------|--------------------------------
+
+          其他文件都是可以 手动编辑的, 但 文件 .mylogin.cnf 是一个例外, 因其由 mysql_config_editor 创建 且 被加密.
+
+          Any long option that may be given on the command line when running a MySQL program can be given in
+          an option file as well. To get the list of available options for a program,
+          run it with the --help option. (For mysqld, use --verbose and --help.)
+
+注: 使用了前缀 --loose 的选项 如 --loose-opt_name 在 option file 中 应该写成 loose-opt_name
+
+options file 的文件内容格式:
+       Empty lines         被直接忽略
+      #comment, ;comment   注释, 且 A # comment can start in the middle of a line as well.
+      [group]    注: group is the name of the program or group for which you want to set options,  (Option group names 不区分大小写)
+
+注: options file 中的 opt_name=value 中的 符号 = 周围 可以 have spaces. value 可选择性(optionally)
+    用 single quotation marks 或 double quotation marks 引起来.
+
+    Leading and trailing spaces are automatically deleted from option names and values.
+
+        [mysqld] ---> 应用于 mysqld
+        [mysql]  ---> 应用于 mysql
+        [client] ---> is read by all client programs provided in MySQL distributions (but not by mysqld)
+        [mysqldump] ---> 应用于 mysqldump
+
+    Programs 如果 在 无法 理解 the option 时, 则 其会在 报错 之后 quit.
+
+
+    To create option groups to be read only by mysqld servers from specific MySQL release series,
+    use groups with names of [mysqld-5.6], [mysqld-5.7], and so forth.
+
+        [mysqld-5.7] ----> 仅 应用于 具有 5.7.x version numbers 的 mysqld
+
+
+option files 中 还可以使用 指令(directives) 有 !include  和 !includedir, 如法如下:
+
+        !include /home/mydir/myopt.cnf
+        !includedir /home/mydir
+
+        MySQL makes no guarantee about the order in which option files in the directory are read.
+
+    Note:
+        Any files to be found and included using the !includedir directive on Unix operating systems must have file names ending in .cnf.
+        On Windows, this directive checks for files with the .ini or .cnf extension.
+
+注: 被 included 的 option file 和 其他 option file 一样, 必须有 [group] 来指定其 options 被那些 program 应用.
+    如被包含的文件  /home/mydir/myopt.cnf 可能看起来 像 如下这样:
+
+          [mysqladmin]
+          force
+
+          [mysqld]
+          key_buffer_size=16M
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+        4.6.6 mysql_config_editor — MySQL Configuration Utility
+              https://dev.mysql.com/doc/refman/5.7/en/mysql-config-editor.html
+
+        4.3.2 mysqld_safe — MySQL Server Startup Script
+              https://dev.mysql.com/doc/refman/5.7/en/mysqld-safe.html
+
+
+        4.5.2 mysqladmin — Client for Administering a MySQL Server
+              https://dev.mysql.com/doc/refman/5.7/en/mysqladmin.html
+
