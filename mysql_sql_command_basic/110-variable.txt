@@ -23,7 +23,7 @@ https://dev.mysql.com/doc/refman/5.7/en/using-system-variables.html
 
 
 ---------------------------------------------------------------------------------------------------
-set 语法:
+set 语法:       https://dev.mysql.com/doc/refman/5.7/en/set-variable.html
 mysql> help set
           Name: 'SET'
           Description:
@@ -44,6 +44,43 @@ mysql> help set
 
 
 对于 set, 赋值运算符 既可以是  =  也可以是  :=
+
+注: LOCAL 是 SESSION 的同义词
+
+Multiple Variable Assignment
+
+    A SET statement can contain multiple variable assignments, separated by commas.
+    This statement assigns a value to a user-defined variable and a system variable:
+
+        mysql> SET @x = 1, SESSION sql_mode = '';
+
+    If you set multiple system variables in a single statement, the most recent GLOBAL or SESSION
+    keyword in the statement is used for following assignments that have no keyword specified.
+
+
+        mysql> SET GLOBAL sort_buffer_size = 1000000, SESSION sort_buffer_size = 1000000;
+        mysql> SET @@GLOBAL.sort_buffer_size = 1000000, @@LOCAL.sort_buffer_size = 1000000;
+        mysql> SET GLOBAL max_connections = 1000, sort_buffer_size = 1000000;  # 注：这里是对两个 global 变量 value 进行了设置, 即关键字 GLOBAL 作用于 后续的 2 个变量
+
+    The @@GLOBAL., @@SESSION., and @@ modifiers apply only to the immediately following system variable,
+    not any remaining system variables.This statement sets the sort_buffer_size global value to 50000 and the session value to 1000000:
+
+        mysql> SET @@GLOBAL.sort_buffer_size = 50000, sort_buffer_size = 1000000;  # 这里 分别 set 了一个 global 变量 和 一个 session 变量
+
+
+
+System Variable References in Expressions
+
+    To refer to the value of a system variable in expressions, use one of the @@-modifiers.
+    For example, you can retrieve system variable values in a SELECT statement like this:
+
+        mysql> SELECT @@GLOBAL.sql_mode, @@SESSION.sql_mode, @@sql_mode;
+
+    Note:
+          A reference to a system variable in an expression as @@var_name (with @@ rather than @@GLOBAL.
+          or @@SESSION.) returns the session value if it exists and the global value otherwise.
+          This differs from SET @@var_name = expr, which always refers to the session value.
+
 ---------------------------------------------------------------------------------------------------
 
 mysql> SET @v1 = X'41';                      # Hexadecimal or bit values assigned to user variables are treated as binary strings.
@@ -192,6 +229,9 @@ https://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html
 16.1.6 Replication and Binary Logging Options and Variables
       https://dev.mysql.com/doc/refman/5.7/en/replication-options.html
 
+5.1.8.1 System Variable Privileges
+      https://dev.mysql.com/doc/refman/5.7/en/system-variable-privileges.html
+
 ----------------
 注: 在 startup 时 Boolean variables 可以被设置为 ON, TRUE, OFF, 和 FALSE(不分区分大小写) 以及 1 和 0
 
@@ -201,6 +241,13 @@ Note:
       or disabled by setting them to OFF or 0. Boolean variables can be set at startup
       to the values ON, TRUE, OFF, and FALSE (not case sensitive),
       as well as 1 and 0. See Section 4.2.2.4, “Program Option Modifiers”.
+
+Note: 见 https://dev.mysql.com/doc/refman/5.7/en/using-system-variables.html
+        Some system variables can be enabled with the SET statement by setting them to ON or 1,
+        or disabled by setting them to OFF or 0. However,
+        to set such a variable on the command line or in an option file,
+        you must set it to 1 or 0; setting it to ON or OFF will not work.
+        For example, on the command line, --delay_key_write=1 works but --delay_key_write=ON does not.
 
 4.2.2.4 Program Option Modifiers
     https://dev.mysql.com/doc/refman/5.7/en/option-modifiers.html
@@ -281,12 +328,112 @@ https://dev.mysql.com/doc/refman/5.6/en/program-variables.html
 
 ---------------------------------------------------------------------------------------------------
 
+5.1.8 Using System Variables
+
+https://dev.mysql.com/doc/refman/5.7/en/using-system-variables.html
+
+许多 system variables 是 内置(built in)的, 而由 a server plugin 实现的 系统变量在 该 plugin 被 installed 是 被 exposed
+且 have names that begin with the plugin name. For example, the audit_log plugin implements a system variable named audit_log_policy.
 
 
+global variable 和 session variable:
+
+      There are two scopes in which system variables exist.
+      Global variables affect the overall operation of the server.
+      Session variables affect its operation for individual client connections.
+      A given system variable can have both a global and a session value. (某个系统变量 可以 同时拥有 a global value 和 a session value)
+      Global and session system variables are related as follows:
+
+          -   When the server starts, it initializes each global variable to its default value. These defaults can be changed by options
+              specified on the command line or in an option file. (See Section 4.2.2, “Specifying Program Options”.)
+
+          -   The server also maintains a set of session variables for each client that connects.
+              The client's session variables are initialized at connect time using the current values of the corresponding global variables.
+              For example, a client's SQL mode is controlled by the session sql_mode value,
+              which is initialized when the client connects to the value of the global sql_mode value.
+
+        For some system variables, the session value is not initialized from the corresponding global value;
+        if so, that is indicated in the variable description.
 
 
+前缀 --maximum 限制 通过 set 为 a system variable 设置的 the maximum value. 使用的形式如: --maximum-var_name=value
+
+// 使用 set 设置全局变量
+mysql> SET GLOBAL max_connections = 1000;     # 设置全局变量
+mysql> SET @@GLOBAL.max_connections = 1000;   # 同上
+
+// 使用 set 设置会话变量
+mysql> SET SESSION sql_mode = 'TRADITIONAL';
+mysql> SET @@SESSION.sql_mode = 'TRADITIONAL';
+mysql> SET @@sql_mode = 'TRADITIONAL';
+
+          ----------------
+          mysql> help show var%
+
+          Name: 'SHOW VARIABLES'
+          Description:
+          Syntax:
+          SHOW [GLOBAL | SESSION] VARIABLES
+              [LIKE 'pattern' | WHERE expr]
+
+          SHOW VARIABLES accepts an optional GLOBAL or SESSION variable scope
+          modifier:
+
+          o With a GLOBAL modifier, the statement displays global system variable
+            values. These are the values used to initialize the corresponding
+            session variables for new connections to MySQL. If a variable has no
+            global value, no value is displayed.
+
+          o With a SESSION modifier, the statement displays the system variable
+            values that are in effect for the current connection. If a variable
+            has no session value, the global value is displayed. LOCAL is a
+            synonym for SESSION.
+
+          o If no modifier is present, the default is SESSION.
+
+          ----------------
+
+mysql> SHOW VARIABLES;    # 默认显示 所有 session 变量值
+
+// 在 show variables 是 使用 like 子句
+mysql> SHOW VARIABLES LIKE 'max_join_size';
+mysql> SHOW SESSION VARIABLES LIKE 'max_join_size';
 
 
+// 在 like 子句中使用 通配符 % 和 _, 如果要匹配字符 '_' 本身, 可使用其转义形式: \_
+mysql> SHOW VARIABLES LIKE '%size%';
+mysql> SHOW GLOBAL VARIABLES LIKE '%size%';
+
+
+注: LOCAL 是 SESSION 的 同义词
+---------------------------------------------------------------------------------------------------
+
+5.1.8.2 Dynamic System Variables
+
+https://dev.mysql.com/doc/refman/5.7/en/dynamic-system-variables.html
+
+
+      Variables that are marked as “enumeration” normally should be set to one of the available values for the variable,
+      but can also be set to the number that corresponds to the desired enumeration value.
+      For enumerated system variables, the first enumeration value corresponds to 0.
+      This differs from the ENUM data type used for table columns, for which the first enumeration value corresponds to 1.
+
+---------------------------------------------------------------------------------------------------
+
+5.1.8.3 Structured System Variables
+
+https://dev.mysql.com/doc/refman/5.7/en/structured-system-variables.html
+
+  To refer to a component of a structured variable instance,
+  you can use a compound name in instance_name.component_name format. Examples:
+
+    hot_cache.key_buffer_size
+
+
+          global, session, and local are not legal instance names.
+          This avoids a conflict with notation such as @@GLOBAL.var_name for referring to nonstructured system variables.
+
+---------------------------------------------------------------------------------------------------
 
 
 
