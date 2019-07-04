@@ -47,7 +47,110 @@ mysql> help set
 
 注: LOCAL 是 SESSION 的同义词
 
-Multiple Variable Assignment
+
+set 的 赋值 语句 不会被 写入到 binary log, 因此在 replication scenarios 中 其 仅 对 执行该 set 语句的 host 起作用.
+要使其 对 所有的 replication hosts 其作用, 则要在 每个 host 上 执行它.
+
+----------------
+User-Defined Variable Assignment  用户定义变量的赋值
+
+mysql> SET @name = 43;
+mysql> set @total_user = (select count(*) from user);   # 可以看到, expr 还可以是 返回 标量(scalar) 的 子查询(subquery)
+
+
+----------------
+Parameter and Local Variable Assignment
+
+      -------------------
+      使用declare 声明 local variable 的语法:
+
+      mysql> help declare var%;
+      Name: 'DECLARE VARIABLE'
+      Description:
+      Syntax:
+      DECLARE var_name [, var_name] ... type [DEFAULT value]
+
+      If the DEFAULT clause is missing, the initial value is NULL.
+
+      Local variables are treated like stored routine parameters with respect to data type and overflow checking.
+
+      Variable declarations must appear before cursor or handler declarations.
+
+      Local variable names 不区分大小写.
+
+      The scope of a local variable is the BEGIN ... END block within which it is declared.
+      The variable can be referred to in blocks nested within the declaring block,
+      except those blocks that declare a variable with the same name.
+      -------------------
+
+            set 可 应用于 在 存储对象(stored object) 的 上下文 中 的  parameters 和 local variables
+            (而这些 parameters 和 local variables 就是在该 stored object 中 定义的)
+
+                    ---------------------------------------
+                    delimiter $
+                    create procedure greeting()
+                    begin
+                      declare user char(77) character set utf8;
+
+                      set user = (select current_user());
+
+                      if instr(user, '@') > 0 then
+                        set user = substring_index(user, '@', 1);
+                      end if;
+
+                      if user = '' then
+                        set user = 'earthling';
+                      end if;
+
+                      select concat('Greeting, ', user, '!') as greeting;
+                    end$
+                    delimiter ;
+                    call greeting();
+                    ---------------------------------------
+
+                网上资料:
+                13.1.16 CREATE PROCEDURE and CREATE FUNCTION Syntax
+                      https://dev.mysql.com/doc/refman/5.7/en/create-procedure.html
+
+                9.2 Schema Object Names
+                      https://dev.mysql.com/doc/refman/5.7/en/identifiers.html
+
+                13.6.4.2 Local Variable Scope and Resolution
+                      https://dev.mysql.com/doc/refman/5.7/en/local-variable-scope.html
+
+----------------
+System Variable Assignment   系统变量的赋值 (注: 系统变量由可分为 global 的 和 session 的)
+
+
+// 为 global 系统变量 赋值 需要 在 var_name 前 加 关键字 GLOBAL 或 @GLOBAL. 限定词, 如下:
+mysql> SET GLOBAL max_connections = 1000;
+mysql> SET @@GLOBAL.max_connections = 1000;
+
+// 为 session 系统变量 赋值
+    To assign a value to a session system variable, precede the variable name by the SESSION or LOCAL keyword,
+    by the @@SESSION., @@LOCAL., or @@ qualifier, or by no keyword or no modifier at all:
+
+mysql> SET SESSION sql_mode = 'TRADITIONAL';
+mysql> SET LOCAL sql_mode = 'TRADITIONAL';
+mysql> SET @@SESSION.sql_mode = 'TRADITIONAL';
+mysql> SET @@LOCAL.sql_mode = 'TRADITIONAL';
+mysql> SET @@sql_mode = 'TRADITIONAL';
+mysql> SET sql_mode = 'TRADITIONAL';
+
+To set a global system variable value to the compiled-in MySQL default value or a session system variable to
+the current corresponding global value, set the variable to the value DEFAULT.
+For example, the following two statements are identical in setting the session value of max_join_size to the current global value:
+
+      mysql> SET @@SESSION.max_join_size = DEFAULT;  # 注意这里的特殊值 DEFAULT.
+      mysql> SET @@SESSION.max_join_size = @@GLOBAL.max_join_size;
+
+
+注: 使用 DEFAULT 的限制:
+    It is not permitted to assign the value DEFAULT to stored procedure or function parameters or stored program local variables
+    (for example with a SET var_name = DEFAULT statement). In MySQL 5.7, this results in a syntax error.
+
+----------------
+Multiple Variable Assignment   同一条 set 语句中 对 多个 variables 赋值
 
     A SET statement can contain multiple variable assignments, separated by commas.
     This statement assigns a value to a user-defined variable and a system variable:
@@ -434,6 +537,57 @@ https://dev.mysql.com/doc/refman/5.7/en/structured-system-variables.html
           This avoids a conflict with notation such as @@GLOBAL.var_name for referring to nonstructured system variables.
 
 ---------------------------------------------------------------------------------------------------
+
+
+13.6.4 Variables in Stored Programs
+
+      https://dev.mysql.com/doc/refman/5.7/en/stored-program-variables.html
+
+
+
+        It is not permitted to assign the value DEFAULT to stored procedure or function parameters or stored program local variables
+        (for example with a SET var_name = DEFAULT statement). In MySQL 5.7, this results in a syntax error.
+
+
+
+---------------------------------------------------------------------------------------------------
+
+
+delimiter $
+create procedure greeting()
+begin
+  declare user char(77) character set utf8;
+
+  set user = (select current_user());
+
+  if instr(user, '@') > 0 then
+    set user = substring_index(user, '@', 1);
+  end if;
+
+  if user = '' then
+    set user = 'earthling';
+  end if;
+
+  select concat('Greeting, ', user, '!') as greeting;
+end$
+delimiter ;
+call greeting();
+
+---------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
