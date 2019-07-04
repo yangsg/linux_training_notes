@@ -248,8 +248,38 @@ Values for buffer sizes, lengths, and stack sizes are given in bytes unless othe
 
 ---------------------------------------------------------------------------------------------------
 
+4.2.2.5 Using Options to Set Program Variables
+
+https://dev.mysql.com/doc/refman/5.6/en/program-variables.html
+
+在 startup 是 指定 program 的 内部变量:
+        mysql --max_allowed_packet=16777216   # 默认单位 byte
+        mysql --max_allowed_packet=16M        # M 表示 兆字节
+
+        这些表单位的 suffix letters 不区分大小写, 且 MySQL 8.0.14 才支持 T, P, 和 E
+        K     M     G      T       P       E
+        1024 1024^2 1024^3 1024^4  1024^5  1024^6
+
+注: 使用 Suffixes 指定 multiplier 在 program 调用时 是 合法的, 但 在 at runtime 时 通过 set 语句设置是 非法的.
+    另一方面, set 可用 an expression 被变量 赋值, 当这在 server startup 时 是 非法的.
+        如:
+            shell> mysql --max_allowed_packet=16M           #<---- ok
+            shell> mysql --max_allowed_packet=16*1024*1024  #<---- wrong
+
+            mysql> SET GLOBAL max_allowed_packet=16M;          #<---- wrong
+            mysql> SET GLOBAL max_allowed_packet=16*1024*1024; #<---- ok
 
 
+在 an option file 中, 变量 的指定 不带 leading dashes (即 没有前导的 '--'),
+且如果你喜欢, 可以把 underscores(即 '_') 当作 dashes (即 '-') 来 指定. 所以如下的 设置是等价的:
+
+      [mysqld]
+      key_buffer_size=512M
+
+      [mysqld]
+      key-buffer-size=512M
+
+---------------------------------------------------------------------------------------------------
 
 
 
