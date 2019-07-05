@@ -1,0 +1,513 @@
+
+
+
+
+https://dev.mysql.com/doc/refman/5.7/en/sql-syntax-compound-statements.html
+
+
+---------------------------------------------------------------------------------------------------
+13.6.1 BEGIN ... END Compound-Statement Syntax
+
+https://dev.mysql.com/doc/refman/5.7/en/begin-end.html
+
+mysql> help begin end
+    Name: 'BEGIN END'
+    Description:
+    Syntax:
+    [begin_label:] BEGIN
+        [statement_list]
+    END [end_label]
+
+
+mysql> help lables
+
+
+BEGIN ... END 可 出现在 stored programs 中(如 stored procedures 和 functions, triggers, 和 events)
+BEGIN ... END 可以 被 nested
+BEGIN ... END 支持 空语句(empty compound statement).
+
+修改 语句结束 界定符(delimiter) ; 为其他符号 (如 //) 允许 ; 被 用于 a program body 中.
+
+        The optional [NOT] ATOMIC clause is not supported. This means that no transactional savepoint
+        is set at the start of the instruction block and the BEGIN clause used
+        in this context has no effect on the current transaction.
+
+Note:
+在 所有的 stored programs 中, the parser 会将 BEGIN [WORK] 视作 BEGIN ... END 的 beginning 来 对待.
+如果要在 该上下文中 begin a transaction, 可 使用 START TRANSACTION 作为替代方式
+
+
+---------------------------------------------------------------------------------------------------
+
+13.6.2 Statement Label Syntax
+
+https://dev.mysql.com/doc/refman/5.7/en/statement-labels.html
+
+
+mysql> help labels
+                      Name: 'LABELS'
+                      Description:
+                      Syntax:
+                      [begin_label:] BEGIN
+                          [statement_list]
+                      END [end_label]
+
+                      [begin_label:] LOOP
+                          statement_list
+                      END LOOP [end_label]
+
+                      [begin_label:] REPEAT
+                          statement_list
+                      UNTIL search_condition
+                      END REPEAT [end_label]
+
+                      [begin_label:] WHILE search_condition DO
+                          statement_list
+                      END WHILE [end_label]
+
+                      Labels are permitted for BEGIN ... END blocks and for the LOOP, REPEAT,
+                      and WHILE statements. Label use for those statements follows these
+                      rules:
+
+                      o begin_label must be followed by a colon.
+
+                      o begin_label can be given without end_label. If end_label is present,
+                        it must be the same as begin_label.
+
+                      o end_label cannot be given without begin_label.
+
+                      o Labels at the same nesting level must be distinct.
+
+                      o Labels can be up to 16 characters long. (Labels 最多 16 个 字符长度)
+
+                      To refer to a label within the labeled construct, use an ITERATE or
+                      LEAVE statement. The following example uses those statements to
+                      continue iterating or terminate the loop:
+
+                      CREATE PROCEDURE doiterate(p1 INT)
+                      BEGIN
+                        label1: LOOP
+                          SET p1 = p1 + 1;
+                          IF p1 < 10 THEN ITERATE label1; END IF;
+                          LEAVE label1;
+                        END LOOP label1;
+                      END;
+
+---------------------------------------------------------------------------------------------------
+
+13.6.3 DECLARE Syntax
+
+https://dev.mysql.com/doc/refman/5.7/en/declare.html
+
+
+
+---------------------------------------------------------------------------------------------------
+
+13.6.5 Flow Control Statements   控制流语句
+
+https://dev.mysql.com/doc/refman/5.7/en/flow-control-statements.html
+
+13.6.5.1 CASE Syntax
+13.6.5.2 IF Syntax
+13.6.5.3 ITERATE Syntax
+13.6.5.4 LEAVE Syntax
+13.6.5.5 LOOP Syntax
+13.6.5.6 REPEAT Syntax
+13.6.5.7 RETURN Syntax
+13.6.5.8 WHILE Syntax
+
+注: mysql 不支持 for loop
+
+
+---------------------------------------------------------------------------------------------------
+
+13.6.5.1 CASE Syntax
+
+https://dev.mysql.com/doc/refman/5.7/en/case.html
+
+mysql> help case statement
+              Name: 'CASE STATEMENT'
+              Description:
+              Syntax:
+              CASE case_value
+                  WHEN when_value THEN statement_list
+                  [WHEN when_value THEN statement_list] ...
+                  [ELSE statement_list]
+              END CASE
+
+              Or:
+
+              CASE
+                  WHEN search_condition THEN statement_list
+                  [WHEN search_condition THEN statement_list] ...
+                  [ELSE statement_list]
+              END CASE
+
+
+      注: 关于 NULL
+          This syntax cannot be used to test for equality with NULL because NULL = NULL is false. See Section 3.3.4.6, “Working with NULL Values”.
+
+            https://dev.mysql.com/doc/refman/5.7/en/working-with-null.html
+
+If no when_value or search_condition matches the value tested and the CASE
+statement contains no ELSE clause, a Case not found for CASE statement error results.
+
+注: case 语句中的 statement_list 不允许时空语句(empty statement), 所以解决方案是 使用一个 empty 的 begin ... end 块, 因为 begin ... end 块中 empty statement 是 被允许的
+                          -------> case example
+                          DELIMITER |
+
+                          CREATE PROCEDURE p()
+                            BEGIN
+                              DECLARE v INT DEFAULT 1;
+
+                              CASE v
+                                WHEN 2 THEN SELECT v;
+                                WHEN 3 THEN SELECT 0;
+                                ELSE
+                                  BEGIN
+                                  END;
+                              END CASE;
+                            END;
+                            |
+                          -------< case example
+
+---------------------------------------------------------------------------------------------------
+
+13.6.5.2 IF Syntax
+
+https://dev.mysql.com/doc/refman/5.7/en/if.html
+
+
+mysql> help if statem%
+            Name: 'IF STATEMENT'
+            Description:
+            Syntax:
+            IF search_condition THEN statement_list
+                [ELSEIF search_condition THEN statement_list] ...
+                [ELSE statement_list]
+            END IF
+
+            The IF statement for stored programs implements a basic conditional
+            construct.
+
+注: 和 case 语句一样, if 语句中 statement_list 也是不允许为 空语句的,解决方法同样是使用 一个 empty 的 begin ... end 块 替代
+
+                  -------> if example
+                  DELIMITER //
+
+                  CREATE FUNCTION SimpleCompare(n INT, m INT)
+                    RETURNS VARCHAR(20)
+
+                    BEGIN
+                      DECLARE s VARCHAR(20);
+
+                      IF n > m THEN SET s = '>';
+                      ELSEIF n = m THEN SET s = '=';
+                      ELSE SET s = '<';
+                      END IF;
+
+                      SET s = CONCAT(n, ' ', s, ' ', m);
+
+                      RETURN s;
+                    END //
+
+                  DELIMITER ;
+
+                  -------< if example
+
+
+                  -------> if example  一个 if 嵌套的示例
+                  DELIMITER //
+
+                  CREATE FUNCTION VerboseCompare (n INT, m INT)
+                    RETURNS VARCHAR(50)
+
+                    BEGIN
+                      DECLARE s VARCHAR(50);
+
+                      IF n = m THEN SET s = 'equals';
+                      ELSE
+                        IF n > m THEN SET s = 'greater';
+                        ELSE SET s = 'less';
+                        END IF;
+
+                        SET s = CONCAT('is ', s, ' than');
+                      END IF;
+
+                      SET s = CONCAT(n, ' ', s, ' ', m, '.');
+
+                      RETURN s;
+                    END //
+
+                  DELIMITER ;
+
+                  -------< if example
+
+---------------------------------------------------------------------------------------------------
+
+13.6.5.3 ITERATE Syntax
+
+https://dev.mysql.com/doc/refman/5.7/en/iterate.html
+
+mysql> help iter%;
+    Name: 'ITERATE'
+    Description:
+    Syntax:
+    ITERATE label
+
+    ITERATE can appear only within LOOP, REPEAT, and WHILE statements.
+    ITERATE means "start the loop again."
+
+        示例见: https://dev.mysql.com/doc/refman/5.7/en/loop.html
+
+                  -------> iterate example
+                  CREATE PROCEDURE doiterate(p1 INT)
+                  BEGIN
+                    label1: LOOP
+                      SET p1 = p1 + 1;
+                      IF p1 < 10 THEN
+                        ITERATE label1;
+                      END IF;
+                      LEAVE label1;
+                    END LOOP label1;
+                    SET @x = p1;
+                  END;
+
+                  -------< iterate example
+
+---------------------------------------------------------------------------------------------------
+
+13.6.5.4 LEAVE Syntax
+
+https://dev.mysql.com/doc/refman/5.7/en/leave.html
+
+mysql> help leave
+          Name: 'LEAVE'
+          Description:
+          Syntax:
+          LEAVE label
+
+          This statement is used to exit the flow control construct that has the
+          given label. If the label is for the outermost stored program block,
+          LEAVE exits the program.
+
+          LEAVE can be used within BEGIN ... END or loop constructs (LOOP,
+          REPEAT, WHILE).
+
+
+      示例见: https://dev.mysql.com/doc/refman/5.7/en/loop.html
+
+                  -------> leave example
+                  CREATE PROCEDURE doiterate(p1 INT)
+                  BEGIN
+                    label1: LOOP
+                      SET p1 = p1 + 1;
+                      IF p1 < 10 THEN
+                        ITERATE label1;
+                      END IF;
+                      LEAVE label1;
+                    END LOOP label1;
+                    SET @x = p1;
+                  END;
+
+                  -------< leave example
+
+---------------------------------------------------------------------------------------------------
+
+13.6.5.5 LOOP Syntax
+
+https://dev.mysql.com/doc/refman/5.7/en/loop.html
+
+mysql> help loop
+        Name: 'LOOP'
+        Description:
+        Syntax:
+        [begin_label:] LOOP
+            statement_list
+        END LOOP [end_label]
+
+
+通常, loop 是通过 leave statement 退出 循环, 在 a stored function 中, 也可以使用 return 来退出 整个 function.
+
+              -------> loop example
+              CREATE PROCEDURE doiterate(p1 INT)
+              BEGIN
+                label1: LOOP
+                  SET p1 = p1 + 1;
+                  IF p1 < 10 THEN
+                    ITERATE label1;
+                  END IF;
+                  LEAVE label1;
+                END LOOP label1;
+                SET @x = p1;
+              END;
+
+              -------< loop example
+
+---------------------------------------------------------------------------------------------------
+
+13.6.5.6 REPEAT Syntax
+
+https://dev.mysql.com/doc/refman/5.7/en/repeat.html
+
+mysql> help repeat
+            Name: 'REPEAT LOOP'
+            Description:
+            Syntax:
+            [begin_label:] REPEAT
+                statement_list
+            UNTIL search_condition
+            END REPEAT [end_label]
+
+            The statement list within a REPEAT statement is repeated until the
+            search_condition expression is true. Thus, a REPEAT always enters the
+            loop at least once. statement_list consists of one or more statements,
+            each terminated by a semicolon (;) statement delimiter.
+
+
+                  -------> repeat example
+                  mysql> delimiter //
+
+                  mysql> CREATE PROCEDURE dorepeat(p1 INT)
+                         BEGIN
+                           SET @x = 0;
+                           REPEAT
+                             SET @x = @x + 1;
+                           UNTIL @x > p1 END REPEAT;
+                         END
+                         //
+                  Query OK, 0 rows affected (0.00 sec)
+
+                  mysql> CALL dorepeat(1000)//
+                  Query OK, 0 rows affected (0.00 sec)
+
+                  mysql> SELECT @x//
+                  +------+
+                  | @x   |
+                  +------+
+                  | 1001 |
+                  +------+
+                  1 row in set (0.00 sec)
+
+                  -------< repeat example
+
+
+---------------------------------------------------------------------------------------------------
+
+13.6.5.7 RETURN Syntax
+
+https://dev.mysql.com/doc/refman/5.7/en/return.html
+
+mysql> help return
+          Name: 'RETURN'
+          Description:
+          Syntax:
+          RETURN expr
+
+          The RETURN statement terminates execution of a stored function and
+          returns the value expr to the function caller. There must be at least
+          one RETURN statement in a stored function. There may be more than one
+          if the function has multiple exit points.
+
+注: return 语句 不能用于 stored procedures, triggers, 或 events 中, 在这些场景下, 可以使用 leave 语句
+
+---------------------------------------------------------------------------------------------------
+
+13.6.5.8 WHILE Syntax
+
+https://dev.mysql.com/doc/refman/5.7/en/while.html
+
+mysql> help while
+          Name: 'WHILE'
+          Description:
+          Syntax:
+          [begin_label:] WHILE search_condition DO
+              statement_list
+          END WHILE [end_label]
+
+          The statement list within a WHILE statement is repeated as long as the
+          search_condition expression is true. statement_list consists of one or
+          more SQL statements, each terminated by a semicolon (;) statement
+          delimiter.
+
+              -------> while example
+              CREATE PROCEDURE dowhile()
+              BEGIN
+                DECLARE v1 INT DEFAULT 5;
+
+                WHILE v1 > 0 DO
+                  ...
+                  SET v1 = v1 - 1;
+                END WHILE;
+              END;
+
+              -------< while example
+
+---------------------------------------------------------------------------------------------------
+
+13.6.6 Cursors
+
+https://dev.mysql.com/doc/refman/5.7/en/cursors.html
+
+13.6.6.1 Cursor CLOSE Syntax          https://dev.mysql.com/doc/refman/5.7/en/close.html
+13.6.6.2 Cursor DECLARE Syntax        https://dev.mysql.com/doc/refman/5.7/en/declare-cursor.html
+13.6.6.3 Cursor FETCH Syntax          https://dev.mysql.com/doc/refman/5.7/en/fetch.html
+13.6.6.4 Cursor OPEN Syntax           https://dev.mysql.com/doc/refman/5.7/en/open.html
+
+
+cursor 声明语法:   DECLARE cursor_name CURSOR FOR select_statement
+cursor fetch 语法: FETCH [[NEXT] FROM] cursor_name INTO var_name [, var_name] ...
+
+          更多细节见官网
+
+
+    MySQL supports cursors inside stored programs. The syntax is as in embedded SQL. Cursors have these properties:
+
+            Asensitive: The server may or may not make a copy of its result table
+
+            Read only: Not updatable
+
+            Nonscrollable: Can be traversed only in one direction and cannot skip rows
+
+    Cursor declarations must appear before handler declarations and after variable and condition declarations.
+
+                -------> cursor example
+                CREATE PROCEDURE curdemo()
+                BEGIN
+                  DECLARE done INT DEFAULT FALSE;
+                  DECLARE a CHAR(16);
+                  DECLARE b, c INT;
+                  DECLARE cur1 CURSOR FOR SELECT id,data FROM test.t1;
+                  DECLARE cur2 CURSOR FOR SELECT i FROM test.t2;
+                  DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+                  OPEN cur1;
+                  OPEN cur2;
+
+                  read_loop: LOOP
+                    FETCH cur1 INTO a, b;
+                    FETCH cur2 INTO c;
+                    IF done THEN
+                      LEAVE read_loop;
+                    END IF;
+                    IF b < c THEN
+                      INSERT INTO test.t3 VALUES (a,b);
+                    ELSE
+                      INSERT INTO test.t3 VALUES (a,c);
+                    END IF;
+                  END LOOP;
+
+                  CLOSE cur1;
+                  CLOSE cur2;
+                END;
+
+                -------< cursor example
+
+
+---------------------------------------------------------------------------------------------------
+
+13.6.7 Condition Handling
+
+https://dev.mysql.com/doc/refman/5.7/en/condition-handling.html
+
+
