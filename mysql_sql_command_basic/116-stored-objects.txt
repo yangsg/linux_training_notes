@@ -1,0 +1,383 @@
+
+https://github.com/yangsg/myself_learn_notes/blob/node_jxc_manager/learn_note/mariadb_mysql_note/mysql_forth_edition.sql
+
+
+Chapter 23 Stored Objects
+
+https://dev.mysql.com/doc/refman/5.7/en/stored-objects.html
+
+
+23.1 Defining Stored Programs                 https://dev.mysql.com/doc/refman/5.7/en/stored-programs-defining.html
+23.2 Using Stored Routines                    https://dev.mysql.com/doc/refman/5.7/en/stored-routines.html
+23.3 Using Triggers                           https://dev.mysql.com/doc/refman/5.7/en/triggers.html
+23.4 Using the Event Scheduler                https://dev.mysql.com/doc/refman/5.7/en/event-scheduler.html
+23.5 Using Views                              https://dev.mysql.com/doc/refman/5.7/en/views.html
+23.6 Stored Object Access Control             https://dev.mysql.com/doc/refman/5.7/en/stored-objects-security.html
+23.7 Stored Program Binary Logging            https://dev.mysql.com/doc/refman/5.7/en/stored-programs-logging.html
+
+
+stored database objects 就是 存储在 数据库 server 上 供 以后 执行的 sql code
+
+Stored objects 的 类型包括:
+  - Stored procedure: 由 create procedure  创建的 object 并 通过 call 语句调用,
+                       procedure 不能包含 return 但可以 修改其  parameters 以供 caller 后续 检测.
+                       其 也 可用于 创建 返回个 the client program 的  result sets .
+
+  - Stored function:  与 create function 创建的 object 且 使用方式类似于 a built-in function.
+                      You invoke it in an expression and it returns a value during expression evaluation.
+
+  - Trigger:  由 create trigger 创建的 与 a table 关联的 object.
+              Trigger 在 其关联的表的 特定 event occurs 时 被激活.如 insert 或 update 操作.
+
+  - Event: 由 create event 创建的 object 且 invoked by the server according to schedule.
+
+  - View: 由 CREATE VIEW 创建的 在 其被 referenced 是 生成 a result set 的 object. A view acts as a virtual table.
+
+
+  官方文档的术语 反映的 stored object hierarchy:
+
+        Stored routines 包含 stored procedures 和 functions.
+        Stored programs 包含 stored routines, triggers, 和 events.
+        Stored objects 包含 stored programs 和 views.
+
+
+对于 每种 object type, 都有 CREATE, ALTER, and DROP statements 用于 控制 对象的 exist 和 其 如何被 定义.
+
+---------------------------------------------------------------------------------------------------
+
+https://github.com/yangsg/myself_learn_notes/blob/node_jxc_manager/learn_note/mariadb_mysql_note/mysql_forth_edition.sql
+
+23.1 Defining Stored Programs  定义 存储 程序
+
+https://dev.mysql.com/doc/refman/5.7/en/stored-programs-defining.html
+https://dev.mysql.com/doc/refman/5.7/en/create-procedure.html
+
+mysql> help create proc%;
+                        Name: 'CREATE PROCEDURE'
+                        Description:
+                        Syntax:
+                        CREATE
+                            [DEFINER = user]
+                            PROCEDURE sp_name ([proc_parameter[,...]])
+                            [characteristic ...] routine_body
+
+                        CREATE
+                            [DEFINER = user]
+                            FUNCTION sp_name ([func_parameter[,...]])
+                            RETURNS type
+                            [characteristic ...] routine_body
+
+                        proc_parameter:
+                            [ IN | OUT | INOUT ] param_name type
+
+                        func_parameter:
+                            param_name type
+
+                        type:
+                            Any valid MySQL data type
+
+                        characteristic:          见 https://dev.mysql.com/doc/refman/5.7/en/create-procedure.html
+                            COMMENT 'string'
+                          | LANGUAGE SQL
+                          | [NOT] DETERMINISTIC
+                          | { CONTAINS SQL | NO SQL | READS SQL DATA | MODIFIES SQL DATA }
+                          | SQL SECURITY { DEFINER | INVOKER }
+
+                        routine_body:
+                            Valid SQL routine statement
+
+                        These statements create stored routines. By default, a routine is
+                        associated with the default database. To associate the routine
+                        explicitly with a given database, specify the name as db_name.sp_name
+                        when you create it.
+
+
+
+                -------> procedure example
+                mysql> delimiter //
+
+                mysql> CREATE PROCEDURE dorepeat(p1 INT)
+                       BEGIN
+                         SET @x = 0;
+                         REPEAT SET @x = @x + 1; UNTIL @x > p1 END REPEAT;
+                       END
+                       //
+                Query OK, 0 rows affected (0.00 sec)
+
+                mysql> delimiter ;
+
+                mysql> CALL dorepeat(1000);
+                Query OK, 0 rows affected (0.00 sec)
+
+                mysql> SELECT @x;
+                +------+
+                | @x   |
+                +------+
+                | 1001 |
+                +------+
+                1 row in set (0.00 sec)
+
+                -------< procedure example
+
+
+                -------> procedure example
+                delimiter $
+                CREATE FUNCTION count_born_in_year(p_year INT)
+                RETURNS INT
+                READS SQL DATA
+                BEGIN
+                  RETURN (SELECT COUNT(*) FROM president WHERE YEAR(birth) = p_year);
+                END$
+                delimiter ;
+
+                mysql> SELECT count_born_in_year(1908);
+
+                -------< procedure example
+
+https://github.com/yangsg/myself_learn_notes/blob/node_jxc_manager/learn_note/mariadb_mysql_note/mysql_forth_edition.sql
+
+// 存储例程 可能的 使用场景:
+    -  When multiple client applications are written in different languages or work on different platforms, but need to perform the same database operations.
+    -  When security is paramount.
+
+
+// 存储例程(Stored routines) 的对性能的影响:
+    Stored routines can provide improved performance because less information needs to be sent between the server and the client.
+    The tradeoff is that this does increase the load on the database server because more of the work is done
+    on the server side and less is done on the client (application) side.
+
+
+
+stored procedure 和 function 关联着 一个 特定的 database, 这包含的 几层 含义:
+
+        -  When the routine is invoked, an implicit USE db_name is performed (and undone when the routine terminates).
+           USE statements within stored routines are not permitted.
+
+        -  You can qualify routine names with the database name.
+           This can be used to refer to a routine that is not in the current database.
+           For example, to invoke a stored procedure p or function f that is associated with the test database,
+           you can say CALL test.p() or test.f().
+
+
+        -  When a database is dropped, all stored routines associated with it are dropped as well.
+
+Stored functions 不能 递归( Stored functions cannot be recursive )
+
+stored procedures 的递归 是允许的 但默认是 禁用的 (启用方法 见官网)
+
+
+---------------------------------------------------------------------------------------------------
+
+23.3 Using Triggers
+
+https://dev.mysql.com/doc/refman/5.7/en/triggers.html
+
+    A trigger is a named database object that is associated with a table,
+    and that activates when a particular event occurs for the table.
+    Some uses for triggers are to perform checks of values to be inserted
+    into a table or to perform calculations on values involved in an update.
+
+    A trigger is defined to activate when a statement inserts, updates,
+    or deletes rows in the associated table. These row operations are trigger events. For example,
+    rows can be inserted by INSERT or LOAD DATA statements, and an insert trigger activates for each inserted row.
+    A trigger can be set to activate either before or after the trigger event.
+    For example, you can have a trigger activate before each row that is inserted into a table or after each row that is updated.
+
+
+其他细节 见 官网
+
+创建 trigger 的语法见 http://dev.mysql.com/doc/refman/5.7/en/create-trigger.html
+
+mysql> help create trigger;
+                      Name: 'CREATE TRIGGER'
+                      Description:
+                      Syntax:
+                      CREATE
+                          [DEFINER = user]
+                          TRIGGER trigger_name
+                          trigger_time trigger_event
+                          ON tbl_name FOR EACH ROW
+                          [trigger_order]
+                          trigger_body
+
+                      trigger_time: { BEFORE | AFTER }
+
+                      trigger_event: { INSERT | UPDATE | DELETE }
+
+                      trigger_order: { FOLLOWS | PRECEDES } other_trigger_name
+
+
+23.3.1 Trigger Syntax and Examples
+      https://dev.mysql.com/doc/refman/5.7/en/trigger-syntax.html
+
+              -------> trigger example
+              mysql> use test;
+
+              mysql> CREATE TABLE account (acct_num INT, amount DECIMAL(10,2));
+
+              mysql> CREATE TRIGGER ins_sum BEFORE INSERT ON account    # 创建trigger
+                     FOR EACH ROW SET @sum = @sum + NEW.amount;
+
+              mysql> SET @sum = 0;
+              mysql> INSERT INTO account VALUES(137,14.98),(141,1937.50),(97,-100.00);
+              mysql> SELECT @sum AS 'Total amount inserted';
+              +-----------------------+
+              | Total amount inserted |
+              +-----------------------+
+              |               1852.48 |
+              +-----------------------+
+
+              -------< trigger example
+
+// 要删除 trigger, use a DROP TRIGGER statement. You must specify the schema name(database) if the trigger is not in the default schema:
+mysql> DROP TRIGGER test.ins_sum;
+
+如果删除了 a table, 则 任何关联到 该 table 的 triggers 也会被 dropped.
+
+Trigger names 存在于 the schema(database) namespace 中, 这意味着 所有的 triggers 在
+同一个 schema 中 其 names 必须是唯一的. 不同的 schemas 中的 triggers 可以具有相同的 name.
+
+从 MySQL 5.7.2 开始, 可以为 给定的 table 创建 多个 具有 相同的 trigger event 和 action time.
+例如, 你可以 为 a table 创建 2 个 BEFORE UPDATE triggers.
+By default, triggers that have the same trigger event and action time activate in the order they were created.
+如果要 影响 trigger order, 在 FOR EACH ROW 后 指定 a clause 指明 FOLLOWS or PRECEDES and the name of an
+existing trigger that also has the same trigger event and action time. With FOLLOWS, the new trigger
+activates after the existing trigger. With PRECEDES, the new trigger activates before the existing trigger.
+
+            -------> trigger example  (从 MySQL 5.7.2 开始支持)
+            mysql> CREATE TRIGGER ins_transaction BEFORE INSERT ON account
+                   FOR EACH ROW PRECEDES ins_sum
+                   SET
+                   @deposits = @deposits + IF(NEW.amount>0,NEW.amount,0),
+                   @withdrawals = @withdrawals + IF(NEW.amount<0,-NEW.amount,0);
+
+            -------< trigger example
+
+
+
+在 trigger body, 关键字 OLD 和 NEW 使你 能够 访问 受 trigger 影响 到的 the rows 中的 columns.
+OLD and NEW 是 对 triggers 的 mysql 扩展; 它们(即 OLD 和 NEW) 不区分大小写.
+
+在 INSERT trigger 中 仅能使用 NEW.col_name, 因没有 old row.
+在 DELETE trigger 中 仅能使用 OLD.col_name, 因没有 new row.
+在 UPDATE trigger 中, 即可以 使用 OLD.col_name 引用 update 之前的 a row 的  the columns, 也可使用 NEW.col_name 引用
+其 被 update 之后的 the rows 的 the columns.
+
+A column named with OLD is read only. 你可以 引用它(前提是拥有 select 权限), 但不能对其 修改.
+You can refer to a column named with NEW, 在 BEFORE trigger 中, 你可以使用 语句 SET NEW.col_name = value
+对其进行修改. 该 set 语句在 AFTER trigger 中没有效果 因为 the row change will have already occurred.
+
+In a BEFORE trigger, the NEW value for an AUTO_INCREMENT column is 0,
+not the sequence number that is generated automatically when the new row actually is inserted.
+
+                  -------> trigger example (带 begin ... end block 的 trigger)
+                  mysql> delimiter //
+                  mysql> CREATE TRIGGER upd_check BEFORE UPDATE ON account
+                         FOR EACH ROW
+                         BEGIN
+                             IF NEW.amount < 0 THEN
+                                 SET NEW.amount = 0;
+                             ELSEIF NEW.amount > 100 THEN
+                                 SET NEW.amount = 100;
+                             END IF;
+                         END;//
+                  mysql> delimiter ;
+
+                  -------< trigger example (带 begin ... end block 的 trigger)
+
+
+定义 一个 单独的 stored procedure 并 从 trigger 中 通过 call 语句 调用它 也是 很容易的.
+这样的 好处是 你 可以 在 若干个 triggers 中 执行 相同的 code.
+
+
+
+There are limitations on what can appear in statements that a trigger executes when activated:(trigger执行语句中的一些限制)
+
+    - The trigger 不能 使用 CALL 语句 调用 return data to the client 或 使用 dynamic SQL 的 的 stored procedures.
+      (Stored procedures are permitted to return data to the trigger through OUT or INOUT parameters.)
+
+    - The trigger 不能 使用 显示 或 隐式 的 begin or end a transaction 的 statements.
+      如 START TRANSACTION, COMMIT, or ROLLBACK. (ROLLBACK to SAVEPOINT is permitted because it does not end a transaction.).
+
+
+参考 C.1 Restrictions on Stored Programs    https://dev.mysql.com/doc/refman/5.7/en/stored-program-restrictions.html
+
+MySQL handles errors during trigger execution as follows: (mysql 处理 trigger 执行时 产生错误的方式 )
+
+      - If a BEFORE trigger fails, the operation on the corresponding row is not performed.
+
+      - A BEFORE trigger is activated by the attempt to insert or modify the row, regardless of whether the attempt subsequently succeeds.
+
+      - An AFTER trigger is executed only if any BEFORE triggers and the row operation execute successfully.
+
+      - An error during either a BEFORE or AFTER trigger results in failure of the entire statement that caused trigger invocation.
+
+      - For transactional tables, failure of a statement should cause rollback of all changes performed by the statement.
+        Failure of a trigger causes the statement to fail, so trigger failure also causes rollback.
+        For nontransactional tables, such rollback cannot be done, so although the statement fails,
+        any changes performed prior to the point of the error remain in effect.
+
+          对于 事务表, trigger failure 会导致 the statement to fail, 从而 也会 促使 回滚(rollback) 行为.
+
+-------------
+Trigger 中 也 可以通过 name 来 引用 tables, 如下:
+
+                    -------> trigger example (Trigger 中 也 可以通过 name 来 引用 tables)
+                    CREATE TABLE test1(a1 INT);
+                    CREATE TABLE test2(a2 INT);
+                    CREATE TABLE test3(a3 INT NOT NULL AUTO_INCREMENT PRIMARY KEY);
+                    CREATE TABLE test4(
+                      a4 INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                      b4 INT DEFAULT 0
+                    );
+
+                    delimiter |
+
+                    CREATE TRIGGER testref BEFORE INSERT ON test1
+                      FOR EACH ROW
+                      BEGIN
+                        INSERT INTO test2 SET a2 = NEW.a1;
+                        DELETE FROM test3 WHERE a3 = NEW.a1;
+                        UPDATE test4 SET b4 = b4 + 1 WHERE a4 = NEW.a1;
+                      END;
+                    |
+
+                    delimiter ;
+
+                    INSERT INTO test3 (a3) VALUES
+                      (NULL), (NULL), (NULL), (NULL), (NULL),
+                      (NULL), (NULL), (NULL), (NULL), (NULL);
+
+                    INSERT INTO test4 (a4) VALUES
+                      (0), (0), (0), (0), (0), (0), (0), (0), (0), (0);
+
+                    -------< trigger example
+
+---------------------------------------------------------------------------------------------------
+
+
+8.10.4 Caching of Prepared Statements and Stored Programs
+    https://dev.mysql.com/doc/refman/5.7/en/statement-caching.html
+
+13.2.1 CALL Syntax
+    https://dev.mysql.com/doc/refman/5.7/en/call.html
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
