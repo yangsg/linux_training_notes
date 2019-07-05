@@ -1,0 +1,90 @@
+
+https://github.com/yangsg/myself_learn_notes/blob/node_jxc_manager/learn_note/mariadb_mysql_note/mysql_forth_edition.sql
+
+23.5 Using Views
+
+https://dev.mysql.com/doc/refman/5.7/en/views.html
+
+
+23.5.1 View Syntax                            https://dev.mysql.com/doc/refman/5.7/en/view-syntax.html
+23.5.2 View Processing Algorithms             https://dev.mysql.com/doc/refman/5.7/en/view-algorithms.html
+23.5.3 Updatable and Insertable Views         https://dev.mysql.com/doc/refman/5.7/en/view-updatability.html
+23.5.4 The View WITH CHECK OPTION Clause      https://dev.mysql.com/doc/refman/5.7/en/view-check-option.html
+23.5.5 View Metadata                          https://dev.mysql.com/doc/refman/5.7/en/view-metadata.html
+
+
+
+mysql 支持  views, 包括 updatable views. Views 是 stored queries,
+其在 被 调用时 会产生 a result set. A view acts as a virtual table.
+
+---------------------------------------------------------------------------------------------------
+23.5.1 View Syntax
+
+https://dev.mysql.com/doc/refman/5.7/en/view-syntax.html
+
+mysql> help create view;
+          Name: 'CREATE VIEW'
+          Description:
+          Syntax:
+          CREATE
+              [OR REPLACE]
+              [ALGORITHM = {UNDEFINED | MERGE | TEMPTABLE}]
+              [DEFINER = user]
+              [SQL SECURITY { DEFINER | INVOKER }]
+              VIEW view_name [(column_list)]
+              AS select_statement
+              [WITH [CASCADED | LOCAL] CHECK OPTION]
+
+            -------> view example
+            mysql> CREATE TABLE t (qty INT, price INT);
+            mysql> INSERT INTO t VALUES(3, 50), (5, 60);
+            mysql> CREATE VIEW v AS SELECT qty, price, qty*price AS value FROM t;
+
+            -------< view example
+
+---------------------------------------------------------------------------------------------------
+23.5.2 View Processing Algorithms
+
+https://dev.mysql.com/doc/refman/5.7/en/view-algorithms.html
+
+
+可选的 ALGORITHM 子句(用于 CREATE VIEW 或 ALTER VIEW) 是 mysql 对 standard SQL 的扩展.
+它 影响了 mysql 对 view 的处理方式, ALGORITHM 有 3 个 值: MERGE, TEMPTABLE, 或 UNDEFINED.
+
+    - 对于 MERGE, a statement 中 引用 the view 的 the text 和  the view definition 被合并
+      以使 the view definition 的 部分 替换了 the statement 中 对应的 部分.
+
+    - 对于 TEMPTABLE, the results from the view 被 检索进 a temporary table,
+      该 temporary table 然后 被用于 execute the statement. (即 物化视图)
+
+    - 对于 UNDEFINED, MySQL 选择 使用 哪种 algorithm. 如果可能 它 会 优先选择 MERGE 而非 TEMPTABLE,
+      因为 MERGE 通常 更高效 且 如果 使用了 temporary table, 则 view 不能被 update.
+
+
+    - 如果没有 ALGORITHM 子句, MySQL 5.7.6 之前 UNDEFINED 作为 the default algorithm, 从 5.7.6 起,
+      the default algorithm 由 系统变量 optimizer_switch 中 derived_merge 标志 的 value 确定.
+      For additional discussion, see Section 8.2.2.4, “Optimizing Derived Tables and View References with Merging or Materialization”.
+
+
+  A reason to specify TEMPTABLE explicitly is that locks can be released on underlying tables after the
+  temporary table has been created and before it is used to finish processing the statement.
+  This might result in quicker lock release than the MERGE algorithm so that other clients
+  that use the view are not blocked as long.
+
+
+---------------------------------------------------------------------------------------------------
+8.2.2.4 Optimizing Derived Tables and View References with Merging or Materialization
+
+https://dev.mysql.com/doc/refman/5.7/en/derived-table-optimization.html
+
+
+The optimizer can handle derived table references using two strategies (which also apply to view references):
+
+    - Merge the derived table into the outer query block
+
+    - Materialize the derived table to an internal temporary table
+
+
+---------------------------------------------------------------------------------------------------
+
+
