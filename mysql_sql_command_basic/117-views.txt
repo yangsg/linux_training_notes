@@ -87,4 +87,8 @@ The optimizer can handle derived table references using two strategies (which al
 
 ---------------------------------------------------------------------------------------------------
 
+23.5.3 Updatable and Insertable Views
+
+https://dev.mysql.com/doc/refman/5.7/en/view-updatability.html
+
 
