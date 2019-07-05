@@ -1,6 +1,8 @@
 
 https://github.com/yangsg/myself_learn_notes/blob/node_jxc_manager/learn_note/mariadb_mysql_note/mysql_forth_edition.sql
 
+https://stackoverflow.com/questions/733349/list-of-stored-procedures-functions-mysql-command-line
+
 
 Chapter 23 Stored Objects
 
