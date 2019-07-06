@@ -78,12 +78,205 @@ https://dev.mysql.com/doc/refman/5.7/en/grant.html
 
 mysql> help grant;
 
+// 授予 db1 的 所有 object的 所有权限
+mysql> GRANT ALL ON db1.* TO 'jeffrey'@'localhost';
+
+        如果 省略 了 账户名 中的 host name, 则 其 defaults to '%'
+
+
+Note:
+   从 MySQL 5.7.6 开始 使用 GRANT 命令 来 create accounts 或 define nonprivilege characteristics 是 deprecated 的,
+   所以 最佳实践(best practice)是 使用 CREATE USER 或 ALTER USER 来 完成这样的 任务.
+  (因为 grant 的这种使用方式在 未来的 mysql release 中可能会被 remove, 且 被标为 deprecated 的特性 在 新版的 mysql 中
+   不一定能得到 正常工作的 保证, 即 在新版本的 mysql 中 这些  deprecated 特性 不一定能得到充分完整的 测试)
+
+  原文:
+    However, use of GRANT to create accounts or define nonprivilege characteristics is deprecated as of MySQL 5.7.6.
+    Instead, perform these tasks using CREATE USER or ALTER USER.
+
+  关于 grant 支持的 字符长度: (警告:永远不要修改可允许的长度或 系统数据库 mysql 中table 的结构, 否则会导致不可预期的后果)
+    GRANT supports host names up to 60 characters long.
+    User names can be up to 32 characters.
+    Database, table, column, and routine names can be up to 64 characters.
 
 
 
+// 查看 授予的 权限 信息
+mysql> SHOW GRANTS;
+mysql> SHOW GRANTS FOR 'jeffrey'@'localhost';
+
+        如果 省略 了 账户名 中的 host name, 则 其 defaults to '%'
+
+// 查看 当前 用户 的 授权信息 (注: 函数 CURRENT_USER() 和 USER() 是由区别的)
+mysql> SHOW GRANTS FOR CURRENT_USER;
+mysql> SHOW GRANTS FOR CURRENT_USER();  # 同上
+
+函数 user() 和 current_user() 区别 见: https://stackoverflow.com/questions/19350275/is-there-a-way-to-know-your-current-username-in-mysql
 
 
+    注:
+        The _ and % wildcards are permitted when specifying database names in GRANT statements that
+        grant privileges at the database level (GRANT ... ON db_name.*). This means,
+        for example, that to use a _ character as part of a database name, specify it as \_ in the GRANT statement,
+        to prevent the user from being able to access additional databases matching
+        the wildcard pattern (for example, GRANT ... ON `foo\_bar`.* TO ...).
+
+        When a database name not is used to grant privileges at the database level,
+        but as a qualifier for granting privileges to some other object such as a table or routine
+        (for example, GRANT ... ON db_name.tbl_name), wildcard characters are treated as normal characters.
 
 
+查看 mysql 提供的 可支持的 权限列表 见:  https://dev.mysql.com/doc/refman/5.7/en/grant.html
+
+For the global, database, table, and routine levels, GRANT ALL assigns only the privileges that exist at the level you are granting.
+For example, GRANT ALL ON db_name.* is a database-level statement, so it does not grant any global-only privileges
+such as FILE. Granting ALL does not assign the GRANT OPTION or PROXY privilege.
+
+Important(重要):
+    MySQL does not automatically revoke any privileges when you drop a database or table.
+    However, if you drop a routine, any routine-level privileges granted for that routine are revoked.
+
+------------------
+Account Names and Password (在 grant 语句中)
+
+'user_name'@'%.example.com'  表示 域名 example.com 下的任意主机
+'user_name'@'198.51.100.%'   表示 C类子网 198.51.100 下的任意主机
+'user_name'   等价于  user_name'@'%'  (即它们是 同义词 )
+
+   注: mysql 不支持 在 user names 中 使用 通配符 (wildcards)
+
+
+要引用 一个 匿名用户(anonymous user), 在 grant 语句中 指定 an empty user name 就 可以了.如:
+
+    GRANT ALL ON test.* TO ''@'localhost';
+
+
+// 查看 匿名用户(anonymous user)
+mysql> SELECT Host, User FROM mysql.user WHERE User='';
+
+// 删除 本地(localhost) 的 匿名用户(anonymous user)
+mysql> SELECT Host, User FROM mysql.user WHERE User='';   # 删除之前先 查看一下
+mysql> DELETE FROM mysql.user WHERE User='';       # 直接 使用 delete 语句删除 user 表中对应的 本地匿名用户记录
+mysql> FLUSH PRIVILEGES;       # 刷新 权限信息(因为此处是直接修改表, 所以这一步在这里是必须的)
+
+// 如下 方式 删除 匿名用户 会失败, 原因是 mysql 存在 bug.
+mysql> DROP USER ''@'localhost';    # bug, 该方式无法成功,这时 mysql 的 bug 问题, 所以 只能通过其他 方式来 删除匿名用户
+
+----------------------
+Global Privileges
+
+// 通过 *.* 语法 授予 Global privileges (即应用于 给定的 server 的 all databases)
+mysql> GRANT ALL ON *.* TO 'jeffrey'@'localhost';
+mysql> GRANT SELECT, INSERT ON *.* TO 'jeffrey'@'localhost';
+
+
+注:
+    The CREATE TABLESPACE, CREATE USER, FILE, PROCESS, RELOAD, REPLICATION CLIENT, REPLICATION SLAVE,
+    SHOW DATABASES, SHUTDOWN, and SUPER privileges are administrative and can only be granted globally.
+
+
+MySQL stores global privileges in the mysql.user system table.
+
+----------------------
+Database Privileges
+
+    Database privileges apply to all objects in a given database.
+    To assign database-level privileges, use ON db_name.* syntax:
+
+mysql> GRANT ALL ON mydb.* TO 'jeffrey'@'localhost';
+mysql> GRANT SELECT, INSERT ON mydb.* TO 'jeffrey'@'localhost';
+
+      If you use ON * syntax (rather than ON *.*), privileges are assigned at the databaselevel
+      for the default database. An error occurs if there is no default database.
+
+
+MySQL stores database privileges in the mysql.db system table.
+
+----------------------
+Table Privileges
+
+    Table privileges apply to all columns in a given table.
+    To assign table-level privileges, use ON db_name.tbl_name syntax:
+
+mysql> GRANT ALL ON db1.account TO 'jeffrey'@'localhost';
+mysql> GRANT SELECT, INSERT ON db1.account TO 'jeffrey'@'localhost';
+
+    If you specify tbl_name rather than db_name.tbl_name, the statement applies
+    to tbl_name in the default database. An error occurs if there is no default database.
+
+MySQL stores table privileges in the mysql.tables_priv system table.
+
+----------------------
+Column Privileges
+
+    Column privileges apply to single columns in a given table. Each privilege to be granted at
+    the column level must be followed by the column or columns, enclosed within parentheses.
+
+
+mysql> GRANT SELECT (name), INSERT (name, password) ON db1.account TO 'jeffrey'@'localhost';
+
+
+MySQL stores column privileges in the mysql.columns_priv system table.
+
+----------------------
+Stored Routine Privileges
+
+    The ALTER ROUTINE, CREATE ROUTINE, EXECUTE, and GRANT OPTION privileges apply to stored routines (procedures and functions).
+    They can be granted at the global and database levels. Except for CREATE ROUTINE,
+    these privileges can be granted at the routine level for individual routines.
+
+
+mysql> GRANT CREATE ROUTINE ON mydb.* TO 'someuser'@'somehost';
+mysql> GRANT EXECUTE ON PROCEDURE mydb.myproc TO 'someuser'@'somehost';
+
+MySQL stores routine-level privileges in the mysql.procs_priv system table.
+
+---------------------------------------------------------------------------------------------------
+
+13.7.1.5 RENAME USER Syntax
+
+https://dev.mysql.com/doc/refman/5.7/en/rename-user.html
+
+mysql> RENAME USER 'jeffrey'@'localhost' TO 'jeff'@'127.0.0.1';
+
+        如果 省略 了 账户名 中的 host name, 则 其 defaults to '%'
+
+
+    RENAME USER causes the privileges held by the old user to be those held by the new user.
+    However, RENAME USER does not automatically drop or invalidate databases or objects within
+    them that the old user created. This includes stored programs
+    or views for which the DEFINER attribute names the old user.
+
+
+---------------------------------------------------------------------------------------------------
+13.7.1.6 REVOKE Syntax
+
+https://dev.mysql.com/doc/refman/5.7/en/revoke.html
+
+
+mysql> REVOKE INSERT ON *.* FROM 'jeffrey'@'localhost';
+
+        如果 省略 了 账户名 中的 host name, 则 其 defaults to '%'
+
+// 撤销 all privileges, 即撤销 all global, database, table, column, and routine privileges
+mysql> REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'jeffrey'@'127.0.0.1', 'jeffrey'@'localhost';
+
+mysql> SHOW GRANTS FOR 'jeffrey'@'127.0.0.1';
+
+
+---------------------------------------------------------------------------------------------------
+
+13.7.1.7 SET PASSWORD Syntax  (注: 强烈 不推荐 使用该语法, 最佳实践(best practice)是 应该使用 alter user 这种方式来 修改 密码)
+
+https://dev.mysql.com/doc/refman/5.7/en/set-password.html
+
+mysql> ALTER USER 'jeffrey'@'localhost' IDENTIFIED BY 'WWW.1.com';
+
+
+注: SET PASSWORD ... = PASSWORD('auth_string') 语法从  MySQL 5.7.6 起已经 deprecated 了 且 在未来的 MySQL 中 会将其 remove.
+
+---------------------------------------------------------------------------------------------------
+6.2.4 Specifying Account Names
+https://dev.mysql.com/doc/refman/5.7/en/account-names.html
 
 
