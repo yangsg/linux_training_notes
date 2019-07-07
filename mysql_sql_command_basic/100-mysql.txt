@@ -28,6 +28,7 @@ man mysql
 // 非交互式 的 执行一些 mysql 命令 或 语句  (注: 在交互模式下, 查询结果被以 ASCII-table format 表示)
 [root@dbserver ~]# mysql -u root -p -e 'show status'
 [root@dbserver ~]# mysql -u root -p -e 'select user(), now(), version()'
+[root@dbserver ~]# mysql -u root -p -e 'show global status'
 
 // 非交互式, 以 脚本 的方式 执行 sql 语句 (注: 在非交互模式下, 查询结果被以 tab-separated format 表示, 不过其可以通过 command options 来修改)
 [root@dbserver ~]# mysql -u root -p < script.sql
