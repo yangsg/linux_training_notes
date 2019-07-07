@@ -31,6 +31,8 @@ man mysql
 
 // 非交互式, 以 脚本 的方式 执行 sql 语句 (注: 在非交互模式下, 查询结果被以 tab-separated format 表示, 不过其可以通过 command options 来修改)
 [root@dbserver ~]# mysql -u root -p < script.sql
+[root@dbserver ~]# mysql -u root -p -t < script.sql  # --table, -t, 以与交互模式中相同的 table format 输出 结果
+
 
 // 查看 默认 可能的 配置文件 路径
 [root@dbserver ~]# mysql --help | grep my.cnf
@@ -68,6 +70,8 @@ mysql> \! echo $SHELL       # 同上
 mysql> tee /root/result_output.log  # 将所有信息 append 到 指定的 outfile.
 
 mysql> help rep%   # 这里 help 的 'search_string' 中使用了 通配符 %
+
+mysql> select * from \c  # 使用 \c 可以 clear 当前的 input statement.
 
 ---------------------------------------------------------------------------------------------------
 mysql> help    # 注: 内部子命令 help 的语法: HELP 'search_string', 其中 'search_string' 是不区分大小写的, 且可使用通配符 % 和 _, 其意义同 LIKE operator, 如 help help%
