@@ -328,4 +328,7 @@ total 64K
 8.0K -rw-------   1 root root 6.4K Jun 16 20:06 .viminfo
  12K -rw-r--r--.  1 root root 8.6K Dec 23 10:38 .vimrc
 
+[root@dbserver ~]# ls dir/.[!.]?*   # list hidden files in dir, 该例子演示 Pathname Expansion Of Hidden Files
+dir/.hide  dir/.hide02
+
 
