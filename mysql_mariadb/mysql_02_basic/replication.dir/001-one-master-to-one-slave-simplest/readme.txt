@@ -105,7 +105,7 @@ master server 端:
 
 [root@master ~]# mysql -u root -p
 mysql> ALTER USER 'root'@'localhost' IDENTIFIED BY 'WWW.1.com';
-mysql> exit
+mysql> quit
 
 [root@master ~]# netstat -anptu  | grep mysql
     tcp6       0      0 :::3306                 :::*                    LISTEN      2268/mysqld
@@ -137,7 +137,8 @@ mysql> GRANT REPLICATION SLAVE ON *.* TO 'repluser'@'192.168.175.101';      # �
 
 // 查看 一下 后续 slave 用到的 replication 的 起始坐标
 [root@master ~]# grep -in 'change master' /root/db_full-backup.sql  | head -n 1
-    22:-- CHANGE MASTER TO MASTER_LOG_FILE='master-bin.000001', MASTER_LOG_POS=154;
+      22:-- CHANGE MASTER TO MASTER_LOG_FILE='master-bin.000001', MASTER_LOG_POS=631;
+
 
 // 将 master 的 db_full-backup.sql 拷贝给 slave
 [root@master ~]# rsync -av /root/db_full-backup.sql  root@192.168.175.101:/tmp/
@@ -281,7 +282,8 @@ mysql> quit
 
 // 查看 slave 的 replication 需要的 起始坐标
 [root@slave ~]# grep -in 'change master to' /tmp/db_full-backup.sql  | head -n 1
-    22:-- CHANGE MASTER TO MASTER_LOG_FILE='master-bin.000001', MASTER_LOG_POS=154;
+        22:-- CHANGE MASTER TO MASTER_LOG_FILE='master-bin.000001', MASTER_LOG_POS=631;
+
 
 
 // 执行一下 help 帮助信息 查看 change master 的 语法帮助
@@ -294,24 +296,26 @@ mysql> CHANGE MASTER TO
     -> MASTER_USER='repluser',
     -> MASTER_PASSWORD='WWW.1.com',
     -> MASTER_LOG_FILE='master-bin.000001',
-    -> MASTER_LOG_POS=154;
+    -> MASTER_LOG_POS=631;
+
 
 
 // 查看 一些 先关的文件
 [root@slave ~]# ls -1 /var/lib/mysql | grep -E 'master.info|slave|relay'
-      master.info
-      relay-log.info
-      slave-bin.000001
-      slave-bin.index
-      slave-relay-bin.000001
-      slave-relay-bin.index
+            master.info
+            relay-log.info
+            slave-bin.000001
+            slave-bin.index
+            slave-relay-bin.000001
+            slave-relay-bin.index
+
 
 
 // 查看 一下  master.info 文件 内容
 [root@slave ~]# cat /var/lib/mysql/master.info
                               25
                               master-bin.000001
-                              154
+                              631
                               192.168.175.100
                               repluser
                               WWW.1.com
@@ -333,16 +337,18 @@ mysql> CHANGE MASTER TO
 
                               0
 
+
 // 查看 一下  relay-log.info 文件 内容
 [root@slave ~]# cat /var/lib/mysql/relay-log.info
                               7
                               ./slave-relay-bin.000001
                               4
                               master-bin.000001
-                              154
+                              631
                               0
                               0
                               1
+
 
 
 
@@ -354,30 +360,88 @@ mysql> pager less -Fi
 
 // 查看 slave 状态信息
 mysql> show slave status\G
+              *************************** 1. row ***************************
+                             Slave_IO_State: Waiting for master to send event
+                                Master_Host: 192.168.175.100
+                                Master_User: repluser
+                                Master_Port: 3306
+                              Connect_Retry: 60
+                            Master_Log_File: master-bin.000001
+                        Read_Master_Log_Pos: 631
+                             Relay_Log_File: slave-relay-bin.000002
+                              Relay_Log_Pos: 321
+                      Relay_Master_Log_File: master-bin.000001
+                           Slave_IO_Running: Yes   <----------- 查看 io thread 状态
+                          Slave_SQL_Running: Yes   <----------- 查看 sql thread 状态
+                            Replicate_Do_DB:
+                        Replicate_Ignore_DB:
+                         Replicate_Do_Table:
+                     Replicate_Ignore_Table:
+                    Replicate_Wild_Do_Table:
+                Replicate_Wild_Ignore_Table:
+                                 Last_Errno: 0
+                                 Last_Error:
+                               Skip_Counter: 0
+                        Exec_Master_Log_Pos: 631
+                            Relay_Log_Space: 528
+                            Until_Condition: None
+                             Until_Log_File:
+                              Until_Log_Pos: 0
+                         Master_SSL_Allowed: No
+                         Master_SSL_CA_File:
+                         Master_SSL_CA_Path:
+                            Master_SSL_Cert:
+                          Master_SSL_Cipher:
+                             Master_SSL_Key:
+                      Seconds_Behind_Master: 0   <------------- 延迟
+              Master_SSL_Verify_Server_Cert: No
+                              Last_IO_Errno: 0
+                              Last_IO_Error:      <---------------- 当发生错误时可以查看一下这里
+                             Last_SQL_Errno: 0
+                             Last_SQL_Error:      <---------------- 当发生错误时可以查看一下这里 
+                Replicate_Ignore_Server_Ids:
+                           Master_Server_Id: 100
+                                Master_UUID: dc0c664f-a20f-11e9-b9d0-000c2982ac0f
+                           Master_Info_File: /var/lib/mysql/master.info
+                                  SQL_Delay: 0
+                        SQL_Remaining_Delay: NULL
+                    Slave_SQL_Running_State: Slave has read all relay log; waiting for more updates
+                         Master_Retry_Count: 86400
+                                Master_Bind:
+                    Last_IO_Error_Timestamp:
+                   Last_SQL_Error_Timestamp:
+                             Master_SSL_Crl:
+                         Master_SSL_Crlpath:
+                         Retrieved_Gtid_Set:
+                          Executed_Gtid_Set:
+                              Auto_Position: 0
+                       Replicate_Rewrite_DB:
+                               Channel_Name:
+                         Master_TLS_Version:
 
 
 
+---------------------------------------------------------------------------------------------------
+测试 test:
+   在 master 上 执行一些 修改操作 (如 创建数据库 等), 看起是否自动 同步到 slave 端.
+
+---------------------------------------------------------------------------------------------------
+
+其他相关命令:
+
+      mysql> stop slave;   # 暂停 slave threads
 
 
+默认 启动 mysqld 时, 会 自动 start slave threads.  如果启动时指定了 --skip-slave-start , 则 slave 启动后 不会自动 start slave threads.
 
 
+---------------------------------------------------------------------------------------------------
+网上资料:
 
+    16.1 Configuring Replication
+        https://dev.mysql.com/doc/refman/5.7/en/replication-configuration.html
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    16.1.1 Binary Log File Position Based Replication Configuration Overview
+        https://dev.mysql.com/doc/refman/5.7/en/binlog-replication-configuration-overview.html
 
 
