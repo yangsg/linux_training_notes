@@ -435,6 +435,15 @@ mysql> show slave status\G
 默认 启动 mysqld 时, 会 自动 start slave threads.  如果启动时指定了 --skip-slave-start , 则 slave 启动后 不会自动 start slave threads.
 
 
+语句: flush tables with read lock     # 常用于 backup, 与语句 lock tables 是有区别的. 见  https://dev.mysql.com/doc/refman/5.7/en/flush.html
+作用: Closes all open tables and locks all tables for all databases with a global read lock.
+
+语句:  UNLOCK TABLES
+作用:  release the lock
+
+
+reset 命令 见  https://dev.mysql.com/doc/refman/5.7/en/reset.html
+
 ---------------------------------------------------------------------------------------------------
 网上资料:
 
