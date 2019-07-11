@@ -360,6 +360,9 @@ mycat 9066管理端口 常用命令
       https://blog.csdn.net/l1028386804/article/details/53441395
       https://stackoverflow.com/questions/30074492/what-is-the-difference-between-utf8mb4-and-utf8-charsets-in-mysql
 
+  mysql 设置 字符编码:
+      https://dev.mysql.com/doc/refman/5.7/en/charset-server.html
+
 
 ---------------------------------------------------------------------------------------------------
 
