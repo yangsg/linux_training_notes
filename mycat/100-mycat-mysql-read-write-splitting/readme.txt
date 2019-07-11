@@ -139,19 +139,77 @@ mysql> grant all on jiaowu.* to 'admin'@'192.168.175.88';
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 mysql> create database jiaowu default charset utf8;
 
+
+---------------------------------------------------------------------------------------------------
+mycat 开机自己的设置:
+
+---------
+// 方式01: 修改文件 /etc/rc.d/rc.local
+[root@mycatserver ~]# vim /etc/rc.d/rc.local
+        su - mycat -s /bin/bash -c 'cd /app/mycat/bin/  && ./mycat start'
+
+[root@mycatserver ~]# chmod +x /etc/rc.d/rc.local
+
+
+---------
+// 方式02
+
+// 创建 mycat 的 init script, 参考了 less /app/mycat/bin/mycat 中 chkconfig 设置
+[root@mycatserver ~]# vim /etc/init.d/mycat
+
+                #!/bin/bash
+
+                # chkconfig: 2345 20 80
+                # description:  Mycat-server init script of myself
+
+                case "$1" in
+                  'console'|'start'|'stop'|'restart'|'status'|'dump')
+                    command_line="cd /app/mycat/bin/  && ./mycat $@"
+                    # 注: 如下语句 执行 $command_line 表示的命令时, 会自动读取 /etc/profile, 所以不用重复设置如 JAVA_HOME 之类的环境变量
+                    su - mycat -s /bin/bash -c "$command_line"
+                    exit $?
+                    ;;
+                esac
+
+                echo "Usage: $0 { console | start | stop | restart | status | dump }"
+                exit 1
+
+
+
+[root@mycatserver ~]# chmod 755 /etc/init.d/mycat
+[root@mycatserver ~]# chkconfig --add mycat
+[root@mycatserver ~]# chkconfig --list mycat
+
+Note: This output shows SysV services only and does not include native
+      systemd services. SysV configuration data might be overridden by native
+      systemd configuration.
+
+      If you want to list systemd services use 'systemctl list-unit-files'.
+      To see services enabled on particular target use
+      'systemctl list-dependencies [target]'.
+
+mycat           0:off   1:off   2:on    3:on    4:on    5:on    6:off
+
+// 查看 对应 directory 所发生的变量
+[root@mycatserver ~]# find /etc/rc* | grep mycat
+          /etc/rc.d/init.d/mycat
+          /etc/rc.d/rc0.d/K80mycat
+          /etc/rc.d/rc1.d/K80mycat
+          /etc/rc.d/rc2.d/S20mycat
+          /etc/rc.d/rc3.d/S20mycat
+          /etc/rc.d/rc4.d/S20mycat
+          /etc/rc.d/rc5.d/S20mycat
+          /etc/rc.d/rc6.d/K80mycat
+
+---------
+方式3:
+
+[root@mycatserver ~]# touch /etc/systemd/system/mycat.service
+[root@mycatserver ~]# chmod 664 /etc/systemd/system/mycat.service
+
+---------
 
 
 
