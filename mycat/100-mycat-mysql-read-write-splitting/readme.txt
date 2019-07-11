@@ -143,7 +143,7 @@ mysql> create database jiaowu default charset utf8;
 
 
 ---------------------------------------------------------------------------------------------------
-mycat 开机自己的设置:
+mycat 开机自启的设置:
 
 ---------
 // 方式01: 修改文件 /etc/rc.d/rc.local
@@ -208,9 +208,37 @@ mycat           0:off   1:off   2:on    3:on    4:on    5:on    6:off
 
 [root@mycatserver ~]# touch /etc/systemd/system/mycat.service
 [root@mycatserver ~]# chmod 664 /etc/systemd/system/mycat.service
+[root@mycatserver ~]# vim /etc/systemd/system/mycat.service
+
+          [Unit]
+          Description=Mycat-server
+          After=network.target
+          After=syslog.target
+
+          [Service]
+          User=mycat
+          Group=mycat
+
+          Type=forking
+          ExecStart=/bin/bash -l -c 'cd /app/mycat/bin/  && ./mycat start'
+          ExecStop=/bin/bash -l -c 'cd /app/mycat/bin/  && ./mycat stop'
+
+          [Install]
+          WantedBy=multi-user.target
+
+[root@mycatserver ~]# systemctl daemon-reload
+[root@mycatserver ~]# systemctl start mycat.service
+[root@mycatserver ~]# systemctl enable mycat.service
+        Created symlink from /etc/systemd/system/multi-user.target.wants/mycat.service to /etc/systemd/system/mycat.service.
 
 ---------
 
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+
+mycat 9066管理端口 常用命令
+      https://www.cnblogs.com/parryyang/p/5606071.html
 
 
 
