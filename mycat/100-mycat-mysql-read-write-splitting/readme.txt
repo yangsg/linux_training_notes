@@ -359,9 +359,16 @@ mycat 9066管理端口 常用命令
       https://blog.csdn.net/leipeng321123/article/details/50428020
       https://blog.csdn.net/l1028386804/article/details/53441395
       https://stackoverflow.com/questions/30074492/what-is-the-difference-between-utf8mb4-and-utf8-charsets-in-mysql
+      https://www.cnblogs.com/straybirds/p/6392306.html
 
   mysql 设置 字符编码:
       https://dev.mysql.com/doc/refman/5.7/en/charset-server.html
+
+  jdbc 关于 utf8mb4 的设置:
+      https://stackoverflow.com/questions/44591895/utf8mb4-in-mysql-workbench-and-jdbc
+      https://dev.mysql.com/doc/connector-j/5.1/en/connector-j-reference-charsets.html
+      https://www.jianshu.com/p/f7d7609de6b0
+      https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-usagenotes-troubleshooting.html
 
 
 ---------------------------------------------------------------------------------------------------
