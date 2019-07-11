@@ -1,9 +1,24 @@
 
+// 查看本机 ip 地址
+[root@mycatserver ~]# ip addr show ens33  | awk '/inet / {print $2}'  # 查看 ip 地址
+192.168.175.88/24
 
-// 安装 jdk (因 mycat 由 java 实现, 且 至少 jdk7)
 
+---------------------------------------------------------------------------------------------------
+该 示例 使用了 master - slave 的 mysql replication 环境, 具体见:
 
+    https://github.com/yangsg/linux_training_notes/tree/master/mysql_mariadb/mysql_02_basic/replication.dir/001-one-master-to-one-slave-simplest
 
+针对本示例 对 数据库 执行的 一些 操作(如下操作都是在 master 上执行, 然后 自动同步 给 slave):
+
+// 创建 示例数据库
+mysql> create database jiaowu default charset utf8;
+
+// 创建 mycat 访问 后台 mysql servers 的 user 和 对其进行 授权
+mysql> create user 'admin'@'192.168.175.88' identified by 'WWW.1.com';
+mysql> grant all on jiaowu.* to 'admin'@'192.168.175.88';
+
+---------------------------------------------------------------------------------------------------
 
 // 下载 mycat
 [root@mycatserver ~]# mkdir download && cd download
@@ -16,7 +31,7 @@
       └── Mycat-server-1.6.7.1-release-20190627191042-linux.tar.gz
 
 ---------------------------------------------------------------------------------------------------
-// 安装 jdk
+// 安装 jdk (因 mycat 由 java 实现, 且 至少 jdk7)
 
 [root@mycatserver download]# mkdir /app     # 创建自定义 软件 安装目录
 [root@mycatserver download]# tar -xvf jdk-8u202-linux-x64.tar.gz -C /app
@@ -68,7 +83,7 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.202-b08, mixed mode)
         QQGroup 106088787
 
 
-// 查看一些 conf 目录
+// 查看一下 conf 目录
 [root@mycatserver mycat]# ls conf/
     autopartition-long.txt      ehcache.xml                  partition-hash-int.txt    sequence_db_conf.properties           wrapper.conf
     auto-sharding-long.txt      index_to_charset.properties  partition-range-mod.txt   sequence_distributed_conf.properties  zkconf
@@ -112,34 +127,129 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.202-b08, mixed mode)
         </user>
 
 
-[root@mycatserver ~]# useradd -s /sbin/nologin mycat
+[root@mycatserver ~]# useradd -M -s /sbin/nologin mycat
 [root@mycatserver ~]# chown -R mycat:mycat /app/mycat/
 [root@mycatserver ~]# chmod -R go-rwx /app/mycat/
 
 [root@mycatserver ~]# su - mycat -s /bin/bash -c 'cd /app/mycat/bin/  && ./mycat start'
+
+// 查看 mycat 对应的 java 进程
+[root@mycatserver ~]# ps -elf | grep java
+
+[root@mycatserver ~]# netstat -anptu | grep java
+        tcp        0      0 127.0.0.1:32000         0.0.0.0:*               LISTEN      1374/java
+        tcp6       0      0 :::41013                :::*                    LISTEN      1374/java
+        tcp6       0      0 :::1984                 :::*                    LISTEN      1374/java
+        tcp6       0      0 :::8066                 :::*                    LISTEN      1374/java   <---- 8066 为 server port, 类似于 mysql 的 3306 端口
+        tcp6       0      0 :::9066                 :::*                    LISTEN      1374/java   <---- 9066 为 管理端口(managerPort)
+        tcp6       0      0 :::44138                :::*                    LISTEN      1374/java
+        tcp6       0      0 192.168.175.88:50806    192.168.175.100:3306    ESTABLISHED 1374/java
+        tcp6       0      0 127.0.0.1:31000         127.0.0.1:32000         ESTABLISHED 1374/java
+        tcp6       0      0 192.168.175.88:51560    192.168.175.101:3306    ESTABLISHED 1374/java
+        tcp6       0      0 192.168.175.88:50810    192.168.175.100:3306    ESTABLISHED 1374/java
+        tcp6       0      0 192.168.175.88:50818    192.168.175.100:3306    ESTABLISHED 1374/java
+        tcp6       0      0 192.168.175.88:50814    192.168.175.100:3306    ESTABLISHED 1374/java
+        tcp6       0      0 192.168.175.88:50812    192.168.175.100:3306    ESTABLISHED 1374/java
+        tcp6       0      0 192.168.175.88:50804    192.168.175.100:3306    ESTABLISHED 1374/java
+        tcp6       0      0 192.168.175.88:50808    192.168.175.100:3306    ESTABLISHED 1374/java
+        tcp6       0      0 192.168.175.88:50802    192.168.175.100:3306    ESTABLISHED 1374/java
+        tcp6       0      0 192.168.175.88:50820    192.168.175.100:3306    ESTABLISHED 1374/java
+        tcp6       0      0 192.168.175.88:50816    192.168.175.100:3306    ESTABLISHED 1374/java
+
+
+// 查看一下 其 日志目录 下的 内容
+[root@mycatserver ~]# ls /app/mycat/logs/
+        mycat.log  mycat.pid  wrapper.log
+      其中 wrapper.log 是 启动过程日志, mycat.log 是 运行过程日志, 另外还可在 conf/log4j2.xml 中调整日志 level
+
+---------------------------------------------------------------------------------------------------
+测试 test:
+
+// 随便找台 安装了 mysql client 客户端程序 测试:
+[root@dbserver ~]# mysql -h 192.168.175.88 -u mycatuser -p -P 8066  --default-character-set=utf8
+                              Enter password:
+                              Welcome to the MySQL monitor.  Commands end with ; or \g.
+                              Your MySQL connection id is 6
+                              Server version: 5.6.29-mycat-1.6.7.1-release-20190627191042 MyCat Server (OpenCloudDB)
+
+                              Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+
+                              Oracle is a registered trademark of Oracle Corporation and/or its
+                              affiliates. Other names may be trademarks of their respective
+                              owners.
+
+                              Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+                              mysql> status
+                              --------------
+                              mysql  Ver 14.14 Distrib 5.7.26, for Linux (x86_64) using  EditLine wrapper
+
+                              Connection id:          6
+                              Current database:       jiaowu
+                              Current user:           admin@192.168.175.88
+                              SSL:                    Not in use
+                              Current pager:          stdout
+                              Using outfile:          ''
+                              Using delimiter:        ;
+                              Server version:         5.6.29-mycat-1.6.7.1-release-20190627191042 MyCat Server (OpenCloudDB)
+                              Protocol version:       10
+                              Connection:             192.168.175.88 via TCP/IP
+                              Server characterset:    latin1
+                              Db     characterset:    utf8
+                              Client characterset:    utf8
+                              Conn.  characterset:    utf8
+                              TCP port:               8066
+                              --------------
+
+                              mysql> show databases;
+                              +----------+
+                              | DATABASE |
+                              +----------+
+                              | jiaowu   |
+                              +----------+
+                              1 row in set (0.00 sec)
+
+
+[root@dbserver ~]# mysql -h 192.168.175.88 -u mycatuser -p -P 9066 --default-character-set=utf8
+        Enter password:
+        Welcome to the MySQL monitor.  Commands end with ; or \g.
+        Your MySQL connection id is 5
+        Server version: 5.6.29-mycat-1.6.7.1-release-20190627191042 MyCat Server (monitor)
+
+        Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+
+        Oracle is a registered trademark of Oracle Corporation and/or its
+        affiliates. Other names may be trademarks of their respective
+        owners.
+
+        Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+        mysql> show @@backend;
+        +------------+------+---------+-----------------+------+--------+--------+---------+------+--------+----------+------------+--------+----------+---------+------------+
+        | processor  | id   | mysqlId | host            | port | l_port | net_in | net_out | life | closed | borrowed | SEND_QUEUE | schema | charset  | txlevel | autocommit |
+        +------------+------+---------+-----------------+------+--------+--------+---------+------+--------+----------+------------+--------+----------+---------+------------+
+        | Processor0 |    1 |     123 | 192.168.175.100 | 3306 |  50846 |   2333 |     574 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
+        | Processor0 |    2 |     127 | 192.168.175.100 | 3306 |  50854 |   2413 |     592 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
+        | Processor0 |    3 |     129 | 192.168.175.100 | 3306 |  50858 |   2333 |     574 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
+        | Processor0 |    4 |     132 | 192.168.175.100 | 3306 |  50864 |   2333 |     574 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
+        | Processor0 |    5 |     124 | 192.168.175.100 | 3306 |  50848 |   2333 |     574 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
+        | Processor0 |    6 |     125 | 192.168.175.100 | 3306 |  50850 |   2333 |     574 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
+        | Processor0 |    7 |     128 | 192.168.175.100 | 3306 |  50856 |   2333 |     574 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
+        | Processor0 |    8 |     131 | 192.168.175.100 | 3306 |  50862 |   2333 |     574 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
+        | Processor0 |    9 |     126 | 192.168.175.100 | 3306 |  50852 |   2333 |     574 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
+        | Processor0 |   10 |     130 | 192.168.175.100 | 3306 |  50860 |   2333 |     574 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
+        | Processor0 |   11 |      16 | 192.168.175.101 | 3306 |  51604 |  22573 |    5128 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
+        +------------+------+---------+-----------------+------+--------+--------+---------+------+--------+----------+------------+--------+----------+---------+------------+
+        11 rows in set (0.03 sec)
+
+
+
+
+---------------------------------------------------------------------------------------------------
+其他:
+
+// 停止 mycat 的命令:
 [root@mycatserver ~]# su - mycat -s /bin/bash -c 'cd /app/mycat/bin/  && ./mycat stop'
-
-
-
-
-
-
-mysql> create user 'admin'@'192.168.175.88' identified by 'WWW.1.com';
-mysql> grant all on jiaowu.* to 'admin'@'192.168.175.88';
-
-
-
-
-
-
-
-
-[root@dbserver ~]# mysql -h 192.168.175.88 -u mycatuser -p   -P 8066
-
-
-
-
-mysql> create database jiaowu default charset utf8;
 
 
 ---------------------------------------------------------------------------------------------------
@@ -240,6 +350,18 @@ mycat           0:off   1:off   2:on    3:on    4:on    5:on    6:off
 mycat 9066管理端口 常用命令
       https://www.cnblogs.com/parryyang/p/5606071.html
 
+
+关于 mysql utf8 和 utf8mb4 的资料:
+
+      https://blog.csdn.net/u010584271/article/details/80835547
+      https://yq.aliyun.com/articles/138488
+      https://mathiasbynens.be/notes/mysql-utf8mb4
+      https://blog.csdn.net/leipeng321123/article/details/50428020
+      https://blog.csdn.net/l1028386804/article/details/53441395
+      https://stackoverflow.com/questions/30074492/what-is-the-difference-between-utf8mb4-and-utf8-charsets-in-mysql
+
+
+---------------------------------------------------------------------------------------------------
 
 
 
