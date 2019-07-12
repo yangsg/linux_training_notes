@@ -31,12 +31,12 @@ import java.sql.Statement;
 public class JdbcTest
 {
   // JDBC driver name and database URL
-   static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
-  //static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
-  static final String DB_URL = "jdbc:mysql://192.168.175.30/test?useSSL=true";
-  //static final String DB_URL = "jdbc:mysql://192.168.175.30/test?useUnicode=true&characterEncoding=UTF-8&useSSL=true";
+  //static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
+  static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
+  //static final String DB_URL = "jdbc:mysql://192.168.175.30/test?useUnicode=true&characterEncoding=UTF-8";
+  //static final String DB_URL = "jdbc:mysql://192.168.175.30/test?useUnicode=true&characterEncoding=UTF-8&useSSL=false";
   // 必要时 还 可以设置 connectionCollation=utf8mb4_unicode_ci 参数
-  //static final String DB_URL = "jdbc:mysql://192.168.175.30/test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci";
+  static final String DB_URL = "jdbc:mysql://192.168.175.30/test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&useSSL=false";
 
   //  Database credentials
   static final String USER = "root";
