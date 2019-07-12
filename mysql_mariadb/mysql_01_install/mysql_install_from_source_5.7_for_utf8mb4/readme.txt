@@ -260,6 +260,7 @@ MySQL [(none)]> status;
       [root@dbserver download]# wget https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-8.0.16.tar.gz
 
 
+
 关于 mysql utf8 和 utf8mb4 的资料:
 
       https://blog.csdn.net/u010584271/article/details/80835547
@@ -289,6 +290,14 @@ Warning
     set has been changed by the query, and will continue to use the character set configured when the connection was first set up.
 
 
+mysql 8.0 jdbc 驱动的变化:
+    https://www.runoob.com/java/java-mysql-connect.html
+
+        MySQL 8.0 以上版本的数据库连接有所不同：
+              1、MySQL 8.0 以上版本驱动包版本 mysql-connector-java-8.0.16.jar。
+              2、com.mysql.jdbc.Driver 更换为 com.mysql.cj.jdbc.Driver。
+              MySQL 8.0 以上版本不需要建立 SSL 连接的，需要显示关闭。
+              最后还需要设置 CST。
 ---------------------------------------------------------------------------------------------------
 
 #其他一些小技巧：
