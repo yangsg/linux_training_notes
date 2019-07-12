@@ -1,10 +1,214 @@
 
 
-// 安装 jdk
 
+// 下载 maven
 [root@client ~]# mkdir download
 [root@client ~]# cd download/
 [root@client download]# wget http://mirrors.tuna.tsinghua.edu.cn/apache/maven/maven-3/3.6.1/binaries/apache-maven-3.6.1-bin.tar.gz
+
+[root@client download]# tree
+        .
+        ├── apache-maven-3.6.1-bin.tar.gz
+        └── jdk-8u202-linux-x64.tar.gz
+
+---------------------------------------------------------------------------------------------------
+安装 jdk1.8.xxx
+
+[root@client download]# mkdir /app     # 创建自定义 软件 安装目录
+[root@client download]# tar -xvf jdk-8u202-linux-x64.tar.gz -C /app
+
+[root@client download]# ls /app/
+    jdk1.8.0_202
+
+// 配置 jdk 相关 环境变量
+[root@client download]# vim /etc/profile
+      # 安装 jdk 都 最好定义变量 JAVA_HOME, 因为许多 java的 程序或框架会依赖该变量
+      export JAVA_HOME=/app/jdk1.8.0_202
+      export PATH=$PATH:$JAVA_HOME/bin
+
+
+// 执行 /etc/profile
+[root@client download]# source /etc/profile
+
+// 验证 jdk
+[root@client download]# java -version
+      java version "1.8.0_202"
+      Java(TM) SE Runtime Environment (build 1.8.0_202-b08)
+      Java HotSpot(TM) 64-Bit Server VM (build 25.202-b08, mixed mode)
+
+---------------------------------------------------------------------------------------------------
+安装 maven
+
+[root@client download]# tar -xvf apache-maven-3.6.1-bin.tar.gz  -C /app
+
+[root@client download]# ls /app/apache-maven-3.6.1/
+bin  boot  conf  lib  LICENSE  NOTICE  README.txt
+
+[root@client download]# cd
+[root@client ~]# vim /etc/profile
+    export MAVEN_HOME=/app/apache-maven-3.6.1
+    export PATH=$PATH:$MAVEN_HOME/bin
+
+[root@client ~]# source /etc/profile
+
+// 验证安装
+[root@client ~]# mvn --version
+        Apache Maven 3.6.1 (d66c9c0b3152b2e69ee9bac180bb8fcc8e6af555; 2019-04-05T03:00:29+08:00)
+        Maven home: /app/apache-maven-3.6.1
+        Java version: 1.8.0_202, vendor: Oracle Corporation, runtime: /app/jdk1.8.0_202/jre
+        Default locale: en_US, platform encoding: UTF-8
+        OS name: "linux", version: "3.10.0-693.el7.x86_64", arch: "amd64", family: "unix"
+---------------------------------------------------------------------------------------------------
+配置 maven 使用 阿里镜像  参考: https://help.aliyun.com/document_detail/102512.html?spm=a2c40.aliyun_maven_repo.0.0.361830541BTo7y
+
+// 备份 maven 自带的 settings.xml 文件
+[root@client ~]# cd /app/apache-maven-3.6.1/conf/
+[root@client conf]# cp settings.xml settings.xml.bak
+
+// 在<mirrors></mirrors>标签中添加mirror子节点
+[root@client conf]# vim settings.xml
+
+        <mirror>
+            <id>aliyunmaven</id>
+            <mirrorOf>*</mirrorOf>
+            <name>阿里云公共仓库</name>
+            <url>https://maven.aliyun.com/repository/public</url>
+        </mirror>
+
+
+---------------------------------------------------------------------------------------------------
+[root@client ~]# mkdir wkdir
+[root@client ~]# cd wkdir/
+
+// 创建 一个 简单的 maven project
+[root@client ~]# mvn -B archetype:generate \
+  -DarchetypeGroupId=org.apache.maven.archetypes \
+  -DgroupId=com.mycompany.app \
+  -DartifactId=my-app
+
+// 查看 一下 目录结构
+[root@client wkdir]# tree
+    .
+    └── my-app
+        ├── pom.xml
+        └── src
+            ├── main
+            │   └── java
+            │       └── com
+            │           └── mycompany
+            │               └── app
+            │                   └── App.java
+            └── test
+                └── java
+                    └── com
+                        └── mycompany
+                            └── app
+                                └── AppTest.java
+
+// 列出 文件 路径
+[root@client wkdir]# find
+      .
+      ./my-app
+      ./my-app/pom.xml
+      ./my-app/src
+      ./my-app/src/main
+      ./my-app/src/main/java
+      ./my-app/src/main/java/com
+      ./my-app/src/main/java/com/mycompany
+      ./my-app/src/main/java/com/mycompany/app
+      ./my-app/src/main/java/com/mycompany/app/App.java
+      ./my-app/src/test
+      ./my-app/src/test/java
+      ./my-app/src/test/java/com
+      ./my-app/src/test/java/com/mycompany
+      ./my-app/src/test/java/com/mycompany/app
+      ./my-app/src/test/java/com/mycompany/app/AppTest.java
+
+// 修改 maven 的 项目文件
+[root@client wkdir]# vim ./my-app/pom.xml
+
+        <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+          <modelVersion>4.0.0</modelVersion>
+          <groupId>com.mycompany.app</groupId>
+          <artifactId>my-app</artifactId>
+          <packaging>jar</packaging>
+          <version>1.0-SNAPSHOT</version>
+          <name>my-app</name>
+          <url>http://maven.apache.org</url>
+
+          <properties>
+            <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+            <maven.compiler.source>1.8</maven.compiler.source>
+            <maven.compiler.target>1.8</maven.compiler.target>
+          </properties>
+
+          <dependencies>
+
+            <!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
+            <dependency>
+              <groupId>mysql</groupId>
+              <artifactId>mysql-connector-java</artifactId>
+              <version>8.0.16</version>
+            </dependency>
+
+            <dependency>
+              <groupId>junit</groupId>
+              <artifactId>junit</artifactId>
+              <version>4.11</version>
+              <scope>test</scope>
+            </dependency>
+          </dependencies>
+        </project>
+
+
+// 切换到 工程目录 并 下载 相关 dependencies
+[root@client wkdir]# cd my-app/
+[root@client my-app]# mvn dependency:resolve
+
+[root@client my-app]# mvn clean
+[root@client my-app]# mvn compile   # 编译 (当然, 可以 skip 该命令, 直接执行 package 也是可以的)
+[root@client my-app]# mvn package   # 打包
+
+[root@client my-app]# mvn exec:java -Dexec.mainClass="com.mycompany.app.App"
+
+
+[root@client my-app]# vim ./src/main/java/com/mycompany/app/JdbcTest.java
+
+[root@client my-app]# mvn clean package
+
+[root@client my-app]# mvn exec:java -Dexec.mainClass="com.mycompany.app.JdbcTest" -Dexec.cleanupDaemonThreads=false
+
+---------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------
+
+https://stackoverflow.com/questions/26609922/maven-home-mvn-home-or-m2-home
+
+
+maven 下载页面:
+    https://maven.apache.org/download.cgi
+
+maven 使用:
+    https://stackoverflow.com/questions/8563960/maven-command-to-update-repository-after-adding-dependency-to-pom
+
+maven 执行 java:
+    https://stackoverflow.com/questions/10108374/maven-how-to-run-a-java-file-from-command-line-passing-arguments
+    https://stackoverflow.com/questions/5396749/pass-command-line-params-in-mvn-execexec
+
+运行 mvn java:exec 如何避免 `IllegalThreadStateException`
+    https://blog.csdn.net/weixin_34318272/article/details/92001767
+    https://stackoverflow.com/questions/13471519/running-daemon-with-exec-maven-plugin-avoiding-illegalthreadstateexception
+
+
+MySQL Connector/J 所在的 maven 查找页面:
+    https://mvnrepository.com/artifact/mysql/mysql-connector-java
+
+
+国内阿里的 maven 镜像仓库:
+    https://maven.aliyun.com/mvn/view?spm=a2c4g.11186623.2.13.29dc54e78jCcBo
+
+
 
 
 
