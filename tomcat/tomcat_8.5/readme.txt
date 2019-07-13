@@ -38,7 +38,6 @@ download/
     Java HotSpot(TM) 64-Bit Server VM (build 25.202-b08, mixed mode)
 
 
-
 // 安装 tomcat-8.5.39
 // 参考： https://tomcat.apache.org/tomcat-8.5-doc/RUNNING.txt  或 less /app/apache-tomcat-8.5.39/RUNNING.txt
 // 注：除了 CATALINA_HOME and CATALINA_BASE 之外，所有其他环境变量都可以在 $CATALINA_HOME/bin/setenv.sh 中设置
@@ -209,5 +208,12 @@ https://www.cnblogs.com/bigdevilking/p/9497991.html
 https://legacy.gitbook.com/@alleniverson
 https://blog.csdn.net/axi295309066
 
-
+---------------------------------------------------------------------------------------------------
+    ----------
+    java 小知识:
+       命令 java 的选项 没有 如 linux 传统命令 那样使用 '--' 作为前缀标识 long format options,
+       可能是因为 java 是跨平台的语言, 而 类似 如 windows 操作系统 的 dos 命令窗口 中 仅支持 '-',
+       不支持 '--', 所以 为了跨平台, java 命令采用为了 类似 如 'java -version' 的语法, 而没有
+       采用 'java --version' 这种语法风格
+    ----------
 
