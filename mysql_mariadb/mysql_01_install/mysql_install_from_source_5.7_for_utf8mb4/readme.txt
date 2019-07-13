@@ -280,6 +280,11 @@ MySQL [(none)]> status;
       https://www.jianshu.com/p/f7d7609de6b0
       https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-usagenotes-troubleshooting.html
 
+
+      http://unicode-table.com/
+
+在线工具列表:
+      https://github.com/yangsg/linux_training_notes/tree/master/linux_basic/centos7.4
 ---------------------------------------------------------------------------------------------------
 https://dev.mysql.com/doc/connector-j/5.1/en/connector-j-reference-charsets.html
 https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-charsets.html
