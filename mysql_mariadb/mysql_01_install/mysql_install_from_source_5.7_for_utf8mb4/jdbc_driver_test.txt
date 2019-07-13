@@ -180,6 +180,51 @@ bin  boot  conf  lib  LICENSE  NOTICE  README.txt
 [root@client my-app]# mvn exec:java -Dexec.mainClass="com.mycompany.app.JdbcTest" -Dexec.cleanupDaemonThreads=false
 
 ---------------------------------------------------------------------------------------------------
+不借助 maven 工具, 直接使用 javac 和 java 命令 编译 运行 测试代码的例子:
+
+// 简单 创建一个 单独的 目录
+[root@client ~]# mkdir my-app && cd my-app
+
+// 获取 mysql 的 jdbc  驱动
+[root@client my-app]# wget https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-8.0.16.tar.gz
+[root@client my-app]# tar -xvf mysql-connector-java-8.0.16.tar.gz
+[root@client my-app]# find mysql-connector-java-8.0.16/ | grep jar
+      mysql-connector-java-8.0.16/mysql-connector-java-8.0.16.jar
+
+
+// coding 测试代码
+[root@client my-app]# mkdir -p com/mycompany/app
+[root@client my-app]# vim com/mycompany/app/JdbcTest.java
+
+// 编译
+[root@client my-app]# javac -cp mysql-connector-java-8.0.16/mysql-connector-java-8.0.16.jar com/mycompany/app/JdbcTest.java
+[root@client my-app]# find com/mycompany/app/
+        com/mycompany/app/
+        com/mycompany/app/JdbcTest.java
+        com/mycompany/app/JdbcTest.class
+
+// 运行
+[root@client my-app]# java -cp mysql-connector-java-8.0.16/mysql-connector-java-8.0.16.jar:. com.mycompany.app.JdbcTest
+        Connecting to a selected database...
+        Connected database successfully...
+        Creating statement...
+        character_set_client            utf8mb4
+        character_set_connection                utf8mb4
+        character_set_database          utf8mb4
+        character_set_filesystem                binary
+        character_set_results
+        character_set_server            utf8mb4
+        character_set_system            utf8
+        character_sets_dir              /app/mysql/share/charsets/
+        collation_connection            utf8mb4_unicode_ci
+        collation_database              utf8mb4_unicode_ci
+        collation_server                utf8mb4_unicode_ci
+        Goodbye!
+
+
+
+
+
 
 ---------------------------------------------------------------------------------------------------
 
@@ -207,55 +252,6 @@ MySQL Connector/J 所在的 maven 查找页面:
 
 国内阿里的 maven 镜像仓库:
     https://maven.aliyun.com/mvn/view?spm=a2c4g.11186623.2.13.29dc54e78jCcBo
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
