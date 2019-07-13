@@ -424,6 +424,9 @@ mycat 9066管理端口 常用命令
 
       http://unicode-table.com/
 
+在线工具列表:
+      https://github.com/yangsg/linux_training_notes/tree/master/linux_basic/centos7.4
+
 ---------------------------------------------------------------------------------------------------
 
 
