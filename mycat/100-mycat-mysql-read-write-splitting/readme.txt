@@ -4,6 +4,21 @@
 192.168.175.88/24
 
 
+注: 本示例 假设 后端的 master 和 slave 中 使用的字符编码设置如下:
+
+            [client]  # 注: [client] group 是 所有的 mysql client 工具都会读取的配置文件
+            default-character-set = utf8mb4
+
+            [mysql]
+            default-character-set = utf8mb4
+
+
+            [mysqld]
+            # 设置 mysql 字符集为 utf8
+            character-set-client-handshake = FALSE  # 忽略 client 端的 character set 设置
+            character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
+            collation-server = utf8mb4_unicode_ci
+
 ---------------------------------------------------------------------------------------------------
 该 示例 使用了 master - slave 的 mysql replication 环境, 具体见:
 
@@ -11,8 +26,10 @@
 
 针对本示例 对 数据库 执行的 一些 操作(如下操作都是在 master 上执行, 然后 自动同步 给 slave):
 
-// 创建 示例数据库
-mysql> create database jiaowu default charset utf8;
+
+// 创建 示例数据库 , 语法 参见 https://dev.mysql.com/doc/refman/5.7/en/charset-database.html
+mysql> CREATE DATABASE jiaowu CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 
 // 创建 mycat 访问 后台 mysql servers 的 user 和 对其进行 授权
 mysql> create user 'admin'@'192.168.175.88' identified by 'WWW.1.com';
@@ -120,6 +137,13 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.202-b08, mixed mode)
 
 [root@mycatserver mycat]# cp conf/server.xml  conf/server.xml.bak
 [root@mycatserver mycat]# vim conf/server.xml
+
+        <!-- 找到 <system> 标签, 在其中添加 charset 的设置, 此处使用 utf8mb4 -->
+        <system>
+          <property name="charset">utf8mb4</property>
+        </system>
+
+
         <!-- 删除多余的 <user> 标签, 值保留修改需要的 user 配置 -->
         <user name="mycatuser">
                 <property name="password">1234</property>
@@ -165,82 +189,109 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.202-b08, mixed mode)
 ---------------------------------------------------------------------------------------------------
 测试 test:
 
-// 随便找台 安装了 mysql client 客户端程序 测试:
-[root@dbserver ~]# mysql -h 192.168.175.88 -u mycatuser -p -P 8066  --default-character-set=utf8
-                              Enter password:
-                              Welcome to the MySQL monitor.  Commands end with ; or \g.
-                              Your MySQL connection id is 6
-                              Server version: 5.6.29-mycat-1.6.7.1-release-20190627191042 MyCat Server (OpenCloudDB)
-
-                              Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
-
-                              Oracle is a registered trademark of Oracle Corporation and/or its
-                              affiliates. Other names may be trademarks of their respective
-                              owners.
-
-                              Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
-
-                              mysql> status
-                              --------------
-                              mysql  Ver 14.14 Distrib 5.7.26, for Linux (x86_64) using  EditLine wrapper
-
-                              Connection id:          6
-                              Current database:       jiaowu
-                              Current user:           admin@192.168.175.88
-                              SSL:                    Not in use
-                              Current pager:          stdout
-                              Using outfile:          ''
-                              Using delimiter:        ;
-                              Server version:         5.6.29-mycat-1.6.7.1-release-20190627191042 MyCat Server (OpenCloudDB)
-                              Protocol version:       10
-                              Connection:             192.168.175.88 via TCP/IP
-                              Server characterset:    latin1
-                              Db     characterset:    utf8
-                              Client characterset:    utf8
-                              Conn.  characterset:    utf8
-                              TCP port:               8066
-                              --------------
-
-                              mysql> show databases;
-                              +----------+
-                              | DATABASE |
-                              +----------+
-                              | jiaowu   |
-                              +----------+
-                              1 row in set (0.00 sec)
+// 先查看一下  index_to_charset.properties 中的 index 为 33 和 45 时的对应值
+[root@mycatserver ~]# grep -E '^(33|45)=' /app/mycat/conf/index_to_charset.properties
+      33=utf8
+      45=utf8mb4
 
 
-[root@dbserver ~]# mysql -h 192.168.175.88 -u mycatuser -p -P 9066 --default-character-set=utf8
-        Enter password:
-        Welcome to the MySQL monitor.  Commands end with ; or \g.
-        Your MySQL connection id is 5
-        Server version: 5.6.29-mycat-1.6.7.1-release-20190627191042 MyCat Server (monitor)
+// 随便找台 安装了 mysql client 客户端程序 测试( 只要有权限访问即可 ):
+[root@dbserver ~]# mysql -h 192.168.175.88 -u mycatuser -p -P 8066  --default-character-set=utf8mb4
 
-        Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+                      Enter password:    # <------ 键入 mycatuser 的密码
+                      Welcome to the MySQL monitor.  Commands end with ; or \g.
+                      Your MySQL connection id is 3
+                      Server version: 5.6.29-mycat-1.6.7.1-release-20190627191042 MyCat Server (OpenCloudDB)
 
-        Oracle is a registered trademark of Oracle Corporation and/or its
-        affiliates. Other names may be trademarks of their respective
-        owners.
+                      Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
 
-        Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+                      Oracle is a registered trademark of Oracle Corporation and/or its
+                      affiliates. Other names may be trademarks of their respective
+                      owners.
 
-        mysql> show @@backend;
-        +------------+------+---------+-----------------+------+--------+--------+---------+------+--------+----------+------------+--------+----------+---------+------------+
-        | processor  | id   | mysqlId | host            | port | l_port | net_in | net_out | life | closed | borrowed | SEND_QUEUE | schema | charset  | txlevel | autocommit |
-        +------------+------+---------+-----------------+------+--------+--------+---------+------+--------+----------+------------+--------+----------+---------+------------+
-        | Processor0 |    1 |     123 | 192.168.175.100 | 3306 |  50846 |   2333 |     574 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
-        | Processor0 |    2 |     127 | 192.168.175.100 | 3306 |  50854 |   2413 |     592 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
-        | Processor0 |    3 |     129 | 192.168.175.100 | 3306 |  50858 |   2333 |     574 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
-        | Processor0 |    4 |     132 | 192.168.175.100 | 3306 |  50864 |   2333 |     574 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
-        | Processor0 |    5 |     124 | 192.168.175.100 | 3306 |  50848 |   2333 |     574 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
-        | Processor0 |    6 |     125 | 192.168.175.100 | 3306 |  50850 |   2333 |     574 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
-        | Processor0 |    7 |     128 | 192.168.175.100 | 3306 |  50856 |   2333 |     574 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
-        | Processor0 |    8 |     131 | 192.168.175.100 | 3306 |  50862 |   2333 |     574 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
-        | Processor0 |    9 |     126 | 192.168.175.100 | 3306 |  50852 |   2333 |     574 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
-        | Processor0 |   10 |     130 | 192.168.175.100 | 3306 |  50860 |   2333 |     574 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
-        | Processor0 |   11 |      16 | 192.168.175.101 | 3306 |  51604 |  22573 |    5128 | 2800 | false  | false    |          0 | jiaowu | latin1:5 | 3       | true       |
-        +------------+------+---------+-----------------+------+--------+--------+---------+------+--------+----------+------------+--------+----------+---------+------------+
-        11 rows in set (0.03 sec)
+                      Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+                      mysql> status;    # <------------- 查看状态
+                      --------------
+                      mysql  Ver 14.14 Distrib 5.7.26, for Linux (x86_64) using  EditLine wrapper
+
+                      Connection id:          3
+                      Current database:       jiaowu
+                      Current user:           admin@192.168.175.88
+                      SSL:                    Not in use
+                      Current pager:          stdout
+                      Using outfile:          ''
+                      Using delimiter:        ;
+                      Server version:         5.6.29-mycat-1.6.7.1-release-20190627191042 MyCat Server (OpenCloudDB)
+                      Protocol version:       10
+                      Connection:             192.168.175.88 via TCP/IP
+                      Server characterset:    utf8mb4
+                      Db     characterset:    utf8mb4
+                      Client characterset:    utf8mb4
+                      Conn.  characterset:    utf8mb4
+                      TCP port:               8066
+                      --------------
+
+                      mysql> show databases;  # <----------- 查看 database
+                      +----------+
+                      | DATABASE |
+                      +----------+
+                      | jiaowu   |
+                      +----------+
+                      1 row in set (0.00 sec)
+
+
+
+[root@dbserver ~]# mysql -h 192.168.175.88 -u mycatuser -p -P 9066 --default-character-set=utf8mb4
+    Enter password:
+    Welcome to the MySQL monitor.  Commands end with ; or \g.
+    Your MySQL connection id is 8
+    Server version: 5.6.29-mycat-1.6.7.1-release-20190627191042 MyCat Server (monitor)
+
+    Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+
+    Oracle is a registered trademark of Oracle Corporation and/or its
+    affiliates. Other names may be trademarks of their respective
+    owners.
+
+    Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+    mysql> show @@backend;
+    +------------+------+---------+-----------------+------+--------+--------+---------+------+--------+----------+------------+--------+---------+---------+------------+
+    | processor  | id   | mysqlId | host            | port | l_port | net_in | net_out | life | closed | borrowed | SEND_QUEUE | schema | charset | txlevel | autocommit |
+    +------------+------+---------+-----------------+------+--------+--------+---------+------+--------+----------+------------+--------+---------+---------+------------+
+    | Processor0 |    1 |       7 | 192.168.175.100 | 3306 |  52460 |    653 |     196 |  669 | false  | false    |          0 | jiaowu | utf8:45 | 3       | true       |
+    | Processor0 |    2 |       5 | 192.168.175.100 | 3306 |  52446 |    653 |     196 |  669 | false  | false    |          0 | jiaowu | utf8:45 | 3       | true       |
+    | Processor0 |    3 |       9 | 192.168.175.100 | 3306 |  52452 |    573 |     178 |  669 | false  | false    |          0 | jiaowu | utf8:45 | 3       | true       |
+    | Processor0 |    4 |       8 | 192.168.175.100 | 3306 |  52450 |    653 |     196 |  669 | false  | false    |          0 | jiaowu | utf8:45 | 3       | true       |
+    | Processor0 |    5 |       6 | 192.168.175.100 | 3306 |  52458 |    653 |     196 |  669 | false  | false    |          0 | jiaowu | utf8:45 | 3       | true       |
+    | Processor0 |    6 |      12 | 192.168.175.100 | 3306 |  52448 |    573 |     178 |  669 | false  | false    |          0 | jiaowu | utf8:45 | 3       | true       |
+    | Processor0 |    7 |      10 | 192.168.175.100 | 3306 |  52454 |    653 |     196 |  669 | false  | false    |          0 | jiaowu | utf8:45 | 3       | true       |
+    | Processor0 |    8 |       4 | 192.168.175.100 | 3306 |  52444 |    653 |     196 |  669 | false  | false    |          0 | jiaowu | utf8:45 | 3       | true       |
+    | Processor0 |    9 |      11 | 192.168.175.100 | 3306 |  52456 |    653 |     196 |  669 | false  | false    |          0 | jiaowu | utf8:45 | 3       | true       |
+    | Processor0 |   10 |      13 | 192.168.175.100 | 3306 |  52462 |    573 |     178 |  669 | false  | false    |          0 | jiaowu | utf8:45 | 3       | true       |
+    | Processor0 |   11 |       4 | 192.168.175.101 | 3306 |  35600 |   5833 |    1434 |  666 | false  | false    |          0 | jiaowu | utf8:45 | 3       | true       |
+    +------------+------+---------+-----------------+------+--------+--------+---------+------+--------+----------+------------+--------+---------+---------+------------+
+    11 rows in set (0.00 sec)
+
+    mysql> show @@connection;
+    +------------+------+----------------+------+------------+-----------+--------+---------+--------+---------+---------------+-------------+------------+---------+------------+
+    | PROCESSOR  | ID   | HOST           | PORT | LOCAL_PORT | USER      | SCHEMA | CHARSET | NET_IN | NET_OUT | ALIVE_TIME(S) | RECV_BUFFER | SEND_QUEUE | txlevel | autocommit |
+    +------------+------+----------------+------+------------+-----------+--------+---------+--------+---------+---------------+-------------+------------+---------+------------+
+    | Processor0 |    8 | 192.168.175.40 | 9066 |      58646 | mycatuser | NULL   | utf8:45 |    167 |    1803 |            18 |        4096 |          0 |         |            |
+    +------------+------+----------------+------+------------+-----------+--------+---------+--------+---------+---------------+-------------+------------+---------+------------+
+    1 row in set (0.00 sec)
+
+    mysql> show @@heartbeat;
+    +--------+-------+-----------------+------+---------+-------+--------+---------+--------------+---------------------+-------+
+    | NAME   | TYPE  | HOST            | PORT | RS_CODE | RETRY | STATUS | TIMEOUT | EXECUTE_TIME | LAST_ACTIVE_TIME    | STOP  |
+    +--------+-------+-----------------+------+---------+-------+--------+---------+--------------+---------------------+-------+
+    | hostM1 | mysql | 192.168.175.100 | 3306 |       1 |     0 | idle   |   30000 | 1,1,1        | 2019-07-13 08:52:33 | false |
+    | hostS1 | mysql | 192.168.175.101 | 3306 |       1 |     0 | idle   |   30000 | 1,1,2        | 2019-07-13 08:52:33 | false |
+    +--------+-------+-----------------+------+---------+-------+--------+---------+--------------+---------------------+-------+
+    2 rows in set (0.00 sec)
+
+
 
 
 
@@ -314,7 +365,7 @@ mycat           0:off   1:off   2:on    3:on    4:on    5:on    6:off
           /etc/rc.d/rc6.d/K80mycat
 
 ---------
-方式3:
+方式03:
 
 [root@mycatserver ~]# touch /etc/systemd/system/mycat.service
 [root@mycatserver ~]# chmod 664 /etc/systemd/system/mycat.service
