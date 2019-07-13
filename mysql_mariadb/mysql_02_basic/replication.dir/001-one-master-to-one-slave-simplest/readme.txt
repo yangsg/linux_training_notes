@@ -4,6 +4,21 @@ ip信息：
     slave:  192.168.175.101/24
 
 ---------------------------------------------------------------------------------------------------
+注: 本例中仅演示 replication 的 最基本设置, 没有 考虑 character set 的问题, 如果要 采用 utf8mb4 编码,
+    可以分别在 master server 和 slave server 的 /etc/my.cnf 中 针对 utf8mb4 做 如下设置:
+
+            [client]  # 注: [client] group 是 所有的 mysql client 工具都会读取的配置文件
+            default-character-set = utf8mb4
+
+            [mysql]
+            default-character-set = utf8mb4
+
+            # 设置 mysql 字符集为 utf8mb4
+            character-set-client-handshake = FALSE  # 忽略 client 端的 character set 设置
+            character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
+            collation-server = utf8mb4_unicode_ci
+
+---------------------------------------------------------------------------------------------------
 master server 端:
 
 // 前期准备：设置时区 和 同步时间,  参考  https://github.com/yangsg/linux_training_notes/tree/master/ntp_chrony_basic
