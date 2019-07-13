@@ -21,6 +21,13 @@ http://calc.50x.eu/
 http://www.youkud.com/tool/jinzhi.php
 
 
+关于 unicode 或 utf8:
+http://unicode-table.com/
+https://www.fileformat.info/info/unicode/utf8.htm
+https://www.fileformat.info/info/unicode/utf8test.htm
+https://en.wiktionary.org/wiki/Appendix:Unicode
+
+
 
 The TCP/IP Guide
 http://www.redbooks.ibm.com/redbooks/pdfs/gg243376.pdf
