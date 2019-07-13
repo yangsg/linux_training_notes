@@ -422,6 +422,8 @@ mycat 9066管理端口 常用命令
       https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-usagenotes-troubleshooting.html
 
 
+      http://unicode-table.com/
+
 ---------------------------------------------------------------------------------------------------
 
 
