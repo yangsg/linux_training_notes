@@ -1,0 +1,530 @@
+
+
+---------------------------------------------------------------------------------------------------
+16.1.1 Binary Log File Position Based Replication Configuration Overview
+      https://dev.mysql.com/doc/refman/5.7/en/binlog-replication-configuration-overview.html
+
+  Each slave receives a copy of the entire contents of the binary log. It is the responsibility
+  of the slave to decidewhich statements in the binary log should be executed. Unless you specify
+  otherwise, all events in the master binary log are executed on the slave. If required,
+  you can configure the slave to process only events that apply to particular databases or tables.
+
+
+The details are stored within the slave's master info repository,
+which can be either a file or a table (see Section 16.2.4, “Replication Relay and Status Logs”).
+
+            https://dev.mysql.com/doc/refman/5.7/en/slave-logs.html
+
+  https://dev.mysql.com/doc/refman/5.7/en/replication-options.html
+      In MySQL 5.7, the --server-id option must be specified if binary logging is enabled, otherwise the server is not allowed to start.
+
+---------------------------------------------------------------------------------------------------
+16.1.3 Replication with Global Transaction Identifiers
+
+      https://dev.mysql.com/doc/refman/5.7/en/replication-gtids.html
+
+GTIDs, 即 global transaction identifiers, 被 用于 基于事务(transaction-based) 的 复制(replication).
+
+ Because GTID-based replication is completely transaction-based, it is simple to determine whether masters
+and slaves are consistent; as long as all transactions committed on a master are also committed on a slave,
+consistency between the two is guaranteed. You can use either statement-based or row-based replication
+with GTIDs (see Section 16.2.1, “Replication Formats”); however,
+for best results, we recommend that you use the row-based format.
+
+      推荐使用 row-based format
+
+    GTIDs 在 master 和 slave 上 总是会被 保留. 这意味着 你 总是 可以 通过 examining 其 binary log 确定
+    被应用(applied) 在 any slave 上的 any transaction 的 the source. 另外, 一旦 a given GTID 的 a transaction
+    在 给定的 server 上 被提交(committed), 任何 后续的 拥有 相同的 GTID 的 transaction 将被 该 server 忽略(ignored).
+    因此, a transaction committed on the master can be applied no more than once on the slave,
+    which helps to guarantee consistency.
+
+
+---------------------------------------------------------------------------------------------------
+16.1.3.1 GTID Format and Storage
+
+    https://dev.mysql.com/doc/refman/5.7/en/replication-gtids-concepts.html
+
+A global transaction identifier (GTID) is a unique identifier created and associated
+with each transaction committed on the server of origin (the master).
+This identifier is unique not only to the server on which it originated,
+but is unique across all servers in a given replication topology.
+
+Replicated transactions retain the same GTID that was assigned to the transaction on the server of origin.
+The GTID is present before the replicated transaction begins to execute, and is persisted even if
+the replicated transaction is not written to the binary log on the slave, or is filtered out on the slave.
+The MySQL system table mysql.gtid_executed is used to preserve the assigned GTIDs of all the transactions
+applied on a MySQL server, except those that are stored in a currently active binary log file.
+
+mysql 的 系统表 mysql.gtid_executed 被用于 保存 被 用来 保存 分配给 应用于 a MySQL server 的 所有 transactions
+的 GTIDs, 除了 那些 被 保存(stored) 在 a currently active binary log file 里的 GTIDs.
+
+The auto-skip function for GTIDs means that a transaction committed on the master can be applied no
+more than once on the slave, which helps to guarantee consistency.
+
+A GTID is represented as a pair of coordinates, separated by a colon character (:), as shown here:
+
+    GTID = source_id:transaction_id
+
+其中 source_id 标志 了 原始 server, 通常 master 的 server_uuid 就用于此目的.
+transaction_id 是 由 该 transaction 在 master 上所 提交的 order 确定的 a sequence number.
+如  第一个 被提交的 transaction 使用 1 作为 其 transaction_id, 而 在相同的 原始服务器上
+的 第 10 个 被提交的 transaction 的 transaction_id 为 10. 对应一个 transaction 而言,
+其 GTID 中的 sequence number 部分 不可能是 0.
+
+一个 gtid 的具体实例:
+      3E11FA47-71CA-11E1-9E33-C80AA9429562:23
+  此处:
+      server_uuid 作为 source_id: 3E11FA47-71CA-11E1-9E33-C80AA9429562
+      sequence number 作为 transaction_id: 23
+
+          25.12.11.6 The replication_applier_status_by_worker Table
+          https://dev.mysql.com/doc/refman/5.7/en/replication-applier-status-by-worker-table.html
+
+存储在 系统变量 gtid_next (@@GLOBAL.gtid_next) 中的 value 是 一个 single GTID.
+
+GTID Sets:
+      存储在系统变量 gtid_executed 和 gtid_purged 的 value 是 GTID sets.
+
+
+The START SLAVE clauses UNTIL SQL_BEFORE_GTIDS and UNTIL SQL_AFTER_GTIDS can be used to make a slave
+process transactions only up to the first GTID in a GTID set, or stop after the last GTID in a GTID set.
+The built-in functions GTID_SUBSET() and GTID_SUBTRACT() require GTID sets as input.
+
+一些 GTID Sets 的示例:
+
+          3E11FA47-71CA-11E1-9E33-C80AA9429562:1-5
+          3E11FA47-71CA-11E1-9E33-C80AA9429562:1-3:11:47-49
+
+          2174B383-5441-11E8-B90A-C80AA9429562:1-3, 24DA167-0C0C-11E8-8442-00059A3C7B00:1-19
+
+注: When GTID sets are returned from server variables, UUIDs are in alphabetical order, and numeric intervals are merged and in ascending order.
+
+        查看 gtid set 语法格式的命令:
+              mysql> pager less -Fi
+              mysql> help start slave;
+
+                ---------
+                gtid_set:
+                    uuid_set [, uuid_set] ...
+                    | ''
+
+                uuid_set:
+                    uuid:interval[:interval]...
+
+                uuid:
+                    hhhhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhhhh
+
+                h:
+                    [0-9,A-F]
+
+                interval:
+                    n[-n]
+
+                    (n >= 1)
+                ---------
+
+
+mysql.gtid_executed 表:
+
+    CREATE TABLE gtid_executed (
+        source_uuid CHAR(36) NOT NULL,
+        interval_start BIGINT(20) NOT NULL,
+        interval_end BIGINT(20) NOT NULL,
+        PRIMARY KEY (source_uuid, interval_start)
+    )
+
+和 其他 MySQL 系统表一样, 永远不要试图 创建 或 修改该表
+
+The mysql.gtid_executed table is provided for internal use by the MySQL server. It enables a slave to
+use GTIDs when binary logging is disabled on the slave, and it enables retention of the GTID state
+when the binary logs have been lost. The mysql.gtid_executed table is reset by RESET MASTER.
+
+
+GTIDs 仅当 gtid_mode 为 ON 或 ON_PERMISSIVE 是 才会被 存储到 mysql.gtid_executed 表中.
+The point at which GTIDs are stored depends on whether binary logging is enabled or disabled:
+
+  关于 mysql.gtid_executed 的 更多 细节 见 https://dev.mysql.com/doc/refman/5.7/en/replication-gtids-concepts.html
+
+    如果 binary logging 被 disabled (log_bin is OFF), 或 如果 log_slave_updates 被 disabled.
+    the server stores the GTID belonging to each transaction together with the transaction in the table.
+    另外, the table 会 根据 a user-configurable rate 定期压缩(compressed periodically); 参见 mysql.gtid_executed Table Compression
+    获取更多信息. 这种情况 仅 会 在 那些 binary logging or slave update logging 被 disabled 的
+    a replication slave 上. 其 不会 应用 在 a replication master 上, 因为 在 a master 上, binary logging 必须被
+    enabled 以 实现 replication.
+
+    如果 binary logging 被 enabled (log_bin is ON), 每逢  binary log is rotated 或  the server is shut down,
+    the server writes GTIDs for all transactions that were written into the previous binary log into the mysql.gtid_executed table.
+    这种情况 会 发生在 binary logging 被 enabled 的 a replication master 或 a replication slave 上.
+
+    在 发生 the server stopping unexpectedly 事件时,
+    the set of GTIDs from the current binary log file is not saved in the mysql.gtid_executed table.
+    These GTIDs are added to the table from the binary log file during recovery.
+    The exception to this is if binary logging is not enabled when the server is restarted.
+    In this situation, the server cannot access the binary log file to recover the GTIDs, so replication cannot be started.
+
+
+    mysql.gtid_executed 表 在 启用了 bin log 时, 其 并没有 hold 所有的 被执行了的
+    transactions 的 完成的 GTIDs 记录(record).
+    要想 获取 这种 完整的 记录 信息, 应使用 gtid_executed 系统变量, 因为 系统变量 @@GLOBAL.gtid_executed
+    在 every commit 之后 都会被 updated, 以 表示  MySQL server 的 the GTID state.
+
+
+mysql.gtid_executed Table Compression
+
+为了 节省 空间, MySQL server 会 定期的 压缩 mysql.gtid_executed 表(其实就是换一种等价的更简洁的表示方式),
+如：
+        +--------------------------------------+----------------+--------------+
+        | source_uuid                          | interval_start | interval_end |
+        |--------------------------------------+----------------+--------------|
+        | 3E11FA47-71CA-11E1-9E33-C80AA9429562 | 37             | 37           |
+        | 3E11FA47-71CA-11E1-9E33-C80AA9429562 | 38             | 38           |
+        | 3E11FA47-71CA-11E1-9E33-C80AA9429562 | 39             | 39           |
+        | 3E11FA47-71CA-11E1-9E33-C80AA9429562 | 40             | 40           |
+        | 3E11FA47-71CA-11E1-9E33-C80AA9429562 | 41             | 41           |
+        | 3E11FA47-71CA-11E1-9E33-C80AA9429562 | 42             | 42           |
+        | 3E11FA47-71CA-11E1-9E33-C80AA9429562 | 43             | 43           |
+        ...
+可以表示为:
+        +--------------------------------------+----------------+--------------+
+        | source_uuid                          | interval_start | interval_end |
+        |--------------------------------------+----------------+--------------|
+        | 3E11FA47-71CA-11E1-9E33-C80AA9429562 | 37             | 43           |
+        ...
+
+
+系统变量 gtid_executed_compression_period 可用于 控制 mysql.gtid_executed 表被 压缩前
+所 允许 经过 的 transactions 数。其 default value 为 1000. 意味着 每 1000 transactions
+之后 执行一次 compression. 当  gtid_executed_compression_period 被设置 为 0 是
+compression 将 彻底 被 禁止 执行.
+
+注:
+    当 binary logging 被启用 时, gtid_executed_compression_period 的 value 不会被使用 且 mysql.gtid_executed 在
+    每次 binary log 滚动是 被 compressed.
+
+
+mysql.gtid_executed 的 Compression 由 专用的 名为 thread/sql/compress_gtid_table 的前台 线程 所执行.
+该 thread 不会再 SHOW PROCESSLIST 的 输出中 被列出, 但 其 可以在 the threads table 的 某行被 观察到, 如下:
+
+      mysql> SELECT * FROM performance_schema.threads WHERE NAME LIKE '%gtid%'\G
+      *************************** 1. row ***************************
+                THREAD_ID: 26
+                     NAME: thread/sql/compress_gtid_table
+                     TYPE: FOREGROUND
+           PROCESSLIST_ID: 1
+         PROCESSLIST_USER: NULL
+         PROCESSLIST_HOST: NULL
+           PROCESSLIST_DB: NULL
+      PROCESSLIST_COMMAND: Daemon
+         PROCESSLIST_TIME: 1509
+        PROCESSLIST_STATE: Suspending
+         PROCESSLIST_INFO: NULL
+         PARENT_THREAD_ID: 1
+                     ROLE: NULL
+             INSTRUMENTED: YES
+                  HISTORY: YES
+          CONNECTION_TYPE: NULL
+             THREAD_OS_ID: 18677
+
+线程 thread/sql/compress_gtid_table 通常 处于 睡眠 直到 gtid_executed_compression_period 个 transactions 被执行,
+然后 醒来 执行 前面 所描述的 mysql.gtid_executed 表的 compression. 然后 它 有 睡眠 直到 另一个
+gtid_executed_compression_period 个 transactions 被 执行. 然后 醒来 再一次执行 compression, 无限的重复该 循环.
+Setting this value to 0 when binary logging is disabled means that the thread always sleeps and never wakes up.
+
+---------------------------------------------------------------------------------------------------
+16.1.3.2 GTID Life Cycle ( GTID 生命周期 )
+
+更多信息，更多细节见官网:
+https://dev.mysql.com/doc/refman/5.7/en/replication-gtids-lifecycle.html
+
+The life cycle of a GTID 的 组成 步骤 如下:
+
+----------------------
+中文注释:
+1.  A transaction 在 master 上被 executed and committed, 该 client transaction 被 赋予(assigned)
+    a GTID( 该 GTID 由 master 的 UUID 和 最小的 尚未被使用的 nonzero transaction sequence number 组成),
+    该 GTID 被 写入 the master's binary log(immediately preceding the transaction itself in the log).
+    如果 a client transaction 没有被 written 到 the binary log(如: 因为 the transaction 被  filtered out
+    或 the transaction was read-only), 其 不会 被 赋予(assigned) a GTID.
+
+原文:
+1.  A transaction is executed and committed on the master. This client transaction is assigned a GTID composed
+    of the master's UUID and the smallest nonzero transaction sequence number not yet used on this server.
+    The GTID is written to the master's binary log (immediately preceding the transaction itself in the log).
+    If a client transaction is not written to the binary log (for example, because the transaction
+    was filtered out, or the transaction was read-only), it is not assigned a GTID.
+
+----------------------
+中文注释:
+2.  如果 a GTID 被 assigned 给 the transaction, the GTID 通过
+    writing it to the binary log at the beginning of the transaction (as a Gtid_log_event)
+    而被 自动 持久化(persisted). 每逢 the binary log is rotated 或 the server is shut down,
+    the server 会将 被 written 到 the previous binary log file 的 all transactions 的 GTIDs
+    写入 进 系统表 mysql.gtid_executed 中.
+
+
+2.  If a GTID was assigned for the transaction, the GTID is persisted atomically at commit time
+    by writing it to the binary log at the beginning of the transaction (as a Gtid_log_event).
+    Whenever the binary log is rotated or the server is shut down, the server writes GTIDs for
+    all transactions that were written into the previous binary log file into the mysql.gtid_executed table.
+
+----------------------
+中文注释:
+3.  如果 a GTID 被 赋给 the transaction,  the GTID 被 在 the transaction 被 committed 之后 很短的
+    时间内 通过 add 该 GTID 到 系统变量 gtid_executed (@@GLOBAL.gtid_executed) 中的 GTIDs 集合(set)
+    而被 非原子的 表示(is externalized non-atomically). 该 GTID set 包含 了 all committed GTID transactions
+    的 the set 的 表示(representation), 且 其 被用作 在 replication 中的 表示 the server state 的 a token.
+    With binary logging enabled (as required for the master), 系统变量 gtid_executed 中的 GTIDs 的 the set 是
+    a complete record of the transactions applied, 但是 系统表 mysql.gtid_executed 不是,
+    因为 the most recent history is still in the current binary log file.
+
+3.  If a GTID was assigned for the transaction, the GTID is externalized non-atomically
+    (very shortly after the transaction is committed) by adding it to the set of GTIDs in
+    the gtid_executed system variable (@@GLOBAL.gtid_executed). This GTID set contains
+    a representation of the set of all committed GTID transactions, and it is used in replication
+    as a token that represents the server state. With binary logging enabled (as required for the master),
+    the set of GTIDs in the gtid_executed system variable is a complete record of the transactions applied,
+    but the mysql.gtid_executed table is not, because the most recent history is still in the current binary log file.
+
+
+----------------------
+中文注释:
+4.  在 the binary log data 被 transmitted 到 the slave 且 被 stored 进 the slave's relay log 之后,
+    the slave 读取(reads) 该 GTID 且 将 系统变量 gtid_next 的值 设置为 该 GTID. 这告诉
+    the slave that the next transaction must be logged using this GTID.
+    It is important to note that the slave sets gtid_next in a session context.
+
+4.  After the binary log data is transmitted to the slave and stored in the slave's relay log
+    (using established mechanisms for this process, see Section 16.2, “Replication Implementation”, for details),
+    the slave reads the GTID and sets the value of its gtid_next system variable as this GTID. This tells
+    the slave that the next transaction must be logged using this GTID.
+    It is important to note that the slave sets gtid_next in a session context.
+
+----------------------
+中文注释:
+5.  The slave 验证 没有 thread 已经 获得 系统变量 gtid_next 中 GTID 的 所有权 以 process the transaction.
+    通过 首先 读取 和 检查(check) the replicated transaction's GTID, 在处理 the transaction 本身 之前,
+    the slave 不仅 保证 没有 具有该 GTID 的 previous transaction 在 the slave 上 被 应用, 还 保证
+    没有 其他 session 已经读取 该 GTID 但 还 尚未 committed 关联的 transaction.
+    因此如果 multiple clients 并发尝试 应用 the same transaction,
+    the server 通过 仅让 其中一个 执行 来解决该问题.
+    the slave 的 系统变量 gtid_owned (@@GLOBAL.gtid_owned) 显示 当前正被使用的  each GTID 和 拥有该 GTID
+    的 thread 的 ID. 如果 the GTID 已经被 使用过, 则不会 抛出 error, 且
+    auto-skip function 被 用于 ignore the transaction.
+
+
+5.  The slave verifies that no thread has yet taken ownership of the GTID in gtid_next
+    in order to process the transaction. By reading and checking the replicated transaction's GTID first,
+    before processing the transaction itself, the slave guarantees not only that no previous
+    transaction having this GTID has been applied on the slave, but also that no other session
+    has already read this GTID but has not yet committed the associated transaction.
+    So if multiple clients attempt to apply the same transaction concurrently,
+    the server resolves this by letting only one of them execute.
+    The gtid_owned system variable (@@GLOBAL.gtid_owned) for the slave shows
+    each GTID that is currently in use and the ID of the thread that owns it.
+    If the GTID has already been used, no error is raised,
+    and the auto-skip function is used to ignore the transaction.
+
+----------------------
+中文注释:
+6.  如果 the GTID 尚未被 使用,the slave applies the replicated transaction.
+    因为 gtid_next 已经被 设置为了 被 master 赋予的 GTID. the slave 不会 试图
+    为 该 transaction 生成 a new GTID, 取而代之的是 使用 存储在 gtid_next 中的 这个 GTID.
+
+6.  If the GTID has not been used, the slave applies the replicated transaction.
+    Because gtid_next is set to the GTID already assigned by the master,
+    the slave does not attempt to generate a new GTID for this transaction, but instead uses the GTID stored in gtid_next.
+
+----------------------
+中文注释:
+7.  如果 binary logging 在 the slave 上 被 enabled, the GTID 会 在 commit 时 被 写到(as a Gtid_log_event)
+    the binary log 中 the transaction 的 起始处 从而被 自动持久化.
+    每逢 the binary log is rotated 或 the server is shut down,
+    the server writes GTIDs for all transactions that were written
+    into the previous binary log file into the mysql.gtid_executed table.
+
+
+7.  If binary logging is enabled on the slave, the GTID is persisted atomically at commit time
+    by writing it to the binary log at the beginning of the transaction (as a Gtid_log_event).
+    Whenever the binary log is rotated or the server is shut down, the server writes GTIDs for all
+    transactions that were written into the previous binary log file into the mysql.gtid_executed table.
+
+----------------------
+中文注释:
+8.  如果 binary logging 在 the slave 上被 disabled, the GTID 通过 其被 直接 写入 到系统表 mysql.gtid_executed
+    中 而被 自动持久化. MySQL 追加(appends) a statement 到 the transaction 以 插入 the GTID 到 the table.
+    这种 情况下, 系统表 mysql.gtid_executed 就是 被 应用到 the slave 上的 the transactions 的 完成记录(a complete record).
+    注意 在 MySQL 5.7 中, the operation to insert the GTID into the table 对于 DML statements 是 原子的,
+    但是 对 DDL statements 则 不是原子的, 因此 如果 the server 在 a transaction involving DDL statements 之后 异常退出(exits unexpectedly),
+    the GTID state 可能 变得 不一致(inconsistent). 从 MySQL 8.0 起, the operation 对于  DDL statements 和 DML statements.
+    则都是 原子的了.
+
+8.  If binary logging is disabled on the slave, the GTID is persisted atomically by writing it directly into the mysql.
+    gtid_executed table. MySQL appends a statement to the transaction to insert the GTID into the table.
+    In this situation, the mysql.gtid_executed table is a complete record of the transactions applied on the slave.
+    Note that in MySQL 5.7, the operation to insert the GTID into the table is atomic for DML statements,
+    but not for DDL statements, so if the server exits unexpectedly after a transaction involving DDL statements,
+    the GTID state might become inconsistent. From MySQL 8.0, the operation is atomic for DDL statements as well as for DML statements.
+
+----------------------
+
+9.  Very shortly after the replicated transaction is committed on the slave,
+    the GTID is externalized non-atomically by adding it to the set of GTIDs in the
+    gtid_executed system variable (@@GLOBAL.gtid_executed) for the slave. As for the master,
+    this GTID set contains a representation of the set of all committed GTID transactions.
+    If binary logging is disabled on the slave, the mysql.gtid_executed table is also
+    a complete record of the transactions applied on the slave. If binary logging is enabled on the slave,
+    meaning that some GTIDs are only recorded in the binary log,
+    the set of GTIDs in the gtid_executed system variable is the only complete record.
+
+--------------------------------------------
+
+在 slave 上 保存 filtered-out transactions 的 GTIDs 确保了 系统表 mysql.gtid_executed 和
+系统变量 gtid_executed 中的 GTIDs 集 能够被 compressed. 其 还 确保了 the filtered-out transactions
+在 slave 重新 连接 到 master 时 不会被 再次重复 获取.
+
+Client transactions that are completely filtered out on the master are not assigned a GTID,
+therefore they are not added to the set of transactions in the gtid_executed system variable,
+or added to the mysql.gtid_executed table. However, the GTIDs of replicated transactions that
+are completely filtered out on the slave are persisted. If binary logging is enabled on the slave,
+the filtered-out transaction is written to the binary log as a Gtid_log_event followed
+by an empty transaction containing only BEGIN and COMMIT statements. If binary logging is disabled,
+the GTID of the filtered-out transaction is written to the mysql.gtid_executed table.
+Preserving the GTIDs for filtered-out transactions ensures that the mysql.gtid_executed table and
+the set of GTIDs in the gtid_executed system variable can be compressed. It also ensures
+that the filtered-out transactions are not retrieved again if the slave reconnects to the master,
+as explained in Section 16.1.3.3, “GTID Auto-Positioning”.
+              https://dev.mysql.com/doc/refman/5.7/en/replication-gtids-auto-positioning.html
+
+--------------------------------------------
+What changes are assigned a GTID?
+   https://dev.mysql.com/doc/refman/5.7/en/replication-gtids-lifecycle.html
+
+The gtid_next System Variable
+   https://dev.mysql.com/doc/refman/5.7/en/replication-gtids-lifecycle.html
+
+The gtid_purged System Variable
+  https://dev.mysql.com/doc/refman/5.7/en/replication-gtids-lifecycle.html
+
+系统变量 gtid_purged(@@GLOBAL.gtid_purged) 中的 GTIDs 集 包含了 在 server 上 commited,
+但不 存在于 server 上 任何 binary log file 中的 所有的 transactions 的 GTIDs .
+gtid_purged 是 gtid_executed 的 子集(subset).
+如下类别的  GTIDs 会放在 gtid_purged 中:
+
+    - GTIDs of replicated transactions that were committed with binary logging disabled on the slave.
+    - GTIDs of transactions that were written to a binary log file that has now been purged.
+    - GTIDs that were added explicitly to the set by the statement SET @@GLOBAL.gtid_purged.
+
+You can change the value of gtid_purged in order to record on the server that the transactions
+in a certain GTID set have been applied, although they do not exist in any binary log on the server.
+When you add GTIDs to gtid_purged, they are also added to gtid_executed. An example use case for
+this action is when you are restoring a backup of one or more databases on a server,
+but you do not have the relevant binary logs containing the transactions on the server.
+In MySQL 5.7, you can only change the value of gtid_purged when gtid_executed
+(and therefore gtid_purged) is empty. For details of how to do this, see the description for gtid_purged.
+
+
+系统变量 gtid_executed 和 gtid_purged 中的 GTIDs 的 sets 在 server starts 时 被 初始化(initialized),
+Every binary log file 以 事件 Previous_gtids_log_event 开始, 该事件 包含了
+所有 previous binary log files(composed from the GTIDs in the preceding file's Previous_gtids_log_event,
+and the GTIDs of every Gtid_log_event in the preceding file itself) 的 GTIDs 的 set.
+最旧的 和 最新的 binary log files 的 Previous_gtids_log_event 的 contents 在 server startup时 被用于 计算
+gtid_executed 和 gtid_purged 的 sets.
+
+
+系统变量 gtid_executed 为计算为
+    最近的 binary log file 的 Previous_gtids_log_event 中的 GTIDs, 和
+    该 binary log file 中的 transactions 的 GTIDs, 和
+    存储在系统表 mysql.gtid_executed 中 的 GTIDs   的 并集(union).
+    GTID set 包含了 server 上 已被 使用(or added explicitly to gtid_purged)了的 所有 GTIDs,
+    不论 它们 当前 是否 在 binary log file 中.
+    系统变量 gtid_executed 中 不包含 server 上 当前 正在被 处理 的 transactions 的 GTIDs.
+
+gtid_purged 的计算规则:
+    首先 add 最近 的 binary log file 中 Previous_gtids_log_event 中的 binary log file 和 该 binary log file
+    中 transactions 的 GTIDs, 这一步 给出了 当前 或 曾经 被 记录 进 该 server 上的 GTIDs 的 set (gtids_in_binlog).
+    下一步, 最旧的 binary log file 中的 Previous_gtids_log_event 中的 GTIDs 从 gtids_in_binlog 中 被 减去.
+    这一步 给出了 当前 server 上 当前 被 记录在 a binary log 的 GTIDs 的 set (gtids_in_binlog_not_purged)
+    最后, gtids_in_binlog_not_purged 被 从 gtid_executed 中 减去. 结果就是 server 上 已经被 使用了的, 但当前
+    没有被 记录(recorded) 进 a binary log 的 GTIDs 的 set, 且 该结果 并用于初始化 系统变量 gtid_purged.
+
+https://dev.mysql.com/doc/refman/5.7/en/replication-gtids-lifecycle.html
+
+一个与版本有关的问题:
+
+如果 则 这些计算中涉及到  MySQL 5.7.7 或 更旧(older)版本 的 binary logs. 则 可能 为系统变量 gtid_executed 和 gtid_purged
+计算出 不正确的 GTID sets, 且 即使 server 稍后 restarted 该 错误 仍然存在.
+   具体信息见 系统变量 binlog_gtid_simple_recovery 的描述: https://dev.mysql.com/doc/refman/5.7/en/replication-options-gtids.html#sysvar_binlog_gtid_simple_recovery
+系统变量 binlog_gtid_simple_recovery 控制着 binary logs 被 如何 迭代(iterated) 以 计算 the GTID sets.
+If one of the situations described there applies on a server, 在 server start 之前 在其
+configuration file 设置 变量 binlog_gtid_simple_recovery=FALSE .
+该设置 使得 server iterate all the binary log files (not just the newest and oldest) to find where GTID events start to appear.
+This process could take a long time if the server has a large number of binary log files without GTID events.
+
+
+关于 RESET MASTER 命令:
+                 https://dev.mysql.com/doc/refman/5.7/en/reset-master.html
+      执行 RESET MASTER 会使 gtid_purged 被 重置(reset) 为 an empty string, 且 使 gtid_executed 的
+      global value(but not the session value) 被 重置为 an empty string.
+
+---------------------------------------------------------------------------------------------------
+
+16.1.3.3 GTID Auto-Positioning
+
+    https://dev.mysql.com/doc/refman/5.7/en/replication-gtids-auto-positioning.html
+
+
+使用 GTIDs 时, the slave 不需要 nonlocal data. 取而代之的是, 你需要 enable 选项 MASTER_AUTO_POSITION
+
+选项 MASTER_AUTO_POSITION 默认是 disabled 的. 如果 多源复制 (multi-source replication) 在 slave 上被 enabled,
+你需要为 each applicable replication channel 设置该 选项.
+
+当 a replication slave 启用了 GTIDs (GTID_MODE=ON, ON_PERMISSIVE, or OFF_PERMISSIVE) 和 启用了 MASTER_AUTO_POSITION,
+则 auto-positioning 被 激活(activated) 用于 到 master 的 connection.
+master 必须 设置 GTID_MODE=ON 以使 connection 能够 成功.
+In the initial handshake, the slave 发送(sends) 包含 已经被 received, committed, or both 的 transactions 的 a GTID set.
+该 GTID set 等于 系统变量 gtid_executed (@@GLOBAL.gtid_executed) 中的 GTIDs 的 set 和
+performance_schema 中的 replication_connection_status 表 中记录的 作为 received transactions
+(即该语句的结果: select received_transaction_set from performance_schema.replication_connection_status )
+的 GTIDs 的 set 的 并集(union)。
+
+The master 为了响应 会 发送(send) 被记录在 其 binary log 中 但 不包含在 the slave 发送的 GTID set 的 all transactions.
+这种 交换(exchange) 确保 master 仅 send 还未在 slave 上 被 received 或 committed 的 transactions.
+如果 slave 从多个 masters 上 receives transactions, as in the case of a diamond topology,
+auto-skip function 确保 the transactions 不会被应用 两次(即不会出现重复应用的情况).
+
+
+针对 问题 的 解决方案 见官网: https://dev.mysql.com/doc/refman/5.7/en/replication-gtids-auto-positioning.html
+    master 发送 ER_MASTER_HAS_PURGED_REQUIRED_GTIDS 的错误
+    master 发送 ER_SLAVE_HAS_MORE_GTIDS_THAN_MASTER 的错误
+
+   关于 sync_binlog=1 的 设置 见:
+      https://dev.mysql.com/doc/refman/5.7/en/replication-options-binary-log.html#sysvar_sync_binlog
+
+      sync_binlog:
+                Default Value (>= 5.7.7)  1
+                Default Value (<= 5.7.6)  0
+
+For the greatest possible durability and consistency in a replication setup that uses InnoDB with transactions, use these settings:
+
+        sync_binlog=1.
+        innodb_flush_log_at_trx_commit=1.
+
+小心:
+      Many operating systems and some disk hardware fool the flush-to-disk operation.
+      They may tell mysqld that the flush has taken place, even though it has not.
+      In this case, the durability of transactions is not guaranteed even with the recommended settings,
+      and in the worst case, a power outage can corrupt InnoDB data. Using a battery-backed disk cache
+      in the SCSI disk controller or in the disk itself speeds up file flushes,
+      and makes the operation safer. You can also try to disable the caching of disk writes in hardware caches.
+
+
+---------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
