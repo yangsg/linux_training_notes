@@ -475,3 +475,20 @@ https://dev.mysql.com/doc/refman/5.7/en/replication.html
 注: 在 启用 GTIDs 之前做的 已经存在的 backups 不能 再 用于 启用了 GTIDs 的 server
     此时做 一个 新的 backup, 你将 不会没有 可用的 backup.
 
+
+---------------------------------------------------------------------------------------------------
+网上各种搭建资料:
+
+      https://www.percona.com/doc/percona-xtrabackup/2.4/howtos/recipes_ibkx_gtid.html
+      https://www.fromdual.com/sites/default/files/How_to_implement_GTID_replication.pdf
+      https://dinfratechsource.com/2019/05/27/setting-up-mysql-master-master-replication-with-gtid/
+      https://dbtut.com/index.php/2018/10/02/implementation-of-gtid-replication-using-mariadb/
+      https://minervadb.com/index.php/2018/02/02/mysql-replication-simplified-with-gtid-step-by-step-gtid-replication-setup/
+      https://scriptingmysql.wordpress.com/2013/01/18/mysql-replication-with-global-transaction-identifiers-step-by-step-install-and-addition-of-slaves-part-one/
+      https://mysqlstepbystep.files.wordpress.com/2015/04/gtid_replication-implementation_and_troubleshooting2.pdf
+
+      https://thedataguy.in/mysql-gtid-vs-mariadb-gtid/
+
+
+
+
