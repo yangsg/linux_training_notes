@@ -1,0 +1,68 @@
+
+
+
+---------------------------------------------------------------------------------------------------
+flush privileges
+作用: 重新加载(reload) mysql 系统数据库 中 授权表(grant tables) 中的 privileges.
+
+    Reloads the privileges from the grant tables in the mysql system database.
+
+          https://dev.mysql.com/doc/refman/5.7/en/flush.html#flush-privileges
+
+The server 会将 GRANT, CREATE USER, CREATE SERVER, and INSTALL PLUGIN statements 执行的结果缓存在
+内存中, 而对应的 REVOKE, DROP USER, DROP SERVER, and UNINSTALL PLUGIN statements 并不会释放(released)
+这些内存, 因此 对于 执行了 很多 会产生 缓存的 statements 时, 将会 增加 内存的使用量.
+这些 cached memory 可以 通过执行 命令 FLUSH PRIVILEGES 来被释放(freed).
+
+
+---------------------------------------------------------------------------------------------------
+
+https://dev.mysql.com/doc/refman/5.7/en/privilege-changes.html
+
+mysqld server 启动时 如果没有指定选项 --skip-grant-tables , 则其在启动过程中会读取 all grant table contents
+进 memory.
+
+
+如果你 使用 an account-management statement 间接 modify 这些 grant tables, the server 会 注意到
+the server notices these changes and loads the grant tables into memory again immediately.
+
+“Account Management Statements” 包括 GRANT, REVOKE, SET PASSWORD, and RENAME USER.
+
+
+Account-management statements 的更多信息见:
+      https://dev.mysql.com/doc/refman/5.7/en/account-management-sql.html
+
+      13.7.1.1 ALTER USER Syntax      https://dev.mysql.com/doc/refman/5.7/en/alter-user.html
+      13.7.1.2 CREATE USER Syntax     https://dev.mysql.com/doc/refman/5.7/en/create-user.html
+      13.7.1.3 DROP USER Syntax       https://dev.mysql.com/doc/refman/5.7/en/drop-user.html
+      13.7.1.4 GRANT Syntax           https://dev.mysql.com/doc/refman/5.7/en/grant.html
+      13.7.1.5 RENAME USER Syntax     https://dev.mysql.com/doc/refman/5.7/en/rename-user.html
+      13.7.1.6 REVOKE Syntax          https://dev.mysql.com/doc/refman/5.7/en/revoke.html
+      13.7.1.7 SET PASSWORD Syntax    https://dev.mysql.com/doc/refman/5.7/en/set-password.html
+
+
+如果使用  INSERT, UPDATE, or DELETE 语句执行修改 授权表(不推荐), 则 这些 changes 在 让 server
+reloads 或 restart 之前 对 权限 检查 是 不起作用的. 所以要使其 生效, 你需要 reload 授权表 或 重启 server.
+
+告诉 server to reload the grant tables 的方式有:
+    - 执行 FLUSH PRIVILEGES 语句               https://dev.mysql.com/doc/refman/5.7/en/flush.html#flush-privileges
+    - 执行 mysqladmin flush-privileges 命令    https://dev.mysql.com/doc/refman/5.7/en/mysqladmin.html
+    - 执行 mysqladmin reload 命令
+
+
+---------------------------------------------------------------------------------------------------
+网上资料:
+
+https://stackoverflow.com/questions/36463966/when-is-flush-privileges-in-mysql-really-needed
+
+https://dev.mysql.com/doc/refman/5.7/en/privilege-changes.html
+
+https://dev.mysql.com/doc/refman/5.7/en/flush.html#flush-privileges
+
+
+
+
+
+
+
+
