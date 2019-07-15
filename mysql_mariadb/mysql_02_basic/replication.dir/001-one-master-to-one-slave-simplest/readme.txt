@@ -13,6 +13,7 @@ ip信息：
             [mysql]
             default-character-set = utf8mb4
 
+            [mysqld]
             # 设置 mysql 字符集为 utf8mb4
             character-set-client-handshake = FALSE  # 忽略 client 端的 character set 设置
             character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
