@@ -464,6 +464,11 @@ https://dev.mysql.com/doc/refman/5.7/en/replication.html
     https://dev.mysql.com/doc/refman/5.7/en/replication-gtids-restrictions.html
 
 
+2.3.5 Using GTIDs for Failover and Scaleout
+    https://dev.mysql.com/doc/mysql-replication-excerpt/5.7/en/replication-gtids-failover.html
+
+
+
 谨记一点:
       未启用 GTIDs 的 transactions 的 binary log 是 不能 用在 启用了  GTIDs 的 server 上的
 
@@ -475,6 +480,8 @@ https://dev.mysql.com/doc/refman/5.7/en/replication.html
 注: 在 启用 GTIDs 之前做的 已经存在的 backups 不能 再 用于 启用了 GTIDs 的 server
     此时做 一个 新的 backup, 你将 不会没有 可用的 backup.
 
+注: mariadb 的 gtid 和 mysql 的 gtid 实现是不同的
+      https://thedataguy.in/mysql-gtid-vs-mariadb-gtid/
 
 ---------------------------------------------------------------------------------------------------
 网上各种搭建资料:
