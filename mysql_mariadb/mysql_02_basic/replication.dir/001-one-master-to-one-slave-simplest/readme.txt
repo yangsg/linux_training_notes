@@ -470,3 +470,6 @@ reset 命令 见  https://dev.mysql.com/doc/refman/5.7/en/reset.html
         https://dev.mysql.com/doc/refman/5.7/en/binlog-replication-configuration-overview.html
 
 
+https://www.tecmint.com/how-to-setup-mysql-master-slave-replication-in-rhel-centos-fedora/
+
+
