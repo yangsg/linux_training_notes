@@ -139,6 +139,12 @@ option files 中 还可以使用 指令(directives) 有 !include  和 !includedi
           [mysqld]
           key_buffer_size=16M
 
+
+
+注:  应该 List more general option groups first and more specific groups later.
+     即 更通用的 选项 groups 置于 前面, 更 特殊的 groups 置于 后面.
+     如 [client] 应该 在 [mysql] 的前面
+
 ---------------------------------------------------------------------------------------------------
 网上资料:
         4.6.6 mysql_config_editor — MySQL Configuration Utility
