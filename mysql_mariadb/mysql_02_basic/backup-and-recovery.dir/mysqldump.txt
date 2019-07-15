@@ -17,6 +17,11 @@ https://dev.mysql.com/doc/refman/5.7/en/mysqldump.html
 //     你要知道 --lock-tables 是分别分开对每个database都做一次独立的lock操作, 这之间也可能出现整体上的数据不一致的情况),
 //     所以条件允许的情况下，在一台离线状态的专用于做备份的slave机器上加上 --lock-all-tables 选项来备份，是最没有后顾之忧的一种方案.
 
+// 注: 其实如果指定了 选项 --master-data, 则该选项会自动地 turn off --lock-tables. 它 也会 turns on --lock-all-tables, 除非 --single-transaction also is specified
+// man mysqldump 上 原文如下:
+//     The --master-data option automatically turns off --lock-tables. It also turns on --lock-all-tables, unless --single-transaction also is specified,
+
+
 // 只备份数据库中的指定表---------------------------------
 // 注意：这种方式不会自动生成create database 语句
 [root@dbserver ~]# mysqldump -h localhost -u root -p -P 3306 --lock-all-tables db_web01 user production > mysqldump.db_web01.user.production.sql
@@ -39,7 +44,11 @@ https://dev.mysql.com/doc/refman/5.7/en/mysqldump.html
 
 
 
+---------------------------------------------------------------------------------------------------
+网上资料:
 
+2.2.4.1 Creating a Data Snapshot Using mysqldump
+    https://dev.mysql.com/doc/mysql-replication-excerpt/5.7/en/replication-howto-mysqldump.html
 
 
 
