@@ -1,0 +1,45 @@
+
+
+---------------------------------------------------------------------------------------------------
+
+Chapter 16 Replication
+    https://dev.mysql.com/doc/refman/5.7/en/replication.html
+
+16.1.4.1 MySQL Multi-Source Replication Overview
+    https://dev.mysql.com/doc/refman/5.7/en/replication-multi-source-overview.html
+
+多源复制
+MySQL Multi-Source Replication 可理解为 多主一从, Multi-source replication 可被用于 备份
+multiple servers 到 a single server, merge table shards,
+和 consolidate data from multiple servers to a single server.
+Multi-source replication 没有 实现 在 applying the transactions 时的 冲突检测或解决,
+如果需要, 这些任务 需要 the application 来 完成.
+In a multi-source replication topology,
+a slave creates a replication channel for each master that it should receive transactions from.
+见 Section 16.2.3, “Replication Channels”.
+
+          https://dev.mysql.com/doc/refman/5.7/en/replication-channels.html
+
+
+
+---------------------------------------------------------------------------------------------------
+
+16.1.4.2 Multi-Source Replication Tutorials
+
+    https://dev.mysql.com/doc/refman/5.7/en/replication-multi-source-tutorials.html
+
+Masters in a multi-source replication topology can be configured to use either
+global transaction identifier (GTID) based replication, or binary log position-based replication.
+
+  多源复制中的 Masters 可以 配置 基于 GTID 的 replication, 或 基于 binary log 位置的 replication
+
+Slaves in a multi-source replication topology require TABLE based repositories.
+Multi-source replication is not compatible with FILE based repositories.
+The type of repository being used by mysqld can be configured either at startup, or dynamically.
+
+   多源复制 拓扑结构中的  slave 必须 是 基于  TABLE 的 repositories.
+   其与 FILE based repositories 不兼容
+---------------------------------------------------------------------------------------------------
+
+
+
