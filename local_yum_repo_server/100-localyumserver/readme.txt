@@ -1,4 +1,8 @@
 
+
+
+
+
 ---------------------------------------------------------------------------------------------------
 构建 最基本的 local yum repo 服务
 
@@ -21,6 +25,11 @@
 [root@localyumrepo ~]# createrepo /var/www/html/local_yum_repo_dir/
 
 至此, 一个最基本的 local yum repo 就准备完成了
+
+
+
+
+
 ---------------------------------------------------------------------------------------------------
 示例: 向本地仓库 添加 mysql 的 相关 rpm 包
 
@@ -59,6 +68,10 @@
 [root@localyumrepo ~]# yum -y install mysql-community-server --downloadonly --downloaddir=/var/www/html/local_yum_repo_dir/
 [root@localyumrepo ~]# createrepo /var/www/html/local_yum_repo_dir/   # 注: 其实 createrepo 是一个执行 python 程序的 shell script
 
+
+
+
+
 ---------------------------------------------------------------------------------------------------
 client 端:
 
@@ -75,6 +88,10 @@ client 端:
 
 [root@client ~]# yum clean metadata   # force yum to download all the metadata the next time it is run.
 [root@client ~]# yum -y install mysql-community-server
+
+
+
+
 
 ---------------------------------------------------------------------------------------------------
 client 端: (另一种使用方式, 为 local yum repo 配置高优先级, update 时低优先级repo的 packages 无法覆盖 高优先级 repo 的 packages)
@@ -114,6 +131,10 @@ client 端: (另一种使用方式, 为 local yum repo 配置高优先级, updat
 
 [root@client ~]# yum clean metadata
 [root@client ~]# yum list mysql-community-server
+
+
+
+
 
 
 ---------------------------------------------------------------------------------------------------
