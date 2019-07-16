@@ -44,6 +44,43 @@ https://dev.mysql.com/doc/refman/5.7/en/mysqldump.html
 
 
 
+
+
+
+---------------------------------------------------------------------------------------------------
+
+其他知识点:
+
+mysqldump 的一些其他选项:
+
+       ·   --add-drop-database
+
+           Write a DROP DATABASE statement before each CREATE DATABASE statement. This option is typically used in conjunction with the
+           --all-databases or --databases option because no CREATE DATABASE statements are written unless one of those options is specified.
+
+
+选项 --add-drop-database 写出的 DROP DATABASE statement 形式可能如:
+
+      /*!40000 DROP DATABASE IF EXISTS `mysql`*/;
+
+    注意: 如上 这一行 并不是普通的注释, 而是 /*! MySQL-specific code */, 里面的 code 会被 mysql server 解析和执行
+           详细见  https://dev.mysql.com/doc/refman/5.7/en/comments.html
+
+If you add a version number after the ! character, the syntax within the comment is executed only
+if the MySQL version is greater than or equal to the specified version number.
+The KEY_BLOCK_SIZE keyword in the following comment is executed only by servers from MySQL 5.1.10 or higher:
+
+    CREATE TABLE t1(a INT, KEY (a)) /*!50110 KEY_BLOCK_SIZE=1024 */;
+
+
+9.6 Comment Syntax
+    https://dev.mysql.com/doc/refman/5.7/en/comments.html
+
+4.5.1.6 mysql Client Tips
+    https://dev.mysql.com/doc/refman/5.7/en/mysql-tips.html
+
+
+
 ---------------------------------------------------------------------------------------------------
 网上资料:
 
