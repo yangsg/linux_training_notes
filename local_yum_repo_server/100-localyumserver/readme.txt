@@ -128,8 +128,9 @@ client 端 执行如下命令:
       enabled = 1
 
 [root@client ~]# vim /etc/yum.repos.d/000-local-yum.repo
-        [local-yum]
-        name=local-yum
+
+        [000-local-yum]
+        name=000-local-yum
         baseurl=http://192.168.175.10/local_yum_repo_dir/
         enabled=1
         gpgcheck=0
