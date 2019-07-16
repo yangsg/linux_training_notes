@@ -7,7 +7,7 @@
 构建 最基本的 local yum repo 服务
 
 // 创建 用于 local yum repo 的 目录
-[root@localyumrepo ~]# mkdir  /var/www/html/local_yum_repo_dir
+[root@localyumrepo ~]# mkdir -p /var/www/html/local_yum_repo_dir
 
 // 先下载 httpd 和 createrepo 相关的 rpm 包 到 /var/www/html/local_yum_repo_dir
 [root@localyumrepo ~]# yum install httpd createrepo --downloadonly   --downloaddir=/var/www/html/local_yum_repo_dir
@@ -88,6 +88,9 @@ client 端:
 
 [root@client ~]# yum clean metadata   # force yum to download all the metadata the next time it is run.
 [root@client ~]# yum -y install mysql-community-server
+
+[root@client ~]# rpm -q mysql-community-server
+[root@client ~]# yum list installed  mysql-community-server
 
 
 
