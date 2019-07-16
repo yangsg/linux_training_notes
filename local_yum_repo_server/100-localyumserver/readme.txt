@@ -62,9 +62,10 @@
 ---------------------------------------------------------------------------------------------------
 client 端:
 
-[root@client ~]# vim /etc/yum.repos.d/local-yum.repo
-        [local-yum]
-        name=local-yum
+//注: 这里 加了前缀 '000-', 其实其并不会影响下载顺序, 只是为了在 使用如 `yum repolist` 这样的命令时其能第一个显示出来
+[root@client ~]# vim /etc/yum.repos.d/000-local-yum.repo
+        [000-local-yum]
+        name=000-local-yum
         baseurl=http://192.168.175.10/local_yum_repo_dir/
         enabled=1
         gpgcheck=0
@@ -72,6 +73,7 @@ client 端:
 [root@client ~]# yum repolist | grep local-yum
       local-yum             local-yum                                                6
 
+[root@client ~]# yum clean metadata   # force yum to download all the metadata the next time it is run.
 [root@client ~]# yum -y install mysql-community-server
 
 ---------------------------------------------------------------------------------------------------
@@ -100,7 +102,7 @@ client 端: (另一种使用方式, 为 local yum repo 配置高优先级, updat
       [main]
       enabled = 1
 
-[root@client ~]# vim /etc/yum.repos.d/local-yum.repo
+[root@client ~]# vim /etc/yum.repos.d/000-local-yum.repo
         [local-yum]
         name=local-yum
         baseurl=http://192.168.175.10/local_yum_repo_dir/
@@ -110,14 +112,33 @@ client 端: (另一种使用方式, 为 local yum repo 配置高优先级, updat
         #  见 https://wiki.centos.org/PackageManagement/Yum/Priorities
         priority=1
 
+[root@client ~]# yum clean metadata
+[root@client ~]# yum list mysql-community-server
+
+
 ---------------------------------------------------------------------------------------------------
 网上资料:
 https://serverfault.com/questions/503083/how-does-yum-know-which-repository-to-use-for-installation-if-the-same-applicati
 
 https://wiki.centos.org/PackageManagement/Yum/Priorities
 https://wiki.centos.org/PackageManagement/Yum
+https://docs.fedoraproject.org/en-US/Fedora/14/html/Musicians_Guide/sect-Musicians_Guide-CCRMA_Repository_Priorities.html
+http://www.linuxe.cn/post-300.html
+
+https://superuser.com/questions/333542/how-do-i-get-yum-to-see-updates-to-a-local-repo-without-cleaning-cache
 
 https://wiki.centos.org/TipsAndTricks/YumAndRPM
+
+https://stackoverflow.com/questions/635869/can-yum-tell-me-which-of-my-repositories-provide-a-particular-package
+
+其他搭建 local yum repo 的资料:
+
+      https://www.howtoforge.com/creating_a_local_yum_repository_centos
+      https://phoenixnap.com/kb/create-local-yum-repository-centos
+      https://www.itzgeek.com/how-tos/linux/centos-how-tos/create-local-yum-repository-on-centos-7-rhel-7-using-dvd.html
+      https://www.cloudera.com/documentation/enterprise/5-5-x/topics/cdh_ig_yumrepo_local_create.html
+
+
 
 
 
