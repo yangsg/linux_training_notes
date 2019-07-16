@@ -41,5 +41,109 @@ The type of repository being used by mysqld can be configured either at startup,
    其与 FILE based repositories 不兼容
 ---------------------------------------------------------------------------------------------------
 
+2.4.2.1 Configuring Multi-Source Replication
+
+      https://dev.mysql.com/doc/mysql-replication-excerpt/5.7/en/replication-multi-source-configuration.html
+
+Slaves in a multi-source replication topology require TABLE based repositories. Multi-source replication is not compatible with FILE based repositories.
+
+多源复制的 slave 必须 是 基于 TABLE 的 repositories
+    --master-info-repository=TABLE --relay-log-info-repository=TABLE
+
+动态修改的方式:
+      STOP SLAVE;
+      SET GLOBAL master_info_repository = 'TABLE';
+      SET GLOBAL relay_log_info_repository = 'TABLE';
+
+---------------------------------------------------------------------------------------------------
+
+2.4.2.2 Adding a GTID Based Master to a Multi-Source Replication Slave
+
+      https://dev.mysql.com/doc/mysql-replication-excerpt/5.7/en/replication-multi-source-adding-gtid-master.html
+
+            mysql> CHANGE MASTER TO
+                -> MASTER_HOST='192.168.175.101',
+                -> MASTER_PORT=3306,
+                -> MASTER_USER='repluser',
+                -> MASTER_PASSWORD='WWW.1.com',
+                -> MASTER_AUTO_POSITION=1 FOR CHANNEL 'master-01';
+
+---------------------------------------------------------------------------------------------------
+2.4.2.3 Adding a Binary Log Based Master to a Multi-Source Replication Slave
+
+        CHANGE MASTER TO
+          MASTER_HOST='master1',
+          MASTER_USER='rpl',
+          MASTER_PORT=3451,
+          MASTER_PASSWORD='' \
+          MASTER_LOG_FILE='master1-bin.000006',
+          MASTER_LOG_POS=628 FOR CHANNEL 'master-1';
+
+
+---------------------------------------------------------------------------------------------------
+
+2.4.2.4 Starting Multi-Source Replication Slaves
+
+https://dev.mysql.com/doc/mysql-replication-excerpt/5.7/en/replication-multi-source-start-slave.html
+
+
+        语法: START SLAVE thread_types;
+        语法: START SLAVE thread_types FOR CHANNEL channel;
+
+            https://dev.mysql.com/doc/refman/5.7/en/start-slave.html
+
+---------------------------------------------------------------------------------------------------
+
+2.4.2.5 Stopping Multi-Source Replication Slaves
+
+
+        语法: STOP SLAVE thread_types;
+        语法: STOP SLAVE thread_types FOR CHANNEL channel;
+
+            https://dev.mysql.com/doc/refman/5.7/en/stop-slave.html
+
+
+---------------------------------------------------------------------------------------------------
+
+2.4.2.6 Resetting Multi-Source Replication Slaves
+
+https://dev.mysql.com/doc/mysql-replication-excerpt/5.7/en/replication-multi-source-reset-slave.html
+
+        语法: RESET SLAVE;
+        语法: RESET SLAVE FOR CHANNEL channel;
+
+            https://dev.mysql.com/doc/refman/5.7/en/reset-slave.html
+            https://dev.mysql.com/doc/refman/5.7/en/stop-slave.html
+
+RESET SLAVE makes the slave forget its replication position in the master's binary log.
+This statement is meant to be used for a clean start: It clears the master info and relay log info repositories,
+deletes all the relay log files, and starts a new relay log file.
+It also resets to 0 the replication delay specified with the MASTER_DELAY option to
+CHANGE MASTER TO. RESET SLAVE does not change the values of gtid_executed or gtid_purged.
+
+       STOP SLAVE;
+       RESET SLAVE
+
+
+---------------------------------------------------------------------------------------------------
+13.4.2.1 CHANGE MASTER TO Syntax
+
+    https://dev.mysql.com/doc/refman/5.7/en/change-master-to.html
+
+  CHANGE MASTER TO MASTER_HOST=host1, MASTER_PORT=3002 FOR CHANNEL 'channel2'
+
+If no clause is named and no extra channels exist, the statement applies to the default channel.
+
+When using multiple replication channels, if a CHANGE MASTER TO statement does not name a channel
+using a FOR CHANNEL channel clause, an error occurs. See Section 16.2.3, “Replication Channels” for more information.
+
+
+16.2.3 Replication Channels
+
+https://dev.mysql.com/doc/refman/5.7/en/replication-channels.html
+
+MySQL 5.7.6 introduces the concept of a replication channel, which represents the path of transactions flowing from a master to a slave.
+
+---------------------------------------------------------------------------------------------------
 
 
