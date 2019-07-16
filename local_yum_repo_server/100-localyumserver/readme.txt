@@ -111,7 +111,7 @@ client 端 执行如下命令:
 [root@client ~]# grep -E '^plugins=1' /etc/yum.conf
         plugins=1   <----- 为 1 表示 已经其被 enabled
 
-[root@client ~]# yum install yum-plugin-priorities
+[root@localhost ~]# yum -y install yum-plugin-priorities
 
 // 查看一下 安装 yum-plugin-priorities 的 相关文件
 [root@client ~]# rpm -ql yum-plugin-priorities
