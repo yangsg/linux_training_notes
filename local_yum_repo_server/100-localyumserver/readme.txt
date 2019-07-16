@@ -99,8 +99,13 @@ client 端:
 ---------------------------------------------------------------------------------------------------
 client 端: (另一种使用方式, 为 local yum repo 配置高优先级, update 时低优先级repo的 packages 无法覆盖 高优先级 repo 的 packages)
 
+---------
+// server 端 可选择的 执行如下 2 条语句(其在 client 无法访问外网或通过其他 repo 安装该 package 时很有用)
 [root@localyumrepo ~]# yum -y install yum-plugin-priorities --downloadonly   --downloaddir=/var/www/html/local_yum_repo_dir
 [root@localyumrepo ~]# createrepo /var/www/html/local_yum_repo_dir
+
+---------
+client 端 执行如下命令:
 
 // 查看 yum 的 plugins 功能 以确保其被启用
 [root@client ~]# grep -E '^plugins=1' /etc/yum.conf
@@ -135,7 +140,10 @@ client 端: (另一种使用方式, 为 local yum repo 配置高优先级, updat
 [root@client ~]# yum clean metadata
 [root@client ~]# yum list mysql-community-server
 
+[root@client ~]# yum -y install mysql-community-server
 
+[root@client ~]# rpm -q mysql-community-server
+[root@client ~]# yum list installed  mysql-community-server
 
 
 
