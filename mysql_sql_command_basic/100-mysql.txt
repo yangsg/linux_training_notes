@@ -54,6 +54,13 @@ man mysql
           /* this is an in-line comment */
 
 
+   例外:
+      /*!40000 DROP DATABASE IF EXISTS `mysql`*/;
+
+    注意: 如上 这一行 并不是普通的注释, 而是 /*! MySQL-specific code */, 里面的 code 会被 mysql server 解析和执行
+          详细见: https://dev.mysql.com/doc/refman/5.7/en/comments.html
+
+          https://github.com/yangsg/linux_training_notes/blob/master/mysql_mariadb/mysql_02_basic/backup-and-recovery.dir/mysqldump.txt
 
 ---------------------------------------------------------------------------------------------------
 // mysql client  交互模式下的一些小技巧
