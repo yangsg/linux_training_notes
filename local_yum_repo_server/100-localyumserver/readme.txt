@@ -138,6 +138,9 @@ client 端 执行如下命令:
         #  见 https://wiki.centos.org/PackageManagement/Yum/Priorities
         priority=1
 
+
+[root@localhost ~]# yum repolist
+
 [root@client ~]# yum clean metadata
 [root@client ~]# yum list mysql-community-server
 
