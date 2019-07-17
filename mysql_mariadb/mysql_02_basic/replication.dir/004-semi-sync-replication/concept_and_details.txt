@@ -1,0 +1,111 @@
+
+16.3.9 Semisynchronous Replication
+      https://dev.mysql.com/doc/refman/5.7/en/replication-semisync.html
+
+16.3.9.1 Semisynchronous Replication Administrative Interface
+      https://dev.mysql.com/doc/refman/5.7/en/replication-semisync-interface.html
+
+16.3.9.2 Semisynchronous Replication Installation and Configuration
+      https://dev.mysql.com/doc/refman/5.7/en/replication-semisync-installation.html
+
+16.3.9.3 Semisynchronous Replication Monitoring
+      https://dev.mysql.com/doc/refman/5.7/en/replication-semisync-monitoring.html
+
+
+---------------------------------------------------------------------------------------------------
+16.3.9 Semisynchronous Replication
+      https://dev.mysql.com/doc/refman/5.7/en/replication-semisync.html
+
+
+MySQL 5.7 通过 插件 支持 semisynchronous replication
+
+MySQL replication 默认是 异步的(asynchronous). The master 将 events 写到 其 binary log
+但是 并不 知道 a slave 是否(whether) 或 何时(when) 已经取回 并 处理执行了 它们.
+使用 asynchronous replication, 如果 the master crashes, transactions 有可能 尚未被 传送给
+任何 一台 slave. 结果就是, 在这种情况下 从 master 故障转移(failover) 到 slave 可能导致
+故障转移到 相对 master 而言 缺失了(missing) 部分 transactions 的 server 上. (所以无法保证数据的完整,一致性)
+
+Semisynchronous replication 能够被 用作 asynchronous replication 的一种 替代:
+
+    - A slave 在 connects 到 the master 时 执行自己(slave) 是否具有 半同步能力(semisynchronous-capable).
+
+    - 如果 master 端 的 semisynchronous replication 被 enabled 且 至少(at least) 存在 一台 semisynchronous slave,
+      performs a transaction commit 的 a thread 会 blocks 并 waits 直到  至少 一台 slave 承认告知(acknowledges) 它
+      已经 received 了该 transaction 的 所有 events, 或 直到 a timeout occurs.
+
+    - The slave 仅 在 这些 events 已经被 写入其 relay log 和 被 flushed to disk 之后, 才会 acknowledges 自己接受 到了 transaction's events.
+
+    - 如果 超过一段时间 都 一直没有 any slave having acknowledged the transaction, 则 the master 恢复为 异步复制(semisynchronous replication).
+      When at least one semisynchronous slave catches up, the master 又 返回 到 半同步复制(semisynchronous replication).
+
+    - Semisynchronous replication 必须在 the master 端 和 the slave 端 同时(both) 被 enabled. 如果 semisynchronous replication 在
+      the master 上 被 disabled, 或者 在 the master 上被 enabled 但 没有在 任何一台 slaves 上被 enabled,
+      则 the master 会使用 半同步复制(asynchronous replication)
+
+当 the master 正 处于阻塞(is blocking)时(因 waiting for acknowledgment from a slave), 它 不会 向 performed the transaction
+的 session 返回(return). 当 block ends, the master 才会 向 session 返回(return), 然后该 session 能够 proceed to execute other statements.
+At this point, the transaction 在 master 端 已经被 committed 了, 且 其 events 已经被 at least one slave 承认告知(acknowledged) 收到.
+
+
+the master 在 继续之前(before proceeding) 对于 每个 transaction 所必须 收到(receive) 的 slave acknowledgments 的 the number 可以
+使用 系统变量 rpl_semi_sync_master_wait_for_slave_count 来 配置. 其 默认值(default value) 为 1.
+
+Blocking 也可以 发生在 rollbacks 被 written 到 the binary log 之后, 这种情况 会在 修改(modifies) nontransactional tables 的 a transaction
+被 rolled back 时 发生(occurs). The rolled-back transaction 会被 logged 即使 it has no effect for transactional tables
+because the modifications to the nontransactional tables cannot be rolled back and must be sent to slaves.
+
+
+For statements that do not occur in transactional context (that is,
+when no transaction has been started with START TRANSACTION or SET autocommit = 0),
+autocommit is enabled and each statement commits implicitly. With semisynchronous replication,
+the master blocks for each such statement, just as it does for explicit transaction commits.
+
+
+理解 “semisynchronous replication” 中 “semi” 的 意思(通过比较 异步 和 完全同步 复制):
+To understand what the “semi” in “semisynchronous replication” means, compare it with asynchronous and fully synchronous replication:
+
+  - With asynchronous replication, the master writes events to its binary log and slaves request them when they are ready.
+    There is no guarantee that any event will ever reach any slave.
+
+  - With fully synchronous replication, when a master commits a transaction, all slaves also will have
+    committed the transaction before the master returns to the session that performed the transaction.
+    The drawback of this is that there might be a lot of delay to complete a transaction.
+
+  - Semisynchronous replication falls between asynchronous and fully synchronous replication.
+    The master waits only until at least one slave has received and logged the events.
+    It does not wait for all slaves to acknowledge receipt, and it requires only receipt,
+    not that the events have been fully executed and committed on the slave side.
+
+
+相较于 异步复制(asynchronous replication), semisynchronous replication 提供了 改进了的 数据完整性(data integrity) 因为
+当 a commit 成功 returns 的时候, 则 可以知道 the data 至少 在 两处地方(two places) 已经存在.
+在 a semisynchronous master 接受(receives)到 从 由 变量 rpl_semi_sync_master_wait_for_slave_count 配置的
+the number of slaves 返回的 acknowledgment 之前, the transaction 一直 处于 hold 状态 且 并未 被 committed.
+
+
+Semisynchronous replication 还可以 通过 限制 binary log events 能被 从 master 发送(sent) 到 slave 的 speed
+来 在 busy sessions 上 设置 a rate limit. When one user is too busy,
+this will slow it down, which is useful in some deployment situations.
+
+
+
+
+
+
+---------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
