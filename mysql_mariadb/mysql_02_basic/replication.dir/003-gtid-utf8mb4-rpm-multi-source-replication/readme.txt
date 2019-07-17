@@ -1,6 +1,7 @@
 
 多源复制, 可理解为 多主一从
 
+   注: 该示例 只是 一个 简单的 示例, 实际环境中 可能 还 需要考虑 更多的 情况
 
 准备 实现 环境用的 3 台 主机:
 master01: 192.168.175.101
@@ -455,7 +456,12 @@ https://juejin.im/entry/5bf7731351882518805ac985
     ---------------------------------------
 
    https://dev.mysql.com/doc/refman/5.7/en/change-replication-filter.html
+
    https://dev.mysql.com/doc/refman/5.7/en/replication-rules.html
+      16.2.5 How Servers Evaluate Replication Filtering Rules
+           If a master server does not write a statement to its binary log,
+           the statement is not replicated. If the server does log the statement,
+           the statement is sent to all slaves and each slave determines whether to execute it or ignore it.
 
     一些帮助命令:
         [root@slave ~]# mysqld --verbose --help | grep replica
@@ -578,6 +584,13 @@ https://stackoverflow.com/questions/12086049/mysql-db-in-replication-but-users-c
 
 16.2.3 Replication Channels
       https://dev.mysql.com/doc/refman/5.7/en/replication-channels.html
+
+
+13.4.1.2 RESET MASTER Syntax
+      https://dev.mysql.com/doc/refman/5.7/en/reset-master.html
+
+13.4.2.4 RESET SLAVE Syntax
+      https://dev.mysql.com/doc/refman/5.7/en/reset-slave.html
 
 
 
