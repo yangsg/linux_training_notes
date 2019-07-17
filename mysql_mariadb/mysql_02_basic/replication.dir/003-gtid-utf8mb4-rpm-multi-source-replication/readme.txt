@@ -454,6 +454,7 @@ mysql> select @@session.gtid_next;
           https://www.cnblogs.com/cobbliu/p/4311926.html
           https://www.cnblogs.com/hellotracy/articles/5113602.html
           https://www.sundayle.com/mysqlbinlog-gtid/
+          https://www.thegeekstuff.com/2017/08/mysqlbinlog-examples/
 
 
 ---------------------------------------------------------------------------------------------------
