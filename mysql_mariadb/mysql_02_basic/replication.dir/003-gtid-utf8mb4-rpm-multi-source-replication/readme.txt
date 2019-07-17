@@ -7,6 +7,12 @@ master01: 192.168.175.101
 master02: 192.168.175.102
 slave:    192.168.175.103
 
+小心点: create user 时 一定要小心,多考虑, 最好参考使用如下的 步骤 和 语句形式 来 创建 用户:
+      mysql> USE mysql;
+      mysql> CREATE USER IF NOT EXISTS 'repluser'@'192.168.175.103' IDENTIFIED BY 'WWW.1.com';   # 创建 用于 replication 的用户
+      mysql> GRANT REPLICATION SLAVE ON *.* TO 'repluser'@'192.168.175.103';       授予 该用户 replication slave 权限
+
+
 ---------------------------------------------------------------------------------------------------
 搭建 本地 yum repo 服务器
 
@@ -96,7 +102,12 @@ master01 相关配置
 
 
 // 创建 专用于 replication 的 user. 参见 https://dev.mysql.com/doc/refman/5.7/en/replication-howto-repuser.html
-mysql> CREATE USER 'repluser'@'192.168.175.103' IDENTIFIED BY 'WWW.1.com';   # 创建 用于 replication 的用户
+// 注:
+//     create user 的步骤有 许多 问题 或 细节要考虑, 所以为了 最大的 灵活性, 最好 按部就班 的 按如下的 步骤 和 语法
+//     来 创建用户(尤其是 涉及 replication 的 拓扑结构中), 具体原因见 该 文档 最后的 一些 笔记
+//     或 参考   http://www.unixfbi.com/155.html   中 “复制账号重复问题”
+mysql> USE mysql;
+mysql> CREATE USER IF NOT EXISTS 'repluser'@'192.168.175.103' IDENTIFIED BY 'WWW.1.com';   # 创建 用于 replication 的用户
 mysql> GRANT REPLICATION SLAVE ON *.* TO 'repluser'@'192.168.175.103';       授予 该用户 replication slave 权限
 
      注: mysql 5.7 的文档中 推荐 使用 命令 create user 创建用户和密码, 而不推荐使用 grant 来创建,
