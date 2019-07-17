@@ -239,6 +239,131 @@ mysql> show tables from mysql like 'slave%';
 mysql> start slave;    # 该命令 会 启动 所有 channel 上 所有 类型的 的 thread
 
 
+mysql> show slave status\G
+
+              *************************** 1. row ***************************
+                             Slave_IO_State: Waiting for master to send event
+                                Master_Host: 192.168.175.101
+                                Master_User: repluser
+                                Master_Port: 3306
+                              Connect_Retry: 60
+                            Master_Log_File: master01-bin.000001
+                        Read_Master_Log_Pos: 655
+                             Relay_Log_File: slave-relay-bin-master@002d01.000002
+                              Relay_Log_Pos: 874
+                      Relay_Master_Log_File: master01-bin.000001
+                           Slave_IO_Running: Yes   <----------
+                          Slave_SQL_Running: Yes   <----------
+                            Replicate_Do_DB:
+                        Replicate_Ignore_DB:
+                         Replicate_Do_Table:
+                     Replicate_Ignore_Table:
+                    Replicate_Wild_Do_Table:
+                Replicate_Wild_Ignore_Table:
+                                 Last_Errno: 0
+                                 Last_Error:
+                               Skip_Counter: 0
+                        Exec_Master_Log_Pos: 655
+                            Relay_Log_Space: 1095
+                            Until_Condition: None
+                             Until_Log_File:
+                              Until_Log_Pos: 0
+                         Master_SSL_Allowed: No
+                         Master_SSL_CA_File:
+                         Master_SSL_CA_Path:
+                            Master_SSL_Cert:
+                          Master_SSL_Cipher:
+                             Master_SSL_Key:
+                      Seconds_Behind_Master: 0
+              Master_SSL_Verify_Server_Cert: No
+                              Last_IO_Errno: 0
+                              Last_IO_Error:
+                             Last_SQL_Errno: 0
+                             Last_SQL_Error:
+                Replicate_Ignore_Server_Ids:
+                           Master_Server_Id: 101
+                                Master_UUID: 8ab7c026-a860-11e9-9c5d-000c29528e39
+                           Master_Info_File: mysql.slave_master_info
+                                  SQL_Delay: 0
+                        SQL_Remaining_Delay: NULL
+                    Slave_SQL_Running_State: Slave has read all relay log; waiting for more updates
+                         Master_Retry_Count: 86400
+                                Master_Bind:
+                    Last_IO_Error_Timestamp:
+                   Last_SQL_Error_Timestamp:
+                             Master_SSL_Crl:
+                         Master_SSL_Crlpath:
+                         Retrieved_Gtid_Set: 8ab7c026-a860-11e9-9c5d-000c29528e39:1-2
+                          Executed_Gtid_Set: 8ab7c026-a860-11e9-9c5d-000c29528e39:1-2,
+              8e8d2dcd-a860-11e9-95d1-000c294b426a:1-2
+                              Auto_Position: 1
+                       Replicate_Rewrite_DB:
+                               Channel_Name: master-01
+                         Master_TLS_Version:
+              *************************** 2. row ***************************
+                             Slave_IO_State: Waiting for master to send event
+                                Master_Host: 192.168.175.102
+                                Master_User: repluser
+                                Master_Port: 3306
+                              Connect_Retry: 60
+                            Master_Log_File: master02-bin.000001
+                        Read_Master_Log_Pos: 655
+                             Relay_Log_File: slave-relay-bin-master@002d02.000002
+                              Relay_Log_Pos: 874
+                      Relay_Master_Log_File: master02-bin.000001
+                           Slave_IO_Running: Yes    <----------
+                          Slave_SQL_Running: Yes    <----------
+                            Replicate_Do_DB:
+                        Replicate_Ignore_DB:
+                         Replicate_Do_Table:
+                     Replicate_Ignore_Table:
+                    Replicate_Wild_Do_Table:
+                Replicate_Wild_Ignore_Table:
+                                 Last_Errno: 0
+                                 Last_Error:
+                               Skip_Counter: 0
+                        Exec_Master_Log_Pos: 655
+                            Relay_Log_Space: 1095
+                            Until_Condition: None
+                             Until_Log_File:
+                              Until_Log_Pos: 0
+                         Master_SSL_Allowed: No
+                         Master_SSL_CA_File:
+                         Master_SSL_CA_Path:
+                            Master_SSL_Cert:
+                          Master_SSL_Cipher:
+                             Master_SSL_Key:
+                      Seconds_Behind_Master: 0
+              Master_SSL_Verify_Server_Cert: No
+                              Last_IO_Errno: 0
+                              Last_IO_Error:
+                             Last_SQL_Errno: 0
+                             Last_SQL_Error:
+                Replicate_Ignore_Server_Ids:
+                           Master_Server_Id: 102
+                                Master_UUID: 8e8d2dcd-a860-11e9-95d1-000c294b426a
+                           Master_Info_File: mysql.slave_master_info
+                                  SQL_Delay: 0
+                        SQL_Remaining_Delay: NULL
+                    Slave_SQL_Running_State: Slave has read all relay log; waiting for more updates
+                         Master_Retry_Count: 86400
+                                Master_Bind:
+                    Last_IO_Error_Timestamp:
+                   Last_SQL_Error_Timestamp:
+                             Master_SSL_Crl:
+                         Master_SSL_Crlpath:
+                         Retrieved_Gtid_Set: 8e8d2dcd-a860-11e9-95d1-000c294b426a:1-2
+                          Executed_Gtid_Set: 8ab7c026-a860-11e9-9c5d-000c29528e39:1-2,
+              8e8d2dcd-a860-11e9-95d1-000c294b426a:1-2
+                              Auto_Position: 1
+                       Replicate_Rewrite_DB:
+                               Channel_Name: master-02
+                         Master_TLS_Version:
+
+
+
+
+---------------------------------------------------------------------------------------------------
 
 
 
@@ -246,7 +371,27 @@ mysql> start slave;    # 该命令 会 启动 所有 channel 上 所有 类型�
 
 随便测试一下:
 
-mysql> CREATE DATABASE db_m01 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+master01 上创建 db_m01:
+    mysql> CREATE DATABASE db_m01 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+
+master02 上创建 db_m02:
+    mysql> CREATE DATABASE db_m02 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+
+slave 上 查看 如上 创建的 databases 是否 被 replicated 过来:
+    mysql> show databases;
+          +--------------------+
+          | Database           |
+          +--------------------+
+          | information_schema |
+          | db_m01             | <-----
+          | db_m02             | <-----
+          | mysql              |
+          | performance_schema |
+          | sys                |
+          +--------------------+
+
 
 
 
