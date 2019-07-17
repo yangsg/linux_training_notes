@@ -102,6 +102,8 @@ mysql> GRANT ALL ON db1.* TO 'jeffrey'@'localhost';
 mysql> grant replication slave on *.* to 'repluser'@'192.168.122.103' identified by 'WWW.1.com';
 mysql> flush privileges;
 
+        注: 如上的 grant ... identified by 示例语句 在 user 不存在时 创建该 user 并设置密码, 在 user 已经存在时 会 修改其 既有的密码.
+
 https://stackoverflow.com/questions/31111847/identified-by-password-in-mysql
 https://dev.mysql.com/doc/refman/5.7/en/grant.html
 注: 如果
