@@ -88,20 +88,97 @@ Semisynchronous replication 还可以 通过 限制 binary log events 能被 从
 this will slow it down, which is useful in some deployment situations.
 
 
+Semisynchronous replication 确实会对 性能 产生影响, 因为 需要 wait for slaves 而使 commits 变得 slower.
+这时为 增加 数据完整性(data integrity) 而做的 交易.The amount of slowdown is at least the
+TCP/IP roundtrip time to send the commit to the slave and wait for the acknowledgment of receipt by the slave.
+这意味着 semisynchronous replication 最合适工作在 通过 fast networks 通信的 近距离的 servers, 最不适合
+工作在 通过 slow networks 通信的 远距离的 servers.
+
+系统变量 rpl_semi_sync_master_wait_point 控制 a semisynchronous replication master 在 向 提交(commit) 该
+transaction 的 the client 返回 a status 之前 等待 slave 的 transaction receipt 的 acknowledgment 的时间点.
+允许的值 有:
+
+AFTER_SYNC (the default): The master 将 each transaction 写到 its binary log 和 the slave,
+                          并 syncs the binary log to disk. The master waits for slave acknowledgment of transaction receipt after the sync.
+                          Upon receiving acknowledgment, the master commits the transaction
+                          to the storage engine and returns a result to the client, which then can proceed.
+
+
+AFTER_COMMIT: The master writes each transaction to its binary log and the slave, syncs the binary log,
+              and commits the transaction to the storage engine.
+              The master waits for slave acknowledgment of transaction receipt after the commit.
+              Upon receiving acknowledgment, the master returns a result to the client, which then can proceed.
+
+
+The replication characteristics of these settings differ as follows:(见官网)
+        https://dev.mysql.com/doc/refman/5.7/en/replication-semisync.html
+---------------------------------------------------------------------------------------------------
+
+
+16.3.9.1 Semisynchronous Replication Administrative Interface
+      https://dev.mysql.com/doc/refman/5.7/en/replication-semisync-interface.html
+
+The administrative interface to semisynchronous replication has several components:
+
+- Two plugins(两个插件) implement semisynchronous capability. There is one plugin for the master side and one for the slave side.
+- System variables(系统变量) control plugin behavior. Some examples:
+
+        rpl_semi_sync_master_enabled   用于控制是否启用 semisynchronous replication(即对应 plugin), 默认值为 0, 即默认该功能没有被启用.
+
+              Controls whether semisynchronous replication is enabled on the master.
+              To enable or disable the plugin, set this variable to 1 or 0, respectively. The default is 0 (off).
+
+        rpl_semi_sync_master_timeout   单位为 milliseconds(毫秒), 默认值为 10000，即 10 秒
+
+              A value in milliseconds that controls how long the master waits on a commit for acknowledgment from a slave
+              before timing out and reverting to asynchronous replication. The default value is 10000 (10 seconds).
+
+        rpl_semi_sync_slave_enabled  类似于 rpl_semi_sync_master_enabled, 但是控制的是 the slave plugin. 默认值也是 0
+
+              Similar to rpl_semi_sync_master_enabled, but controls the slave plugin.
+
+All rpl_semi_sync_xxx system variables are described at Section 5.1.7, “Server System Variables”.
+                                https://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html
 
 
 
+Status variables(状态变量) enable semisynchronous replication monitoring. Some examples:
+
+        Rpl_semi_sync_master_clients   表示 semisynchronous slaves 数
+
+              The number of semisynchronous slaves.
+
+        Rpl_semi_sync_master_status
+
+              Whether semisynchronous replication currently is operational on the master.
+              The value is 1 if the plugin has been enabled and a commit acknowledgment has not occurred.
+              It is 0 if the plugin is not enabled or the master has fallen back to asynchronous replication due to commit acknowledgment timeout.
+
+        Rpl_semi_sync_master_no_tx   没有被 a slave 成功 确认的 commits 数.
+
+              The number of commits that were not acknowledged successfully by a slave.
+
+        Rpl_semi_sync_master_yes_tx  被 a slave 成功确认的 commits 数.
+
+              The number of commits that were acknowledged successfully by a slave.
+
+        Rpl_semi_sync_slave_status
+
+              Whether semisynchronous replication currently is operational on the slave.
+              This is 1 if the plugin has been enabled and the slave I/O thread is running, 0 otherwise.
+
+
+All Rpl_semi_sync_xxx status variables are described at Section 5.1.9, “Server Status Variables”.
+                                          https://dev.mysql.com/doc/refman/5.7/en/server-status-variables.html
+
+  这些 系统变量 和 状态变量 可用的 前提是 仅当 相应的 master or slave plugin 通过 INSTALL PLUGIN 被安装(installed).
 
 ---------------------------------------------------------------------------------------------------
 
 
+16.3.9.2 Semisynchronous Replication Installation and Configuration  半同步复制的 安装 与 配置
 
-
-
-
-
-
-
+    https://dev.mysql.com/doc/refman/5.7/en/replication-semisync-installation.html
 
 
 
