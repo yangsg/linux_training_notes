@@ -2,13 +2,14 @@
 多源复制, 可理解为 多主一从
 
 
----------------------------------------------------------------------------------------------------
 准备 实现 环境用的 3 台 主机:
 master01: 192.168.175.101
 master02: 192.168.175.102
 slave:    192.168.175.103
 
-// 搭建 本地 yum repo 服务器
+---------------------------------------------------------------------------------------------------
+搭建 本地 yum repo 服务器
+
 因为 外网 网速 太慢, 所有这次 准备自己 搭建 一台 简单的 local yum repo 服务器, 通过该 server 安装 mysql 软件.
 具体步骤见:
       https://github.com/yangsg/linux_training_notes/tree/master/local_yum_repo_server/100-localyumserver
@@ -201,6 +202,20 @@ mysql> CHANGE MASTER TO
     -> MASTER_AUTO_POSITION=1 FOR CHANNEL 'master-02';    # 将 master02 加到 名为 'master-02' 的 channel 中
 
 
+// 看一下 如上的 设置
+mysql> pager less -Fi
+mysql> show slave status\G
+
+// 看一下 与 slave 相关的表
+mysql> show tables from mysql like 'slave%';
+      +--------------------------+
+      | Tables_in_mysql (slave%) |
+      +--------------------------+
+      | slave_master_info        |
+      | slave_relay_log_info     |
+      | slave_worker_info        |
+      +--------------------------+
+
 
 // 启动 slave 线程(io_thread , sql_thread),
 // 见 https://dev.mysql.com/doc/mysql-replication-excerpt/5.7/en/replication-multi-source-start-slave.html
@@ -238,12 +253,108 @@ https://juejin.im/entry/5bf7731351882518805ac985
 
 
 
+---------------------------------------------------------------------------------------------------
+
+与 create user 和 过滤 复制的 database 有关的问题:
+  https://dev.mysql.com/doc/refman/5.7/en/replication-options-slave.html#option_mysqld_replicate-ignore-db
+
+  https://dba.stackexchange.com/questions/28551/mysql-replication-and-ignore-tables
+  https://stackoverflow.com/questions/18830964/filter-mysql-replication-ignore-db
+    ---------------------------------------
+
+      binlog-ignore-db
+      replicate-ignore-db
+
+          binlog-ignore-db is a master-side setting, it tells the Master not to log changes taking place on the listed DB.
+
+          replicate-ignore-db is a slave-side setting, it tells the Slave to ignore incoming log information related to the listed DB
+
+          The typical use case is when you want to replicate different databases
+          from onesingle Master to different Slaves. The Master must log all changes occurring in all databases
+          (minus those possibly excluded by binlog-ignore-db, i.e. database that will not be replicated anywhere).
+
+          Each Slave will receive the full binary log, but will only replicate changes related to the selected databases
+          (i.e. databases not excluded by replicate-ignore-db -- this list would be different on each Slave).
+
+          (mysql database being a system database, it should be ignored from both ends, unless you really, really really know what you are doing).
+
+    ---------------------------------------
+
+   https://dev.mysql.com/doc/refman/5.7/en/change-replication-filter.html
+   https://dev.mysql.com/doc/refman/5.7/en/replication-rules.html
+
+    一些帮助命令:
+        [root@slave ~]# mysqld --verbose --help | grep replica
+        mysql> help CHANGE REPLICATION FILTER;
+
+   https://dev.mysql.com/doc/refman/5.7/en/replication-rules.html
+
+单个的 'change replication filter' 语句 可以指定 Multiple replication filtering rules.
+通过 逗号(commas) 将它们分隔开:
+    CHANGE REPLICATION FILTER REPLICATE_DO_DB = (d1), REPLICATE_IGNORE_DB = (d2);
+如上语句等价于 在 启动 slave 的 mysqld 时 指定如下选项:
+       --replicate-do-db=d1 --replicate-ignore-db=d2
+
+如果相同的 filtering rule 被指定了 multiple times, 则仅 最后的 rule 会被 实际使用.
+原文:
+      If the same filtering rule is specified multiple times, only the last such rule is actually used.
+      For example, the two statements shown here have exactly the same effect,
+      because the first REPLICATE_DO_DB rule in the first statement is ignored:
+
+    CHANGE REPLICATION FILTER REPLICATE_DO_DB = (db1, db2), REPLICATE_DO_DB = (db3, db4); # <---- 等价于如下语句
+    CHANGE REPLICATION FILTER REPLICATE_DO_DB = (db3,db4);     # <----------------------  等价于如上语句
+    如上两条语句 具有 相同的效果, 因为 第 1 条语句中
+    过滤规则 REPLICATE_DO_DB = (db1, db2) 与 过滤规则 REPLICATE_DO_DB = (db3, db4) 相同,
+    所以 前面的 过滤规则 REPLICATE_DO_DB = (db1, db2) 会被 ignored, 只会 使用 the last 的
+    过滤规则 REPLICATE_DO_DB = (db3, db4).
+
+  小心:
+      这种 行为 和 specifying the same option multiple times 的 --replicate-* filter options 的行为是不同的,
+      因为后者 会导致 the creation of multiple filter rules.
+
+      ------------------ 更多信息 和 细节 见官网: https://dev.mysql.com/doc/refman/5.7/en/change-replication-filter.html
+        CHANGE REPLICATION FILTER filter[, filter][, ...]
+
+        filter:
+            REPLICATE_DO_DB = (db_list)
+          | REPLICATE_IGNORE_DB = (db_list)
+          | REPLICATE_DO_TABLE = (tbl_list)
+          | REPLICATE_IGNORE_TABLE = (tbl_list)
+          | REPLICATE_WILD_DO_TABLE = (wild_tbl_list)
+          | REPLICATE_WILD_IGNORE_TABLE = (wild_tbl_list)
+          | REPLICATE_REWRITE_DB = (db_pair_list)
+
+      ------------------
+
+(server 计算 复制 过滤规则的方式)   16.2.5 How Servers Evaluate Replication Filtering Rules
+https://dev.mysql.com/doc/refman/5.7/en/replication-rules.html
+master 可配置的一下选项(但不推荐这么做, 必要时应该 在 slave 上使用 filtering 来控制 那些 events 应该在slave 上被执行):
+          --binlog-do-db
+          --binlog-ignore-db
+
+16.1.6 Replication and Binary Logging Options and Variables
+    https://dev.mysql.com/doc/refman/5.7/en/replication-options.html   (查看 slave上 --replicate-* options)
+
+注意: Note that replication filters cannot be used on a MySQL server instance that is configured for Group Replication,
+      because filtering transactions on some servers would make the group unable to reach agreement on a consistent state.
+
+Database-level options (--replicate-do-db, --replicate-ignore-db) are checked first;
+
+[root@slave ~]# mysqld --verbose --help | grep -E --  '--replicate'
+      --replicate-do-db=name       <--- Database-level options (数据库级别的 选项)
+      --replicate-do-table=name
+      --replicate-ignore-db=name   <--- Database-level options
+      --replicate-ignore-table=name
+      --replicate-rewrite-db=name
+      --replicate-same-server-id
+      --replicate-wild-do-table=name
+      --replicate-wild-ignore-table=name
 
 
+To make it easier to determine what effect an option set will have,
+it is recommended that you avoid mixing “do” and “ignore” options, or wildcard and nonwildcard options.
 
-
-
-
+If any --replicate-rewrite-db options were specified, they are applied before the --replicate-* filtering rules are tested.
 
 ---------------------------------------------------------------------------------------------------
 网上资料:
