@@ -393,7 +393,66 @@ slave 上 查看 如上 创建的 databases 是否 被 replicated 过来:
           | sys                |
           +--------------------+
 
+master01 上执行:
+mysql> show master status\G
+          *************************** 1. row ***************************
+                       File: master01-bin.000001
+                   Position: 869
+               Binlog_Do_DB:
+           Binlog_Ignore_DB:
+          Executed_Gtid_Set: 8ab7c026-a860-11e9-9c5d-000c29528e39:1-3
 
+
+master02 上执行:
+      mysql> show master status\G
+          *************************** 1. row ***************************
+                       File: master02-bin.000001
+                   Position: 869
+               Binlog_Do_DB:
+           Binlog_Ignore_DB:
+          Executed_Gtid_Set: 8e8d2dcd-a860-11e9-95d1-000c294b426a:1-3
+
+
+slave 上执行:
+    mysql> show slave status\G
+    mysql> show master status\G
+          *************************** 1. row ***************************
+                       File: slave-bin.000001
+                   Position: 154
+               Binlog_Do_DB:
+           Binlog_Ignore_DB:
+          Executed_Gtid_Set: 8ab7c026-a860-11e9-9c5d-000c29528e39:1-3,
+          8e8d2dcd-a860-11e9-95d1-000c294b426a:1-3
+
+
+其他可能感兴趣的变量: (如下只 显示了 slave 上执行过结果, 当然也 可以在 master 上 观察对应的信息)
+mysql> select @@GLOBAL.gtid_executed;
+        +------------------------------------------------------------------------------------+
+        | @@GLOBAL.gtid_executed                                                             |
+        +------------------------------------------------------------------------------------+
+        | 8ab7c026-a860-11e9-9c5d-000c29528e39:1-3,
+        8e8d2dcd-a860-11e9-95d1-000c294b426a:1-3 |
+        +------------------------------------------------------------------------------------+
+
+mysql> select @@session.gtid_next;
+        +---------------------+
+        | @@session.gtid_next |
+        +---------------------+
+        | AUTOMATIC           |
+        +---------------------+
+
+更多感兴趣的 系统变量 或 系统表 见
+    https://github.com/yangsg/linux_training_notes/blob/master/mysql_mariadb/mysql_02_basic/replication.dir/002-gtid-utf8mb4-rpm-one-master-to-one-slave/concept_and_details.txt
+
+
+查看一下日志:
+
+[root@slave mysql]# mysqlbinlog --no-defaults  slave-bin.000001
+    这里如果不加 --no-defaults 则会报错: mysqlbinlog: [ERROR] unknown variable 'default-character-set=utf8mb4'
+    原因是 mysqlbinlog 不识别 default-character-set 设置.
+    详细见:
+          https://www.programering.com/a/MTN2QDNwATM.html
+          https://www.cnblogs.com/cobbliu/p/4311926.html
 
 
 ---------------------------------------------------------------------------------------------------
