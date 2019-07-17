@@ -140,4 +140,15 @@ mysql> show master status;
 >> -   shell> mysql -u root -p -e "source /tmp/statements.sql"
 
 
+```text
+trouble shooting
+
+ [root@slave mysql]# mysqlbinlog --no-defaults  slave-bin.000001
+     这里如果不加 --no-defaults 则会报错: mysqlbinlog: [ERROR] unknown variable 'default-character-set=utf8mb4'
+     原因是 mysqlbinlog 不识别 default-character-set 设置.
+     详细见:
+           https://www.programering.com/a/MTN2QDNwATM.html
+           https://www.cnblogs.com/cobbliu/p/4311926.html
+      https://github.com/yangsg/linux_training_notes/tree/master/mysql_mariadb/mysql_02_basic/replication.dir/003-gtid-utf8mb4-rpm-multi-source-replication
+```
 
