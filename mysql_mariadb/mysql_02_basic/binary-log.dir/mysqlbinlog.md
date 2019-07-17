@@ -151,6 +151,7 @@ trouble shooting
            https://www.cnblogs.com/cobbliu/p/4311926.html
            https://www.cnblogs.com/hellotracy/articles/5113602.html
            https://www.sundayle.com/mysqlbinlog-gtid/
+           https://www.thegeekstuff.com/2017/08/mysqlbinlog-examples/
 
       https://github.com/yangsg/linux_training_notes/tree/master/mysql_mariadb/mysql_02_basic/replication.dir/003-gtid-utf8mb4-rpm-multi-source-replication
 ```
