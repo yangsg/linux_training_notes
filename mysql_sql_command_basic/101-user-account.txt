@@ -30,6 +30,21 @@ mysql> CREATE USER 'jeffrey'@'localhost' IDENTIFIED BY 'WWW.1.com';
 
         如果 省略 了 账户名 中的 host name, 则 其 defaults to '%'
 
+小心: create user 在 replication 中 需要特别小心, 详细见:  https://github.com/yangsg/linux_training_notes/tree/master/mysql_mariadb/mysql_02_basic/replication.dir/003-gtid-utf8mb4-rpm-multi-source-replication
+
+典型的在 replication 中 create user 的 步骤:
+mysql> use mysql;  # 第一步: 一定要先使用 use 语句选择 mysql 作为 默认的 数据库.
+mysql> CREATE USER IF NOT EXISTS 'repluser'@'192.168.175.103' IDENTIFIED BY 'WWW.1.com';  # create user 时 最好(甚至必须) 加上 IF NOT EXISTS
+mysql> GRANT REPLICATION SLAVE ON *.* TO 'repluser'@'192.168.175.103';  # 根据 需要 使用 grant 授予 replication slave 权限
+
+            https://dev.mysql.com/doc/refman/5.7/en/replication-rules-db-options.html
+      Note (这段文字 可以解释 如上提到的 为什么 create user 时 先执行 use mysql)
+        Only DML statements can be logged using the row format. DDL statements are always logged as statements,
+        even when binlog_format=ROW. All DDL statements are therefore always filtered according to the rules
+        for statement-based replication. This means that you must select the default database explicitly
+        with a USE statement in order for a DDL statement to be applied.
+
+
 // 查看 所有 user accounts
 mysql> select user, host, authentication_string from mysql.user;
 
