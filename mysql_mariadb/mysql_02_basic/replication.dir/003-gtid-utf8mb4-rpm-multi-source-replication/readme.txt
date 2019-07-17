@@ -253,13 +253,25 @@ https://juejin.im/entry/5bf7731351882518805ac985
 
 
 
+
+
+
+
+
+
+
 ---------------------------------------------------------------------------------------------------
 
 与 create user 和 过滤 复制的 database 有关的问题:
+
+  http://www.unixfbi.com/155.html
+  https://yq.aliyun.com/articles/516644
+
   https://dev.mysql.com/doc/refman/5.7/en/replication-options-slave.html#option_mysqld_replicate-ignore-db
 
   https://dba.stackexchange.com/questions/28551/mysql-replication-and-ignore-tables
   https://stackoverflow.com/questions/18830964/filter-mysql-replication-ignore-db
+  https://dev.mysql.com/doc/refman/5.7/en/replication-howto-repuser.html
     ---------------------------------------
 
       binlog-ignore-db
@@ -355,6 +367,46 @@ To make it easier to determine what effect an option set will have,
 it is recommended that you avoid mixing “do” and “ignore” options, or wildcard and nonwildcard options.
 
 If any --replicate-rewrite-db options were specified, they are applied before the --replicate-* filtering rules are tested.
+
+
+16.2.5.1 Evaluation of Database-Level Replication and Binary Logging Options
+            https://dev.mysql.com/doc/refman/5.7/en/replication-rules-db-options.html
+
+      ----------------该段文字摘自 http://www.unixfbi.com/155.html
+      2.复制账号重复问题
+      方法一：
+
+      set  sql_log_bin=0;
+      grant all privileges on ....;
+      set sql_log_bin=1;
+      创建用户时，不管是否使用 use mysql;新创建的用户都不会复制到从库；
+      方法二：
+
+      stop slave sql_thread; change replication filter Replicate_ignore_DB=(mysql);
+      创建用户时，先执行 use mysql; 然后再 create user XXX; 否则新创建的用户还是会复制到从库；
+      ---------------------
+        Note (这段文字 可以解释 如上提到的 为什么 create user 时 先执行 use mysql)
+          Only DML statements can be logged using the row format. DDL statements are always logged as statements,
+          even when binlog_format=ROW. All DDL statements are therefore always filtered according to the rules
+          for statement-based replication. This means that you must select the default database explicitly
+          with a USE statement in order for a DDL statement to be applied.
+
+      仅 DML statements 能够被 使用 the row format 被 logged.
+      而 所有的 DDL 语句 总是被 作为 statements 被 logged. 即使 将 binlog_format 配置为 ROW. 所以 所有的 DDL 语句 总是根据
+      statement-based replication 的 规则被过滤. 这意味着 你 必须 使用 use 语句 明确的 select the default database
+      以使  a DDL statement 被应用.
+
+
+      [root@slave ~]# mysqld --verbose --help | grep ^binlog-format
+              binlog-format                                                ROW
+          ----------
+          binlog_format 默认值: https://dev.mysql.com/doc/refman/5.7/en/replication-options-binary-log.html#sysvar_binlog_format
+              Default Value (>= 5.7.7)  ROW
+              Default Value (<= 5.7.6)  STATEMENT
+          ----------
+
+--replicate-do-db
+https://stackoverflow.com/questions/12086049/mysql-db-in-replication-but-users-created-on-master-are-not-replicating-on-slave
 
 ---------------------------------------------------------------------------------------------------
 网上资料:
