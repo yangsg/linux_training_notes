@@ -83,6 +83,14 @@ mysql> GRANT ALL ON db1.* TO 'jeffrey'@'localhost';
 
         如果 省略 了 账户名 中的 host name, 则 其 defaults to '%'
 
+// 使用 grant ... identified 创建用户 或 修改 密码的 语法 (但不推荐这样使用 grant)
+mysql> grant replication slave on *.* to 'repluser'@'192.168.122.103' identified by 'WWW.1.com';
+mysql> flush privileges;
+
+https://stackoverflow.com/questions/31111847/identified-by-password-in-mysql
+https://dev.mysql.com/doc/refman/5.7/en/grant.html
+注: 如果
+ If the account already exists, IDENTIFIED WITH is prohibited because it is intended only for use when creating new accounts.
 
 Note:
    从 MySQL 5.7.6 开始 使用 GRANT 命令 来 create accounts 或 define nonprivilege characteristics 是 deprecated 的,
