@@ -449,12 +449,16 @@ mysql> select @@session.gtid_next;
 [root@slave mysql]# mysqlbinlog --no-defaults --set-charset=utf8mb4  slave-bin.000001
     这里如果不加 --no-defaults 则会报错: mysqlbinlog: [ERROR] unknown variable 'default-character-set=utf8mb4'
     原因是 mysqlbinlog 不识别 default-character-set 设置.
+
+          另外, 必要时 可以 使用选项前缀 --loose 前缀(option file中为 loose- ), 并针对 [mysqlbinlog] group 单独设置变量 set_charset=utf8mb4
     详细见:
           https://www.programering.com/a/MTN2QDNwATM.html
           https://www.cnblogs.com/cobbliu/p/4311926.html
           https://www.cnblogs.com/hellotracy/articles/5113602.html
           https://www.sundayle.com/mysqlbinlog-gtid/
           https://www.thegeekstuff.com/2017/08/mysqlbinlog-examples/
+
+          https://github.com/yangsg/linux_training_notes/blob/master/mysql_sql_command_basic/111-option-files.txt
 
 
 ---------------------------------------------------------------------------------------------------
