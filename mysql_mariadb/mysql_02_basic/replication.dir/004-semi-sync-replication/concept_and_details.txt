@@ -180,6 +180,79 @@ All Rpl_semi_sync_xxx status variables are described at Section 5.1.9, “Server
 
     https://dev.mysql.com/doc/refman/5.7/en/replication-semisync-installation.html
 
+(使用 半同步 复制 的 前置条件)
+To use semisynchronous replication, the following requirements must be satisfied:
+
+条件01： The capability of installing plugins requires a MySQL server that supports dynamic loading.
+         To verify this, check that the value of the have_dynamic_loading system variable is YES.
+         Binary distributions should support dynamic loading.
+
+      可以采用如下任意一种方式可确认 mysql server 是否支持 dynamic loading 功能
+
+          mysql> show global variables like 'have_dynamic_loading';
+                    +----------------------+-------+
+                    | Variable_name        | Value |
+                    +----------------------+-------+
+                    | have_dynamic_loading | YES   |     <----- OK
+                    +----------------------+-------+
+
+          mysql> select @@global.have_dynamic_loading;
+                    +-------------------------------+
+                    | @@global.have_dynamic_loading |
+                    +-------------------------------+
+                    | YES                           |    <----- OK
+                    +-------------------------------+
+
+条件02:  Replication must already be working, see Section 16.1, “Configuring Replication”.
+
+
+条件03:  There must not be multiple replication channels configured. Semisynchronous replication is only compatible
+         with the default replication channel. See Section 16.2.3, “Replication Channels”.
+
+         Semisynchronous replication 不支持  multiple replication channels, 其兼容于 the default replication channel
+
+
+To set up semisynchronous replication, use the following instructions.
+The INSTALL PLUGIN, SET GLOBAL, STOP SLAVE, and START SLAVE statements mentioned here require the SUPER privilege.
+
+MySQL distributions 已经包含了 master 端 和 slave 端的  semisynchronous replication plugin files.
+MySQL distributions include semisynchronous replication plugin files for the master side and the slave side.
+
+
+
+To be usable by a master or slave server, the appropriate plugin library file must be located
+in the MySQL plugin directory (the directory named by the plugin_dir system variable).
+If necessary, configure the plugin directory location by setting the value of plugin_dir at server startup.
+
+查看 插件 目录的 路径:
+mysql> show global variables like 'plugin_dir';
+        +---------------+--------------------------+
+        | Variable_name | Value                    |
+        +---------------+--------------------------+
+        | plugin_dir    | /usr/lib64/mysql/plugin/ |
+        +---------------+--------------------------+
+
+The plugin library file base names are semisync_master and semisync_slave.
+The file name suffix differs per platform (for example, .so for Unix and Unix-like systems, .dll for Windows).
+
+The master plugin library file must be present in the plugin directory of the master server.
+The slave plugin library file must be present in the plugin directory of each slave server.
+
+[root@dbserver ~]# find /usr/lib64/mysql/plugin/ | grep -E 'semisync_master|semisync_slave'
+          /usr/lib64/mysql/plugin/debug/semisync_master.so
+          /usr/lib64/mysql/plugin/debug/semisync_slave.so
+          /usr/lib64/mysql/plugin/semisync_master.so       <--------- 半同步复制 的 master 端插件
+          /usr/lib64/mysql/plugin/semisync_slave.so        <--------- 半同步复制 的 slave  端插件
+
+
+更多信息见 官网  https://dev.mysql.com/doc/refman/5.7/en/replication-semisync-installation.html
+
+
+
+
+
+
+
 
 
 
