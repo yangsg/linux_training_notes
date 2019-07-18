@@ -248,6 +248,21 @@ The slave plugin library file must be present in the plugin directory of each sl
 更多信息见 官网  https://dev.mysql.com/doc/refman/5.7/en/replication-semisync-installation.html
 
 
+After a semisynchronous replication plugin has been installed, it is disabled by default.
+The plugins must be enabled both on the master side and the slave side to enable semisynchronous replication.
+If only one side is enabled, replication will be asynchronous.
+
+在 slave 上 动态 启用 半同步复制 需要注意的细节:
+If you enable semisynchronous replication on a slave at runtime,
+you must also start the slave I/O thread (stopping it first if it is already running)
+to cause the slave to connect to the master and register as a semisynchronous slave:
+
+      STOP SLAVE IO_THREAD;
+      START SLAVE IO_THREAD;
+
+If the I/O thread is already running and you do not restart it, the slave continues to use asynchronous replication.
+
+
 
 
 
