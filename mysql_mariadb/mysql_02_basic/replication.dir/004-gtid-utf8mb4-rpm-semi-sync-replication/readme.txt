@@ -424,7 +424,7 @@ mysql> SHOW VARIABLES LIKE 'rpl_semi_sync%';
           +-------------------------------------------+------------+
 
 
-// 观察 重启后  相关 'Rpl_semi_sync%' 状态变量 
+// 观察 重启后  相关 'Rpl_semi_sync%' 状态变量
 mysql> SHOW STATUS LIKE 'Rpl_semi_sync%';
           +--------------------------------------------+-------+
           | Variable_name                              | Value |
