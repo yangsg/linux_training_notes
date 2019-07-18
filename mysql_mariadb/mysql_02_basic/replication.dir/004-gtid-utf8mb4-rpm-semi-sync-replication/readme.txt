@@ -395,6 +395,7 @@ mysql> SHOW STATUS LIKE 'Rpl_semi_sync%';
 // 在 /etc/my.cnf 中 添加 semi-sync replication 的配置
 [root@master ~]# vim /etc/my.cnf
 
+          [mysqld]
           # 如下 2 行 是与 半同步复制 相关的设置
           # 注: 半同步复制 必须同时(both) 在 master 和 slave 上启用, 否则会 退化为 异步复制 方式
           rpl_semi_sync_master_enabled=1    # 启用 master 的 semi-sync replication功能 # 默认为 0 即关闭
