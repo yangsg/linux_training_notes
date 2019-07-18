@@ -69,10 +69,12 @@ master 上 安装 mysql
 
 
 ---------------------------------------------------------------------------------------------------
+1. 先搭建 基本的 one master to two slaves 的 replication 拓扑环境
+
 // 开始正式 配置 与 replication 相关的 设置(此时不包含 semi-sync replication 的 设置 )
 
 --------------------
-master01 端
+master 端 replication 设置 (此时不包含 semi-sync replication 的 设置)
 
 [root@master ~]# vim /etc/my.cnf
 
@@ -144,56 +146,13 @@ mysql> show master status;
       +-------------------+----------+--------------+------------------+------------------------------------------+
       | File              | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set                        |
       +-------------------+----------+--------------+------------------+------------------------------------------+
-      | master-bin.000001 |      631 |              |                  | 1ea51141-a6b4-11e9-b38f-000c29f6f083:1-2 |
+      | master-bin.000001 |     1156 |              |                  | abeb8ed5-a946-11e9-a9a6-000c29528e39:1-4 |
       +-------------------+----------+--------------+------------------+------------------------------------------+
 
 
 
-----------------------------------------------------------------
-
-注: 启用 半同步 复制前 必须 先 安装其 对应的 半同步复制 插件
-
-// 安装 半同步 复制 的 master 端 插件 semisync_master.so
-mysql> INSTALL PLUGIN rpl_semi_sync_master SONAME 'semisync_master.so';
-
-// 验证 插件 semisync_master.so 的安装 (还 可以使用 语句 SHOW PLUGINS 查看)
-mysql> SELECT PLUGIN_NAME, PLUGIN_STATUS FROM INFORMATION_SCHEMA.PLUGINS WHERE PLUGIN_NAME LIKE '%semi%';
-      +----------------------+---------------+
-      | PLUGIN_NAME          | PLUGIN_STATUS |
-      +----------------------+---------------+
-      | rpl_semi_sync_master | ACTIVE        |
-      +----------------------+---------------+
-
-
-          # 如下 2 行 是与 半同步复制 相关的设置
-          # 注: 半同步复制 必须同时(both) 在 master 和 slave 上启用, 否则会 退化为 异步复制 方式
-          rpl_semi_sync_master_enabled=1    # 启用 master 的 semi-sync replication功能 # 默认为 0 即关闭
-          rpl_semi_sync_master_timeout=1000 # 1 second # 默认为 10 seconds
-
-          # 更多 与 半同步复制 相关的 系统变量 或 状态变量 见:
-          #    https://dev.mysql.com/doc/refman/5.7/en/replication-semisync-interface.html
-          #    https://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html
-          #    https://dev.mysql.com/doc/refman/5.7/en/server-status-variables.html
-
-
-
------------------------------------------------------------------------------
-
 --------------------
-slave01 相关配置
-
-注: 启用 半同步 复制前 必须 先 安装其 对应的 半同步复制 插件
-
-// 安装 半同步 复制 的 slave 端 插件 semisync_slave.so
-mysql> INSTALL PLUGIN rpl_semi_sync_slave SONAME 'semisync_slave.so';
-
-// 验证 插件 semisync_slave.so 的安装 (还 可以使用 语句 SHOW PLUGINS 查看)
-mysql> SELECT PLUGIN_NAME, PLUGIN_STATUS FROM INFORMATION_SCHEMA.PLUGINS WHERE PLUGIN_NAME LIKE '%semi%';
-        +---------------------+---------------+
-        | PLUGIN_NAME         | PLUGIN_STATUS |
-        +---------------------+---------------+
-        | rpl_semi_sync_slave | ACTIVE        |
-        +---------------------+---------------+
+slave01 端 replication 设置 (此时不包含 semi-sync replication 的 设置)
 
 
 [root@slave01 ~]# vim /etc/my.cnf
@@ -238,6 +197,7 @@ mysql> SELECT PLUGIN_NAME, PLUGIN_STATUS FROM INFORMATION_SCHEMA.PLUGINS WHERE P
         log-bin                                                      slave01-bin
         server-id                                                    101
 
+
 // 重启 slave01 的 mysql server 是 如上配置生效
 [root@slave01 ~]# systemctl restart mysqld
 
@@ -268,8 +228,292 @@ mysql> CHANGE MASTER TO
     -> MASTER_PASSWORD='WWW.1.com',
     -> MASTER_AUTO_POSITION=1 ; #因为是基于 gtid, 所有启用 MASTER_AUTO_POSITION 功能自动确定 replication 所需的坐标信息
 
+// 启动 slave 的 io_thread 和 sql_thread
+mysql> start slave;
 
 
+mysql> pager less -Fi
+mysql> show slave status\G
+
+
+----------------------------------------------------------------
+
+slave02 端 replication 设置 (此时不包含 semi-sync replication 的 设置)
+
+
+[root@slave02 ~]# vim /etc/my.cnf
+
+          [client]  # 注: [client] group 是 所有的 mysql client 工具都会读取的配置文件
+          loose-default-character-set = utf8mb4   # 加 loose- 前缀是为解决 [mysqlbinlog] group 不识别该 选项的 问题
+
+          [mysql]
+          default-character-set = utf8mb4
+
+          [mysqlbinlog]
+          set_charset=utf8mb4
+
+          [mysqld]
+          # 设置 mysql 字符集为 utf8mb4
+          character-set-client-handshake = FALSE  # 忽略 client 端的 character set 设置
+          character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
+          collation-server = utf8mb4_unicode_ci
+
+          # 如下 4 行 配置 是与 replication 和 gtid 相关的 配置
+          log-bin=slave02-bin
+          server-id=102   # server-id 范围: 1 and (232)−1
+          gtid_mode=ON    # ON: Both new and replicated transactions must be GTID transactions.
+          enforce-gtid-consistency=true  # ON: no transaction is allowed to violate GTID consistency.
+
+          # 关于 系统变量 gtid_mode 和 enforce-gtid-consistency 的信息, 见:
+          #  https://dev.mysql.com/doc/refman/5.7/en/replication-options-gtids.html#sysvar_gtid_mode
+          #  https://dev.mysql.com/doc/refman/5.7/en/replication-options-gtids.html#sysvar_enforce_gtid_consistency
+
+          # 此例中 打算 使用 TABLE 记录 master_info 和 relay_log_info
+          # 一些 mysql replication 的 最佳实践(best practices) 指南 见 https://www.percona.com/sites/default/files/presentations/Replication-webinar.pdf
+          master_info_repository=TABLE
+          relay_log_info_repository=TABLE
+          relay-log-recovery=1
+
+
+
+// 先 通过 命令 mysqld 查看一下 配置
+[root@slave02 ~]# mysqld --verbose --help | grep -E '^(log-bin |server-id |gtid-mode|enforce-gtid-consistency)'
+          enforce-gtid-consistency                                     true
+          gtid-mode                                                    ON
+          log-bin                                                      slave02-bin
+          server-id                                                    102
+
+
+// 重启 slave02 的 mysql server 是 如上配置生效
+[root@slave02 ~]# systemctl restart mysqld
+
+
+// 查看一下客户端工具 mysql 默认使用 的 字符集
+[root@slave02 ~]# mysql --help | grep  ^default-character-set
+      default-character-set             utf8mb4
+
+
+// 查看一下 slave02 上的 master 的 一份完全备份
+[root@slave02 ~]# ls /tmp/db_full-backup.sql
+      /tmp/db_full-backup.sql
+
+
+[root@slave02 ~]# mysql -u root -p < /tmp/db_full-backup.sql  # 以 batch mode 还原 master 的 备份(即保持slave 初始数据与 master 一致)
+
+[root@slave02 ~]# echo $?
+0
+
+// 执行一下 help 帮助信息 查看 change master 的 语法帮助
+mysql> help change master to
+
+// 在 slave 上设置 master 信息 (即 到 master 的 连接, 认证 和 replication 的坐标信息)
+mysql> CHANGE MASTER TO
+    -> MASTER_HOST='192.168.175.100',
+    -> MASTER_PORT=3306,
+    -> MASTER_USER='repluser',
+    -> MASTER_PASSWORD='WWW.1.com',
+    -> MASTER_AUTO_POSITION=1 ; #因为是基于 gtid, 所有启用 MASTER_AUTO_POSITION 功能自动确定 replication 所需的坐标信息
+
+// 启动 slave 的 io_thread 和 sql_thread
+mysql> start slave;
+
+
+mysql> pager less -Fi
+mysql> show slave status\G
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------------------------
+2. 设置 启用 Semisynchronous Replication
+
+
+--------------------
+
+master 端 的 semi-sync replication 设置
+
+
+注: 启用 半同步 复制前 必须 先 安装其 对应的 半同步复制 插件
+
+// 安装 半同步 复制 的 master 端 插件 semisync_master.so
+mysql> INSTALL PLUGIN rpl_semi_sync_master SONAME 'semisync_master.so';
+
+// 验证 插件 semisync_master.so 的安装 (还 可以使用 语句 SHOW PLUGINS 查看)
+mysql> SELECT PLUGIN_NAME, PLUGIN_STATUS FROM INFORMATION_SCHEMA.PLUGINS WHERE PLUGIN_NAME LIKE '%semi%';
+      +----------------------+---------------+
+      | PLUGIN_NAME          | PLUGIN_STATUS |
+      +----------------------+---------------+
+      | rpl_semi_sync_master | ACTIVE        |
+      +----------------------+---------------+
+
+
+// 演示一下 在 运行时(at runtime, 即 动态)  如何启用 rpl_semi_sync_master 插件 (注: 此时这些修改 仅在 当前运行的 mysqld 进程中有效)
+mysql> SET GLOBAL rpl_semi_sync_master_enabled = 1;
+mysql> SET GLOBAL rpl_semi_sync_master_timeout = 1000;
+
+// 查看修改后 相关的 'rpl_semi_sync%' 配置
+mysql> SHOW VARIABLES LIKE 'rpl_semi_sync%';
+        +-------------------------------------------+------------+
+        | Variable_name                             | Value      |
+        +-------------------------------------------+------------+
+        | rpl_semi_sync_master_enabled              | ON         |  <------
+        | rpl_semi_sync_master_timeout              | 1000       |
+        | rpl_semi_sync_master_trace_level          | 32         |
+        | rpl_semi_sync_master_wait_for_slave_count | 1          |
+        | rpl_semi_sync_master_wait_no_slave        | ON         |
+        | rpl_semi_sync_master_wait_point           | AFTER_SYNC |
+        +-------------------------------------------+------------+
+
+
+// 查看 此时 相关的 'Rpl_semi_sync%' 状态
+mysql> SHOW STATUS LIKE 'Rpl_semi_sync%';
+        +--------------------------------------------+-------+
+        | Variable_name                              | Value |
+        +--------------------------------------------+-------+
+        | Rpl_semi_sync_master_clients               | 0     |
+        | Rpl_semi_sync_master_net_avg_wait_time     | 0     |
+        | Rpl_semi_sync_master_net_wait_time         | 0     |
+        | Rpl_semi_sync_master_net_waits             | 0     |
+        | Rpl_semi_sync_master_no_times              | 0     |
+        | Rpl_semi_sync_master_no_tx                 | 0     |
+        | Rpl_semi_sync_master_status                | ON    |  <------
+        | Rpl_semi_sync_master_timefunc_failures     | 0     |
+        | Rpl_semi_sync_master_tx_avg_wait_time      | 0     |
+        | Rpl_semi_sync_master_tx_wait_time          | 0     |
+        | Rpl_semi_sync_master_tx_waits              | 0     |
+        | Rpl_semi_sync_master_wait_pos_backtraverse | 0     |
+        | Rpl_semi_sync_master_wait_sessions         | 0     |
+        | Rpl_semi_sync_master_yes_tx                | 0     |
+        +--------------------------------------------+-------+
+
+
+// 在 /etc/my.cnf 中 添加 semi-sync replication 的配置
+[root@master ~]# vim /etc/my.cnf
+
+          # 如下 2 行 是与 半同步复制 相关的设置
+          # 注: 半同步复制 必须同时(both) 在 master 和 slave 上启用, 否则会 退化为 异步复制 方式
+          rpl_semi_sync_master_enabled=1    # 启用 master 的 semi-sync replication功能 # 默认为 0 即关闭
+          rpl_semi_sync_master_timeout=1000 # 1 second # 默认为 10 seconds
+
+          # 更多 与 半同步复制 相关的 系统变量 或 状态变量 见:
+          #    https://dev.mysql.com/doc/refman/5.7/en/replication-semisync-interface.html
+          #    https://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html
+          #    https://dev.mysql.com/doc/refman/5.7/en/server-status-variables.html
+
+
+// 重启 master 的 mysql server 使 如上配置生效
+[root@master ~]# systemctl restart mysqld
+
+// 观察 重启后 相关 'rpl_semi_sync%' 变量
+mysql> SHOW VARIABLES LIKE 'rpl_semi_sync%';
+          +-------------------------------------------+------------+
+          | Variable_name                             | Value      |
+          +-------------------------------------------+------------+
+          | rpl_semi_sync_master_enabled              | ON         | <------
+          | rpl_semi_sync_master_timeout              | 1000       |
+          | rpl_semi_sync_master_trace_level          | 32         |
+          | rpl_semi_sync_master_wait_for_slave_count | 1          |
+          | rpl_semi_sync_master_wait_no_slave        | ON         |
+          | rpl_semi_sync_master_wait_point           | AFTER_SYNC |
+          +-------------------------------------------+------------+
+
+
+// 观察 重启后  相关 'Rpl_semi_sync%' 状态变量 
+mysql> SHOW STATUS LIKE 'Rpl_semi_sync%';
+          +--------------------------------------------+-------+
+          | Variable_name                              | Value |
+          +--------------------------------------------+-------+
+          | Rpl_semi_sync_master_clients               | 0     |
+          | Rpl_semi_sync_master_net_avg_wait_time     | 0     |
+          | Rpl_semi_sync_master_net_wait_time         | 0     |
+          | Rpl_semi_sync_master_net_waits             | 0     |
+          | Rpl_semi_sync_master_no_times              | 0     |
+          | Rpl_semi_sync_master_no_tx                 | 0     |
+          | Rpl_semi_sync_master_status                | ON    | <------
+          | Rpl_semi_sync_master_timefunc_failures     | 0     |
+          | Rpl_semi_sync_master_tx_avg_wait_time      | 0     |
+          | Rpl_semi_sync_master_tx_wait_time          | 0     |
+          | Rpl_semi_sync_master_tx_waits              | 0     |
+          | Rpl_semi_sync_master_wait_pos_backtraverse | 0     |
+          | Rpl_semi_sync_master_wait_sessions         | 0     |
+          | Rpl_semi_sync_master_yes_tx                | 0     |
+          +--------------------------------------------+-------+
+
+
+
+
+--------------------
+
+slave01 端 的 semi-sync replication 设置
+
+注: 启用 半同步 复制前 必须 先 安装其 对应的 半同步复制 插件
+
+// 安装 半同步 复制 的 slave 端 插件 semisync_slave.so
+mysql> INSTALL PLUGIN rpl_semi_sync_slave SONAME 'semisync_slave.so';
+
+// 验证 插件 semisync_slave.so 的安装 (还 可以使用 语句 SHOW PLUGINS 查看)
+mysql> SELECT PLUGIN_NAME, PLUGIN_STATUS FROM INFORMATION_SCHEMA.PLUGINS WHERE PLUGIN_NAME LIKE '%semi%';
+        +---------------------+---------------+
+        | PLUGIN_NAME         | PLUGIN_STATUS |
+        +---------------------+---------------+
+        | rpl_semi_sync_slave | ACTIVE        |
+        +---------------------+---------------+
+
+// 演示一下 在 运行时(at runtime, 即 动态)  如何启用 rpl_semi_sync_slave 插件 (注: 此时这些修改 仅在 当前运行的 mysqld 进程中有效)
+mysql> SET GLOBAL rpl_semi_sync_slave_enabled = 1;
+
+
+// 重新启动 slave 的 I/O 线程, 让 slave 重新连接 master 以使 自己 作为 a semisynchronous slave 被注册
+mysql> STOP SLAVE IO_THREAD;
+mysql> START SLAVE IO_THREAD;
+
+// 观察 slave01 上 相关的 'rpl_semi_sync%' 变量
+mysql> SHOW VARIABLES LIKE 'rpl_semi_sync%';
+        +---------------------------------+-------+
+        | Variable_name                   | Value |
+        +---------------------------------+-------+
+        | rpl_semi_sync_slave_enabled     | ON    |  <-----
+        | rpl_semi_sync_slave_trace_level | 32    |
+        +---------------------------------+-------+
+
+// 观察 slave01 上 相关的 'Rpl_semi_sync%' 状态变量
+mysql> SHOW STATUS LIKE 'Rpl_semi_sync%';
+        +----------------------------+-------+
+        | Variable_name              | Value |
+        +----------------------------+-------+
+        | Rpl_semi_sync_slave_status | ON    |  <-----
+        +----------------------------+-------+
+
+// 此时 在 master 端 执行 如下 语句 看一下 master 端相关 'Rpl_semi_sync%' 状态 变化
+            mysql> SHOW STATUS LIKE 'Rpl_semi_sync%';    #<---- 注: 此语句在 master 端 执行
+            +--------------------------------------------+-------+
+            | Variable_name                              | Value |
+            +--------------------------------------------+-------+
+            | Rpl_semi_sync_master_clients               | 1     | <------
+            | Rpl_semi_sync_master_net_avg_wait_time     | 0     |
+            | Rpl_semi_sync_master_net_wait_time         | 0     |
+            | Rpl_semi_sync_master_net_waits             | 0     |
+            | Rpl_semi_sync_master_no_times              | 0     |
+            | Rpl_semi_sync_master_no_tx                 | 0     |
+            | Rpl_semi_sync_master_status                | ON    |
+            | Rpl_semi_sync_master_timefunc_failures     | 0     |
+            | Rpl_semi_sync_master_tx_avg_wait_time      | 0     |
+            | Rpl_semi_sync_master_tx_wait_time          | 0     |
+            | Rpl_semi_sync_master_tx_waits              | 0     |
+            | Rpl_semi_sync_master_wait_pos_backtraverse | 0     |
+            | Rpl_semi_sync_master_wait_sessions         | 0     |
+            | Rpl_semi_sync_master_yes_tx                | 0     |
+            +--------------------------------------------+-------+
+
+
+
+
+// 在 /etc/my.cnf 中 添加 semi-sync replication 的配置
 [root@slave01 ~]# vim /etc/my.cnf
 
           [mysqld]
@@ -285,6 +529,25 @@ mysql> CHANGE MASTER TO
 
 // 重启 slave01 的 mysql server 是 如上配置生效
 [root@slave01 ~]# systemctl restart mysqld
+
+
+// 观察 重启后 slave01 上 相关的 'rpl_semi_sync%' 变量
+mysql> SHOW VARIABLES LIKE 'rpl_semi_sync%';
+        +---------------------------------+-------+
+        | Variable_name                   | Value |
+        +---------------------------------+-------+
+        | rpl_semi_sync_slave_enabled     | ON    |   <-----
+        | rpl_semi_sync_slave_trace_level | 32    |
+        +---------------------------------+-------+
+
+// 观察 重启后 slave01 上 相关的 'Rpl_semi_sync%' 状态变量
+mysql> SHOW STATUS LIKE 'Rpl_semi_sync%';
+        +----------------------------+-------+
+        | Variable_name              | Value |
+        +----------------------------+-------+
+        | Rpl_semi_sync_slave_status | ON    |  <-----
+        +----------------------------+-------+
+
 
 mysql> pager less -Fi
 mysql> start slave;
