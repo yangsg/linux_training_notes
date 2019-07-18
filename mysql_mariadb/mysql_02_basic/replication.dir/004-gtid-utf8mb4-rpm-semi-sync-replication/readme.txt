@@ -571,7 +571,8 @@ mysql> SHOW STATUS LIKE 'Rpl_semi_sync%';
             +--------------------------------------------+-------+
 
 mysql> pager less -Fi
-mysql> start slave;
+mysql> show slave status\G
+
 
 
 --------------------
@@ -705,8 +706,42 @@ mysql> SHOW STATUS LIKE 'Rpl_semi_sync%';
 
 
 mysql> pager less -Fi
-mysql> start slave;
+mysql> show slave status\G
 
+
+
+
+---------------------------------------------------------------------------------------------------
+简单测试一下:
+
+// 在 master 上 创建 一个数据库
+mysql> CREATE DATABASE db_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+
+// 在 slave01 上 看一下 replication 效果
+mysql> show databases;
+    +--------------------+
+    | Database           |
+    +--------------------+
+    | information_schema |
+    | db_test            |
+    | mysql              |
+    | performance_schema |
+    | sys                |
+    +--------------------+
+
+
+// 在 slave02 上 看一下 replication 效果
+mysql> show databases;
+    +--------------------+
+    | Database           |
+    +--------------------+
+    | information_schema |
+    | db_test            |
+    | mysql              |
+    | performance_schema |
+    | sys                |
+    +--------------------+
 
 
 
