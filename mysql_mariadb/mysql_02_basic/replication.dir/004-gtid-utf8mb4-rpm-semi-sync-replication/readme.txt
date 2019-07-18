@@ -64,7 +64,83 @@ master 上 安装 mysql
 
 
 ---------------------------------------------------------------------------------------------------
+// 开始正式 配置 与 replication 相关的 设置
 
+--------------------
+master01 相关配置
+
+注: 启用 半同步 复制前 必须 先 安装其 对应的 半同步复制 插件
+
+// 安装 半同步 复制 的 master 端 插件 semisync_master.so
+mysql> INSTALL PLUGIN rpl_semi_sync_master SONAME 'semisync_master.so';
+
+// 验证 插件 semisync_master.so 的安装 (还 可以使用 语句 SHOW PLUGINS 查看)
+mysql> SELECT PLUGIN_NAME, PLUGIN_STATUS FROM INFORMATION_SCHEMA.PLUGINS WHERE PLUGIN_NAME LIKE '%semi%';
+      +----------------------+---------------+
+      | PLUGIN_NAME          | PLUGIN_STATUS |
+      +----------------------+---------------+
+      | rpl_semi_sync_master | ACTIVE        |
+      +----------------------+---------------+
+
+
+[root@master ~]# vim /etc/my.cnf
+
+          [client]  # 注: [client] group 是 所有的 mysql client 工具都会读取的配置文件
+          loose-default-character-set = utf8mb4   # 加 loose- 前缀是为解决 [mysqlbinlog] group 不识别该 选项的 问题
+
+          [mysql]
+          default-character-set = utf8mb4
+
+          [mysqlbinlog]
+          set_charset=utf8mb4
+
+          [mysqld]
+          # 设置 mysql 字符集为 utf8mb4
+          character-set-client-handshake = FALSE  # 忽略 client 端的 character set 设置
+          character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
+          collation-server = utf8mb4_unicode_ci
+
+          # 如下 4 行 配置 是与 replication 和 gtid 相关的 配置
+          log-bin=master-bin
+          server-id=100   # server-id 范围: 1 and (232)−1
+          gtid_mode=ON    # ON: Both new and replicated transactions must be GTID transactions.
+          enforce-gtid-consistency=true  # ON: no transaction is allowed to violate GTID consistency.
+
+          # 关于 系统变量 gtid_mode 和 enforce-gtid-consistency 的信息, 见:
+          #  https://dev.mysql.com/doc/refman/5.7/en/replication-options-gtids.html#sysvar_gtid_mode
+          #  https://dev.mysql.com/doc/refman/5.7/en/replication-options-gtids.html#sysvar_enforce_gtid_consistency
+
+          # 如下 2 行 是与 半同步复制 相关的设置
+          # 注: 半同步复制 必须同时(both) 在 master 和 slave 上启用, 否则会 退化为 异步复制 方式
+          rpl_semi_sync_master_enabled=1    # 启用 master 的 semi-sync replication功能 # 默认为 0 即关闭
+          rpl_semi_sync_master_timeout=1000 # 1 second # 默认为 10 seconds
+
+          # 更多 与 半同步复制 相关的 系统变量 或 状态变量 见:
+          #    https://dev.mysql.com/doc/refman/5.7/en/replication-semisync-interface.html
+          #    https://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html
+          #    https://dev.mysql.com/doc/refman/5.7/en/server-status-variables.html
+
+
+
+// 重启 mysql server, 以 应用 如上的配置
+[root@master ~]# systemctl restart mysqld
+
+
+// 创建 专用于 replication 的 user. 参见 https://dev.mysql.com/doc/refman/5.7/en/replication-howto-repuser.html
+// 注:
+//     create user 的步骤有 许多 问题 或 细节要考虑, 所以为了 最大的 灵活性, 最好 按部就班 的 按如下的 步骤 和 语法
+//     来 创建用户(尤其是 涉及 replication 的 拓扑结构中), 具体原因见
+//     https://github.com/yangsg/linux_training_notes/tree/master/mysql_mariadb/mysql_02_basic/replication.dir/003-gtid-utf8mb4-rpm-multi-source-replication
+//     或 参考   http://www.unixfbi.com/155.html   中 “复制账号重复问题”
+mysql> USE mysql;
+mysql> CREATE USER IF NOT EXISTS 'repluser'@'192.168.175.103' IDENTIFIED BY 'WWW.1.com';   # 创建 用于 replication 的用户
+mysql> GRANT REPLICATION SLAVE ON *.* TO 'repluser'@'192.168.175.103';       授予 该用户 replication slave 权限
+
+     注: mysql 5.7 的文档中 推荐 使用 命令 create user 创建用户和密码, 而不推荐使用 grant 来创建,
+         所以如上例子中 为了迎合这种趋势, 没有使用更简单的一行 grant ... identified by ... 这种语句来创建 user.
+
+
+-----------------------------------------------------------------------------
 
 
 
