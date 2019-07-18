@@ -2,11 +2,16 @@
 
 半同步复制 Semisynchronous Replication
 
+       该 示例仅 演示 最简单的 semi-sync replication 搭建, 更复杂的场景 还需要做 更多的考虑
+
 准备 实现 环境用的 3 台 主机:
 master:  192.168.175.100
 slave01: 192.168.175.101
 slave02: 192.168.175.102
 
+总体步骤:
+    1. 先搭建 基本的 one master to two slaves 的 replication 拓扑环境
+    2. 设置 启用 Semisynchronous Replication
 
 ---------------------------------------------------------------------------------------------------
 搭建 本地 yum repo 服务器
@@ -64,24 +69,10 @@ master 上 安装 mysql
 
 
 ---------------------------------------------------------------------------------------------------
-// 开始正式 配置 与 replication 相关的 设置
+// 开始正式 配置 与 replication 相关的 设置(此时不包含 semi-sync replication 的 设置 )
 
 --------------------
-master01 相关配置
-
-注: 启用 半同步 复制前 必须 先 安装其 对应的 半同步复制 插件
-
-// 安装 半同步 复制 的 master 端 插件 semisync_master.so
-mysql> INSTALL PLUGIN rpl_semi_sync_master SONAME 'semisync_master.so';
-
-// 验证 插件 semisync_master.so 的安装 (还 可以使用 语句 SHOW PLUGINS 查看)
-mysql> SELECT PLUGIN_NAME, PLUGIN_STATUS FROM INFORMATION_SCHEMA.PLUGINS WHERE PLUGIN_NAME LIKE '%semi%';
-      +----------------------+---------------+
-      | PLUGIN_NAME          | PLUGIN_STATUS |
-      +----------------------+---------------+
-      | rpl_semi_sync_master | ACTIVE        |
-      +----------------------+---------------+
-
+master01 端
 
 [root@master ~]# vim /etc/my.cnf
 
@@ -109,17 +100,6 @@ mysql> SELECT PLUGIN_NAME, PLUGIN_STATUS FROM INFORMATION_SCHEMA.PLUGINS WHERE P
           # 关于 系统变量 gtid_mode 和 enforce-gtid-consistency 的信息, 见:
           #  https://dev.mysql.com/doc/refman/5.7/en/replication-options-gtids.html#sysvar_gtid_mode
           #  https://dev.mysql.com/doc/refman/5.7/en/replication-options-gtids.html#sysvar_enforce_gtid_consistency
-
-          # 如下 2 行 是与 半同步复制 相关的设置
-          # 注: 半同步复制 必须同时(both) 在 master 和 slave 上启用, 否则会 退化为 异步复制 方式
-          rpl_semi_sync_master_enabled=1    # 启用 master 的 semi-sync replication功能 # 默认为 0 即关闭
-          rpl_semi_sync_master_timeout=1000 # 1 second # 默认为 10 seconds
-
-          # 更多 与 半同步复制 相关的 系统变量 或 状态变量 见:
-          #    https://dev.mysql.com/doc/refman/5.7/en/replication-semisync-interface.html
-          #    https://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html
-          #    https://dev.mysql.com/doc/refman/5.7/en/server-status-variables.html
-
 
 
 // 重启 mysql server, 以 应用 如上的配置
@@ -166,6 +146,34 @@ mysql> show master status;
       +-------------------+----------+--------------+------------------+------------------------------------------+
       | master-bin.000001 |      631 |              |                  | 1ea51141-a6b4-11e9-b38f-000c29f6f083:1-2 |
       +-------------------+----------+--------------+------------------+------------------------------------------+
+
+
+
+----------------------------------------------------------------
+
+注: 启用 半同步 复制前 必须 先 安装其 对应的 半同步复制 插件
+
+// 安装 半同步 复制 的 master 端 插件 semisync_master.so
+mysql> INSTALL PLUGIN rpl_semi_sync_master SONAME 'semisync_master.so';
+
+// 验证 插件 semisync_master.so 的安装 (还 可以使用 语句 SHOW PLUGINS 查看)
+mysql> SELECT PLUGIN_NAME, PLUGIN_STATUS FROM INFORMATION_SCHEMA.PLUGINS WHERE PLUGIN_NAME LIKE '%semi%';
+      +----------------------+---------------+
+      | PLUGIN_NAME          | PLUGIN_STATUS |
+      +----------------------+---------------+
+      | rpl_semi_sync_master | ACTIVE        |
+      +----------------------+---------------+
+
+
+          # 如下 2 行 是与 半同步复制 相关的设置
+          # 注: 半同步复制 必须同时(both) 在 master 和 slave 上启用, 否则会 退化为 异步复制 方式
+          rpl_semi_sync_master_enabled=1    # 启用 master 的 semi-sync replication功能 # 默认为 0 即关闭
+          rpl_semi_sync_master_timeout=1000 # 1 second # 默认为 10 seconds
+
+          # 更多 与 半同步复制 相关的 系统变量 或 状态变量 见:
+          #    https://dev.mysql.com/doc/refman/5.7/en/replication-semisync-interface.html
+          #    https://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html
+          #    https://dev.mysql.com/doc/refman/5.7/en/server-status-variables.html
 
 
 
