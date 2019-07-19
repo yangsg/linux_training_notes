@@ -30,6 +30,11 @@ When monitoring master server, MHA just sends ping packets to master every N sec
         https://raw.githubusercontent.com/wiki/yoshinorim/mha4mysql-manager/UseCases.md
 
 
+注: 实际生产环境中, 可考虑采用 mha + semi-sync 结合的方式, 仅可能保证数据的 一致性 和 完整性.
+    而 全同步复制 需要使用 NDB Cluster, 虽然 数据完整性 能保证, 但 其 降低了 性能 且 不支持 innodb, 所以通常不会采用.
+
+
+
 manager :   192.168.175.100  <----- 生产环境中 最好 manager server 也弄 2 台以上, 保证 manager 本身的高可用
 master  :   192.168.175.101
 slave01 :   192.168.175.102
@@ -37,7 +42,7 @@ slave02 :   192.168.175.103
 slave03 :   192.168.175.104
 
 
-
+---------------------------------------------------------------------------------------------------
 
 
 
