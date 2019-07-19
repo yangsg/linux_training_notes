@@ -1,10 +1,14 @@
 
 
 
+构建 最基本的 local yum repo 服务
+
+
+
 
 
 ---------------------------------------------------------------------------------------------------
-构建 最基本的 local yum repo 服务
+
 
 // 创建 用于 local yum repo 的 目录
 [root@localyumrepo ~]# mkdir -p /var/www/html/local_yum_repo_dir
