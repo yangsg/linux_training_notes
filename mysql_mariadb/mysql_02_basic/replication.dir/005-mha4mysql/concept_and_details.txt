@@ -1,0 +1,256 @@
+
+
+---------------------------------------------------------------------------------------------------
+
+https://github.com/yoshinorim/mha4mysql-manager/wiki/Overview
+
+-------------Overview 概要-------------
+
+MHA 以l最短的停机 时间内 执行 自动的 master failover and slave promotion,
+通常在 在 10-30 seconds 以内. MHA 阻止了 replication consistency 问题 以及
+节约了 需要购买 额外 servers 的 费用. 所有这一些 没有降低任何性能, 无复杂性(easy-to-install)
+无需对 existing deployments 做 任何修改.
+
+MHA 还 提供 计划(scheduled) 的 online master switching,
+safely changing the currently running master to a new master,
+within mere seconds (0.5-2 seconds) of downtime (blocking writes only)
+
+
+MHA 提供了如下功能, and can be useful in many deployments in which high availability,
+data integrity and near non-stop master maintenance are required.
+
+- Automated master monitoring and failover (自动 master 监视 及 故障转移)
+
+    MHA 能 监视 已经存在的 replication environment 中的 MySQL masters, 根据 master failure 的
+    detection 执行自动 master failover.  MHA guarantees the consistency of all the slaves by
+    identifying differential relay log events from the most current slave and applying them to all the other slaves,
+    including those slaves which still haven't received the latest relay log events.
+    MHA can normally perform failover in a matter of seconds: 9-12 seconds to detect master failure,
+    optionally 7-10 seconds to power off the master machine to avoid split brain(脑裂),
+    and a few seconds to apply differential relay logs to the new master. Total downtime is normally 10-30 seconds(10-30秒).
+    A specific slave can be designated as a candidate master(候选 master) (setting priorities) in a configuration file.
+    Since MHA maintains consistency between slaves, any slave can be promoted to become the new master.
+    Consistency problems, which would ordinarily cause sudden replication failure, will not occur.
+
+- Interactive (manually initiated) Master Failover (交互式的 Master Failover)
+
+    MHA can be configured for manually initiated (non-automatic), interactive failover, without monitoring the master.
+
+
+- Non-interactive master failover (非交互式的,自动的  master failover)
+
+    非 交互式, 无需 monitoring the master 的 automatic master failover 也被支持.
+    该特性 在 已经使用了 MySQL master software monitoring 的时候 特别有用,
+    例如, 你能使用 Pacemaker(Heartbeat) 探测 master failure 和 virtual IP address takeover,
+    同时 使用 MHA 来 实现 master failover 和 slave promotion.
+
+
+              http://www.linux-ha.org/wiki/Pacemaker
+
+
+- Online switching master to a different host  (在线 切换 master to a different host, 可以是故障转移,也可以是 仅简单的切换到 a faster machine)
+
+    It is often necessary to migrate an existing master to a different machine,
+    like when the current master has H/W RAID controller or RAM problems,
+    or when you want to replace it with a faster machine, etc. This is not a master crash,
+    but scheduled master maintenance is required.
+    Scheduled master maintenance should be done as quickly as possible,
+    since it entails partial downtime (master writes are disabled).
+    On the other hand, you should block/kill current running sessions very carefully because
+    consistency problems between different masters may occur (i.e "updating master1,
+    updating master 2, committing master1, getting error on committing master 2" will result in data inconsistency).
+    Both fast master switch and graceful blocking writes are required.
+
+    MHA provides graceful master switching within 0.5-2 seconds of writer blockage.
+    0.5-2 seconds of writer downtime is often acceptable, (0.5-2 的 writer downtime 通常是 可接受的)
+    so you can switch masters even without allocating a scheduled maintenance window.
+    Actions such as upgrading to higher versions, faster machine, etc. become much easier.
+
+-------------Difficulties of Master Failover (故障转移的困难)-------------
+
+    Master Failover is not as trivial as it might seem. Take the most typical MYSQL deployment case
+    of a single master with multiple slaves. If the master crashes,
+    you need to pick one of the latest slaves, promote it to the new master,
+    and let other slaves start replication from the new master. This is actually not trivial.
+    Even when the most current slave can be identified, it is likely that
+    the other slaves have not yet received all their binary log events.
+    Those slaves will lose transactions if connected to the new master upon commencement of replication.
+    This will cause consistency problems. To avoid those consistency problems,
+    ---中文注释:
+    被丢失的 binlog events(其还没有抵达 所有的 slaves) 需要被 识别
+    并 在 the new (promoted) master 上 initiating replication 之前 依次序 应用到 每个 slave.
+    -------------
+    the lost binlog events (which haven't yet reached all the slaves) need to be identified
+    and applied to each slave in turn prior to initiating replication on the new (promoted) master.
+    This operation can be very complex and difficult to perform manually.
+    This is illustrated in my presentation at the MySQL Conference and Expo 2011 slides (especially in p.10 as below).
+
+        图片见   https://github.com/yoshinorim/mha4mysql-manager/wiki/Overview
+
+
+    Currently most MySQL Replication users have no choice but to perform failover manually on master crashes.
+    One or more hours of downtime are not uncommon to complete failover.
+    It is likely that not all slaves will have received the same relay log events,
+    resulting in consistency problems later which will have to be corrected later.
+    Even though master crashes are infrequent, they can be very painful when they occur.
+
+    ------ 中文注释:
+    MHA 旨在 尽可能 快的 完全 自动化 实现 master failover 和 recovery procedures.
+    而不需要 任何 passive (standby) machine. 还原(Recovery) 包括
+    determining the new master,
+    identifying differential relay log events between slaves,
+    applying necessary events to the new master,
+    syncing the other slaves and have them start replication from the new master.
+    MHA 通常 能在 10-30 秒 的 downtime 之内 完成 failover.
+    (10 秒 用于 探测 master failure, optionally 7-10 seconds 用于 power off the master machine 以 避免 split brain,
+    a few seconds or more 用于 还原(recovery),
+    依赖于 replication delay
+    ------
+
+    MHA aims to fully automate master failover and recovery procedures as quickly as possible,
+    without any passive (standby) machine. Recovery includes determining the new master,
+    identifying differential relay log events between slaves, applying necessary events to the new master,
+    syncing the other slaves and have them start replication from the new master.
+    MHA normally can to failover in 10-30 seconds of downtime
+    (10 seconds to detect master failure, optionally 7-10 seconds
+    to power off the master machine to avoid split brain, a few seconds or more for recovery),
+    depending on replication delay.
+
+
+
+    自动转移命令 "masterha_manager (MHA Manager)"
+
+    MHA provides both automated and manual failover commands.
+    The automated failover command "masterha_manager (MHA Manager)" consists of master monitoring and master failover.
+    masterha_manager permanently monitors the master server's availability.
+    If MHA Manager cannot reach the master server, it automatically starts non-interactive failover procedures.
+
+
+    手动转移命令 "masterha_master_switch"
+
+    The manual failover command "masterha_master_switch" initially checks to see that master is in fact dead.
+    If the master is really dead, masterha_master_switch picks one of the slaves as a new master
+    (you can choose a preferred master), and initiates recovery and failover.
+    Internally it does much more, but you execute only one command,
+    without having to perform complex master recovery and failover operations on your own.
+
+    你可以 choose a preferred master
+
+
+小结: MHA 旨在 实现 故障转移(包括非故障切换) 和 slave 提升. 且 保证 这些行为 快速,自动化 和 数据的完整一致性,
+      以及对 管理员 而言的 简单,方便,高效.
+
+---------------------------------------------------------------------------------------------------
+https://github.com/yoshinorim/mha4mysql-manager/wiki/Overview
+
+
+Existing solutions and issues  (已经存在的 解决方案 和 问题), 详细信息见 官网
+      https://raw.githubusercontent.com/wiki/yoshinorim/mha4mysql-manager/Other_HA_Solutions.md
+
+##   Doing everything manually    //手动完成 所有事情
+       缺点多多, 详细见官网
+
+##   Single master and single slave  // 一主一从
+       许多很严重的问题:
+
+    M(RW)
+     |          --(master crash)-->   M(RW), promoted from S
+    S(R)
+
+          // 首先, 无法扩展(scale out) read 的流量(即多台slaves 分摊流量), 一些 耗时的 操作 导致 性能下降, 在出现 一台 down 机时再次加重.
+          First, you can not scale out read traffics. In many cases you may
+          want to run expensive operations on one of slaves such as backups, analytic queries,
+          batch jobs. These might cause performance problems on the slave server.
+          If you have only one slave and the slave is crashed, the master has to handle all such traffics.
+
+
+          // 在 master 宕机时, 会出现 单节点故障的 问题. 当一台 机器 down 掉了, 如 备份,还原 等一下耗时的操作很难完成甚至很危险.
+          Second issue is availability. If the master is crashed, only one server (new master) remains,
+          so it becomes single point of failure. To create a new slave, you need to take an online backup,
+          restore it on the new hardware, and start slave immediately. But these operations normally takes hours
+          (or even more than one day to fully catch up replication) in total. On some critical applications
+          you may not accept that the database becomes single point of failure for such a long time.
+          And taking an online backup on master increases i/o loads significantly so taking backups during the peak time is dangerous.
+
+
+          // 缺乏可扩展性(extensibility)
+          Third issue is lack of extensibility. For example,
+          when you want to create a read-only database on a remote data center, you need at least two slaves,
+          one is a slave on the local data center, the other is a slave on the remote data center.
+          You can not build this architecture if you have only one slave.
+
+          Single slave is actually not enough in many cases.  //很多情况下 single slave 实际上 是 不足够的.
+
+
+
+##   Master, one candidate master, and multiple slaves // 一台 master, 一台 候选 master, 和 多台 slaves (同样会出现如 数据一致性 和 结构复杂 等问题)
+
+              M(RW)-----M2(R)                            M(RW), promoted from M2
+               |                                          |
+          +----+----+          --(master crash)-->   +-x--+--x-+
+         S(R)     S2(R)                             S(?)      S(?)
+
+        (From which position should S restart replication?)
+
+
+            M(RW)-----M2(R)
+             |          |
+            S(R)      S2(R)
+
+##   Pacemaker and DRBD
+      Using Pacemaker(Heartbeat)+DRBD+MySQL is a very common HA solution. But this solution also has some serious issues.
+
+      缺点:
+        1. 高成本. 你需要 一台 不会处理任何 application traffic 的 passive master server. 所以该 server 无法用于read scaling(即分摊 read 流量)
+        2. Second issue is downtime.
+        3. Third issue is write performance drops or consistency problems.
+        4. Fourth issue is complexity.
+
+
+##   MySQL Cluster  (缺点: 无法使用 InnoDB)
+    MySQL Cluster is really Highly Available solution, but you have to use NDB storage engine. When you use InnoDB (in most cases), you can't take advantages of MySQL Cluster.
+
+##   Semi-Synchronous Replication
+       半同步复制 减少了 "binlog events exist only on the crashed master" 的 风险, 但不能解决所有的 一致性问题.
+
+
+## Semi-Synchronous Replication
+    [Semi-Synchronous replication](http://dev.mysql.com/doc/refman/5.5/en/replication-semisync.html)
+    greatly minimizes a risk of "binlog events exist only on the crashed master" situation.
+    This is really helpful to avoid data loss. But Semi-Synchronous replication does not solve all consistency issues.
+    Semi-Synchronous replication guarantees that **at least one** (not all) slaves receive binlog events
+    from the master at commit. There are still possibilities that some of slaves have not received all binlog events.
+    Without applying differential relay log events from the latest slave to non-latest slaves,
+    slaves can not be consistent each other.
+
+    MHA takes care of these consistency issues, so by using both Semi-Synchronous replication and MHA,
+    both "almost no data loss" and "slaves consistency" can be achieved.
+
+## Global Transaction ID
+    The purpose of the global transaction id is basically same as what MHA tries to achieve,
+    but it covers more. MHA works with only two tier replication,
+    but global transaction id covers any tier replication environment, so even though second tier slave fails,
+    you can recover third tier slave.
+    Check [Google's global transaction id project](http://code.google.com/p/google-mysql-tools/wiki/GlobalTransactionIds) for details.
+
+    Starting from MySQL 5.6, GTID was supported. Oracle's official tool
+    [mysqlfailover](http://dev.mysql.com/doc/mysql-utilities/1.3/en/mysqlfailover.html) supports master failover with GTID.
+    Starting from MHA version 0.56, MHA also supports failover based on GTID.
+    MHA automatically detects whether mysqld is running with GTID or not, and if GTID is enabled,
+    MHA does failover with GTID. If not, MHA does traditional failover with relay logs.
+
+---------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
