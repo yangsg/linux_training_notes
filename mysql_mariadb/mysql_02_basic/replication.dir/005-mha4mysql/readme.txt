@@ -1,5 +1,8 @@
 
 
+mha4mysql:
+      MHA for MySQL: Master High Availability Manager and tools for MySQL (MHA) for automating master failover and fast master switch.
+
 
 
 
