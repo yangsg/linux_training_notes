@@ -614,7 +614,31 @@ mysql> show slave status\G
 
 
 在数据库服务器上创建MHA的管理用户 (5个)
-todo
+
+// 注:
+//     create user 的步骤有 许多 问题 或 细节要考虑, 所以为了 最大的 灵活性, 最好 按部就班 的 按如下的 步骤 和 语法
+//     来 创建用户(尤其是 涉及 replication 的 拓扑结构中), 具体原因见
+//     https://github.com/yangsg/linux_training_notes/tree/master/mysql_mariadb/mysql_02_basic/replication.dir/003-gtid-utf8mb4-rpm-multi-source-replication
+//     或 参考   http://www.unixfbi.com/155.html   中 “复制账号重复问题”
+mysql> USE mysql;
+mysql> CREATE USER IF NOT EXISTS 'manager'@'192.168.175.110' IDENTIFIED BY 'WWW.1.manager';
+mysql> GRANT ALL ON *.* TO 'manager'@'192.168.175.110';
+
+mysql> CREATE USER IF NOT EXISTS 'manager'@'192.168.175.100' IDENTIFIED BY 'WWW.1.manager';
+mysql> GRANT ALL ON *.* TO 'manager'@'192.168.175.100';
+
+mysql> CREATE USER IF NOT EXISTS 'manager'@'192.168.175.101' IDENTIFIED BY 'WWW.1.manager';
+mysql> GRANT ALL ON *.* TO 'manager'@'192.168.175.101';
+
+mysql> CREATE USER IF NOT EXISTS 'manager'@'192.168.175.102' IDENTIFIED BY 'WWW.1.manager';
+mysql> GRANT ALL ON *.* TO 'manager'@'192.168.175.102';
+
+mysql> CREATE USER IF NOT EXISTS 'manager'@'192.168.175.103' IDENTIFIED BY 'WWW.1.manager';
+mysql> GRANT ALL ON *.* TO 'manager'@'192.168.175.103';
+
+
+     注: mysql 5.7 的文档中 推荐 使用 命令 create user 创建用户和密码, 而不推荐使用 grant 来创建,
+         所以如上例子中 为了迎合这种趋势, 没有使用更简单的一行 grant ... identified by ... 这种语句来创建 user.
 
 
 // 配置mha_manager服务器
@@ -681,41 +705,170 @@ todo
         Sat Jul 20 17:45:26 2019 - [info] All SSH connection tests passed successfully.
 
 // 检测主从复制是否正常
+[root@manager ~]# masterha_check_repl --conf=/etc/masterha/app1.cnf
+
+        ------------ 观察 一下 输出 信息, 看一下 masterha_check_repl 做了 那些 检查
+        Sat Jul 20 19:32:56 2019 - [warning] Global configuration file /etc/masterha_default.cnf not found. Skipping.
+        Sat Jul 20 19:32:56 2019 - [info] Reading application default configuration from /etc/masterha/app1.cnf..
+        Sat Jul 20 19:32:56 2019 - [info] Reading server configuration from /etc/masterha/app1.cnf..
+        Sat Jul 20 19:32:56 2019 - [info] MHA::MasterMonitor version 0.58.
+        Sat Jul 20 19:32:57 2019 - [info] GTID failover mode = 1
+        Sat Jul 20 19:32:57 2019 - [info] Dead Servers:
+        Sat Jul 20 19:32:57 2019 - [info] Alive Servers:
+        Sat Jul 20 19:32:57 2019 - [info]   192.168.175.100(192.168.175.100:3306)
+        Sat Jul 20 19:32:57 2019 - [info]   192.168.175.101(192.168.175.101:3306)
+        Sat Jul 20 19:32:57 2019 - [info]   192.168.175.102(192.168.175.102:3306)
+        Sat Jul 20 19:32:57 2019 - [info]   192.168.175.103(192.168.175.103:3306)
+        Sat Jul 20 19:32:57 2019 - [info] Alive Slaves:
+        Sat Jul 20 19:32:57 2019 - [info]   192.168.175.101(192.168.175.101:3306)  Version=5.7.26-log (oldest major version between slaves) log-bin:enabled
+        Sat Jul 20 19:32:57 2019 - [info]     GTID ON
+        Sat Jul 20 19:32:57 2019 - [info]     Replicating from 192.168.175.100(192.168.175.100:3306)
+        Sat Jul 20 19:32:57 2019 - [info]     Primary candidate for the new Master (candidate_master is set)
+        Sat Jul 20 19:32:57 2019 - [info]   192.168.175.102(192.168.175.102:3306)  Version=5.7.26-log (oldest major version between slaves) log-bin:enabled
+        Sat Jul 20 19:32:57 2019 - [info]     GTID ON
+        Sat Jul 20 19:32:57 2019 - [info]     Replicating from 192.168.175.100(192.168.175.100:3306)
+        Sat Jul 20 19:32:57 2019 - [info]     Primary candidate for the new Master (candidate_master is set)
+        Sat Jul 20 19:32:57 2019 - [info]   192.168.175.103(192.168.175.103:3306)  Version=5.7.26-log (oldest major version between slaves) log-bin:enabled
+        Sat Jul 20 19:32:57 2019 - [info]     GTID ON
+        Sat Jul 20 19:32:57 2019 - [info]     Replicating from 192.168.175.100(192.168.175.100:3306)
+        Sat Jul 20 19:32:57 2019 - [info]     Primary candidate for the new Master (candidate_master is set)
+        Sat Jul 20 19:32:57 2019 - [info] Current Alive Master: 192.168.175.100(192.168.175.100:3306)
+        Sat Jul 20 19:32:57 2019 - [info] Checking slave configurations..
+        Sat Jul 20 19:32:57 2019 - [info]  read_only=1 is not set on slave 192.168.175.101(192.168.175.101:3306).
+        Sat Jul 20 19:32:57 2019 - [info]  read_only=1 is not set on slave 192.168.175.102(192.168.175.102:3306).
+        Sat Jul 20 19:32:57 2019 - [info]  read_only=1 is not set on slave 192.168.175.103(192.168.175.103:3306).
+        Sat Jul 20 19:32:57 2019 - [info] Checking replication filtering settings..
+        Sat Jul 20 19:32:57 2019 - [info]  binlog_do_db= , binlog_ignore_db=
+        Sat Jul 20 19:32:57 2019 - [info]  Replication filtering check ok.
+        Sat Jul 20 19:32:57 2019 - [info] GTID (with auto-pos) is supported. Skipping all SSH and Node package checking.
+        Sat Jul 20 19:32:57 2019 - [info] Checking SSH publickey authentication settings on the current master..
+        Sat Jul 20 19:32:57 2019 - [info] HealthCheck: SSH to 192.168.175.100 is reachable.
+        Sat Jul 20 19:32:57 2019 - [info]
+        192.168.175.100(192.168.175.100:3306) (current master)
+         +--192.168.175.101(192.168.175.101:3306)
+         +--192.168.175.102(192.168.175.102:3306)
+         +--192.168.175.103(192.168.175.103:3306)
+
+        Sat Jul 20 19:32:57 2019 - [info] Checking replication health on 192.168.175.101..
+        Sat Jul 20 19:32:57 2019 - [info]  ok.
+        Sat Jul 20 19:32:57 2019 - [info] Checking replication health on 192.168.175.102..
+        Sat Jul 20 19:32:57 2019 - [info]  ok.
+        Sat Jul 20 19:32:57 2019 - [info] Checking replication health on 192.168.175.103..
+        Sat Jul 20 19:32:57 2019 - [info]  ok.
+        Sat Jul 20 19:32:57 2019 - [warning] master_ip_failover_script is not defined.
+        Sat Jul 20 19:32:57 2019 - [warning] shutdown_script is not defined.
+        Sat Jul 20 19:32:57 2019 - [info] Got exit code 0 (Not master dead).
+
+        MySQL Replication Health is OK.
+        ------------
 
 
 
 
+// 启动MHA
+[root@manager ~]# masterha_manager --conf=/etc/masterha/app1.cnf  &
+    [1] 1181
+    [root@manager ~]# Sat Jul 20 19:39:31 2019 - [warning] Global configuration file /etc/masterha_default.cnf not found. Skipping.
+    Sat Jul 20 19:39:31 2019 - [info] Reading application default configuration from /etc/masterha/app1.cnf..
+    Sat Jul 20 19:39:31 2019 - [info] Reading server configuration from /etc/masterha/app1.cnf..
+
+
+// 如下是 刚启动 MHA 是 与 mha 相关的 网络 状态信息
+[root@manager ~]# netstat -anptu
+
+      ......
+      tcp        0      0 192.168.175.110:43986   192.168.175.101:3306    TIME_WAIT   -
+
+      tcp        0      0 192.168.175.110:56984   192.168.175.100:22      TIME_WAIT   -
+      tcp        0      0 192.168.175.110:50102   192.168.175.100:3306    TIME_WAIT   -
+      tcp        0      0 192.168.175.110:50112   192.168.175.100:3306    ESTABLISHED 1181/perl
+      tcp        0      0 192.168.175.110:55096   192.168.175.103:3306    TIME_WAIT   -
+      tcp        0      0 192.168.175.110:43990   192.168.175.101:3306    TIME_WAIT   -
+      tcp        0      0 192.168.175.110:34326   192.168.175.102:3306    TIME_WAIT   -
+      tcp        0      0 192.168.175.110:34314   192.168.175.102:3306    TIME_WAIT   -
+      tcp        0      0 192.168.175.110:55108   192.168.175.103:3306    TIME_WAIT   -
+      tcp        0      0 192.168.175.110:50098   192.168.175.100:3306    TIME_WAIT   -
+      ......
+
+
+// 一段时间之后 与 mha 有关的 网络状态信息
+[root@manager ~]# netstat -anptu
+
+      ......
+
+      tcp        0      0 192.168.175.110:50112   192.168.175.100:3306    ESTABLISHED 1181/perl
+
+      ......
+
+// 观察 一下 日志 信息
+[root@manager ~]# tail -f /masterha/app1/manager.log
+         +--192.168.175.101(192.168.175.101:3306)
+         +--192.168.175.102(192.168.175.102:3306)
+         +--192.168.175.103(192.168.175.103:3306)
+
+        Sat Jul 20 19:39:32 2019 - [warning] master_ip_failover_script is not defined.
+        Sat Jul 20 19:39:32 2019 - [warning] shutdown_script is not defined.
+        Sat Jul 20 19:39:32 2019 - [info] Set master ping interval 1 seconds.
+        Sat Jul 20 19:39:32 2019 - [warning] secondary_check_script is not defined. It is highly recommended setting it to check master reachability from two or more routes.
+        Sat Jul 20 19:39:32 2019 - [info] Starting ping health check on 192.168.175.100(192.168.175.100:3306)..
+        Sat Jul 20 19:39:32 2019 - [info] Ping(SELECT) succeeded, waiting until MySQL doesn't respond..  <------- 观察这里, 再联系网络状态信息
+
+
+// master 上执行 如下语句 观察
+mysql> show slave hosts;
+        +-----------+------+------+-----------+--------------------------------------+
+        | Server_id | Host | Port | Master_id | Slave_UUID                           |
+        +-----------+------+------+-----------+--------------------------------------+
+        |       101 |      | 3306 |       100 | f154567b-aab0-11e9-a4b9-000c29b95f25 |
+        |       102 |      | 3306 |       100 | f9eb741e-aab0-11e9-9ee7-000c29f6f083 |
+        |       103 |      | 3306 |       100 | 0b310aec-aab1-11e9-9f2a-000c2982ac0f |
+        +-----------+------+------+-----------+--------------------------------------+
+
+// 关闭 master 上的 mysqld, 观察 故障转移 效果
+[root@master ~]# systemctl stop mysqld
+
+
+// slave01 上: (注: 故障转移不一定每次都 切换到 slave01 上, 所以有时需要在 slave02 或 slave03 才能看到如下信息)
+mysql> show slave hosts;
++-----------+------+------+-----------+--------------------------------------+
+| Server_id | Host | Port | Master_id | Slave_UUID                           |
++-----------+------+------+-----------+--------------------------------------+
+|       103 |      | 3306 |       101 | 0b310aec-aab1-11e9-9f2a-000c2982ac0f |
+|       102 |      | 3306 |       101 | f9eb741e-aab0-11e9-9ee7-000c29f6f083 |
++-----------+------+------+-----------+--------------------------------------+
 
 
 
+// 恢复故障的主服务器
+
+  主服务器故障修复后，需要人为手工执行change master to连接现有主服务器
+
+      mysql>  CHANGE MASTER TO
+          ->  MASTER_HOST='192.168.175.101',
+          ->  MASTER_PORT=3306,
+          ->  MASTER_USER='repluser',
+          ->  MASTER_PASSWORD='WWW.1.rep',
+          ->  MASTER_AUTO_POSITION=1 ; #因为是基于 gtid, 所有启用 MASTER_AUTO_POSITION 功能自动确定 replication 所需的坐标信息
+      Query OK, 0 rows affected, 2 warnings (0.03 sec)
 
 
 
+mysql> start slave;
 
 
+mysql> show slave hosts;
+    +-----------+------+------+-----------+--------------------------------------+
+    | Server_id | Host | Port | Master_id | Slave_UUID                           |
+    +-----------+------+------+-----------+--------------------------------------+
+    |       102 |      | 3306 |       101 | f9eb741e-aab0-11e9-9ee7-000c29f6f083 |
+    |       100 |      | 3306 |       101 | e20ebf76-aab0-11e9-b48a-000c29152d2e |
+    |       103 |      | 3306 |       101 | 0b310aec-aab1-11e9-9f2a-000c2982ac0f |
+    +-----------+------+------+-----------+--------------------------------------+
 
 
+通过如上的试验, 可以观察到, 使用 gtid, 还可以 简化 恢复过程.
 
-
-
-
-
-
-
-
-
-
-
-
-
----------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
+主从复制修复完成后，需要手工启动MHA_manager， 启动时需要将其工作目录下的app1.failover.complete删除
 
 
 
