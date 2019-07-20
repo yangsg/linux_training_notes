@@ -36,6 +36,9 @@ When monitoring master server, MHA just sends ping packets to master every N sec
     而如果对 数据 的 完整性(no data loss) 的 要求再高一点儿, 可以 考虑 设置
     rpl_semi_sync_master_wait_for_slave_count 为 大于 1 的 某个相应值.
 
+注:
+    如下hostname 为 master 和 slave01 等可能并不太好,
+    因它们之间的角色是可以相互转换的,可能类似 host 或 server 等的名字更好一点儿
 
 manager :   192.168.175.100  <----- 生产环境中 最好 manager server 也弄 2 台以上, 保证 manager 本身的高可用
 master  :   192.168.175.101
@@ -110,12 +113,377 @@ master 上 安装 mysql
 
 
 ---------------------------------------------------------------------------------------------------
-在 slave01, slave02 上安装 mysql, 方法 与 如上 master 安装方法一样 (此处略)
+在 slave01, slave02, slave03 上安装 mysql, 方法 与 如上 master 安装方法一样 (此处略)
 
 
 
 
 ---------------------------------------------------------------------------------------------------
+1. 先搭建 mha 可用 基础的 one master to three slaves 的 replication 拓扑环境
+
+注意:
+     该例中 除了包含 纯粹的 1主3从 的 replication 拓扑结构的配置外,
+     还直接包含了 mha 需要的基础配置,
+     因为 mha 环境中 master <---> slave 之间 角色之间不稳定,
+     是可以在特定条件下随时 相互转换 的.
+
+--------------------
+master 端 replication 设置
+
+[root@master ~]# vim /etc/my.cnf
+
+          [client]  # 注: [client] group 是 所有的 mysql client 工具都会读取的配置文件
+          loose-default-character-set = utf8mb4   # 加 loose- 前缀是为解决 [mysqlbinlog] group 不识别该 选项的 问题
+
+          [mysql]
+          default-character-set = utf8mb4
+
+          [mysqlbinlog]
+          set_charset=utf8mb4
+
+          [mysqld]
+          # 设置 mysql 字符集为 utf8mb4
+          character-set-client-handshake = FALSE  # 忽略 client 端的 character set 设置
+          character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
+          collation-server = utf8mb4_unicode_ci
+
+          # 如下 4 行 配置 是与 replication 和 gtid 相关的 配置
+          log-bin=master-bin
+          server-id=100   # server-id 范围: 1 and (232)−1
+          gtid_mode=ON    # ON: Both new and replicated transactions must be GTID transactions.
+          enforce-gtid-consistency=true  # ON: no transaction is allowed to violate GTID consistency.
+
+          # 关于 系统变量 gtid_mode 和 enforce-gtid-consistency 的信息, 见:
+          #  https://dev.mysql.com/doc/refman/5.7/en/replication-options-gtids.html#sysvar_gtid_mode
+          #  https://dev.mysql.com/doc/refman/5.7/en/replication-options-gtids.html#sysvar_enforce_gtid_consistency
+
+          # 注:
+          #    因为是在 mha 高可用环境中, 所有 master 的 角色不是一成不变的, 其本省也 可能转换成 slave 角色,
+          #    所以同样需要其 扮演 slave 时的 slave 相关配置
+          # 此例中 打算 使用 TABLE 记录 master_info 和 relay_log_info
+          # 一些 mysql replication 的 最佳实践(best practices) 指南 见 https://www.percona.com/sites/default/files/presentations/Replication-webinar.pdf
+          master_info_repository=TABLE
+          relay_log_info_repository=TABLE
+          relay-log-recovery=1
+
+
+// 重启 mysql server, 以 应用 如上的配置
+[root@master ~]# systemctl restart mysqld
+
+
+// 创建 专用于 replication 的 user. 参见 https://dev.mysql.com/doc/refman/5.7/en/replication-howto-repuser.html
+// 注:
+//     create user 的步骤有 许多 问题 或 细节要考虑, 所以为了 最大的 灵活性, 最好 按部就班 的 按如下的 步骤 和 语法
+//     来 创建用户(尤其是 涉及 replication 的 拓扑结构中), 具体原因见
+//     https://github.com/yangsg/linux_training_notes/tree/master/mysql_mariadb/mysql_02_basic/replication.dir/003-gtid-utf8mb4-rpm-multi-source-replication
+//     或 参考   http://www.unixfbi.com/155.html   中 “复制账号重复问题”
+mysql> USE mysql;
+mysql> CREATE USER IF NOT EXISTS 'repluser'@'192.168.175.100' IDENTIFIED BY 'WWW.1.rep';   # 创建 用于 replication 的用户
+mysql> GRANT REPLICATION SLAVE ON *.* TO 'repluser'@'192.168.175.100';       授予 该用户 replication slave 权限
+
+mysql> CREATE USER IF NOT EXISTS 'repluser'@'192.168.175.101' IDENTIFIED BY 'WWW.1.rep';   # 创建 用于 replication 的用户
+mysql> GRANT REPLICATION SLAVE ON *.* TO 'repluser'@'192.168.175.101';       授予 该用户 replication slave 权限
+
+mysql> CREATE USER IF NOT EXISTS 'repluser'@'192.168.175.102' IDENTIFIED BY 'WWW.1.rep';   # 创建 用于 replication 的用户
+mysql> GRANT REPLICATION SLAVE ON *.* TO 'repluser'@'192.168.175.102';       授予 该用户 replication slave 权限
+
+mysql> CREATE USER IF NOT EXISTS 'repluser'@'192.168.175.103' IDENTIFIED BY 'WWW.1.rep';   # 创建 用于 replication 的用户
+mysql> GRANT REPLICATION SLAVE ON *.* TO 'repluser'@'192.168.175.103';       授予 该用户 replication slave 权限
+
+     注: mysql 5.7 的文档中 推荐 使用 命令 create user 创建用户和密码, 而不推荐使用 grant 来创建,
+         所以如上例子中 为了迎合这种趋势, 没有使用更简单的一行 grant ... identified by ... 这种语句来创建 user.
+
+
+// 在 master 上 做一次 full backup, 后续的操作 会 将其 同步给 slave
+[root@master ~]# mysqldump --help | grep -E '^default-character-set'
+        default-character-set             utf8mb4
+
+[root@master ~]# mysqldump -u root -p --lock-all-tables --all-databases --master-data=2 > /root/db_full-backup.sql
+Enter password:
+Warning: A partial dump from a server that has GTIDs will by default include the GTIDs of all transactions, even those that changed suppressed parts of the database. If you don't want to restore GTIDs, pass --set-gtid-purged=OFF. To make a complete dump, pass --all-databases --triggers --routines --events.
+
+
+// 将 master 的 db_full-backup.sql 拷贝给 slave
+[root@master ~]# rsync -av /root/db_full-backup.sql  root@192.168.175.101:/tmp/
+[root@master ~]# rsync -av /root/db_full-backup.sql  root@192.168.175.102:/tmp/
+[root@master ~]# rsync -av /root/db_full-backup.sql  root@192.168.175.103:/tmp/
+
+
+// 查看一下 状态信息
+mysql> show master status;
+      +-------------------+----------+--------------+------------------+------------------------------------------+
+      | File              | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set                        |
+      +-------------------+----------+--------------+------------------+------------------------------------------+
+      | master-bin.000001 |     2158 |              |                  | e20ebf76-aab0-11e9-b48a-000c29152d2e:1-8 |
+      +-------------------+----------+--------------+------------------+------------------------------------------+
+
+
+
+
+
+--------------------
+slave01 端 replication 设置
+
+
+[root@slave01 ~]# vim /etc/my.cnf
+
+          [client]  # 注: [client] group 是 所有的 mysql client 工具都会读取的配置文件
+          loose-default-character-set = utf8mb4   # 加 loose- 前缀是为解决 [mysqlbinlog] group 不识别该 选项的 问题
+
+          [mysql]
+          default-character-set = utf8mb4
+
+          [mysqlbinlog]
+          set_charset=utf8mb4
+
+          [mysqld]
+          # 设置 mysql 字符集为 utf8mb4
+          character-set-client-handshake = FALSE  # 忽略 client 端的 character set 设置
+          character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
+          collation-server = utf8mb4_unicode_ci
+
+          # 如下 4 行 配置 是与 replication 和 gtid 相关的 配置
+          log-bin=slave01-bin
+          server-id=101   # server-id 范围: 1 and (232)−1
+          gtid_mode=ON    # ON: Both new and replicated transactions must be GTID transactions.
+          enforce-gtid-consistency=true  # ON: no transaction is allowed to violate GTID consistency.
+
+          # 关于 系统变量 gtid_mode 和 enforce-gtid-consistency 的信息, 见:
+          #  https://dev.mysql.com/doc/refman/5.7/en/replication-options-gtids.html#sysvar_gtid_mode
+          #  https://dev.mysql.com/doc/refman/5.7/en/replication-options-gtids.html#sysvar_enforce_gtid_consistency
+
+          # 此例中 打算 使用 TABLE 记录 master_info 和 relay_log_info
+          # 一些 mysql replication 的 最佳实践(best practices) 指南 见 https://www.percona.com/sites/default/files/presentations/Replication-webinar.pdf
+          master_info_repository=TABLE
+          relay_log_info_repository=TABLE
+          relay-log-recovery=1
+
+
+
+// 先 通过 命令 mysqld 查看一下 配置
+[root@slave01 ~]# mysqld --verbose --help | grep -E '^(log-bin |server-id |gtid-mode|enforce-gtid-consistency)'
+        enforce-gtid-consistency                                     true
+        gtid-mode                                                    ON
+        log-bin                                                      slave01-bin
+        server-id                                                    101
+
+
+// 重启 slave01 的 mysql server 是 如上配置生效
+[root@slave01 ~]# systemctl restart mysqld
+
+
+// 查看一下客户端工具 mysql 默认使用 的 字符集
+[root@slave01 ~]# mysql --help | grep  ^default-character-set
+      default-character-set             utf8mb4
+
+
+// 查看一下 slave01 上的 master 的 一份完全备份
+[root@slave01 ~]# ls /tmp/db_full-backup.sql
+      /tmp/db_full-backup.sql
+
+
+[root@slave01 ~]# mysql -u root -p < /tmp/db_full-backup.sql  # 以 batch mode 还原 master 的 备份(即保持slave 初始数据与 master 一致)
+
+[root@slave01 ~]# echo $?
+0
+
+// 执行一下 help 帮助信息 查看 change master 的 语法帮助
+mysql> help change master to
+
+// 在 slave 上设置 master 信息 (即 到 master 的 连接, 认证 和 replication 的坐标信息)
+mysql> CHANGE MASTER TO
+    -> MASTER_HOST='192.168.175.100',
+    -> MASTER_PORT=3306,
+    -> MASTER_USER='repluser',
+    -> MASTER_PASSWORD='WWW.1.rep',
+    -> MASTER_AUTO_POSITION=1 ; #因为是基于 gtid, 所有启用 MASTER_AUTO_POSITION 功能自动确定 replication 所需的坐标信息
+
+// 启动 slave 的 io_thread 和 sql_thread
+mysql> start slave;
+
+
+mysql> pager less -Fi
+mysql> show slave status\G
+
+
+
+
+
+
+----------------------------------------------------------------
+
+slave02 端 replication 设置 (此时不包含 semi-sync replication 的 设置)
+
+
+[root@slave02 ~]# vim /etc/my.cnf
+
+          [client]  # 注: [client] group 是 所有的 mysql client 工具都会读取的配置文件
+          loose-default-character-set = utf8mb4   # 加 loose- 前缀是为解决 [mysqlbinlog] group 不识别该 选项的 问题
+
+          [mysql]
+          default-character-set = utf8mb4
+
+          [mysqlbinlog]
+          set_charset=utf8mb4
+
+          [mysqld]
+          # 设置 mysql 字符集为 utf8mb4
+          character-set-client-handshake = FALSE  # 忽略 client 端的 character set 设置
+          character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
+          collation-server = utf8mb4_unicode_ci
+
+          # 如下 4 行 配置 是与 replication 和 gtid 相关的 配置
+          log-bin=slave02-bin
+          server-id=102   # server-id 范围: 1 and (232)−1
+          gtid_mode=ON    # ON: Both new and replicated transactions must be GTID transactions.
+          enforce-gtid-consistency=true  # ON: no transaction is allowed to violate GTID consistency.
+
+          # 关于 系统变量 gtid_mode 和 enforce-gtid-consistency 的信息, 见:
+          #  https://dev.mysql.com/doc/refman/5.7/en/replication-options-gtids.html#sysvar_gtid_mode
+          #  https://dev.mysql.com/doc/refman/5.7/en/replication-options-gtids.html#sysvar_enforce_gtid_consistency
+
+          # 此例中 打算 使用 TABLE 记录 master_info 和 relay_log_info
+          # 一些 mysql replication 的 最佳实践(best practices) 指南 见 https://www.percona.com/sites/default/files/presentations/Replication-webinar.pdf
+          master_info_repository=TABLE
+          relay_log_info_repository=TABLE
+          relay-log-recovery=1
+
+
+
+// 先 通过 命令 mysqld 查看一下 配置
+[root@slave02 ~]# mysqld --verbose --help | grep -E '^(log-bin |server-id |gtid-mode|enforce-gtid-consistency)'
+          enforce-gtid-consistency                                     true
+          gtid-mode                                                    ON
+          log-bin                                                      slave02-bin
+          server-id                                                    102
+
+
+// 重启 slave02 的 mysql server 是 如上配置生效
+[root@slave02 ~]# systemctl restart mysqld
+
+
+// 查看一下客户端工具 mysql 默认使用 的 字符集
+[root@slave02 ~]# mysql --help | grep  ^default-character-set
+      default-character-set             utf8mb4
+
+
+// 查看一下 slave02 上的 master 的 一份完全备份
+[root@slave02 ~]# ls /tmp/db_full-backup.sql
+      /tmp/db_full-backup.sql
+
+
+[root@slave02 ~]# mysql -u root -p < /tmp/db_full-backup.sql  # 以 batch mode 还原 master 的 备份(即保持slave 初始数据与 master 一致)
+
+[root@slave02 ~]# echo $?
+0
+
+// 执行一下 help 帮助信息 查看 change master 的 语法帮助
+mysql> help change master to
+
+// 在 slave 上设置 master 信息 (即 到 master 的 连接, 认证 和 replication 的坐标信息)
+mysql> CHANGE MASTER TO
+    -> MASTER_HOST='192.168.175.100',
+    -> MASTER_PORT=3306,
+    -> MASTER_USER='repluser',
+    -> MASTER_PASSWORD='WWW.1.rep',
+    -> MASTER_AUTO_POSITION=1 ; #因为是基于 gtid, 所有启用 MASTER_AUTO_POSITION 功能自动确定 replication 所需的坐标信息
+
+// 启动 slave 的 io_thread 和 sql_thread
+mysql> start slave;
+
+
+mysql> pager less -Fi
+mysql> show slave status\G
+
+
+
+
+
+
+----------------------------------------------------------------
+
+slave03 端 replication 设置
+
+
+[root@slave03 ~]# vim /etc/my.cnf
+
+          [client]  # 注: [client] group 是 所有的 mysql client 工具都会读取的配置文件
+          loose-default-character-set = utf8mb4   # 加 loose- 前缀是为解决 [mysqlbinlog] group 不识别该 选项的 问题
+
+          [mysql]
+          default-character-set = utf8mb4
+
+          [mysqlbinlog]
+          set_charset=utf8mb4
+
+          [mysqld]
+          # 设置 mysql 字符集为 utf8mb4
+          character-set-client-handshake = FALSE  # 忽略 client 端的 character set 设置
+          character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
+          collation-server = utf8mb4_unicode_ci
+
+          # 如下 4 行 配置 是与 replication 和 gtid 相关的 配置
+          log-bin=slave03-bin
+          server-id=103   # server-id 范围: 1 and (232)−1
+          gtid_mode=ON    # ON: Both new and replicated transactions must be GTID transactions.
+          enforce-gtid-consistency=true  # ON: no transaction is allowed to violate GTID consistency.
+
+          # 关于 系统变量 gtid_mode 和 enforce-gtid-consistency 的信息, 见:
+          #  https://dev.mysql.com/doc/refman/5.7/en/replication-options-gtids.html#sysvar_gtid_mode
+          #  https://dev.mysql.com/doc/refman/5.7/en/replication-options-gtids.html#sysvar_enforce_gtid_consistency
+
+          # 此例中 打算 使用 TABLE 记录 master_info 和 relay_log_info
+          # 一些 mysql replication 的 最佳实践(best practices) 指南 见 https://www.percona.com/sites/default/files/presentations/Replication-webinar.pdf
+          master_info_repository=TABLE
+          relay_log_info_repository=TABLE
+          relay-log-recovery=1
+
+
+
+// 先 通过 命令 mysqld 查看一下 配置
+[root@slave03 ~]# mysqld --verbose --help | grep -E '^(log-bin |server-id |gtid-mode|enforce-gtid-consistency)'
+          enforce-gtid-consistency                                     true
+          gtid-mode                                                    ON
+          log-bin                                                      slave03-bin
+          server-id                                                    103
+
+
+// 重启 slave03 的 mysql server 是 如上配置生效
+[root@slave03 ~]# systemctl restart mysqld
+
+
+// 查看一下客户端工具 mysql 默认使用 的 字符集
+[root@slave03 ~]# mysql --help | grep  ^default-character-set
+      default-character-set             utf8mb4
+
+
+// 查看一下 slave03 上的 master 的 一份完全备份
+[root@slave03 ~]# ls /tmp/db_full-backup.sql
+      /tmp/db_full-backup.sql
+
+
+[root@slave03 ~]# mysql -u root -p < /tmp/db_full-backup.sql  # 以 batch mode 还原 master 的 备份(即保持slave 初始数据与 master 一致)
+
+[root@slave03 ~]# echo $?
+0
+
+// 执行一下 help 帮助信息 查看 change master 的 语法帮助
+mysql> help change master to
+
+// 在 slave 上设置 master 信息 (即 到 master 的 连接, 认证 和 replication 的坐标信息)
+mysql> CHANGE MASTER TO
+    -> MASTER_HOST='192.168.175.100',
+    -> MASTER_PORT=3306,
+    -> MASTER_USER='repluser',
+    -> MASTER_PASSWORD='WWW.1.rep',
+    -> MASTER_AUTO_POSITION=1 ; #因为是基于 gtid, 所有启用 MASTER_AUTO_POSITION 功能自动确定 replication 所需的坐标信息
+
+// 启动 slave 的 io_thread 和 sql_thread
+mysql> start slave;
+
+
+mysql> pager less -Fi
+mysql> show slave status\G
 
 
 
@@ -124,6 +492,8 @@ master 上 安装 mysql
 
 
 
+
+---------------------------------------------------------------------------------------------------
 
 
 
