@@ -40,11 +40,11 @@ When monitoring master server, MHA just sends ping packets to master every N sec
     如下hostname 为 master 和 slave01 等可能并不太好,
     因它们之间的角色是可以相互转换的,可能类似 host 或 server 等的名字更好一点儿
 
-manager :   192.168.175.100  <----- 生产环境中 最好 manager server 也弄 2 台以上, 保证 manager 本身的高可用
-master  :   192.168.175.101
-slave01 :   192.168.175.102
-slave02 :   192.168.175.103
-slave03 :   192.168.175.104
+manager :   192.168.175.110   mha4mysql-node  mha4mysql-manager <----- 生产环境中 最好 manager server 也弄 2 台以上, 保证 manager 本身的高可用
+master  :   192.168.175.100   mha4mysql-node
+slave01 :   192.168.175.101   mha4mysql-node
+slave02 :   192.168.175.102   mha4mysql-node
+slave03 :   192.168.175.103   mha4mysql-node
 
   对应的 replication 的 拓扑结构如下:
 
@@ -494,6 +494,196 @@ mysql> show slave status\G
 
 
 ---------------------------------------------------------------------------------------------------
+2. 正式 部署 mha 集群
+
+
+
+// 配置所有主机的ssh免密登录
+[root@manager ~]# ssh-keygen -t rsa
+      Generating public/private rsa key pair.
+      Enter file in which to save the key (/root/.ssh/id_rsa): <======= 直接回车
+      Created directory '/root/.ssh'.
+      Enter passphrase (empty for no passphrase): <=========== 直接回车
+      Enter same passphrase again: <=========== 直接回车
+      Your identification has been saved in /root/.ssh/id_rsa.
+      Your public key has been saved in /root/.ssh/id_rsa.pub.
+      The key fingerprint is:
+      SHA256:EtF5HKLYZPrk6pXWuWiTOF5YkGFfMU6juYnhhvBTe6s root@manager
+      The key's randomart image is:
+      +---[RSA 2048]----+
+      |    o +.B+..     |
+      |   . X Oo+o      |
+      |.   B O ..       |
+      | o + O +         |
+      |  + = O S        |
+      |   o = = .       |
+      |    o.*.o        |
+      |   .o=+. .       |
+      |   .Eo...        |
+      +----[SHA256]-----+
+
+
+[root@manager ~]# tree .ssh
+          .ssh
+          ├── id_rsa      <-------
+          └── id_rsa.pub  <-------
+
+
+[root@manager ~]# ssh-copy-id root@192.168.175.110
+
+[root@manager ~]# tree .ssh/
+          .ssh/
+          ├── authorized_keys  <------
+          ├── id_rsa
+          ├── id_rsa.pub
+          └── known_hosts
+
+[root@manager ~]# scp -r /root/.ssh/ root@192.168.175.100:/root/
+[root@manager ~]# scp -r /root/.ssh/ root@192.168.175.101:/root/
+[root@manager ~]# scp -r /root/.ssh/ root@192.168.175.102:/root/
+[root@manager ~]# scp -r /root/.ssh/ root@192.168.175.103:/root/
+
+
+// 在每台机器上验证
+[root@manager ~]# for i in 110 100 101 102 103; do ssh 192.168.175.$i hostname; done
+[root@master ~]#  for i in 110 100 101 102 103; do ssh 192.168.175.$i hostname; done
+[root@slave01 ~]# for i in 110 100 101 102 103; do ssh 192.168.175.$i hostname; done
+[root@slave02 ~]# for i in 110 100 101 102 103; do ssh 192.168.175.$i hostname; done
+[root@slave03 ~]# for i in 110 100 101 102 103; do ssh 192.168.175.$i hostname; done
+
+
+// 所有主机配置主机名解析
+[root@manager ~]# vim /etc/hosts
+
+        127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+        ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+
+        192.168.175.110   manager
+        192.168.175.100   master
+        192.168.175.101   slave01
+        192.168.175.102   slave02
+        192.168.175.103   slave03
+
+[root@manager ~]# for i in 100 101 102 103;
+> do
+> scp  /etc/hosts  root@192.168.175.$i
+> done
+
+// 对如上的 scp 拷贝操作 确认一下
+[root@manager ~]# for i in 110 100 101 102 103;
+> do
+> md5sum /etc/hosts
+> done
+
+// 确认 时间 是否 同步(一致)
+[root@manager ~]# for i in 110 100 101 102 103;
+> do
+> ssh root@192.168.175.$i date
+> done
+
+
+// 在mha_manager节点安装mha_manager,mha_node软件
+[root@manager ~]# yum clean metadata
+[root@manager ~]# yum install -y mha4mysql-manager mha4mysql-node
+
+[root@manager ~]# rpm -q mha4mysql-manager mha4mysql-node
+      mha4mysql-manager-0.58-0.el7.centos.noarch
+      mha4mysql-node-0.58-0.el7.centos.noarch
+
+
+// 在所有的数据库服务器上安装mha4mysql_node
+[root@master ~]# yum clean metadata
+[root@master ~]# yum install -y  mha4mysql-node
+
+[root@slave01 ~]# yum clean metadata
+[root@slave01 ~]# yum install -y  mha4mysql-node
+
+[root@slave02 ~]# yum clean metadata
+[root@slave02 ~]# yum install -y  mha4mysql-node
+
+[root@slave03 ~]# yum clean metadata
+[root@slave03 ~]# yum install -y  mha4mysql-node
+
+// 确认 一下 如上 安装
+[root@manager ~]# for i in 100 101 102 103;
+> do
+> ssh root@192.168.175.$i  'printf "%s\t\t--- %s\n" "$(hostname)" "$(rpm -q mha4mysql-node)"'
+> done
+
+
+
+在数据库服务器上创建MHA的管理用户 (5个)
+todo
+
+
+// 配置mha_manager服务器
+[root@manager ~]# mkdir -p /masterha/app1     # 创建工作目录，用于保存日志
+[root@manager ~]# mkdir /etc/masterha         # 创建保存配置文件的目录
+
+
+// 创建MHA的配置文件
+[root@manager ~]# vim /etc/masterha/app1.cnf
+
+              # https://github.com/yoshinorim/mha4mysql-manager/wiki/Configuration
+              # https://raw.githubusercontent.com/wiki/yoshinorim/mha4mysql-manager/Parameters.md
+
+              [server default]
+              #指定MHA的工作目录
+              manager_workdir=/masterha/app1
+              #指定MHA的日志文件
+              manager_log=/masterha/app1/manager.log
+              #后台数据库存在的管理用户
+              user=root
+              password=WWW.1.com
+              #指定ssh免密登录的用户
+              ssh_user=root
+              #指定主从复制用户
+              repl_user=repluser
+              repl_password=WWW.1.rep
+              #用于指定MHA检测master服务器的周期，单位为秒
+              ping_interval=1
+              shutdown_script=""
+
+              [server1]
+              hostname=192.168.175.100
+              port=3306
+              #用于指定该服务器保存二进制日志文件的目录
+              master_binlog_dir="/var/lib/mysql"
+              candidate_master=1
+
+              [server2]
+              hostname=192.168.175.101
+              port=3306
+              master_binlog_dir="/var/lib/mysql"
+              candidate_master=1
+
+              [server3]
+              hostname=192.168.175.102
+              port=3306
+              master_binlog_dir="/var/lib/mysql"
+              candidate_master=1
+
+              [server4]
+              hostname=192.168.175.103
+              port=3306
+              master_binlog_dir="/var/lib/mysql"
+              candidate_master=1
+
+
+
+
+// 检测ssh免密是否正常
+[root@manager ~]# masterha_check_ssh --conf=/etc/masterha/app1.cnf
+
+        ......
+
+        Sat Jul 20 17:45:26 2019 - [info] All SSH connection tests passed successfully.
+
+// 检测主从复制是否正常
+
+
+
 
 
 
