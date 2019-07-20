@@ -62,6 +62,14 @@ slave03 :   192.168.175.103   mha4mysql-node
       S(R)         S2(R)                          S1(R)      S2(R)
 
 
+---------------------------------------------------------------------------------------------------
+前期一些其他准备:
+
+// 设置时区, 同步时间:
+      https://github.com/yangsg/linux_training_notes/tree/master/mysql_mariadb/mysql_02_basic/replication.dir/001-one-master-to-one-slave-simplest
+
+// 为熵池 提供一个好的 采集方案:
+      https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/01-full/031-rngd.txt
 
 ---------------------------------------------------------------------------------------------------
 搭建 本地 yum repo 服务器
