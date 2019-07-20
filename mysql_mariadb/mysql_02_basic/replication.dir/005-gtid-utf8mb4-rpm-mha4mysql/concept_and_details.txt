@@ -241,13 +241,36 @@ Existing solutions and issues  (已经存在的 解决方案 和 问题), 详细
 
 ---------------------------------------------------------------------------------------------------
 
+https://github.com/yoshinorim/mha4mysql-manager/wiki/Installation#Installing_MHA_Manager
+
+Installation
+Downloading MHA Node and MHA Manager
+Installing MHA Node
+Installing MHA Manager
 
 
+MHA 由 MHA Manager 和 MHA Node packages 组成. MHA Manager 运行在 a manager server 上,
+而 a manager server 运行在 每个 MySQL server 上. MHA Node programs 不会 一直运行着,
+而是在 需要时(at configuration check, failover, etc) 被 MHA manager programs 调用.
+MHA Manager 和 MHA Node 都是 使用 Perl 语言 编写的.
+
+MHA Node and MHA Manager can be downloaded from "Downloads" section. These are stable packages.
+  MHA Node 和 MHA Manager 的下载地址(需要翻墙):
+      https://code.google.com/archive/p/mysql-master-ha/downloads
+
+---------------
+Installing MHA Node
+
+MHA Node has scripts and dependent perl modules that do the following.
+      - save_binary_logs: Saving and copying dead master's binary logs
+      - apply_diff_relay_logs: Identifying differential relay log events and applying all necessary log events
+      - purge_relay_logs: Purging relay log files
 
 
-
-
-
+你 需要 将 MHA Node 安装到 all MySQL servers (both master and slave).
+你也 需要 将 MHA Node 安装在 a management server 上 因为 MHA Manager modules 内部依赖
+MHA Node modules. MHA Manager 内部 通过 SSH 连接(connects) 到 被 managed 的 MySQL servers
+并执行(executes) MHA Node scripts. 除 DBD::mysql 之外 MHA Node 不依赖 任何其他的 外部 Perl modules.
 
 
 
