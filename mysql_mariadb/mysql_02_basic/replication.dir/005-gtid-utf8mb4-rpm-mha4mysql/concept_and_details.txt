@@ -259,7 +259,7 @@ MHA Node and MHA Manager can be downloaded from "Downloads" section. These are s
       https://code.google.com/archive/p/mysql-master-ha/downloads
 
 ---------------
-Installing MHA Node
+Installing MHA Node  安装 MHA Node
 
 MHA Node has scripts and dependent perl modules that do the following.
       - save_binary_logs: Saving and copying dead master's binary logs
@@ -267,10 +267,58 @@ MHA Node has scripts and dependent perl modules that do the following.
       - purge_relay_logs: Purging relay log files
 
 
-你 需要 将 MHA Node 安装到 all MySQL servers (both master and slave).
-你也 需要 将 MHA Node 安装在 a management server 上 因为 MHA Manager modules 内部依赖
-MHA Node modules. MHA Manager 内部 通过 SSH 连接(connects) 到 被 managed 的 MySQL servers
-并执行(executes) MHA Node scripts. 除 DBD::mysql 之外 MHA Node 不依赖 任何其他的 外部 Perl modules.
+    你 需要 将 MHA Node 安装到 all MySQL servers (both master and slave).
+    你也 需要 将 MHA Node 安装在 a management server 上 因为 MHA Manager modules 内部依赖
+    MHA Node modules. MHA Manager 内部 通过 SSH 连接(connects) 到 被 managed 的 MySQL servers
+    并执行(executes) MHA Node scripts. 除 DBD::mysql 之外 MHA Node 不依赖 任何其他的 外部 Perl modules.
+
+      On RHEL/CentOS distribution, you can install MHA Node rpm package as below.
+
+          ## If you have not installed DBD::mysql, install it like below, or install from source.
+          # yum install perl-DBD-MySQL
+
+          ## Get MHA Node rpm package from "Downloads" section.
+          # rpm -ivh mha4mysql-node-X.Y-0.noarch.rpm
+
+
+
+---------------
+Installing MHA Manager 安装 MHA Manager
+
+    MHA Manager 带有 管理的 命令行 程序, 如 masterha_manager, masterha_master_switch 等,
+    且 一些 依赖的  Perl modules. MHA Manager 依赖 如下 Perl modules. 你需要 在 安装 MHA Manager
+    之前 安装它们. 别忘了安装 MHA Node (因为 MHA Manager modules 内部依赖 MHA Node modules).
+
+    MHA Node package
+    DBD::mysql
+    Config::Tiny
+    Log::Dispatch
+    Parallel::ForkManager
+    Time::HiRes (included from Perl v5.7.3)
+
+
+      ## Install dependent Perl modules
+      # yum install perl-DBD-MySQL
+      # yum install perl-Config-Tiny
+      # yum install perl-Log-Dispatch
+      # yum install perl-Parallel-ForkManager
+
+      ## Install MHA Node, since MHA Manager uses some modules provided by MHA Node.
+      # rpm -ivh mha4mysql-node-X.Y-0.noarch.rpm
+
+      ## Finally you can install MHA Manager
+      # rpm -ivh mha4mysql-manager-X.Y-0.noarch.rpm
+
+
+---------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
 
 
 
