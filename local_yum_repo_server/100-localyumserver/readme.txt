@@ -186,18 +186,28 @@ https://stackoverflow.com/questions/635869/can-yum-tell-me-which-of-my-repositor
    参考: https://github.com/yoshinorim/mha4mysql-manager/wiki/Installation#Installing_MHA_Manager
          https://hhyo.github.io/2018/06/20/mha-install/
 
+----------
+// 下载 mha4mysql-node 依赖的 perl module
 [root@localyumrepo ~]# yum install perl-DBD-MySQL --downloadonly   --downloaddir=/var/www/html/local_yum_repo_dir
 
+// 下载 mha4mysql-manager 依赖的 perl modules
+[root@localyumrepo ~]# yum install perl-DBD-MySQL              --downloadonly   --downloaddir=/var/www/html/local_yum_repo_dir
+[root@localyumrepo ~]# yum install perl-Config-Tiny            --downloadonly   --downloaddir=/var/www/html/local_yum_repo_dir
+[root@localyumrepo ~]# yum install perl-Log-Dispatch           --downloadonly   --downloaddir=/var/www/html/local_yum_repo_dir
+[root@localyumrepo ~]# yum install perl-Parallel-ForkManager   --downloadonly   --downloaddir=/var/www/html/local_yum_repo_dir
 
 
-// 下载 mha4mysql-manager 对应于 centos7 的 rpm 包
-[root@localyumrepo ~]# wget -P /var/www/html/local_yum_repo_dir/  https://github.com/yoshinorim/mha4mysql-manager/releases/download/v0.58/mha4mysql-manager-0.58-0.el7.centos.noarch.rpm
 
 // 下载 mha4mysql-node 对应于 centos7 的 rpm 包
 [root@localyumrepo ~]# wget -P /var/www/html/local_yum_repo_dir/  https://github.com/yoshinorim/mha4mysql-node/releases/download/v0.58/mha4mysql-node-0.58-0.el7.centos.noarch.rpm
 
+// 下载 mha4mysql-manager 对应于 centos7 的 rpm 包
+[root@localyumrepo ~]# wget -P /var/www/html/local_yum_repo_dir/  https://github.com/yoshinorim/mha4mysql-manager/releases/download/v0.58/mha4mysql-manager-0.58-0.el7.centos.noarch.rpm
+
+
 // 更新生成 本地仓库的 meta data 信息
 [root@localyumrepo ~]# createrepo /var/www/html/local_yum_repo_dir/
+
 
 
 ---------------------------------------------------------------------------------------------------
