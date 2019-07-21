@@ -560,7 +560,7 @@ mysql> show slave status\G
 [root@slave03 ~]# for i in 110 100 101 102 103; do ssh 192.168.175.$i hostname; done
 
 
-// 所有主机配置主机名解析
+// 所有主机配置主机名解析 (注: 如果不通过 主机名连接, 如下主机名解析 其实是可以不用配置的)
 [root@manager ~]# vim /etc/hosts
 
         127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
