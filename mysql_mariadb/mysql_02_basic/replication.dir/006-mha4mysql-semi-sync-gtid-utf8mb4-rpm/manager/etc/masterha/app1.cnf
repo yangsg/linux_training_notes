@@ -1,0 +1,44 @@
+# https://github.com/yoshinorim/mha4mysql-manager/wiki/Configuration
+# https://raw.githubusercontent.com/wiki/yoshinorim/mha4mysql-manager/Parameters.md
+
+[server default]
+#指定MHA的工作目录
+manager_workdir=/masterha/app1
+#指定MHA的日志文件
+manager_log=/masterha/app1/manager.log
+#后台数据库存在的管理用户
+user=manager
+password=WWW.1.manager
+#指定ssh免密登录的用户
+ssh_user=root
+#指定主从复制用户
+repl_user=repluser
+repl_password=WWW.1.rep
+#用于指定MHA检测master服务器的周期，单位为秒
+ping_interval=1
+shutdown_script=""
+
+[server1]
+hostname=192.168.175.100
+port=3306
+#用于指定该服务器保存二进制日志文件的目录
+master_binlog_dir="/var/lib/mysql"
+candidate_master=1
+
+[server2]
+hostname=192.168.175.101
+port=3306
+master_binlog_dir="/var/lib/mysql"
+candidate_master=1
+
+[server3]
+hostname=192.168.175.102
+port=3306
+master_binlog_dir="/var/lib/mysql"
+candidate_master=1
+
+[server4]
+hostname=192.168.175.103
+port=3306
+master_binlog_dir="/var/lib/mysql"
+candidate_master=1
