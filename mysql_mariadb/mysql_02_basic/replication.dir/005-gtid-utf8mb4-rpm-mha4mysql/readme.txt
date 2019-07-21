@@ -575,14 +575,16 @@ mysql> show slave status\G
 
 [root@manager ~]# for i in 100 101 102 103;
 > do
-> scp  /etc/hosts  root@192.168.175.$i
+> scp /etc/hosts  root@192.168.175.$i:/etc/hosts
 > done
+
 
 // 对如上的 scp 拷贝操作 确认一下
 [root@manager ~]# for i in 110 100 101 102 103;
 > do
-> md5sum /etc/hosts
+> ssh root@192.168.175.$i 'md5sum /etc/hosts'
 > done
+
 
 // 确认 时间 是否 同步(一致)
 [root@manager ~]# for i in 110 100 101 102 103;
