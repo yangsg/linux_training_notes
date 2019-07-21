@@ -144,43 +144,115 @@ master 端 replication 设置
 
 [root@master ~]# vim /etc/my.cnf
 
-          [client]  # 注: [client] group 是 所有的 mysql client 工具都会读取的配置文件
-          loose-default-character-set = utf8mb4   # 加 loose- 前缀是为解决 [mysqlbinlog] group 不识别该 选项的 问题
+            [client]  # 注: [client] group 是 所有的 mysql client 工具都会读取的配置文件
+            loose-default-character-set = utf8mb4   # 加 loose- 前缀是为解决 [mysqlbinlog] group 不识别该 选项的 问题
 
-          [mysql]
-          default-character-set = utf8mb4
+            [mysql]
+            default-character-set = utf8mb4
 
-          [mysqlbinlog]
-          set_charset=utf8mb4
+            [mysqlbinlog]
+            set_charset=utf8mb4
 
-          [mysqld]
-          # 设置 mysql 字符集为 utf8mb4
-          character-set-client-handshake = FALSE  # 忽略 client 端的 character set 设置
-          character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
-          collation-server = utf8mb4_unicode_ci
+            [mysqld]
+            # 设置 mysql 字符集为 utf8mb4
+            character-set-client-handshake = FALSE  # 忽略 client 端的 character set 设置
+            character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
+            collation-server = utf8mb4_unicode_ci
 
-          # 如下 4 行 配置 是与 replication 和 gtid 相关的 配置
-          log-bin=master-bin
-          server-id=100   # server-id 范围: 1 and (232)−1
-          gtid_mode=ON    # ON: Both new and replicated transactions must be GTID transactions.
-          enforce-gtid-consistency=true  # ON: no transaction is allowed to violate GTID consistency.
+            # 如下 4 行 配置 是与 replication 和 gtid 相关的 配置
+            log-bin=master-bin
+            server-id=100   # server-id 范围: 1 and (232)−1
+            gtid_mode=ON    # ON: Both new and replicated transactions must be GTID transactions.
+            enforce-gtid-consistency=true  # ON: no transaction is allowed to violate GTID consistency.
 
-          # 关于 系统变量 gtid_mode 和 enforce-gtid-consistency 的信息, 见:
-          #  https://dev.mysql.com/doc/refman/5.7/en/replication-options-gtids.html#sysvar_gtid_mode
-          #  https://dev.mysql.com/doc/refman/5.7/en/replication-options-gtids.html#sysvar_enforce_gtid_consistency
+            # 关于 系统变量 gtid_mode 和 enforce-gtid-consistency 的信息, 见:
+            #  https://dev.mysql.com/doc/refman/5.7/en/replication-options-gtids.html#sysvar_gtid_mode
+            #  https://dev.mysql.com/doc/refman/5.7/en/replication-options-gtids.html#sysvar_enforce_gtid_consistency
 
-          # 注:
-          #    因为是在 mha 高可用环境中, 所有 master 的 角色不是一成不变的, 其本省也 可能转换成 slave 角色,
-          #    所以同样需要其 扮演 slave 时的 slave 相关配置
-          # 此例中 打算 使用 TABLE 记录 master_info 和 relay_log_info
-          # 一些 mysql replication 的 最佳实践(best practices) 指南 见 https://www.percona.com/sites/default/files/presentations/Replication-webinar.pdf
-          master_info_repository=TABLE
-          relay_log_info_repository=TABLE
-          relay-log-recovery=1
+            # 注:
+            #    因为是在 mha 高可用环境中, 所有 master 的 角色不是一成不变的, 其本省也 可能转换成 slave 角色,
+            #    所以同样需要其 扮演 slave 时的 slave 相关配置
+            # 此例中 打算 使用 TABLE 记录 master_info 和 relay_log_info
+            # 一些 mysql replication 的 最佳实践(best practices) 指南 见 https://www.percona.com/sites/default/files/presentations/Replication-webinar.pdf
+            master_info_repository=TABLE
+            relay_log_info_repository=TABLE
+            relay-log-recovery=1
+
+            # 如下 2 行 是与 半同步复制 相关的设置
+            # 注: 半同步复制 必须同时(both) 在 master 和 slave 上启用, 否则会 退化为 异步复制 方式
+            #     有因为 在 mha 中, mysql server 的角色 会在 master <--> slave 时间相互切换, 即 mysql server
+            #     有 扮演 master 和 slave 这两种不同角色的机会, 所以对于 同一 mysql server,
+            #     要 同时 安装 和 启用 semi-sync replication 的 semisync_master.so 插件 和 semisync_slave.so 插件
+            # 注: 安装插件的方式 如 plugin-load-add 和 INSTALL PLUGIN 仅能 择其一,
+            #     即使用了 plugin-load-add 安装 就不要再使用 INSTALL PLUGIN 方式安装, 或
+            #     使用过 INSTALL PLUGIN 安装就 不要再 使用 plugin-load-add 方式安装, 否则会报错
+            #     关于插件安装方式 见
+            #     https://dev.mysql.com/doc/refman/5.7/en/replication-semisync-installation.html
+            #     https://dev.mysql.com/doc/refman/5.7/en/plugin-loading.html
+            plugin-load-add='rpl_semi_sync_master=semisync_master.so'  # 加载半同步复制的 semisync_master.so 插件
+            plugin-load-add='rpl_semi_sync_slave=semisync_slave.so'    # 加载半同步复制的 semisync_slave.so 插件
+            rpl_semi_sync_master_enabled=1                             # 启用半同步复制的 master 插件
+            rpl_semi_sync_master_timeout=1000                          # 1 second # 默认为 10 seconds
+            rpl_semi_sync_slave_enabled=1                              # 启用半同步复制的 slave 插件
+
+            # 更多 与 半同步复制 相关的 系统变量 或 状态变量 见:
+            #    https://dev.mysql.com/doc/refman/5.7/en/replication-semisync-interface.html
+            #    https://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html
+            #    https://dev.mysql.com/doc/refman/5.7/en/server-status-variables.html
+
+
 
 
 // 重启 mysql server, 以 应用 如上的配置
 [root@master ~]# systemctl restart mysqld
+
+// 查看验证 插件 semisync_master.so 和 semisync_slave.so 是否被 安装加载
+mysql> SELECT PLUGIN_NAME, PLUGIN_STATUS FROM INFORMATION_SCHEMA.PLUGINS WHERE PLUGIN_NAME LIKE '%semi%';
+        +----------------------+---------------+
+        | PLUGIN_NAME          | PLUGIN_STATUS |
+        +----------------------+---------------+
+        | rpl_semi_sync_master | ACTIVE        | <----
+        | rpl_semi_sync_slave  | ACTIVE        | <----
+        +----------------------+---------------+
+
+
+// 查看验证 相关的 'rpl_semi_sync%' 配置 是否 生效
+mysql> SHOW VARIABLES LIKE 'rpl_semi_sync%';
+        +-------------------------------------------+------------+
+        | Variable_name                             | Value      |
+        +-------------------------------------------+------------+
+        | rpl_semi_sync_master_enabled              | ON         | <---------
+        | rpl_semi_sync_master_timeout              | 1000       |
+        | rpl_semi_sync_master_trace_level          | 32         |
+        | rpl_semi_sync_master_wait_for_slave_count | 1          |
+        | rpl_semi_sync_master_wait_no_slave        | ON         |
+        | rpl_semi_sync_master_wait_point           | AFTER_SYNC |
+        | rpl_semi_sync_slave_enabled               | ON         | <---------
+        | rpl_semi_sync_slave_trace_level           | 32         |
+        +-------------------------------------------+------------+
+
+// 查看 此时 相关的 'Rpl_semi_sync%' 状态
+mysql> SHOW STATUS LIKE 'Rpl_semi_sync%';
+        +--------------------------------------------+-------+
+        | Variable_name                              | Value |
+        +--------------------------------------------+-------+
+        | Rpl_semi_sync_master_clients               | 0     |
+        | Rpl_semi_sync_master_net_avg_wait_time     | 0     |
+        | Rpl_semi_sync_master_net_wait_time         | 0     |
+        | Rpl_semi_sync_master_net_waits             | 0     |
+        | Rpl_semi_sync_master_no_times              | 0     |
+        | Rpl_semi_sync_master_no_tx                 | 0     |
+        | Rpl_semi_sync_master_status                | ON    |
+        | Rpl_semi_sync_master_timefunc_failures     | 0     |
+        | Rpl_semi_sync_master_tx_avg_wait_time      | 0     |
+        | Rpl_semi_sync_master_tx_wait_time          | 0     |
+        | Rpl_semi_sync_master_tx_waits              | 0     |
+        | Rpl_semi_sync_master_wait_pos_backtraverse | 0     |
+        | Rpl_semi_sync_master_wait_sessions         | 0     |
+        | Rpl_semi_sync_master_yes_tx                | 0     |
+        | Rpl_semi_sync_slave_status                 | OFF   |
+        +--------------------------------------------+-------+
+
 
 
 // 创建 专用于 replication 的 user. 参见 https://dev.mysql.com/doc/refman/5.7/en/replication-howto-repuser.html
