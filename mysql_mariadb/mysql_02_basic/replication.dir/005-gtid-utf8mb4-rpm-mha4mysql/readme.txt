@@ -668,8 +668,8 @@ mysql> GRANT ALL ON *.* TO 'manager'@'192.168.175.103';
               #指定MHA的日志文件
               manager_log=/masterha/app1/manager.log
               #后台数据库存在的管理用户
-              user=root
-              password=WWW.1.com
+              user=manager
+              password=WWW.1.manager
               #指定ssh免密登录的用户
               ssh_user=root
               #指定主从复制用户
