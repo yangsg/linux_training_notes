@@ -155,6 +155,17 @@ master 端 replication 设置
           character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
           collation-server = utf8mb4_unicode_ci
 
+          # 启用 skip-name-resolve 不仅能优化性能(特别是在 DNS 很慢或有许多hosts时),
+          # 还能 解决 本示例中 权限的问题, 因为本示例中 用户都是基于 ip 地址创建并授权的,
+          # 如 'repluser'@'192.168.175.102', 如果不启用 skip-name-resolve,
+          # 则 在某时候 可能会去 检查账号 'repluser'@'slave02' 的授权, 因为本示例未对 'repluser'@'slave02'
+          # 授权, 导致 因权限拒绝 而 访问失败, 从而无法正常实现 replication 功能.
+          #   --skip-name-resolve:  Don't resolve hostnames. All hostnames are IP's or 'localhost'.
+          #   https://dev.mysql.com/doc/refman/5.7/en/server-options.html#option_mysqld_skip-name-resolve
+          #   https://dev.mysql.com/doc/refman/5.7/en/host-cache.html
+          skip-name-resolve=ON
+
+
           # 如下 4 行 配置 是与 replication 和 gtid 相关的 配置
           log-bin=master-bin
           server-id=100   # server-id 范围: 1 and (232)−1
@@ -250,6 +261,17 @@ slave01 端 replication 设置
           character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
           collation-server = utf8mb4_unicode_ci
 
+          # 启用 skip-name-resolve 不仅能优化性能(特别是在 DNS 很慢或有许多hosts时),
+          # 还能 解决 本示例中 权限的问题, 因为本示例中 用户都是基于 ip 地址创建并授权的,
+          # 如 'repluser'@'192.168.175.102', 如果不启用 skip-name-resolve,
+          # 则 在某时候 可能会去 检查账号 'repluser'@'slave02' 的授权, 因为本示例未对 'repluser'@'slave02'
+          # 授权, 导致 因权限拒绝 而 访问失败, 从而无法正常实现 replication 功能.
+          #   --skip-name-resolve:  Don't resolve hostnames. All hostnames are IP's or 'localhost'.
+          #   https://dev.mysql.com/doc/refman/5.7/en/server-options.html#option_mysqld_skip-name-resolve
+          #   https://dev.mysql.com/doc/refman/5.7/en/host-cache.html
+          skip-name-resolve=ON
+
+
           # 如下 4 行 配置 是与 replication 和 gtid 相关的 配置
           log-bin=slave01-bin
           server-id=101   # server-id 范围: 1 and (232)−1
@@ -340,6 +362,17 @@ slave02 端 replication 设置 (此时不包含 semi-sync replication 的 设置
           character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
           collation-server = utf8mb4_unicode_ci
 
+          # 启用 skip-name-resolve 不仅能优化性能(特别是在 DNS 很慢或有许多hosts时),
+          # 还能 解决 本示例中 权限的问题, 因为本示例中 用户都是基于 ip 地址创建并授权的,
+          # 如 'repluser'@'192.168.175.102', 如果不启用 skip-name-resolve,
+          # 则 在某时候 可能会去 检查账号 'repluser'@'slave02' 的授权, 因为本示例未对 'repluser'@'slave02'
+          # 授权, 导致 因权限拒绝 而 访问失败, 从而无法正常实现 replication 功能.
+          #   --skip-name-resolve:  Don't resolve hostnames. All hostnames are IP's or 'localhost'.
+          #   https://dev.mysql.com/doc/refman/5.7/en/server-options.html#option_mysqld_skip-name-resolve
+          #   https://dev.mysql.com/doc/refman/5.7/en/host-cache.html
+          skip-name-resolve=ON
+
+
           # 如下 4 行 配置 是与 replication 和 gtid 相关的 配置
           log-bin=slave02-bin
           server-id=102   # server-id 范围: 1 and (232)−1
@@ -429,6 +462,17 @@ slave03 端 replication 设置
           character-set-client-handshake = FALSE  # 忽略 client 端的 character set 设置
           character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
           collation-server = utf8mb4_unicode_ci
+
+          # 启用 skip-name-resolve 不仅能优化性能(特别是在 DNS 很慢或有许多hosts时),
+          # 还能 解决 本示例中 权限的问题, 因为本示例中 用户都是基于 ip 地址创建并授权的,
+          # 如 'repluser'@'192.168.175.102', 如果不启用 skip-name-resolve,
+          # 则 在某时候 可能会去 检查账号 'repluser'@'slave02' 的授权, 因为本示例未对 'repluser'@'slave02'
+          # 授权, 导致 因权限拒绝 而 访问失败, 从而无法正常实现 replication 功能.
+          #   --skip-name-resolve:  Don't resolve hostnames. All hostnames are IP's or 'localhost'.
+          #   https://dev.mysql.com/doc/refman/5.7/en/server-options.html#option_mysqld_skip-name-resolve
+          #   https://dev.mysql.com/doc/refman/5.7/en/host-cache.html
+          skip-name-resolve=ON
+
 
           # 如下 4 行 配置 是与 replication 和 gtid 相关的 配置
           log-bin=slave03-bin
