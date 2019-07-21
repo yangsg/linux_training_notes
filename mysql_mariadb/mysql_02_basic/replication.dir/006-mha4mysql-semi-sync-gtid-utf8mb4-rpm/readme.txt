@@ -298,7 +298,7 @@ mysql> show master status;
       +-------------------+----------+--------------+------------------+------------------------------------------+
       | File              | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set                        |
       +-------------------+----------+--------------+------------------+------------------------------------------+
-      | master-bin.000001 |     2158 |              |                  | e20ebf76-aab0-11e9-b48a-000c29152d2e:1-8 |
+      | master-bin.000001 |     2158 |              |                  | 41141e82-ab81-11e9-9a5f-000c29152d2e:1-8 |
       +-------------------+----------+--------------+------------------+------------------------------------------+
 
 
@@ -342,6 +342,30 @@ slave01 端 replication 设置
           relay_log_info_repository=TABLE
           relay-log-recovery=1
 
+          # 如下 2 行 是与 半同步复制 相关的设置
+          # 注: 半同步复制 必须同时(both) 在 master 和 slave 上启用, 否则会 退化为 异步复制 方式
+          #     有因为 在 mha 中, mysql server 的角色 会在 master <--> slave 时间相互切换, 即 mysql server
+          #     有 扮演 master 和 slave 这两种不同角色的机会, 所以对于 同一 mysql server,
+          #     要 同时 安装 和 启用 semi-sync replication 的 semisync_master.so 插件 和 semisync_slave.so 插件
+          # 注: 安装插件的方式 如 plugin-load-add 和 INSTALL PLUGIN 仅能 择其一,
+          #     即使用了 plugin-load-add 安装 就不要再使用 INSTALL PLUGIN 方式安装, 或
+          #     使用过 INSTALL PLUGIN 安装就 不要再 使用 plugin-load-add 方式安装, 否则会报错
+          #     关于插件安装方式 见
+          #     https://dev.mysql.com/doc/refman/5.7/en/replication-semisync-installation.html
+          #     https://dev.mysql.com/doc/refman/5.7/en/plugin-loading.html
+          plugin-load-add='rpl_semi_sync_master=semisync_master.so'  # 加载半同步复制的 semisync_master.so 插件
+          plugin-load-add='rpl_semi_sync_slave=semisync_slave.so'    # 加载半同步复制的 semisync_slave.so 插件
+          rpl_semi_sync_master_enabled=1                             # 启用半同步复制的 master 插件
+          rpl_semi_sync_master_timeout=1000                          # 1 second # 默认为 10 seconds
+          rpl_semi_sync_slave_enabled=1                              # 启用半同步复制的 slave 插件
+
+          # 更多 与 半同步复制 相关的 系统变量 或 状态变量 见:
+          #    https://dev.mysql.com/doc/refman/5.7/en/replication-semisync-interface.html
+          #    https://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html
+          #    https://dev.mysql.com/doc/refman/5.7/en/server-status-variables.html
+
+
+
 
 
 // 先 通过 命令 mysqld 查看一下 配置
@@ -352,8 +376,56 @@ slave01 端 replication 设置
         server-id                                                    101
 
 
+
 // 重启 slave01 的 mysql server 是 如上配置生效
 [root@slave01 ~]# systemctl restart mysqld
+
+// 查看验证 插件 semisync_master.so 和 semisync_slave.so 是否被 安装加
+mysql> SELECT PLUGIN_NAME, PLUGIN_STATUS FROM INFORMATION_SCHEMA.PLUGINS WHERE PLUGIN_NAME LIKE '%semi%';
+      +----------------------+---------------+
+      | PLUGIN_NAME          | PLUGIN_STATUS |
+      +----------------------+---------------+
+      | rpl_semi_sync_master | ACTIVE        | <-----
+      | rpl_semi_sync_slave  | ACTIVE        | <-----
+      +----------------------+---------------+
+
+// 查看验证 相关的 'rpl_semi_sync%' 配置 是否 生效
+mysql> SHOW VARIABLES LIKE 'rpl_semi_sync%';
+      +-------------------------------------------+------------+
+      | Variable_name                             | Value      |
+      +-------------------------------------------+------------+
+      | rpl_semi_sync_master_enabled              | ON         | <-----
+      | rpl_semi_sync_master_timeout              | 1000       |
+      | rpl_semi_sync_master_trace_level          | 32         |
+      | rpl_semi_sync_master_wait_for_slave_count | 1          |
+      | rpl_semi_sync_master_wait_no_slave        | ON         |
+      | rpl_semi_sync_master_wait_point           | AFTER_SYNC |
+      | rpl_semi_sync_slave_enabled               | ON         | <-----
+      | rpl_semi_sync_slave_trace_level           | 32         |
+      +-------------------------------------------+------------+
+
+// 查看 此时 相关的 'Rpl_semi_sync%' 状态
+mysql> SHOW STATUS LIKE 'Rpl_semi_sync%';
+      +--------------------------------------------+-------+
+      | Variable_name                              | Value |
+      +--------------------------------------------+-------+
+      | Rpl_semi_sync_master_clients               | 0     |
+      | Rpl_semi_sync_master_net_avg_wait_time     | 0     |
+      | Rpl_semi_sync_master_net_wait_time         | 0     |
+      | Rpl_semi_sync_master_net_waits             | 0     |
+      | Rpl_semi_sync_master_no_times              | 0     |
+      | Rpl_semi_sync_master_no_tx                 | 0     |
+      | Rpl_semi_sync_master_status                | ON    | <-----
+      | Rpl_semi_sync_master_timefunc_failures     | 0     |
+      | Rpl_semi_sync_master_tx_avg_wait_time      | 0     |
+      | Rpl_semi_sync_master_tx_wait_time          | 0     |
+      | Rpl_semi_sync_master_tx_waits              | 0     |
+      | Rpl_semi_sync_master_wait_pos_backtraverse | 0     |
+      | Rpl_semi_sync_master_wait_sessions         | 0     |
+      | Rpl_semi_sync_master_yes_tx                | 0     |
+      | Rpl_semi_sync_slave_status                 | OFF   |
+      +--------------------------------------------+-------+
+
 
 
 // 查看一下客户端工具 mysql 默认使用 的 字符集
@@ -389,6 +461,8 @@ mysql> start slave;
 mysql> pager less -Fi
 mysql> show slave status\G
 
+             Slave_IO_Running: Yes
+            Slave_SQL_Running: Yes
 
 
 
@@ -396,7 +470,7 @@ mysql> show slave status\G
 
 ----------------------------------------------------------------
 
-slave02 端 replication 设置 (此时不包含 semi-sync replication 的 设置)
+slave02 端 replication 设置
 
 
 [root@slave02 ~]# vim /etc/my.cnf
@@ -432,6 +506,23 @@ slave02 端 replication 设置 (此时不包含 semi-sync replication 的 设置
           relay_log_info_repository=TABLE
           relay-log-recovery=1
 
+          # 如下 2 行 是与 半同步复制 相关的设置
+          # 注: 半同步复制 必须同时(both) 在 master 和 slave 上启用, 否则会 退化为 异步复制 方式
+          #     有因为 在 mha 中, mysql server 的角色 会在 master <--> slave 时间相互切换, 即 mysql server
+          #     有 扮演 master 和 slave 这两种不同角色的机会, 所以对于 同一 mysql server,
+          #     要 同时 安装 和 启用 semi-sync replication 的 semisync_master.so 插件 和 semisync_slave.so 插件
+          # 注: 安装插件的方式 如 plugin-load-add 和 INSTALL PLUGIN 仅能 择其一,
+          #     即使用了 plugin-load-add 安装 就不要再使用 INSTALL PLUGIN 方式安装, 或
+          #     使用过 INSTALL PLUGIN 安装就 不要再 使用 plugin-load-add 方式安装, 否则会报错
+          #     关于插件安装方式 见
+          #     https://dev.mysql.com/doc/refman/5.7/en/replication-semisync-installation.html
+          #     https://dev.mysql.com/doc/refman/5.7/en/plugin-loading.html
+          plugin-load-add='rpl_semi_sync_master=semisync_master.so'  # 加载半同步复制的 semisync_master.so 插件
+          plugin-load-add='rpl_semi_sync_slave=semisync_slave.so'    # 加载半同步复制的 semisync_slave.so 插件
+          rpl_semi_sync_master_enabled=1                             # 启用半同步复制的 master 插件
+          rpl_semi_sync_master_timeout=1000                          # 1 second # 默认为 10 seconds
+          rpl_semi_sync_slave_enabled=1                              # 启用半同步复制的 slave 插件
+
 
 
 // 先 通过 命令 mysqld 查看一下 配置
@@ -444,6 +535,54 @@ slave02 端 replication 设置 (此时不包含 semi-sync replication 的 设置
 
 // 重启 slave02 的 mysql server 是 如上配置生效
 [root@slave02 ~]# systemctl restart mysqld
+
+
+// 查看验证 插件 semisync_master.so 和 semisync_slave.so 是否被 安装加
+mysql> SELECT PLUGIN_NAME, PLUGIN_STATUS FROM INFORMATION_SCHEMA.PLUGINS WHERE PLUGIN_NAME LIKE '%semi%';
+      +----------------------+---------------+
+      | PLUGIN_NAME          | PLUGIN_STATUS |
+      +----------------------+---------------+
+      | rpl_semi_sync_master | ACTIVE        | <-----
+      | rpl_semi_sync_slave  | ACTIVE        | <-----
+      +----------------------+---------------+
+
+// 查看验证 相关的 'rpl_semi_sync%' 配置 是否 生效
+mysql> SHOW VARIABLES LIKE 'rpl_semi_sync%';
+      +-------------------------------------------+------------+
+      | Variable_name                             | Value      |
+      +-------------------------------------------+------------+
+      | rpl_semi_sync_master_enabled              | ON         | <-----
+      | rpl_semi_sync_master_timeout              | 1000       |
+      | rpl_semi_sync_master_trace_level          | 32         |
+      | rpl_semi_sync_master_wait_for_slave_count | 1          |
+      | rpl_semi_sync_master_wait_no_slave        | ON         |
+      | rpl_semi_sync_master_wait_point           | AFTER_SYNC |
+      | rpl_semi_sync_slave_enabled               | ON         | <-----
+      | rpl_semi_sync_slave_trace_level           | 32         |
+      +-------------------------------------------+------------+
+
+// 查看 此时 相关的 'Rpl_semi_sync%' 状态
+mysql> SHOW STATUS LIKE 'Rpl_semi_sync%';
+      +--------------------------------------------+-------+
+      | Variable_name                              | Value |
+      +--------------------------------------------+-------+
+      | Rpl_semi_sync_master_clients               | 0     |
+      | Rpl_semi_sync_master_net_avg_wait_time     | 0     |
+      | Rpl_semi_sync_master_net_wait_time         | 0     |
+      | Rpl_semi_sync_master_net_waits             | 0     |
+      | Rpl_semi_sync_master_no_times              | 0     |
+      | Rpl_semi_sync_master_no_tx                 | 0     |
+      | Rpl_semi_sync_master_status                | ON    | <-----
+      | Rpl_semi_sync_master_timefunc_failures     | 0     |
+      | Rpl_semi_sync_master_tx_avg_wait_time      | 0     |
+      | Rpl_semi_sync_master_tx_wait_time          | 0     |
+      | Rpl_semi_sync_master_tx_waits              | 0     |
+      | Rpl_semi_sync_master_wait_pos_backtraverse | 0     |
+      | Rpl_semi_sync_master_wait_sessions         | 0     |
+      | Rpl_semi_sync_master_yes_tx                | 0     |
+      | Rpl_semi_sync_slave_status                 | OFF   |
+      +--------------------------------------------+-------+
+
 
 
 // 查看一下客户端工具 mysql 默认使用 的 字符集
@@ -479,6 +618,31 @@ mysql> start slave;
 mysql> pager less -Fi
 mysql> show slave status\G
 
+             Slave_IO_Running: Yes
+            Slave_SQL_Running: Yes
+
+
+// 此时 在 master 端 执行 如下 语句 看一下 master 端相关 'Rpl_semi_sync%' 状态 变化
+        mysql> SHOW STATUS LIKE 'Rpl_semi_sync%';          #<---- 注: 此语句在 master 端 执行
+        +--------------------------------------------+-------+
+        | Variable_name                              | Value |
+        +--------------------------------------------+-------+
+        | Rpl_semi_sync_master_clients               | 2     | <------
+        | Rpl_semi_sync_master_net_avg_wait_time     | 0     |
+        | Rpl_semi_sync_master_net_wait_time         | 0     |
+        | Rpl_semi_sync_master_net_waits             | 0     |
+        | Rpl_semi_sync_master_no_times              | 1     |
+        | Rpl_semi_sync_master_no_tx                 | 8     |
+        | Rpl_semi_sync_master_status                | ON    |
+        | Rpl_semi_sync_master_timefunc_failures     | 0     |
+        | Rpl_semi_sync_master_tx_avg_wait_time      | 0     |
+        | Rpl_semi_sync_master_tx_wait_time          | 0     |
+        | Rpl_semi_sync_master_tx_waits              | 0     |
+        | Rpl_semi_sync_master_wait_pos_backtraverse | 0     |
+        | Rpl_semi_sync_master_wait_sessions         | 0     |
+        | Rpl_semi_sync_master_yes_tx                | 0     |
+        | Rpl_semi_sync_slave_status                 | OFF   |
+        +--------------------------------------------+-------+
 
 
 
