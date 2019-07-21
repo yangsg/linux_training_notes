@@ -198,16 +198,16 @@ master 端 replication 设置
 //     或 参考   http://www.unixfbi.com/155.html   中 “复制账号重复问题”
 mysql> USE mysql;
 mysql> CREATE USER IF NOT EXISTS 'repluser'@'192.168.175.100' IDENTIFIED BY 'WWW.1.rep';   # 创建 用于 replication 的用户
-mysql> GRANT REPLICATION SLAVE ON *.* TO 'repluser'@'192.168.175.100';       授予 该用户 replication slave 权限
+mysql> GRANT REPLICATION SLAVE ON *.* TO 'repluser'@'192.168.175.100';       # 授予 该用户 replication slave 权限
 
 mysql> CREATE USER IF NOT EXISTS 'repluser'@'192.168.175.101' IDENTIFIED BY 'WWW.1.rep';   # 创建 用于 replication 的用户
-mysql> GRANT REPLICATION SLAVE ON *.* TO 'repluser'@'192.168.175.101';       授予 该用户 replication slave 权限
+mysql> GRANT REPLICATION SLAVE ON *.* TO 'repluser'@'192.168.175.101';       # 授予 该用户 replication slave 权限
 
 mysql> CREATE USER IF NOT EXISTS 'repluser'@'192.168.175.102' IDENTIFIED BY 'WWW.1.rep';   # 创建 用于 replication 的用户
-mysql> GRANT REPLICATION SLAVE ON *.* TO 'repluser'@'192.168.175.102';       授予 该用户 replication slave 权限
+mysql> GRANT REPLICATION SLAVE ON *.* TO 'repluser'@'192.168.175.102';       # 授予 该用户 replication slave 权限
 
 mysql> CREATE USER IF NOT EXISTS 'repluser'@'192.168.175.103' IDENTIFIED BY 'WWW.1.rep';   # 创建 用于 replication 的用户
-mysql> GRANT REPLICATION SLAVE ON *.* TO 'repluser'@'192.168.175.103';       授予 该用户 replication slave 权限
+mysql> GRANT REPLICATION SLAVE ON *.* TO 'repluser'@'192.168.175.103';       # 授予 该用户 replication slave 权限
 
      注: mysql 5.7 的文档中 推荐 使用 命令 create user 创建用户和密码, 而不推荐使用 grant 来创建,
          所以如上例子中 为了迎合这种趋势, 没有使用更简单的一行 grant ... identified by ... 这种语句来创建 user.
