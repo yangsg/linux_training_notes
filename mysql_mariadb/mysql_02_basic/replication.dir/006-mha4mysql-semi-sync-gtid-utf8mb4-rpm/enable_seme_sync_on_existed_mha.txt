@@ -25,6 +25,11 @@
                 等这种 选项的方式来安装 相同的插件了. 因为 INSTALL PLUGIN 会将安装的 插件
                 注册到 mysql.plugin 表中, mysql server 启动时 会自动 加载 该 表中的插件.
                 所以安装 插件的 方式 仅选 其一即可. 重复安装反而不正确.
+
+// 在所有的 当前 slave 角色的 mysql servers 上 执行 如下两行 命令 重新连接 master 并将自己注册为 symi-sync 的client端
+mysql> STOP SLAVE IO_THREAD;
+mysql> START SLAVE IO_THREAD;
+
 ---------------------------------------------------------------------------------------------------
 在 Options file 中 添加 semi-sync replication 相关的 选项, 使其 mysql server 每次启动时 semi-sync replication 自动启用.
 
