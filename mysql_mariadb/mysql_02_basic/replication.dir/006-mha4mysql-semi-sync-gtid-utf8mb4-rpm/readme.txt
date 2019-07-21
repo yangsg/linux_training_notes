@@ -686,6 +686,24 @@ slave03 端 replication 设置
           relay_log_info_repository=TABLE
           relay-log-recovery=1
 
+          # 如下 2 行 是与 半同步复制 相关的设置
+          # 注: 半同步复制 必须同时(both) 在 master 和 slave 上启用, 否则会 退化为 异步复制 方式
+          #     有因为 在 mha 中, mysql server 的角色 会在 master <--> slave 时间相互切换, 即 mysql server
+          #     有 扮演 master 和 slave 这两种不同角色的机会, 所以对于 同一 mysql server,
+          #     要 同时 安装 和 启用 semi-sync replication 的 semisync_master.so 插件 和 semisync_slave.so 插件
+          # 注: 安装插件的方式 如 plugin-load-add 和 INSTALL PLUGIN 仅能 择其一,
+          #     即使用了 plugin-load-add 安装 就不要再使用 INSTALL PLUGIN 方式安装, 或
+          #     使用过 INSTALL PLUGIN 安装就 不要再 使用 plugin-load-add 方式安装, 否则会报错
+          #     关于插件安装方式 见
+          #     https://dev.mysql.com/doc/refman/5.7/en/replication-semisync-installation.html
+          #     https://dev.mysql.com/doc/refman/5.7/en/plugin-loading.html
+          plugin-load-add='rpl_semi_sync_master=semisync_master.so'  # 加载半同步复制的 semisync_master.so 插件
+          plugin-load-add='rpl_semi_sync_slave=semisync_slave.so'    # 加载半同步复制的 semisync_slave.so 插件
+          rpl_semi_sync_master_enabled=1                             # 启用半同步复制的 master 插件
+          rpl_semi_sync_master_timeout=1000                          # 1 second # 默认为 10 seconds
+          rpl_semi_sync_slave_enabled=1                              # 启用半同步复制的 slave 插件
+
+
 
 
 // 先 通过 命令 mysqld 查看一下 配置
@@ -698,6 +716,54 @@ slave03 端 replication 设置
 
 // 重启 slave03 的 mysql server 是 如上配置生效
 [root@slave03 ~]# systemctl restart mysqld
+
+
+// 查看验证 插件 semisync_master.so 和 semisync_slave.so 是否被 安装加
+mysql> SELECT PLUGIN_NAME, PLUGIN_STATUS FROM INFORMATION_SCHEMA.PLUGINS WHERE PLUGIN_NAME LIKE '%semi%';
+      +----------------------+---------------+
+      | PLUGIN_NAME          | PLUGIN_STATUS |
+      +----------------------+---------------+
+      | rpl_semi_sync_master | ACTIVE        | <-----
+      | rpl_semi_sync_slave  | ACTIVE        | <-----
+      +----------------------+---------------+
+
+// 查看验证 相关的 'rpl_semi_sync%' 配置 是否 生效
+mysql> SHOW VARIABLES LIKE 'rpl_semi_sync%';
+      +-------------------------------------------+------------+
+      | Variable_name                             | Value      |
+      +-------------------------------------------+------------+
+      | rpl_semi_sync_master_enabled              | ON         | <-----
+      | rpl_semi_sync_master_timeout              | 1000       |
+      | rpl_semi_sync_master_trace_level          | 32         |
+      | rpl_semi_sync_master_wait_for_slave_count | 1          |
+      | rpl_semi_sync_master_wait_no_slave        | ON         |
+      | rpl_semi_sync_master_wait_point           | AFTER_SYNC |
+      | rpl_semi_sync_slave_enabled               | ON         | <-----
+      | rpl_semi_sync_slave_trace_level           | 32         |
+      +-------------------------------------------+------------+
+
+// 查看 此时 相关的 'Rpl_semi_sync%' 状态
+mysql> SHOW STATUS LIKE 'Rpl_semi_sync%';
+      +--------------------------------------------+-------+
+      | Variable_name                              | Value |
+      +--------------------------------------------+-------+
+      | Rpl_semi_sync_master_clients               | 0     |
+      | Rpl_semi_sync_master_net_avg_wait_time     | 0     |
+      | Rpl_semi_sync_master_net_wait_time         | 0     |
+      | Rpl_semi_sync_master_net_waits             | 0     |
+      | Rpl_semi_sync_master_no_times              | 0     |
+      | Rpl_semi_sync_master_no_tx                 | 0     |
+      | Rpl_semi_sync_master_status                | ON    | <-----
+      | Rpl_semi_sync_master_timefunc_failures     | 0     |
+      | Rpl_semi_sync_master_tx_avg_wait_time      | 0     |
+      | Rpl_semi_sync_master_tx_wait_time          | 0     |
+      | Rpl_semi_sync_master_tx_waits              | 0     |
+      | Rpl_semi_sync_master_wait_pos_backtraverse | 0     |
+      | Rpl_semi_sync_master_wait_sessions         | 0     |
+      | Rpl_semi_sync_master_yes_tx                | 0     |
+      | Rpl_semi_sync_slave_status                 | OFF   |
+      +--------------------------------------------+-------+
+
 
 
 // 查看一下客户端工具 mysql 默认使用 的 字符集
@@ -733,7 +799,31 @@ mysql> start slave;
 mysql> pager less -Fi
 mysql> show slave status\G
 
+             Slave_IO_Running: Yes
+            Slave_SQL_Running: Yes
 
+
+// 此时 在 master 端 执行 如下 语句 看一下 master 端相关 'Rpl_semi_sync%' 状态 变化
+        mysql> SHOW STATUS LIKE 'Rpl_semi_sync%';          #<---- 注: 此语句在 master 端 执行
+        +--------------------------------------------+-------+
+        | Variable_name                              | Value |
+        +--------------------------------------------+-------+
+        | Rpl_semi_sync_master_clients               | 3     | <-------
+        | Rpl_semi_sync_master_net_avg_wait_time     | 0     |
+        | Rpl_semi_sync_master_net_wait_time         | 0     |
+        | Rpl_semi_sync_master_net_waits             | 0     |
+        | Rpl_semi_sync_master_no_times              | 1     |
+        | Rpl_semi_sync_master_no_tx                 | 8     |
+        | Rpl_semi_sync_master_status                | ON    |
+        | Rpl_semi_sync_master_timefunc_failures     | 0     |
+        | Rpl_semi_sync_master_tx_avg_wait_time      | 0     |
+        | Rpl_semi_sync_master_tx_wait_time          | 0     |
+        | Rpl_semi_sync_master_tx_waits              | 0     |
+        | Rpl_semi_sync_master_wait_pos_backtraverse | 0     |
+        | Rpl_semi_sync_master_wait_sessions         | 0     |
+        | Rpl_semi_sync_master_yes_tx                | 0     |
+        | Rpl_semi_sync_slave_status                 | OFF   |
+        +--------------------------------------------+-------+
 
 
 
@@ -865,6 +955,7 @@ mysql> show slave status\G
 
 在数据库服务器上创建MHA的管理用户 (5个)
 
+// 如下语句 在 master 上执行, 让其 自动 同步给 slave01, slave02 和 slave03.
 // 注:
 //     create user 的步骤有 许多 问题 或 细节要考虑, 所以为了 最大的 灵活性, 最好 按部就班 的 按如下的 步骤 和 语法
 //     来 创建用户(尤其是 涉及 replication 的 拓扑结构中), 具体原因见
@@ -908,8 +999,8 @@ mysql> GRANT ALL ON *.* TO 'manager'@'192.168.175.103';
               #指定MHA的日志文件
               manager_log=/masterha/app1/manager.log
               #后台数据库存在的管理用户
-              user=root
-              password=WWW.1.com
+              user=manager
+              password=WWW.1.manager
               #指定ssh免密登录的用户
               ssh_user=root
               #指定主从复制用户
@@ -952,64 +1043,66 @@ mysql> GRANT ALL ON *.* TO 'manager'@'192.168.175.103';
 
         ......
 
-        Sat Jul 20 17:45:26 2019 - [info] All SSH connection tests passed successfully.
+        Sun Jul 21 16:33:35 2019 - [info] All SSH connection tests passed successfully.
+
 
 // 检测主从复制是否正常
 [root@manager ~]# masterha_check_repl --conf=/etc/masterha/app1.cnf
 
         ------------ 观察 一下 输出 信息, 看一下 masterha_check_repl 做了 那些 检查
-        Sat Jul 20 19:32:56 2019 - [warning] Global configuration file /etc/masterha_default.cnf not found. Skipping.
-        Sat Jul 20 19:32:56 2019 - [info] Reading application default configuration from /etc/masterha/app1.cnf..
-        Sat Jul 20 19:32:56 2019 - [info] Reading server configuration from /etc/masterha/app1.cnf..
-        Sat Jul 20 19:32:56 2019 - [info] MHA::MasterMonitor version 0.58.
-        Sat Jul 20 19:32:57 2019 - [info] GTID failover mode = 1
-        Sat Jul 20 19:32:57 2019 - [info] Dead Servers:
-        Sat Jul 20 19:32:57 2019 - [info] Alive Servers:
-        Sat Jul 20 19:32:57 2019 - [info]   192.168.175.100(192.168.175.100:3306)
-        Sat Jul 20 19:32:57 2019 - [info]   192.168.175.101(192.168.175.101:3306)
-        Sat Jul 20 19:32:57 2019 - [info]   192.168.175.102(192.168.175.102:3306)
-        Sat Jul 20 19:32:57 2019 - [info]   192.168.175.103(192.168.175.103:3306)
-        Sat Jul 20 19:32:57 2019 - [info] Alive Slaves:
-        Sat Jul 20 19:32:57 2019 - [info]   192.168.175.101(192.168.175.101:3306)  Version=5.7.26-log (oldest major version between slaves) log-bin:enabled
-        Sat Jul 20 19:32:57 2019 - [info]     GTID ON
-        Sat Jul 20 19:32:57 2019 - [info]     Replicating from 192.168.175.100(192.168.175.100:3306)
-        Sat Jul 20 19:32:57 2019 - [info]     Primary candidate for the new Master (candidate_master is set)
-        Sat Jul 20 19:32:57 2019 - [info]   192.168.175.102(192.168.175.102:3306)  Version=5.7.26-log (oldest major version between slaves) log-bin:enabled
-        Sat Jul 20 19:32:57 2019 - [info]     GTID ON
-        Sat Jul 20 19:32:57 2019 - [info]     Replicating from 192.168.175.100(192.168.175.100:3306)
-        Sat Jul 20 19:32:57 2019 - [info]     Primary candidate for the new Master (candidate_master is set)
-        Sat Jul 20 19:32:57 2019 - [info]   192.168.175.103(192.168.175.103:3306)  Version=5.7.26-log (oldest major version between slaves) log-bin:enabled
-        Sat Jul 20 19:32:57 2019 - [info]     GTID ON
-        Sat Jul 20 19:32:57 2019 - [info]     Replicating from 192.168.175.100(192.168.175.100:3306)
-        Sat Jul 20 19:32:57 2019 - [info]     Primary candidate for the new Master (candidate_master is set)
-        Sat Jul 20 19:32:57 2019 - [info] Current Alive Master: 192.168.175.100(192.168.175.100:3306)
-        Sat Jul 20 19:32:57 2019 - [info] Checking slave configurations..
-        Sat Jul 20 19:32:57 2019 - [info]  read_only=1 is not set on slave 192.168.175.101(192.168.175.101:3306).
-        Sat Jul 20 19:32:57 2019 - [info]  read_only=1 is not set on slave 192.168.175.102(192.168.175.102:3306).
-        Sat Jul 20 19:32:57 2019 - [info]  read_only=1 is not set on slave 192.168.175.103(192.168.175.103:3306).
-        Sat Jul 20 19:32:57 2019 - [info] Checking replication filtering settings..
-        Sat Jul 20 19:32:57 2019 - [info]  binlog_do_db= , binlog_ignore_db=
-        Sat Jul 20 19:32:57 2019 - [info]  Replication filtering check ok.
-        Sat Jul 20 19:32:57 2019 - [info] GTID (with auto-pos) is supported. Skipping all SSH and Node package checking.
-        Sat Jul 20 19:32:57 2019 - [info] Checking SSH publickey authentication settings on the current master..
-        Sat Jul 20 19:32:57 2019 - [info] HealthCheck: SSH to 192.168.175.100 is reachable.
-        Sat Jul 20 19:32:57 2019 - [info]
+        Sun Jul 21 16:34:39 2019 - [warning] Global configuration file /etc/masterha_default.cnf not found. Skipping.
+        Sun Jul 21 16:34:39 2019 - [info] Reading application default configuration from /etc/masterha/app1.cnf..
+        Sun Jul 21 16:34:39 2019 - [info] Reading server configuration from /etc/masterha/app1.cnf..
+        Sun Jul 21 16:34:39 2019 - [info] MHA::MasterMonitor version 0.58.
+        Sun Jul 21 16:34:40 2019 - [info] GTID failover mode = 1
+        Sun Jul 21 16:34:40 2019 - [info] Dead Servers:
+        Sun Jul 21 16:34:40 2019 - [info] Alive Servers:
+        Sun Jul 21 16:34:40 2019 - [info]   192.168.175.100(192.168.175.100:3306)
+        Sun Jul 21 16:34:40 2019 - [info]   192.168.175.101(192.168.175.101:3306)
+        Sun Jul 21 16:34:40 2019 - [info]   192.168.175.102(192.168.175.102:3306)
+        Sun Jul 21 16:34:40 2019 - [info]   192.168.175.103(192.168.175.103:3306)
+        Sun Jul 21 16:34:40 2019 - [info] Alive Slaves:
+        Sun Jul 21 16:34:40 2019 - [info]   192.168.175.101(192.168.175.101:3306)  Version=5.7.26-log (oldest major version between slaves) log-bin:enabled
+        Sun Jul 21 16:34:40 2019 - [info]     GTID ON
+        Sun Jul 21 16:34:40 2019 - [info]     Replicating from 192.168.175.100(192.168.175.100:3306)
+        Sun Jul 21 16:34:40 2019 - [info]     Primary candidate for the new Master (candidate_master is set)
+        Sun Jul 21 16:34:40 2019 - [info]   192.168.175.102(192.168.175.102:3306)  Version=5.7.26-log (oldest major version between slaves) log-bin:enabled
+        Sun Jul 21 16:34:40 2019 - [info]     GTID ON
+        Sun Jul 21 16:34:40 2019 - [info]     Replicating from 192.168.175.100(192.168.175.100:3306)
+        Sun Jul 21 16:34:40 2019 - [info]     Primary candidate for the new Master (candidate_master is set)
+        Sun Jul 21 16:34:40 2019 - [info]   192.168.175.103(192.168.175.103:3306)  Version=5.7.26-log (oldest major version between slaves) log-bin:enabled
+        Sun Jul 21 16:34:40 2019 - [info]     GTID ON
+        Sun Jul 21 16:34:40 2019 - [info]     Replicating from 192.168.175.100(192.168.175.100:3306)
+        Sun Jul 21 16:34:40 2019 - [info]     Primary candidate for the new Master (candidate_master is set)
+        Sun Jul 21 16:34:40 2019 - [info] Current Alive Master: 192.168.175.100(192.168.175.100:3306)
+        Sun Jul 21 16:34:40 2019 - [info] Checking slave configurations..
+        Sun Jul 21 16:34:40 2019 - [info]  read_only=1 is not set on slave 192.168.175.101(192.168.175.101:3306).
+        Sun Jul 21 16:34:40 2019 - [info]  read_only=1 is not set on slave 192.168.175.102(192.168.175.102:3306).
+        Sun Jul 21 16:34:40 2019 - [info]  read_only=1 is not set on slave 192.168.175.103(192.168.175.103:3306).
+        Sun Jul 21 16:34:40 2019 - [info] Checking replication filtering settings..
+        Sun Jul 21 16:34:40 2019 - [info]  binlog_do_db= , binlog_ignore_db=
+        Sun Jul 21 16:34:40 2019 - [info]  Replication filtering check ok.
+        Sun Jul 21 16:34:40 2019 - [info] GTID (with auto-pos) is supported. Skipping all SSH and Node package checking.
+        Sun Jul 21 16:34:40 2019 - [info] Checking SSH publickey authentication settings on the current master..
+        Sun Jul 21 16:34:40 2019 - [info] HealthCheck: SSH to 192.168.175.100 is reachable.
+        Sun Jul 21 16:34:40 2019 - [info]
         192.168.175.100(192.168.175.100:3306) (current master)
          +--192.168.175.101(192.168.175.101:3306)
          +--192.168.175.102(192.168.175.102:3306)
          +--192.168.175.103(192.168.175.103:3306)
 
-        Sat Jul 20 19:32:57 2019 - [info] Checking replication health on 192.168.175.101..
-        Sat Jul 20 19:32:57 2019 - [info]  ok.
-        Sat Jul 20 19:32:57 2019 - [info] Checking replication health on 192.168.175.102..
-        Sat Jul 20 19:32:57 2019 - [info]  ok.
-        Sat Jul 20 19:32:57 2019 - [info] Checking replication health on 192.168.175.103..
-        Sat Jul 20 19:32:57 2019 - [info]  ok.
-        Sat Jul 20 19:32:57 2019 - [warning] master_ip_failover_script is not defined.
-        Sat Jul 20 19:32:57 2019 - [warning] shutdown_script is not defined.
-        Sat Jul 20 19:32:57 2019 - [info] Got exit code 0 (Not master dead).
+        Sun Jul 21 16:34:40 2019 - [info] Checking replication health on 192.168.175.101..
+        Sun Jul 21 16:34:40 2019 - [info]  ok.
+        Sun Jul 21 16:34:40 2019 - [info] Checking replication health on 192.168.175.102..
+        Sun Jul 21 16:34:40 2019 - [info]  ok.
+        Sun Jul 21 16:34:40 2019 - [info] Checking replication health on 192.168.175.103..
+        Sun Jul 21 16:34:40 2019 - [info]  ok.
+        Sun Jul 21 16:34:40 2019 - [warning] master_ip_failover_script is not defined.
+        Sun Jul 21 16:34:40 2019 - [warning] shutdown_script is not defined.
+        Sun Jul 21 16:34:40 2019 - [info] Got exit code 0 (Not master dead).
 
         MySQL Replication Health is OK.
+
         ------------
 
 
@@ -1024,55 +1117,49 @@ mysql> GRANT ALL ON *.* TO 'manager'@'192.168.175.103';
 
 
 // 如下是 刚启动 MHA 是 与 mha 相关的 网络 状态信息
-[root@manager ~]# netstat -anptu
+[root@manager ~]# netstat -anptu | grep 3306
+    tcp        0      0 192.168.175.110:41368   192.168.175.101:3306    TIME_WAIT   -
+    tcp        0      0 192.168.175.110:36452   192.168.175.103:3306    TIME_WAIT   -
+    tcp        0      0 192.168.175.110:47650   192.168.175.102:3306    TIME_WAIT   -
+    tcp        0      0 192.168.175.110:33816   192.168.175.100:3306    TIME_WAIT   -
+    tcp        0      0 192.168.175.110:33822   192.168.175.100:3306    TIME_WAIT   -
+    tcp        0      0 192.168.175.110:47642   192.168.175.102:3306    TIME_WAIT   -
+    tcp        0      0 192.168.175.110:33832   192.168.175.100:3306    ESTABLISHED 17480/perl
+    tcp        0      0 192.168.175.110:41358   192.168.175.101:3306    TIME_WAIT   -
+    tcp        0      0 192.168.175.110:36444   192.168.175.103:3306    TIME_WAIT   -
 
-      ......
-      tcp        0      0 192.168.175.110:43986   192.168.175.101:3306    TIME_WAIT   -
-
-      tcp        0      0 192.168.175.110:56984   192.168.175.100:22      TIME_WAIT   -
-      tcp        0      0 192.168.175.110:50102   192.168.175.100:3306    TIME_WAIT   -
-      tcp        0      0 192.168.175.110:50112   192.168.175.100:3306    ESTABLISHED 1181/perl
-      tcp        0      0 192.168.175.110:55096   192.168.175.103:3306    TIME_WAIT   -
-      tcp        0      0 192.168.175.110:43990   192.168.175.101:3306    TIME_WAIT   -
-      tcp        0      0 192.168.175.110:34326   192.168.175.102:3306    TIME_WAIT   -
-      tcp        0      0 192.168.175.110:34314   192.168.175.102:3306    TIME_WAIT   -
-      tcp        0      0 192.168.175.110:55108   192.168.175.103:3306    TIME_WAIT   -
-      tcp        0      0 192.168.175.110:50098   192.168.175.100:3306    TIME_WAIT   -
-      ......
 
 
 // 一段时间之后 与 mha 有关的 网络状态信息
-[root@manager ~]# netstat -anptu
+[root@manager ~]# netstat -anptu | grep 3306
+    tcp        0      0 192.168.175.110:33832   192.168.175.100:3306    ESTABLISHED 17480/perl
 
-      ......
-
-      tcp        0      0 192.168.175.110:50112   192.168.175.100:3306    ESTABLISHED 1181/perl
-
-      ......
 
 // 观察 一下 日志 信息
 [root@manager ~]# tail -f /masterha/app1/manager.log
-         +--192.168.175.101(192.168.175.101:3306)
-         +--192.168.175.102(192.168.175.102:3306)
-         +--192.168.175.103(192.168.175.103:3306)
+       +--192.168.175.101(192.168.175.101:3306)
+       +--192.168.175.102(192.168.175.102:3306)
+       +--192.168.175.103(192.168.175.103:3306)
 
-        Sat Jul 20 19:39:32 2019 - [warning] master_ip_failover_script is not defined.
-        Sat Jul 20 19:39:32 2019 - [warning] shutdown_script is not defined.
-        Sat Jul 20 19:39:32 2019 - [info] Set master ping interval 1 seconds.
-        Sat Jul 20 19:39:32 2019 - [warning] secondary_check_script is not defined. It is highly recommended setting it to check master reachability from two or more routes.
-        Sat Jul 20 19:39:32 2019 - [info] Starting ping health check on 192.168.175.100(192.168.175.100:3306)..
-        Sat Jul 20 19:39:32 2019 - [info] Ping(SELECT) succeeded, waiting until MySQL doesn't respond..  <------- 观察这里, 再联系网络状态信息
+      Sun Jul 21 16:35:37 2019 - [warning] master_ip_failover_script is not defined.
+      Sun Jul 21 16:35:37 2019 - [warning] shutdown_script is not defined.
+      Sun Jul 21 16:35:37 2019 - [info] Set master ping interval 1 seconds.
+      Sun Jul 21 16:35:37 2019 - [warning] secondary_check_script is not defined. It is highly recommended setting it to check master reachability from two or more routes.
+      Sun Jul 21 16:35:37 2019 - [info] Starting ping health check on 192.168.175.100(192.168.175.100:3306)..
+      Sun Jul 21 16:35:37 2019 - [info] Ping(SELECT) succeeded, waiting until MySQL doesn't respond..
+
 
 
 // master 上执行 如下语句 观察
 mysql> show slave hosts;
-        +-----------+------+------+-----------+--------------------------------------+
-        | Server_id | Host | Port | Master_id | Slave_UUID                           |
-        +-----------+------+------+-----------+--------------------------------------+
-        |       101 |      | 3306 |       100 | f154567b-aab0-11e9-a4b9-000c29b95f25 |
-        |       102 |      | 3306 |       100 | f9eb741e-aab0-11e9-9ee7-000c29f6f083 |
-        |       103 |      | 3306 |       100 | 0b310aec-aab1-11e9-9f2a-000c2982ac0f |
-        +-----------+------+------+-----------+--------------------------------------+
+      +-----------+------+------+-----------+--------------------------------------+
+      | Server_id | Host | Port | Master_id | Slave_UUID                           |
+      +-----------+------+------+-----------+--------------------------------------+
+      |       101 |      | 3306 |       100 | 4468f541-ab81-11e9-9102-000c29b95f25 |
+      |       102 |      | 3306 |       100 | 4947337c-ab81-11e9-a370-000c29f6f083 |
+      |       103 |      | 3306 |       100 | 4be3d091-ab81-11e9-9025-000c2982ac0f |
+      +-----------+------+------+-----------+--------------------------------------+
+
 
 
 ---------------------------------------------------------------------------------------------------
