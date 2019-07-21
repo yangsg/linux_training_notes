@@ -580,17 +580,18 @@ mysql> show slave status\G
 
 
 // 对如上的 scp 拷贝操作 确认一下
-[root@manager ~]# for i in 110 100 101 102 103;
+[root@master ~]# for i in 110 100 101 102 103;
 > do
-> ssh root@192.168.175.$i 'md5sum /etc/hosts'
+> ssh root@192.168.175.$i 'echo $(md5sum /etc/hosts) --- $(hostname)'
 > done
 
 
 // 确认 时间 是否 同步(一致)
 [root@manager ~]# for i in 110 100 101 102 103;
 > do
-> ssh root@192.168.175.$i date
-> done
+> ssh root@192.168.175.$i 'echo $(date) --- $(hostname)' &
+> done 2> /dev/null; wait 2> /dev/null
+
 
 
 // 在mha_manager节点安装mha_manager,mha_node软件
@@ -618,8 +619,9 @@ mysql> show slave status\G
 // 确认 一下 如上 安装
 [root@manager ~]# for i in 100 101 102 103;
 > do
-> ssh root@192.168.175.$i  'printf "%s\t\t--- %s\n" "$(hostname)" "$(rpm -q mha4mysql-node)"'
+> ssh root@192.168.175.$i  'echo $(rpm -q mha4mysql-node) --- $(hostname)'
 > done
+
 
 
 
