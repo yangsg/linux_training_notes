@@ -1,0 +1,47 @@
+
+该文档 描述一下 如何 为 按文档
+  https://github.com/yangsg/linux_training_notes/tree/master/mysql_mariadb/mysql_02_basic/replication.dir/005-gtid-utf8mb4-rpm-mha4mysql/readme.txt
+
+所搭建的 1主3从的 mha 集群 添加 Semisynchronous Replication 功能.
+
+---------------------------------------------------------------------------------------------------
+动态 (即 运行时 at runtime) 安装 相关 插件 并 启用
+
+// 在所有 mysql server 上执行如下命令
+// 注: 准确的说 应该是 会发生 master <--> slave 角色转换 的 所有 mysql server 上 都应该
+// 同时安装 rpl_semi_sync_master 和 rpl_semi_sync_slave 插件, 而 永远只能 扮演 slave 这一个角色的 所有
+// mysql server 仅安装 rpl_semi_sync_slave 插件 就可以了. 但 需求是随时可能变化的, 实际中 没有 绝对的永远.
+// 所有 为了 简化 后期 因 需求变化 带来的 维护扩展工作, 这里就直接在 所有 mysql server 上 启用 半同步复制 功能了.
+
+      INSTALL PLUGIN rpl_semi_sync_master SONAME 'semisync_master.so';  # 运行时安装 rpl_semi_sync_master 插件
+      INSTALL PLUGIN rpl_semi_sync_slave SONAME 'semisync_slave.so';    # 运行时安装 rpl_semi_sync_slave 插件
+      SET GLOBAL rpl_semi_sync_master_enabled = 1;      # 临时启用 rpl_semi_sync_master 插件
+      SET GLOBAL rpl_semi_sync_master_timeout = 1000;  # 1 second # 因为默认为 10 seconds
+      SET GLOBAL rpl_semi_sync_slave_enabled = 1;       # 临时启用 rpl_semi_sync_slave 插件
+
+
+            注: 使用了 INSTALL PLUGIN 安装插件 就 不要 在 options file 中 使用 如
+                  --plugin-load=x --plugin-load-add=y
+                等这种 选项的方式来安装 相同的插件了. 因为 INSTALL PLUGIN 会将安装的 插件
+                注册到 mysql.plugin 表中, mysql server 启动时 会自动 加载 该 表中的插件.
+                所以安装 插件的 方式 仅选 其一即可. 重复安装反而不正确.
+---------------------------------------------------------------------------------------------------
+在 Options file 中 添加 semi-sync replication 相关的 选项, 使其 mysql server 每次启动时 semi-sync replication 自动启用.
+
+在 所有的 mysql server 中 添加 如下 参数 选项:
+      [mysqld]
+      # semi-sync replication 中 master 角色 相关的 设置
+      rpl_semi_sync_master_enabled=1  # 启用 rpl_semi_sync_master 插件
+      rpl_semi_sync_master_timeout=1000 # 1 second # 因为默认为 10 seconds
+
+      # semi-sync replication 中 slave 角色 相关的 设置
+      rpl_semi_sync_slave_enabled=1  # 启用 rpl_semi_sync_slave 插件
+
+
+最后所相应 检查 或 测试 确保 设置 按预期 正常 起作用 就可以了.
+
+---------------------------------------------------------------------------------------------------
+参考其他笔记:
+      https://github.com/yangsg/linux_training_notes/tree/master/mysql_mariadb/mysql_02_basic/replication.dir/004-gtid-utf8mb4-rpm-semi-sync-replication
+      https://github.com/yangsg/linux_training_notes/tree/master/mysql_mariadb/mysql_02_basic/replication.dir/005-gtid-utf8mb4-rpm-mha4mysql
+
