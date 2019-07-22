@@ -12,51 +12,58 @@
 
 ---------------------------------------------------------------------------------------------------
 
-// 构建基础编译环境
-[root@web_server ~]# yum -y install gcc gcc-c++ autoconf automake
+// 下载 或 准备 相应的 源码安装包 到 download 目录
+[root@lamp_server ~]# mkdir download
 
-[root@httpd7server ~]# mkdir download
-[root@httpd7server ~]# cd download/
+[root@lamp_server ~]# tree download/
+        download/
+        ├── apr-1.7.0.tar.gz
+        ├── apr-util-1.6.1.tar.gz
+        ├── httpd-2.4.39.tar.gz
+        ├── mysql-5.7.27-linux-glibc2.12-x86_64.tar.gz
+        └── php-5.6.40.tar.gz
 
-[root@web_server ~]# mkdir download
-[root@web_server ~]# cd download/
-
-//  下载 或 准备 软件包  httpd,  apr 和 apr-util 到 download 目录下
-[root@web_server download]# tree
-      .
-      ├── apr-1.7.0.tar.gz
-      ├── apr-util-1.6.1.tar.gz
-      └── httpd-2.4.39.tar.gz
 
         httpd 下载页面: https://httpd.apache.org/download.cgi
         apr 和 apr-util 最新推荐版本的 下载页面: http://apr.apache.org/download.cgi
         apr 和 apr-util 就版本下载列表 页面: https://archive.apache.org/dist/apr/
 
 
+// 构建基础编译环境
+[root@lamp_server ~]# yum -y install gcc gcc-c++ autoconf automak
+
 
 // 新建独立的程序安装目录
-[root@web_server ~]# mkdir /app
+[root@lamp_server ~]# mkdir /app
 
 
 // 安装httpd其他依赖库
 //  pcre: Perl-compatible regular expression library 兼容于perl正则表达式的库
-[root@web_server ~]# yum -y install pcre-devel openssl-devel
+[root@lamp_server ~]# yum -y install pcre-devel openssl-devel
 
 
 // 安装apr-util的依赖库
-[root@web_server ~]# yum -y install expat-devel   #如果不安装,make apr-util时会报错"fatal error: expat.h: No such file or directory"
+[root@lamp_server ~]# yum -y install expat-devel   #如果不安装,make apr-util时会报错"fatal error: expat.h: No such file or directory"
 
+
+
+
+[root@lamp_server ~]# cd download/
+
+[root@lamp_server download]# ls
+        apr-1.7.0.tar.gz  apr-util-1.6.1.tar.gz  httpd-2.4.39.tar.gz  mysql-5.7.27-linux-glibc2.12-x86_64.tar.gz  php-5.6.40.tar.gz
 
 // 解压并将apr和apr-util放置于httpd下的srclib目录
-[root@web_server download]# tar -xvf httpd-2.4.39.tar.gz
-[root@web_server download]# tar -xvf apr-1.7.0.tar.gz
-[root@web_server download]# tar -xvf apr-util-1.6.1.tar.gz
-[root@web_server download]# cp -r apr-1.7.0 httpd-2.4.39/srclib/apr
-[root@web_server download]# cp -r apr-util-1.6.1 httpd-2.4.39/srclib/apr-util
+[root@lamp_server download]# tar -xvf httpd-2.4.39.tar.gz
+[root@lamp_server download]# tar -xvf apr-1.7.0.tar.gz
+[root@lamp_server download]# tar -xvf apr-util-1.6.1.tar.gz
+[root@lamp_server download]# cp -r apr-1.7.0 httpd-2.4.39/srclib/apr
+[root@lamp_server download]# cp -r apr-util-1.6.1 httpd-2.4.39/srclib/apr-util
 
 
-[root@web_server download]# cd httpd-2.4.39/
-[root@httpd7server httpd-2.4.38]# ./configure \
+[root@lamp_server download]# cd httpd-2.4.39/
+
+[root@lamp_server httpd-2.4.39]# ./configure \
   --prefix=/app/httpd \
   --with-included-apr \
   --enable-so \
@@ -69,67 +76,70 @@
   --enable-mpm-shared=all \
   --with-mpm=event
 
+[root@lamp_server httpd-2.4.39]# make
+[root@lamp_server httpd-2.4.39]# make install
 
-[root@web_server httpd-2.4.39]# make
-[root@web_server httpd-2.4.39]# make install
 
 // 查看一些 编译 设置
-[root@web_server ~]# /app/httpd/bin/httpd -V
-        Server version: Apache/2.4.39 (Unix)
-        Server built:   Jul 22 2019 16:31:17
-        Server's Module Magic Number: 20120211:84
-        Server loaded:  APR 1.7.0, APR-UTIL 1.6.1
-        Compiled using: APR 1.7.0, APR-UTIL 1.6.1
-        Architecture:   64-bit
-        Server MPM:     event
-          threaded:     yes (fixed thread count)
-            forked:     yes (variable process count)
-        Server compiled with....
-         -D APR_HAS_SENDFILE
-         -D APR_HAS_MMAP
-         -D APR_HAVE_IPV6 (IPv4-mapped addresses enabled)
-         -D APR_USE_PROC_PTHREAD_SERIALIZE
-         -D APR_USE_PTHREAD_SERIALIZE
-         -D SINGLE_LISTEN_UNSERIALIZED_ACCEPT
-         -D APR_HAS_OTHER_CHILD
-         -D AP_HAVE_RELIABLE_PIPED_LOGS
-         -D DYNAMIC_MODULE_LIMIT=256
-         -D HTTPD_ROOT="/app/httpd"
-         -D SUEXEC_BIN="/app/httpd/bin/suexec"
-         -D DEFAULT_PIDLOG="logs/httpd.pid"
-         -D DEFAULT_SCOREBOARD="logs/apache_runtime_status"
-         -D DEFAULT_ERRORLOG="logs/error_log"
-         -D AP_TYPES_CONFIG_FILE="conf/mime.types"
-         -D SERVER_CONFIG_FILE="conf/httpd.conf"
+[root@lamp_server ~]# /app/httpd/bin/httpd -V
+
+      Server version: Apache/2.4.39 (Unix)
+      Server built:   Jul 22 2019 21:35:52
+      Server's Module Magic Number: 20120211:84
+      Server loaded:  APR 1.7.0, APR-UTIL 1.6.1
+      Compiled using: APR 1.7.0, APR-UTIL 1.6.1
+      Architecture:   64-bit
+      Server MPM:     event
+        threaded:     yes (fixed thread count)
+          forked:     yes (variable process count)
+      Server compiled with....
+       -D APR_HAS_SENDFILE
+       -D APR_HAS_MMAP
+       -D APR_HAVE_IPV6 (IPv4-mapped addresses enabled)
+       -D APR_USE_PROC_PTHREAD_SERIALIZE
+       -D APR_USE_PTHREAD_SERIALIZE
+       -D SINGLE_LISTEN_UNSERIALIZED_ACCEPT
+       -D APR_HAS_OTHER_CHILD
+       -D AP_HAVE_RELIABLE_PIPED_LOGS
+       -D DYNAMIC_MODULE_LIMIT=256
+       -D HTTPD_ROOT="/app/httpd"
+       -D SUEXEC_BIN="/app/httpd/bin/suexec"
+       -D DEFAULT_PIDLOG="logs/httpd.pid"
+       -D DEFAULT_SCOREBOARD="logs/apache_runtime_status"
+       -D DEFAULT_ERRORLOG="logs/error_log"
+       -D AP_TYPES_CONFIG_FILE="conf/mime.types"
+       -D SERVER_CONFIG_FILE="conf/httpd.conf"
+
 
 
 // 查看 一些 目录结构
-[root@web_server ~]# tree -L 1 /app/httpd/
-          /app/httpd/
-          ├── bin
-          ├── build
-          ├── cgi-bin
-          ├── conf
-          ├── error
-          ├── htdocs
-          ├── icons
-          ├── include
-          ├── lib
-          ├── logs
-          ├── man
-          ├── manual
-          └── modules
+[root@lamp_server ~]# tree -L 1 /app/httpd/
+        /app/httpd/
+        ├── bin
+        ├── build
+        ├── cgi-bin
+        ├── conf
+        ├── error
+        ├── htdocs
+        ├── icons
+        ├── include
+        ├── lib
+        ├── logs
+        ├── man
+        ├── manual
+        └── modules
 
 
 // 设置 PATH 环境变量
-[root@web_server ~]# vim /etc/profile
+[root@lamp_server ~]# vim /etc/profile
       export PATH=/app/httpd/bin:$PATH
 
-[root@web_server ~]# source /etc/profile
+[root@lamp_server ~]# source /etc/profile
+
 
 
 // 查看httpd命令的简要帮助
-[root@web_server ~]# httpd -h
+[root@lamp_server ~]# httpd -h
       Usage: httpd [-D name] [-d directory] [-f file]
                    [-C "directive"] [-c "directive"]
                    [-k start|restart|graceful|graceful-stop|stop]
@@ -157,24 +167,30 @@
         -T                 : start without DocumentRoot(s) check
         -X                 : debug mode (only one worker, do not detach)
 
+
+[root@lamp_server ~]# vim /app/httpd/conf/httpd.conf
+
+        ServerName 192.168.175.100:80
+
+
 // 启用 httpd 服务
-[root@web_server ~]# /app/httpd/bin/httpd -k start
-AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using fe80::20c:29ff:fe15:2d2e%ens33. Set the 'ServerName' directive globally to suppress this message
-httpd (pid 34374) already running
+[root@lamp_server ~]# /app/httpd/bin/httpd -k start
 
 
-[root@web_server ~]# netstat -anptu | grep httpd
-    tcp6       0      0 :::80                   :::*                    LISTEN      34374/httpd
+[root@lamp_server ~]# netstat -anptu | grep httpd
+    tcp6       0      0 :::80                   :::*                    LISTEN      50131/httpd
 
 // 查看 httpd 的 pid 文件
-[root@web_server ~]# find /app/httpd/  | grep pid
-    /app/httpd/logs/httpd.pid
+[root@lamp_server ~]# cat /app/httpd/logs/httpd.pid
+50131
+
 
 // 设置开机自启
-[root@web_server ~]# vim /etc/rc.d/rc.local
+[root@lamp_server ~]# vim /etc/rc.d/rc.local
         /app/httpd/bin/httpd -k start
 
-[root@web_server ~]# chmod +x /etc/rc.d/rc.local
+[root@lamp_server ~]# chmod +x /etc/rc.d/rc.local
+
 
       ---------
       相关参考：
@@ -188,14 +204,11 @@ httpd (pid 34374) already running
 安装通用二进制格式的 mysql
     参考  https://github.com/yangsg/linux_training_notes/tree/master/mysql_mariadb/mysql_01_install/mysql_install_from_generic_binary
 
-// 下载 或 准备 通用二进制格式的 mysql 安装包
-
 
 // 卸载系统自带的mariadb
-
-[root@web_server ~]# rpm -qa | grep mariadb
+[root@lamp_server ~]# rpm -qa | grep -i mariadb
       mariadb-libs-5.5.56-2.el7.x86_64
-[root@web_server ~]# rpm -e --nodeps mariadb-libs
+[root@lamp_server ~]# rpm -e --nodeps mariadb-libs
 
 
 // 确认 或 安装 通用二进制格式的 mysql 需要的依赖
@@ -203,77 +216,86 @@ httpd (pid 34374) already running
     libaio-0.3.109-13.el7.x86_64   <---- 已经安装
 
 // For MySQL 5.7.19 and later, 通用二进制的 mysql 会依赖 libnuma 库
-[root@web_server ~]# yum search libnuma
-[root@web_server ~]# yum -y install numactl-libs
+[root@lamp_server ~]# yum search libnuma
+[root@lamp_server ~]# yum -y install numactl-libs
 
-[root@web_server ~]# rpm -q numactl-libs
+[root@lamp_server ~]# rpm -q numactl-libs
     numactl-libs-2.0.9-7.el7.x86_64
 
-[root@web_server ~]# useradd -M -s /sbin/nologin mysql
-[root@web_server ~]# mkdir -p /mydata/data
-[root@web_server ~]# chown -R mysql:mysql /mydata/data/
+
+[root@lamp_server ~]# useradd -M -s /sbin/nologin mysql
+[root@lamp_server ~]# mkdir -p /mydata/data
+[root@lamp_server ~]# chown -R mysql:mysql /mydata/data/
 
 
-[root@web_server ~]# ls download/ | grep mysql
+[root@lamp_server ~]# ls download/ | grep mysql
     mysql-5.7.27-linux-glibc2.12-x86_64.tar.gz
 
-[root@web_server ~]# cd download/
-[root@web_server download]# tar -xvf mysql-5.7.27-linux-glibc2.12-x86_64.tar.gz  -C /app/
 
-[root@web_server download]# cd /app/
-[root@web_server app]# ls
-httpd  mysql-5.7.27-linux-glibc2.12-x86_64
-
-[root@web_server app]# mv mysql-5.7.27-linux-glibc2.12-x86_64/ mysql
-[root@web_server app]# ls
-      httpd  mysql
-
-[root@web_server app]# cd
-[root@web_server ~]# chown -R root:mysql /app/mysql/
+[root@lamp_server ~]# cd download/
+[root@lamp_server download]# tar -xvf mysql-5.7.27-linux-glibc2.12-x86_64.tar.gz  -C /app/
 
 
-[root@web_server ~]# vim /etc/profile.d/mysql.sh
+[root@lamp_server ~]# ls /app/
+      httpd  mysql-5.7.27-linux-glibc2.12-x86_64
+
+[root@lamp_server ~]# mv /app/mysql-5.7.27-linux-glibc2.12-x86_64/  /app/mysql
+
+[root@lamp_server ~]# chown -R root:mysql /app/mysql/
+
+[root@lamp_server ~]# vim /etc/profile.d/mysql.sh
       export PATH=$PATH:/app/mysql/bin
 
-[root@web_server ~]# source /etc/profile.d/mysql.sh
+[root@lamp_server ~]# source /etc/profile.d/mysql.sh
+
 
 
 // 初始化数据库
 // https://dev.mysql.com/doc/refman/5.7/en/data-directory-initialization.html
-[root@web_server ~]# mysqld --initialize --user=mysql --basedir=/app/mysql/  --datadir=/mydata/data     #注意记录下该命令生成的临时密码
-      2019-07-22T10:41:08.274512Z 1 [Note] A temporary password is generated for root@localhost: .8-G(;L<m.s:    #<<<<<<<记下临时密码
+[root@lamp_server ~]# mysqld --initialize --user=mysql --basedir=/app/mysql/  --datadir=/mydata/data     #注意记录下该命令生成的临时密码
+      2019-07-22T14:34:15.531912Z 1 [Note] A temporary password is generated for root@localhost: (*QgayVZU2F#    #<<<<<<<记下临时密码
 
-[root@web_server ~]# vim /etc/my.cnf
-    [mysqld]
-    basedir=/app/mysql
-    datadir=/mydata/data
-    port=3306
-    server_id=20
-    socket=/tmp/mysql.sock
+
+[root@lamp_server ~]# vim /etc/my.cnf
+
+      [mysqld]
+      basedir=/app/mysql
+      datadir=/mydata/data
+      port=3306
+      server_id=100
+      socket=/tmp/mysql.sock
+
 
 
 // 启动mysqld服务
-[root@web_server ~]# cp /app/mysql/support-files/mysql.server  /etc/init.d/mysqld
-[root@web_server ~]# chmod a+x /etc/init.d/mysqld
-[root@web_server ~]# chkconfig --add mysqld
-[root@web_server ~]# chkconfig mysqld on
-[root@web_server ~]# chkconfig --list mysqld
+[root@lamp_server ~]# cp /app/mysql/support-files/mysql.server  /etc/init.d/mysqld
+[root@lamp_server ~]# chmod a+x /etc/init.d/mysqld
+[root@lamp_server ~]# chkconfig --add mysqld
+[root@lamp_server ~]# chkconfig mysqld on
+[root@lamp_server ~]# chkconfig --list mysqld
+
+        mysqld          0:off   1:off   2:on    3:on    4:on    5:on    6:off
 
 
-[root@web_server ~]# /etc/init.d/mysqld start
-      Starting MySQL.Logging to '/mydata/data/web_server.err'.
+
+
+[root@lamp_server ~]# /etc/init.d/mysqld start
+      Starting MySQL.Logging to '/mydata/data/lamp_server.err'.
        SUCCESS!
 
 
-[root@web_server ~]# netstat -antp | grep :3306
-      tcp6       0      0 :::3306                 :::*                    LISTEN      54091/mysqld
+
+[root@lamp_server ~]# netstat -antp | grep :3306
+      tcp6       0      0 :::3306                 :::*                    LISTEN      50573/mysqld
+
 
 
 // 数据库初始化安全设置 https://dev.mysql.com/doc/refman/5.7/en/mysql-secure-installation.html
-[root@web_server ~]# mysql_secure_installation
+[root@lamp_server ~]# mysql_secure_installation
 
 
-[root@web_server ~]# mysql -h localhost -u root -p
+
+[root@lamp_server ~]# mysql -h localhost -u root -p
 mysql> pager less -Fi
 mysql> show global variables like '%log%';
 
@@ -291,8 +313,8 @@ mysql> show global variables like '%log%';
         ---------
 
 
-// 导出MySQL库文件 (该 操作时 正对 lamp 才有的)
-[root@web_server ~]# ls -1 /app/mysql/lib/
+// 导出MySQL库文件 (如下 操作时 正对 lamp 才有的)
+[root@lamp_server ~]# ls -1 /app/mysql/lib/
       libmysqlclient.a
       libmysqlclient.so
       libmysqlclient.so.20
@@ -305,16 +327,18 @@ mysql> show global variables like '%log%';
       plugin
 
 
-[root@web_server ~]# vim /etc/ld.so.conf.d/mysql.conf
-      /app/mysql/lib
+
+[root@lamp_server ~]# vim /etc/ld.so.conf.d/mysql.conf
+        /app/mysql/lib
 
 
-[root@web_server ~]# ldconfig
+
 [root@web_server ~]# ldconfig -v | grep mysql
 
 // 导出head文件
-[root@web_server ~]# ln -s /app/mysql/include/  /usr/include/mysql
-[root@web_server ~]# ls  /usr/include/mysql
+[root@lamp_server ~]# ln -s /app/mysql/include/  /usr/include/mysql
+[root@lamp_server ~]# ls  /usr/include/mysql
+
 
 
 
@@ -325,22 +349,26 @@ mysql> show global variables like '%log%';
 
 
 // 下载 或 准备 php 软件 的 源码安装包
-[root@web_server download]# ls | grep php
+[root@lamp_server ~]# ls download/ | grep php
       php-5.6.40.tar.gz
 
+
 安装mcrypt,mhash加密认证组件
-[root@web_server ~]# yum -y install libmcrypt libmcrypt-devel mcrypt mhash-devel mhash
-
-[root@web_server ~]# yum install -y libxml2-devel bzip2-devel openssl-devel
-
-[root@web_server ~]# cd /app/mysql/lib/
-[root@web_server lib]# ln -s libmysqlclient.so.20.3.14 libmysqlclient_r.so
+[root@lamp_server ~]# yum -y install libmcrypt libmcrypt-devel mcrypt mhash-devel mhash
 
 
-[root@web_server download]# tar -xvf php-5.6.40.tar.gz
-[root@web_server download]# cd php-5.6.40/
+[root@lamp_server ~]# yum install -y libxml2-devel bzip2-devel openssl-devel
 
-[root@web_server php-5.6.40]# ./configure \
+
+[root@lamp_server ~]# cd /app/mysql/lib/
+[root@lamp_server lib]# ln -s libmysqlclient.so.20.3.14 libmysqlclient_r.so
+
+
+[root@lamp_server lib]# cd /root/download/
+[root@lamp_server download]# tar -xvf php-5.6.40.tar.gz
+[root@lamp_server download]# cd php-5.6.40/
+
+[root@lamp_server php-5.6.40]# ./configure \
 --prefix=/app/php \
 --with-mysql=/app/mysql \
 --with-mysqli=/app/mysql/bin/mysql_config \
@@ -394,24 +422,30 @@ mysql> show global variables like '%log%';
           -------------------------
 
 
-[root@web_server php-5.6.40]# make
-[root@web_server php-5.6.40]# make install
+[root@lamp_server php-5.6.40]# make
+[root@lamp_server php-5.6.40]# make install
+
 
 // 复制PHP配置文件
-[root@web_server php-5.6.40]# cp php.ini-production /etc/php.ini
+[root@lamp_server php-5.6.40]# cp php.ini-production /etc/php.ini
+
 
 
 // 编辑httpd配置文件，整合httpd和PHP
-[root@web_server ~]# vim /app/httpd/conf/httpd.conf
+[root@lamp_server ~]# vim /app/httpd/conf/httpd.conf
 
     AddType application/x-httpd-php .php
     AddType application/x-httpd-php-source .phps
 
     DirectoryIndex index.php index.html
 
-[root@web_server ~]# httpd -t
+[root@lamp_server ~]# httpd -t
 
-[root@web_server ~]# httpd -k restart
+[root@lamp_server ~]# vim /etc/php.ini
+    date.timezone ="Asia/Shanghai"
+
+
+[root@lamp_server ~]# httpd -k restart
 
 
 
@@ -424,8 +458,7 @@ mysql> show global variables like '%log%';
 
 1) 测试httpd, php是否正常工作
 
-[root@web_server ~]# vim /app/httpd/htdocs/a.php
-[root@web_server ~]# cat /app/httpd/htdocs/a.php
+[root@lamp_server ~]# vim /app/httpd/htdocs/a.php
     <?php
         phpinfo()
     ?>
@@ -434,7 +467,7 @@ mysql> show global variables like '%log%';
       http://192.168.175.100/a.php
 
 2) 测试PHP、MySQL
-[root@web_server ~]# cat /app/httpd/htdocs/b.php
+[root@lamp_server ~]# vim /app/httpd/htdocs/b.php
       <?php
       // 参考  https://www.runoob.com/php/php-mysql-connect.html
 
@@ -457,9 +490,6 @@ mysql> show global variables like '%log%';
 
 
 TODO: 部署应用
-
----------------------------------------------------------------------------------------------------
-
 
 
 
