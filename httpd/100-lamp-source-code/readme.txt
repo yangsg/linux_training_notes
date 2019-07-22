@@ -184,7 +184,20 @@ httpd (pid 34374) already running
       ---------
 
 
+---------------------------------------------------------------------------------------------------
+安装通用二进制格式的 mysql
 
+// 卸载系统自带的mariadb
+
+[root@web_server ~]# rpm -qa | grep mariadb
+      mariadb-libs-5.5.56-2.el7.x86_64
+[root@web_server ~]# rpm -e --nodeps mariadb-libs
+
+
+
+
+https://dev.mysql.com/doc/refman/5.7/en/binary-installation.html
+https://dev.mysql.com/doc/refman/5.7/en/replace-third-party-yum.html
 
 
 
