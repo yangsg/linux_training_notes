@@ -186,6 +186,10 @@ httpd (pid 34374) already running
 
 ---------------------------------------------------------------------------------------------------
 安装通用二进制格式的 mysql
+    参考  https://github.com/yangsg/linux_training_notes/tree/master/mysql_mariadb/mysql_01_install/mysql_install_from_generic_binary
+
+// 下载 或 准备 通用二进制格式的 mysql 安装包
+
 
 // 卸载系统自带的mariadb
 
@@ -194,12 +198,267 @@ httpd (pid 34374) already running
 [root@web_server ~]# rpm -e --nodeps mariadb-libs
 
 
+// 确认 或 安装 通用二进制格式的 mysql 需要的依赖
+[root@web_server ~]# rpm -qa | grep -i libaio
+    libaio-0.3.109-13.el7.x86_64   <---- 已经安装
+
+// For MySQL 5.7.19 and later, 通用二进制的 mysql 会依赖 libnuma 库
+[root@web_server ~]# yum search libnuma
+[root@web_server ~]# yum -y install numactl-libs
+
+[root@web_server ~]# rpm -q numactl-libs
+    numactl-libs-2.0.9-7.el7.x86_64
+
+[root@web_server ~]# useradd -M -s /sbin/nologin mysql
+[root@web_server ~]# mkdir -p /mydata/data
+[root@web_server ~]# chown -R mysql:mysql /mydata/data/
 
 
-https://dev.mysql.com/doc/refman/5.7/en/binary-installation.html
-https://dev.mysql.com/doc/refman/5.7/en/replace-third-party-yum.html
+[root@web_server ~]# ls download/ | grep mysql
+    mysql-5.7.27-linux-glibc2.12-x86_64.tar.gz
+
+[root@web_server ~]# cd download/
+[root@web_server download]# tar -xvf mysql-5.7.27-linux-glibc2.12-x86_64.tar.gz  -C /app/
+
+[root@web_server download]# cd /app/
+[root@web_server app]# ls
+httpd  mysql-5.7.27-linux-glibc2.12-x86_64
+
+[root@web_server app]# mv mysql-5.7.27-linux-glibc2.12-x86_64/ mysql
+[root@web_server app]# ls
+      httpd  mysql
+
+[root@web_server app]# cd
+[root@web_server ~]# chown -R root:mysql /app/mysql/
 
 
+[root@web_server ~]# vim /etc/profile.d/mysql.sh
+      export PATH=$PATH:/app/mysql/bin
+
+[root@web_server ~]# source /etc/profile.d/mysql.sh
+
+
+// 初始化数据库
+// https://dev.mysql.com/doc/refman/5.7/en/data-directory-initialization.html
+[root@web_server ~]# mysqld --initialize --user=mysql --basedir=/app/mysql/  --datadir=/mydata/data     #注意记录下该命令生成的临时密码
+      2019-07-22T10:41:08.274512Z 1 [Note] A temporary password is generated for root@localhost: .8-G(;L<m.s:    #<<<<<<<记下临时密码
+
+[root@web_server ~]# vim /etc/my.cnf
+    [mysqld]
+    basedir=/app/mysql
+    datadir=/mydata/data
+    port=3306
+    server_id=20
+    socket=/tmp/mysql.sock
+
+
+// 启动mysqld服务
+[root@web_server ~]# cp /app/mysql/support-files/mysql.server  /etc/init.d/mysqld
+[root@web_server ~]# chmod a+x /etc/init.d/mysqld
+[root@web_server ~]# chkconfig --add mysqld
+[root@web_server ~]# chkconfig mysqld on
+[root@web_server ~]# chkconfig --list mysqld
+
+
+[root@web_server ~]# /etc/init.d/mysqld start
+      Starting MySQL.Logging to '/mydata/data/web_server.err'.
+       SUCCESS!
+
+
+[root@web_server ~]# netstat -antp | grep :3306
+      tcp6       0      0 :::3306                 :::*                    LISTEN      54091/mysqld
+
+
+// 数据库初始化安全设置 https://dev.mysql.com/doc/refman/5.7/en/mysql-secure-installation.html
+[root@web_server ~]# mysql_secure_installation
+
+
+[root@web_server ~]# mysql -h localhost -u root -p
+mysql> pager less -Fi
+mysql> show global variables like '%log%';
+
+
+
+
+        ---------
+        https://dev.mysql.com/doc/refman/5.7/en/binary-installation.html
+        https://dev.mysql.com/doc/refman/5.7/en/replace-third-party-yum.html
+
+        #其他一些小技巧：
+        https://www.psce.com/en/blog/2012/06/02/how-to-find-mysql-binary-logs-error-logs-temporary-files/
+          lsof -nc mysqld | grep -vE '(.so(..*)?$|.frm|.MY?|.ibd|ib_logfile|ibdata|TCP)'
+
+        ---------
+
+
+// 导出MySQL库文件 (该 操作时 正对 lamp 才有的)
+[root@web_server ~]# ls -1 /app/mysql/lib/
+      libmysqlclient.a
+      libmysqlclient.so
+      libmysqlclient.so.20
+      libmysqlclient.so.20.3.14
+      libmysqld.a
+      libmysqld-debug.a
+      libmysqlservices.a
+      mecab
+      pkgconfig
+      plugin
+
+
+[root@web_server ~]# vim /etc/ld.so.conf.d/mysql.conf
+      /app/mysql/lib
+
+
+[root@web_server ~]# ldconfig
+[root@web_server ~]# ldconfig -v | grep mysql
+
+// 导出head文件
+[root@web_server ~]# ln -s /app/mysql/include/  /usr/include/mysql
+[root@web_server ~]# ls  /usr/include/mysql
+
+
+
+
+
+---------------------------------------------------------------------------------------------------
+安装PHP
+
+
+// 下载 或 准备 php 软件 的 源码安装包
+[root@web_server download]# ls | grep php
+      php-5.6.40.tar.gz
+
+安装mcrypt,mhash加密认证组件
+[root@web_server ~]# yum -y install libmcrypt libmcrypt-devel mcrypt mhash-devel mhash
+
+[root@web_server ~]# yum install -y libxml2-devel bzip2-devel openssl-devel
+
+[root@web_server ~]# cd /app/mysql/lib/
+[root@web_server lib]# ln -s libmysqlclient.so.20.3.14 libmysqlclient_r.so
+
+
+[root@web_server download]# tar -xvf php-5.6.40.tar.gz
+[root@web_server download]# cd php-5.6.40/
+
+[root@web_server php-5.6.40]# ./configure \
+--prefix=/app/php \
+--with-mysql=/app/mysql \
+--with-mysqli=/app/mysql/bin/mysql_config \
+--with-openssl \
+--enable-mbstring \
+--with-freetype-dir \
+--with-jpeg-dir \
+--with-png-dir \
+--with-zlib \
+--with-libxml-dir=/usr \
+--enable-xml \
+--enable-sockets \
+--with-apxs2=/app/httpd/bin/apxs \
+--with-mcrypt \
+--with-config-file-path=/etc \
+--with-config-file-scan-dir=/etc/php.d \
+--with-bz2 \
+--enable-maintainer-zts
+
+
+          ------------------------- configure 成功的效果大概如下面的样子
+
+          Generating files
+          configure: creating ./config.status
+          creating main/internal_functions.c
+          creating main/internal_functions_cli.c
+          +--------------------------------------------------------------------+
+          | License:                                                           |
+          | This software is subject to the PHP License, available in this     |
+          | distribution in the file LICENSE.  By continuing this installation |
+          | process, you are bound by the terms of this license agreement.     |
+          | If you do not agree with the terms of this license, you must abort |
+          | the installation process at this point.                            |
+          +--------------------------------------------------------------------+
+
+          Thank you for using PHP.
+
+          config.status: creating php5.spec
+          config.status: creating main/build-defs.h
+          config.status: creating scripts/phpize
+          config.status: creating scripts/man1/phpize.1
+          config.status: creating scripts/php-config
+          config.status: creating scripts/man1/php-config.1
+          config.status: creating sapi/cli/php.1
+          config.status: creating sapi/cgi/php-cgi.1
+          config.status: creating ext/phar/phar.1
+          config.status: creating ext/phar/phar.phar.1
+          config.status: creating main/php_config.h
+          config.status: executing default commands
+
+          -------------------------
+
+
+[root@web_server php-5.6.40]# make
+[root@web_server php-5.6.40]# make install
+
+// 复制PHP配置文件
+[root@web_server php-5.6.40]# cp php.ini-production /etc/php.ini
+
+
+// 编辑httpd配置文件，整合httpd和PHP
+[root@web_server ~]# vim /app/httpd/conf/httpd.conf
+
+    AddType application/x-httpd-php .php
+    AddType application/x-httpd-php-source .phps
+
+    DirectoryIndex index.php index.html
+
+[root@web_server ~]# httpd -t
+
+[root@web_server ~]# httpd -k restart
+
+
+
+
+
+---------------------------------------------------------------------------------------------------
+测试lamp平台工作是否正常
+
+1、测试HTTPD/PHP
+
+1) 测试httpd, php是否正常工作
+
+[root@web_server ~]# vim /app/httpd/htdocs/a.php
+[root@web_server ~]# cat /app/httpd/htdocs/a.php
+    <?php
+        phpinfo()
+    ?>
+
+浏览器访问:
+      http://192.168.175.100/a.php
+
+2) 测试PHP、MySQL
+[root@web_server ~]# cat /app/httpd/htdocs/b.php
+      <?php
+      // 参考  https://www.runoob.com/php/php-mysql-connect.html
+
+      $servername = "localhost";
+      $username = "root";
+      $password = "WWW.1.com";
+
+      // 创建连接
+      $conn = new mysqli($servername, $username, $password);
+
+      // 检测连接
+      if ($conn->connect_error) {
+          die("连接失败: " . $conn->connect_error);
+      }
+      echo "连接成功";
+      ?>
+
+浏览器访问:
+      http://192.168.175.100/b.php
+
+
+TODO: 部署应用
+
+---------------------------------------------------------------------------------------------------
 
 
 
