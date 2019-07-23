@@ -538,6 +538,9 @@ TODO: 部署应用
 httpd 官网:
     https://httpd.apache.org/
 
+httpd 的 wiki:
+https://cwiki.apache.org/confluence/display/HTTPD/
+
 httpd 下载页面:
     https://httpd.apache.org/download.cgi
 
