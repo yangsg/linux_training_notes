@@ -184,12 +184,49 @@
 [root@lamp_server ~]# cat /app/httpd/logs/httpd.pid
 50131
 
+----------------------------------------
+// 设置开机自启   更多开机自启的方式 可参考笔记: https://github.com/yangsg/linux_training_notes/tree/master/mycat/100-mycat-mysql-read-write-splitting
 
-// 设置开机自启
+-------
+// 方式 01: 利用 rc.local 文件
 [root@lamp_server ~]# vim /etc/rc.d/rc.local
         /app/httpd/bin/httpd -k start
 
 [root@lamp_server ~]# chmod +x /etc/rc.d/rc.local
+
+
+-------
+// 方式02：使用 init script 的方式
+[root@lamp_server ~]# vim /etc/init.d/httpd
+
+      #!/bin/bash
+
+      # chkconfig: 2345 85 15
+      # description: active or  deactive httpd service
+
+      /app/httpd/bin/apachectl $@
+
+[root@lamp_server ~]# chmod 755 /etc/init.d/httpd
+[root@lamp_server ~]# chkconfig --add httpd
+[root@lamp_server ~]# chkconfig --list httpd
+    httpd           0:off   1:off   2:on    3:on    4:on    5:on    6:off
+
+[root@lamp_server ~]# find /etc/rc* | grep httpd
+        /etc/rc.d/init.d/httpd
+        /etc/rc.d/rc0.d/K15httpd
+        /etc/rc.d/rc1.d/K15httpd
+        /etc/rc.d/rc2.d/S85httpd
+        /etc/rc.d/rc3.d/S85httpd
+        /etc/rc.d/rc4.d/S85httpd
+        /etc/rc.d/rc5.d/S85httpd
+        /etc/rc.d/rc6.d/K15httpd
+
+[root@lamp_server ~]# /etc/init.d/httpd start
+[root@lamp_server ~]# /etc/init.d/httpd stop
+
+----------------------------------------
+
+
 
 
       ---------
