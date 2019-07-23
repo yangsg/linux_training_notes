@@ -42,6 +42,18 @@ Differences and dis/advanages between: Fast-CGI, CGI, Mod-PHP, SuPHP, PHP-FPM
 [root@phpfpm7server php-5.6.40]# make
 [root@phpfpm7server php-5.6.40]# make install
 
+// 查看一下 目录 /app/php/
+[root@phpfpm7server php-5.6.40]# tree -L 1 /app/php/
+      /app/php/
+      ├── bin
+      ├── etc
+      ├── include
+      ├── lib
+      ├── php
+      ├── sbin
+      └── var
+
+
 #// 复制php加载模块的配置文件
 [root@phpfpm7server php-5.6.40]# cp php.ini-production  /etc/php.ini
 
@@ -66,6 +78,9 @@ Differences and dis/advanages between: Fast-CGI, CGI, Mod-PHP, SuPHP, PHP-FPM
   pm.start_servers = 10
   pm.min_spare_servers = 10
   pm.max_spare_servers = 10
+  ; 参数 pm.max_requests 对于避免 一些 第3方库 因 内存泄露 导致 内存溢出 很有用.
+  ; 关于 内存泄露(memory leak) 和 内存溢出(out of memory) 的区别 和 联系 可参考 网上博文::
+  ;     https://www.cnblogs.com/panxuejun/p/5883044.html
   pm.max_requests = 500
 
 [root@phpfpm7server php-5.6.40]# useradd -s /sbin/nologin nginx
