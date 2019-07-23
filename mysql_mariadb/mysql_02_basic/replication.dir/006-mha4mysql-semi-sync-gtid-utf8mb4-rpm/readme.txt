@@ -1350,6 +1350,8 @@ https://mizzy.org/blog/2013/02/06/1/
 https://www.jianshu.com/p/3ef3fc3c9113
 
 
+How to automatically restart a linux background process if it fails?
+    https://superuser.com/questions/507576/how-to-automatically-restart-a-linux-background-process-if-it-fails
 
 
 
