@@ -38,6 +38,13 @@
 [root@nginx7server ~]# /app/nginx/sbin/nginx -s reload
 
 
+---------------------------------------------------------------------------------------------------
+网上资料:
+
+    https://linuxize.com/post/how-to-install-nginx-on-ubuntu-18-04/
+
+
+
 
 
 
