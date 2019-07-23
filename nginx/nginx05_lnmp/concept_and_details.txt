@@ -1,0 +1,158 @@
+
+
+---------------------------------------------------------------------------------------------------
+php.ini 和 Scan directories
+
+The configuration file
+
+https://www.php.net/manual/en/configuration.file.php
+
+The configuration file (php.ini) is read when PHP starts up. For the server module versions of PHP,
+this happens only once when the web server is started. For the CGI and CLI versions, it happens on every invocation.
+
+    Since PHP 5.1.0, it is possible to refer to existing .ini variables
+    from within .ini files. Example: open_basedir = ${open_basedir} ":/new/dir".
+
+---------
+Scan directories
+
+    It is possible to configure PHP to scan for .ini files in a directory after reading php.ini.
+    This can be done at compile time by setting the --with-config-file-scan-dir option.
+    In PHP 5.2.0 and later, the scan directory can then
+    be overridden at run time by setting the PHP_INI_SCAN_DIR environment variable.
+
+利用 路径分隔符 ':' (即独立于操作系统的 英文冒号) 可以指定 多个 扫描的  directories
+    It is possible to scan multiple directories by separating them with the platform-specific path separator
+    (; on Windows, NetWare and RISC OS; : on all other platforms; the value PHP is using is available as the PATH_SEPARATOR constant).
+    If a blank directory is given in PHP_INI_SCAN_DIR, PHP will also scan the directory given at compile time via --with-config-file-scan-dir .
+
+    Within each directory, PHP will scan all files ending in .ini in alphabetical order.
+    A list of the files that were loaded, and in what order,
+    is available by calling php_ini_scanned_files(), or by running PHP with the --ini option.
+
+---------------------------------------------------------------------------------------------------
+php-config
+
+  https://www.php.net/manual/zh/install.pecl.php-config.php
+
+php-config 是一个简单的命令行脚本用于获取所安装的 PHP 配置的信息。
+
+在编译扩展时，如果安装有多个 PHP 版本，可以在配置时用 --with-php-config 选项来指定使用哪一个版本编译，该选项指定了相对应的 php-config 脚本的路径。
+
+php-config 脚本在命令行所能使用的选项可以通过 -h 选项来显示：
+
+[root@phpfpm7server ~]# /app/php/bin/php-config -h
+    Usage: /app/php/bin/php-config [OPTION]
+    Options:
+      --prefix            [/app/php]
+      --includes          [-I/app/php/include/php -I/app/php/include/php/main -I/app/php/include/php/TSRM -I/app/php/include/php/Zend -I/app/php/include/php/ext -I/app/php/include/php/ext/date/lib]
+      --ldflags           []
+      --libs              [-lcrypt   -lresolv -lcrypt -lrt -lmcrypt -lbz2 -lz -lrt -lm -ldl -lnsl  -lxml2 -lz -lm -ldl -lssl -lcrypto -lxml2 -lz -lm -ldl -lxml2 -lz -lm -ldl -lcrypt -lxml2 -lz -lm -ldl -lxml2 -lz -lm -ldl -lxml2 -lz -lm -ldl -lssl -lcrypto -lcrypt ]
+      --extension-dir     [/app/php/lib/php/extensions/no-debug-non-zts-20131226]
+      --include-dir       [/app/php/include/php]
+      --man-dir           [/app/php/php/man]
+      --php-binary        [/app/php/bin/php]
+      --php-sapis         [ cli fpm cgi]
+      --configure-options [--prefix=/app/php --with-mysql --with-mysqli --with-openssl --enable-mbstring --with-freetype-dir --with-jpeg-dir --with-png-dir --with-zlib --with-libxml-dir=/app --enable-xml --enable-sockets --enable-fpm --with-mcrypt --with-bz2 --with-config-file-path=/etc --with-config-file-scan-dir=/etc/php.d]
+      --version           [5.6.40]
+      --vernum            [50640]
+
+
+// 查看 php 默认的 插件 查找目录
+[root@phpfpm7server ~]# /app/php/bin/php-config  | grep extension-dir
+    --extension-dir     [/app/php/lib/php/extensions/no-debug-non-zts-20131226]
+
+参考:
+  How to find php extension_dir
+      https://syslint.com/blog/tutorial/how-to-find-php-extension_dir/
+
+---------------------------------------------------------------------------------------------------
+phpize
+
+    https://www.php.net/manual/zh/install.pecl.phpize.php
+
+用 phpize 编译共享 PECL 扩展库
+
+有时候不能用 pecl 安装命令。这可能是因为在防火墙后面，或者是因为想要安装的扩展库还没有 PECL 兼容的包，
+如 SVN 中尚未发布的扩展库。如果要编译这种扩展库，可以用更底层的编译工具来手工进行编译。
+
+phpize 命令是用来准备 PHP 扩展库的编译环境的。下面例子中，扩展库的源程序位于 extname 目录中：
+
+$ cd extname
+$ phpize
+$ ./configure
+$ make
+# make install
+
+成功的安装将创建 extname.so 并放置于 PHP 的扩展库目录中。
+需要调整 php.ini，加入 extension=extname.so 这一行之后才能使用此扩展库。
+
+如果系统中没有 phpize 命令并且使用了预编译的包（例如 RPM），
+那要安装 PHP 包相应的开发版本，此版本通常包含了 phpize 命令以及相应的用于编译 PHP 及其扩展库的头文件。
+
+使用 phpize --help 命令可以显示此命令用法。
+
+
+---------------------------------------------------------------------------------------------------
+PECL 扩展库安装
+
+    https://www.php.net/manual/zh/install.pecl.php
+
+
+
+---------------------------------------------------------------------------------------------------
+xcache  该项目已经移到了 github 上
+
+https://github.com/lighttpd/xcache
+
+https://en.wikipedia.org/wiki/List_of_PHP_accelerators
+
+ xcache 下载页面: https://github.com/lighttpd/xcache/releases
+
+ xcache 的安装参考文档: https://github.com/lighttpd/xcache/blob/master/INSTALL
+
+ xcache 的设置example文件(可用于观察一些默认设置) https://github.com/lighttpd/xcache/blob/master/xcache.ini
+
+
+(这是 Introduction 页面对应的中文翻译)
+XCache 是一个开源的 opcode 缓存器/优化器, 这意味着他能够提高您服务器上的 PHP 性能.
+他通过把编译 PHP 后的数据缓冲到共享内存从而避免重复的编译过程,
+能够直接使用缓冲区已编译的代码从而提高速度.
+通常能够提高您的页面生成速率 2 到5 倍, 降低服务器负载.
+
+XCache 工程由 mOo 领队, 他也是 Lighttpd 的开发成员之一.
+Lighttpd 是最快的 Web 服务器应用程序之一,
+并且超越 Apache 以及许多其他 Web 服务器. XCache 努力达到类似的效果.
+
+
+XCache is a fast, stable PHP opcode cacher that has been tested and is now running on production servers under high load.
+It is tested on GNU/Linux and FreeBSD and supported under Windows, for thread-safe and non-thread-safe versions of PHP.
+This relatively new opcode caching software has been developed by mOo, one of the developers of Lighttpd,
+to overcome some of the limitations of the existing solutions at that time;
+such as being able to use it with new PHP versions as they arrive.
+
+
+
+---------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------------------------
+
+
