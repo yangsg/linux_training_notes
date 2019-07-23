@@ -54,6 +54,13 @@ Differences and dis/advanages between: Fast-CGI, CGI, Mod-PHP, SuPHP, PHP-FPM
       └── var
 
 
+// 查看 php 的 help 信息
+[root@phpfpm7server php-5.6.40]# /app/php/bin/php -h
+
+// 查看 php 的 version 信息
+[root@phpfpm7server php-5.6.40]# /app/php/bin/php -v
+
+
 #// 复制php加载模块的配置文件
 [root@phpfpm7server php-5.6.40]# cp php.ini-production  /etc/php.ini
 
@@ -105,7 +112,90 @@ Differences and dis/advanages between: Fast-CGI, CGI, Mod-PHP, SuPHP, PHP-FPM
 
 
 
-#// -------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------
+安装 开源的 php 优化插件 xcache
+
+    参考笔记:
+        https://github.com/yangsg/linux_training_notes/blob/master/nginx/nginx05_lnmp/concept_and_details.txt
+
+  xcache 用于在 共享内存中 缓存 编译后的 .php 的 操作码(opcode), 从而避免了 重复的 解析编译 及 磁盘IO 访问的开销.
+
+// 因 xcache 项目移到了 github, 所以现在只能从 github 上下载
+[root@phpfpm7server download]# wget -O xcache-3.2.0.tar.gz  https://github.com/lighttpd/xcache/archive/3.2.0.tar.gz
+[root@phpfpm7server download]# ls | grep xcache
+      xcache-3.2.0.tar.gz
+
+[root@phpfpm7server download]# tar -xvf xcache-3.2.0.tar.gz
+[root@phpfpm7server download]# ls | grep xcache
+        xcache-3.2.0
+        xcache-3.2.0.tar.gz
+
+[root@phpfpm7server download]# cd xcache-3.2.0/
+
+// phpize 命令是用来准备 PHP 扩展库的编译环境的, 如生成 configure 命令等
+[root@phpfpm7server xcache-3.2.0]# /app/php/bin/phpize --clean
+[root@phpfpm7server xcache-3.2.0]# /app/php/bin/phpize
+      Configuring for:
+      PHP Api Version:         20131106
+      Zend Module Api No:      20131226
+      Zend Extension Api No:   220131226
+
+[root@phpfpm7server xcache-3.2.0]# ./configure --help
+[root@phpfpm7server xcache-3.2.0]# ./configure --enable-xcache --with-php-config=/app/php/bin/php-config
+[root@phpfpm7server xcache-3.2.0]# make
+
+[root@phpfpm7server xcache-3.2.0]# make install
+        Installing shared extensions:     /app/php/lib/php/extensions/no-debug-non-zts-20131226/
+
+[root@phpfpm7server xcache-3.2.0]# ls /app/php/lib/php/extensions/no-debug-non-zts-20131226/
+        opcache.a  opcache.so  xcache.so
+
+
+[root@phpfpm7server xcache-3.2.0]# mkdir /etc/php.d
+
+
+[root@phpfpm7server xcache-3.2.0]# vim /etc/php.d/xcache.ini
+    [xcache-common]
+    extension = xcache.so
+
+// 重启, 使 配置生效
+[root@phpfpm7server xcache-3.2.0]# /etc/init.d/php-fpm restart
+
+
+// 查看 模块
+[root@phpfpm7server xcache-3.2.0]# /app/php/bin/php -m | grep -i xcache
+    XCache
+    XCache Cacher
+    XCache
+    XCache Cacher
+
+
+// 查看版本信息
+[root@phpfpm7server xcache-3.2.0]# /app/php/bin/php -v
+
+      PHP 5.6.40 (cli) (built: Jul 23 2019 14:29:38)
+      Copyright (c) 1997-2016 The PHP Group
+      Zend Engine v2.6.0, Copyright (c) 1998-2016 Zend Technologies
+          with XCache v3.2.0, Copyright (c) 2005-2014, by mOo
+          with XCache Cacher v3.2.0, Copyright (c) 2005-2014, by mOo
+
+
+---------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
