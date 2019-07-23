@@ -3,7 +3,7 @@ Difference between PHP-CGI and PHP-FPM
 Differences and dis/advanages between: Fast-CGI, CGI, Mod-PHP, SuPHP, PHP-FPM
   https://serverfault.com/questions/645755/differences-and-dis-advanages-between-fast-cgi-cgi-mod-php-suphp-php-fpm
 
-
+      https://github.com/yangsg/linux_training_notes/tree/master/httpd
 
 
 #// 安装php-fpm server --------------------------------------------
