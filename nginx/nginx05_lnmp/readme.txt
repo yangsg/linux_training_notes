@@ -180,6 +180,11 @@ Differences and dis/advanages between: Fast-CGI, CGI, Mod-PHP, SuPHP, PHP-FPM
           with XCache v3.2.0, Copyright (c) 2005-2014, by mOo
           with XCache Cacher v3.2.0, Copyright (c) 2005-2014, by mOo
 
+      -------------
+      // 其他有用的命令
+      // 查看 默认的 extension-dir
+      [root@phpfpm7server xcache-3.2.0]# /app/php/bin/php-config | grep  'extension-dir'
+        --extension-dir     [/app/php/lib/php/extensions/no-debug-non-zts-20131226]
 
 ---------------------------------------------------------------------------------------------------
 
