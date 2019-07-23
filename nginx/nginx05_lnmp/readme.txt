@@ -60,6 +60,11 @@ Differences and dis/advanages between: Fast-CGI, CGI, Mod-PHP, SuPHP, PHP-FPM
 // 查看 php 的 version 信息
 [root@phpfpm7server php-5.6.40]# /app/php/bin/php -v
 
+      PHP 5.6.40 (cli) (built: Jul 23 2019 14:29:38)
+      Copyright (c) 1997-2016 The PHP Group
+      Zend Engine v2.6.0, Copyright (c) 1998-2016 Zend Technologies
+
+
 
 #// 复制php加载模块的配置文件
 [root@phpfpm7server php-5.6.40]# cp php.ini-production  /etc/php.ini
