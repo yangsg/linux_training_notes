@@ -84,7 +84,7 @@ parrot('a thousand', state='pushing up the daisies')  # 1 positional, 1 keyword
 #//非法 parrot(actor='John Cleese')  # unknown keyword argument
 
 #// 在一个函数调用中,关键字参数(keyword arguments)应该跟随在位置参数(positional arguments)的后面,
-#// 传递的实参中的关键字参数必须与函数声定义时可接收的某个关键字参数的名字匹配(即不要传递非定义过的关键字参数)，
+#// 传递的实参中的关键字参数必须与函数声明定义时可接收的某个关键字参数的名字匹配(即不要传递非定义过的关键字参数)，
 #// 不过它们的顺序并不重要，This also includes non-optional arguments (e.g. parrot(voltage=1000) is valid too).  
 #// No argument may receive a value more than once. 
 
