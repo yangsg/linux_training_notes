@@ -62,7 +62,7 @@ i = 6
 f()
 
 
-#// 2) Keyword Arguments  键参数
+#// 2) Keyword Arguments  关键字参数
 def parrot(voltage, state='a stiff', action='voom', type='Norwegian Blue'):
     print("-- This parrot wouldn't", action, end=' ')
     print("if you put", voltage, "volts through it.")
@@ -83,13 +83,13 @@ parrot('a thousand', state='pushing up the daisies')  # 1 positional, 1 keyword
 #//非法 parrot(110, voltage=220)     # duplicate value for the same argument
 #//非法 parrot(actor='John Cleese')  # unknown keyword argument
 
-#// 在一个函数调用中,键参(keyword arguments)应该跟随在位置参数(positional arguments)的后面,
-#// 传递的实参中的键参必须与函数声定义时可接收的某个键参的名字匹配(即不要传递非定义过的键参)，
+#// 在一个函数调用中,关键字参数(keyword arguments)应该跟随在位置参数(positional arguments)的后面,
+#// 传递的实参中的关键字参数必须与函数声定义时可接收的某个关键字参数的名字匹配(即不要传递非定义过的关键字参数)，
 #// 不过它们的顺序并不重要，This also includes non-optional arguments (e.g. parrot(voltage=1000) is valid too).  
 #// No argument may receive a value more than once. 
 
 
-#// 如果函数最后一个形参形如 **name, 则**name接收一个字典，该字典可以包含所有的键参(除了出现在定义列表出现过的形参)
+#// 如果函数最后一个形参形如 **name, 则**name接收一个字典，该字典可以包含所有的关键字参数(除了出现在定义列表出现过的形参)
 #// 它可以与形如 *name 的一个形参结合使用，*name 接收一个元组,该元组包含一些
 #// positional arguments beyond the formal parameter list. (*name 必须位于 **name 之前),
 #// 如下示例：
