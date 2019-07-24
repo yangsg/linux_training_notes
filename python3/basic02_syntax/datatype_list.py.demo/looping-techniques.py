@@ -23,7 +23,7 @@ def iterate_in_reversed():
 
 def iterate_with_sorted():
     basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
-    for f in sorted(set(basket)):  #// 排序后迭代，注意：此例中使用了set去除重复，如果无序去重复，直接使用 sorted(basket) 即可
+    for f in sorted(set(basket)):  #// 排序后迭代，注意：此例中使用了set去除重复，如果无需去重复，直接使用 sorted(basket) 即可
         print(f)
 
 
