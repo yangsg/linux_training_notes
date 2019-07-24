@@ -38,7 +38,14 @@ https://www.liaoxuefeng.com/wiki/0014316089557264a6b348958f449949df42a6d3a2e542c
 https://docs.python.org/3.6/library/functions.html
 https://docs.python.org/3.6/library/constants.html
 
+---------------------------------------------------------------------------------------------------
+Python For Beginners
 
+https://www.python.org/about/gettingstarted/
+
+  查找,搜索 python packages (Python Package Index, search page)
+      https://pypi.org/
+      https://www.python.org/search/
 
 
 
