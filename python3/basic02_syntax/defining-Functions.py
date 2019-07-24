@@ -162,7 +162,7 @@ parrot(**d)   # <<< 注意此处的 **d
 #// -- This parrot wouldn't VOOM if you put four million volts through it. E's bleedin' demised !
 
 
-#// Lambda Expressions  这时一种创建小型匿名函数的方法
+#// Lambda Expressions  这是一种创建小型匿名函数的方法
 #// They are syntactically restricted to a single expression.
 
 def make_incrementor(n):
