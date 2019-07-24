@@ -179,6 +179,8 @@ pairs.sort(key=lambda pair: pair[1])
 pairs    # [(4, 'four'), (1, 'one'), (3, 'three'), (2, 'two')]
 
 
+f = lambda x: x*2
+print(type(f))  # <class 'function'>
 
 
 
