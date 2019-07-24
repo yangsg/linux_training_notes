@@ -146,11 +146,78 @@ such as being able to use it with new PHP versions as they arrive.
 
 
 
+---------------------------------------------------------------------------------------------------
+如下内容与 php 无关, 是与 python 相关的一些知识(来自wiki)
+
+uWSGI---------
+
+https://en.wikipedia.org/wiki/UWSGI
+
+    uWSGI is a software application that "aims at developing a full stack for building hosting services".[2]
+    It is named after the Web Server Gateway Interface (WSGI), which was the first plugin supported by the project.[2]
+
+    uWSGI is often used for serving Python web applications in conjunction with web servers
+    such as Cherokee and Nginx, which offer direct support for uWSGI's native uwsgi protocol.[3]
 
 
+---------
+https://en.wikipedia.org/wiki/Web_Server_Gateway_Interface
+
+WSGI---------
+
+The Web Server Gateway Interface (WSGI) is developed for calling convention for web servers
+to forward requests to web applications or frameworks written in the Python programming language.
+The current version of WSGI, version 1.0.1, is specified in Python Enhancement Proposal (PEP) 3333.[1]
+
+Background----
+
+In 2003, Python web frameworks were typically written against only CGI, FastCGI, mod_python,
+or some other custom API of a specific web server.[3] To quote PEP 333:
+
+      Python currently boasts a wide variety of web application frameworks, such as Zope, Quixote,
+      Webware, SkunkWeb, PSO, and Twisted Web -- to name just a few. This wide variety of
+      choices can be a problem for new Python users, because generally speaking,
+      their choice of web framework will limit their choice of usable web servers,
+      and vice versa... By contrast, although Java has just as many web application
+      frameworks available, Java's "servlet" API makes it possible for applications
+      written with any Java web application framework to run in any web server that supports the servlet API.
+
+WSGI was thus created as an implementation-agnostic interface between web servers and
+web applications or frameworks to promote common ground for portable web application development.[1]
 
 
+Specification overview----
 
+    The WSGI has two sides:
+
+    - the server/gateway side. This is often a full web server such as Apache or Nginx,
+    or a lightweight application server that can communicate with a webserver, such as flup.
+
+    - the application/framework side. This is a Python callable, supplied by the Python program or framework.
+
+    Between the server and the application, there may be one or more WSGI middleware components,
+    which implement both sides of the API, typically in Python code.
+
+    WSGI does not specify how the Python interpreter should be started,
+    nor how the application object should be loaded or configured,
+    and different frameworks and webservers achieve this in different ways.
+
+
+WSGI Middleware----
+A WSGI middleware component is a Python callable that is itself a WSGI application,
+but may handle requests by delegating to other WSGI applications.
+These applications can themselves be WSGI middleware components.[4]
+
+  A middleware component can perform such functions as:
+
+    - Routing a request to different application objects based on the target URL,
+      after changing the environment variables accordingly.
+
+    - Allowing multiple applications or frameworks to run side-by-side in the same process
+
+    - Load balancing and remote processing, by forwarding requests and responses over a network
+
+    - Performing content post-processing, such as applying XSLT stylesheets
 
 
 ---------------------------------------------------------------------------------------------------
