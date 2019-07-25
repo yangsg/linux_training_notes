@@ -85,7 +85,7 @@ sys.path.append('/ufs/guido/lib/python')   #通过python代码手动修改 sys.p
 #// export PYTHONPATH=/path/to/extra/python/lib   # 通过shell的环境变量PYTHONPATH修改sys.path变量
 
 import builtins  #python内置的函数和变量都被定义在标准模块 builtins 中
-dir(builtins)     #用户返回module所定义的排序后的名称列表
+dir(builtins)     #用于返回module所定义的排序后的名称列表
 dir()             # 默认返回当前module的名称列表
 
 
@@ -94,7 +94,7 @@ dir()             # 默认返回当前module的名称列表
 #// https://docs.python.org/3.6/tutorial/modules.html#packages
 #// Packages
 
-import sound.effects.echo  # 导入sound.effects.echo到名字空间，引用是不许使用 'sound.effects.echo'
+import sound.effects.echo  # 导入sound.effects.echo到名字空间，引用是需要使用 'sound.effects.echo'
 from sound.effects import echo  # 导入 'echo', 引用是使用 'echo' 即可
 from sound.effects.echo import echofilter   #直接导入函数或变量，而非导入模块
 
