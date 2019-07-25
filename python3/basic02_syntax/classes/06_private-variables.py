@@ -7,11 +7,12 @@
 #// 被大多数python 代码遵循的规范有：
 #//     名字以  1 个 下划线‘_’ 作为前缀的, 应当被视为非公共api 的一部分(不管该名字代表的是function, a method or a data member)
 
-
-#// _private_variable = 'this is private variable(这只是普通private variable,
-#// 而不是利用了name mangling机制的class private variable), not part of the public api.
-#// 对于class-private member,要使用双下划线做前缀(或最多一个下划线后缀),
-#// 如 __class_private_member or  __class_private_member_'
+'''
+    _private_variable = 'this is private variable(这只是普通private variable,
+    而不是利用了name mangling机制的class private variable), not part of the public api.
+    对于class-private member,要使用双下划线做前缀(或最多一个下划线后缀),
+    如 __class_private_member or  __class_private_member_'
+'''
 
 
 def _private_function():
