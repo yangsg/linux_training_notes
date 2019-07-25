@@ -19,12 +19,18 @@
 #// a method of a base class that calls another method defined in the same base class may end up calling a
 #// method of a derived class that overrides it. (For C++ programmers: all methods in Python are effectively virtual.)
 
+#// 注: 一种更好的 调用 父类 方法的 方式 是 使用 super 函数, 更多信息见
+#//     https://github.com/yangsg/linux_training_notes/blob/master/python3/python_books_note/Beginning-Python-From-Novice-to-Professional/09-magic-method-property-iterator.py
 
 #// python中子类方法定义中调用父类中的方法的语法形式就是 BaseClassName.methodname(self, arguments)
 #// There is a simple way to call the base class method directly:
 #// just call BaseClassName.methodname(self, arguments).
 #// This is occasionally useful to clients as well.
 #// (Note that this only works if the base class is accessible as BaseClassName in the global scope.)
+
+#// 注: 如上 BaseClassName.methodname(self, arguments) 通过
+#//     硬编码父类名 BaseClassName 的方式调用 父类方法的方式 不利于 后期代码维护.
+#//     其与 父类的 名称 耦合太紧, 某一天如果要 修改父类名称, 则这种方式 增加的修改量.
 
 
 '''
