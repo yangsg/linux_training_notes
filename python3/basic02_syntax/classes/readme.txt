@@ -10,7 +10,7 @@ python 允许多重继承
 
 相比于c++, python在面向对象的语义上更接近于 Modula-3
 python中类的方法需要显示声明所属对象为第一个参数，而这个参数在方法调用时会被自动传入，
-和 Smalltalk 语言类似， classes 本身也是对象， 这位 importing and renaming 提供了语义支持
+和 Smalltalk 语言类似， classes 本身也是对象， 这为 importing and renaming 提供了语义支持
 
 https://docs.python.org/3.6/tutorial/classes.html#a-word-about-names-and-objects
 对象具有独立性，且多个作用域中的多个 名字 可以绑定到同一个对象，
