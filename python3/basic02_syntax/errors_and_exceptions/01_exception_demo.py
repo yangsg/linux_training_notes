@@ -76,7 +76,7 @@ def else_clause_after_except_clause():
         except OSError:
             print('cannot open', arg)
             print('try clause 发生了异常')
-        else:  #// else 只会在 try 成功执行结束(即没抛出任何异常)后得到执行机会, 且语法上必须更在所有 except 子句之后
+        else:  #// else 只会在 try 成功执行结束(即没抛出任何异常)后得到执行机会, 且语法上必须跟在所有 except 子句之后
             print(arg, 'has', len(f.readlines()), 'lines')
             print('else clause 执行了')
             f.close()
