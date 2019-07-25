@@ -45,5 +45,18 @@
 
 
 
+---------------------------------------------------------------------------------------------------
+查看相关目录:
+[root@python3lang ~]# tree -L 1 /app/python3.6/
+/app/python3.6/
+      ├── bin
+      ├── include
+      ├── lib
+      └── share
+
+
+[root@python3lang ~]# tree -L 1 /app/python3.6/lib/python3.6/ | less
+
+
 
 
