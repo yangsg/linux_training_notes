@@ -37,7 +37,7 @@ in the expression modname.funcname, modname is a module object and funcname is a
 In this case there happens to be a straightforward mapping between the module’s
 attributes and the global names defined in the module: they share the same namespace!
 
-module的attributes 与 定义与其中的global names 具有直接的映射关系：它们共享同一名字空间
+module的attributes 与 定义于其中的global names 具有直接的映射关系：它们共享同一名字空间
 
 为模块属性赋值：
 modname.the_answer = 42  #// 赋值不是copy data, they just bind names to objects, The same is true for deletions
