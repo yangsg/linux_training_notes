@@ -53,7 +53,7 @@ for i in reverse('abcdefg'):
 #// 生成器表达式 https://docs.python.org/3.6/tutorial/classes.html#generator-expressions
 #// Generator Expressions
 #// 生成器表达式比起完整的生成器定义 更加紧凑 但功能更单一，比起list comprehensions, 生成器
-#// 表达式更加友好
+#// 表达式对内存更加友好
 #//
 #// 原文：
 #//  Some simple generators can be coded succinctly as expressions using a syntax
