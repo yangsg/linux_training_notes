@@ -55,7 +55,7 @@ Dog.kind = '111111111111111'
 print(d.kind)         # shared by all dogs  #// '111111111111111'
 print(e.kind)         # shared by all dogs  #// '111111111111111'
 d.kind = 'aaaaaaaaaaa'
-print(d.kind)         #                     #// 'aaaaaaaaaaa'  <<<<<<<<<
+print(d.kind)         #                     #// 'aaaaaaaaaaa'  <<<<<<<<< # 这种效果有点点像 javascript 中 prototype 的感觉.(即最先在对象自身上找成员,没找到时则去某个相关联的对象上找)
 print(e.kind)         # shared by all dogs  #// '111111111111111'
 print(d.name)         # unique to d
 print(e.name)         # unique to e
