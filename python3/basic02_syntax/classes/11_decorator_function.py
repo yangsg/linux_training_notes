@@ -1,6 +1,8 @@
 #// https://www.python-course.eu/python3_decorators.php
 
 
+#// demo01：一个简单的 函数的 装饰器 的 例子
+
 def our_decorator(func):
   def function_wrapper(*args, **kwargs):
     print('^' * 50)
@@ -30,5 +32,26 @@ f1('hello world')
 hello world
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 '''
+
+
+#// demo02：一个 带参数的 装饰器 的 例子
+#// 来自 https://www.python-course.eu/python3_decorators.php
+def greeting(expr):
+    def greeting_decorator(func):
+        def function_wrapper(x):
+            print(expr + ", " + func.__name__ + " returns:")
+            func(x)
+        return function_wrapper
+    return greeting_decorator
+
+#// 类似 foo = (greeting("καλημερα"))(foo)
+@greeting("καλημερα")
+def foo(x):
+    print(42)
+
+foo("Hi")
+
+
+
 
 
