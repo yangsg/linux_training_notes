@@ -1,4 +1,12 @@
 
+
+Python 3 Tutorial
+    https://www.python-course.eu/python3_course.php
+    https://www.python-course.eu/python3_decorators.php
+    https://www.python-course.eu/python3_properties.php
+
+
+
 windows 上安装 python 后有自带的 chm 格式的 python documentation
 
 // 在线资料
