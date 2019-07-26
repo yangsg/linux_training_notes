@@ -53,5 +53,28 @@ foo("Hi")
 
 
 
+#// demo03: 一个纯粹的装饰器 (好比 ‘偷换之后还清除了作案痕迹’)
+from functools import wraps
+
+def greeting(func):
+    @wraps(func)
+    def function_wrapper(x):
+        """ function_wrapper of greeting """
+        print("Hi, " + func.__name__ + " returns:")
+        return func(x)
+    return function_wrapper
+
+
+@greeting
+def f02(x):
+    """ just some silly function """
+    return x + 4
+
+f02(1)
+print("function name: " + f02.__name__)
+print("docstring: " + f02.__doc__)
+print("module name: " + f02.__module__)
+
+
 
 
