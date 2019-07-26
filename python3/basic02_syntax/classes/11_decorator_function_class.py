@@ -76,5 +76,26 @@ print("docstring: " + f02.__doc__)
 print("module name: " + f02.__module__)
 
 
+#// demo04: 将 类 用作 装饰器
+#// Using a Class as a Decorator
+#// https://www.python-course.eu/python3_decorators.php
+
+class decorator2:
+
+    def __init__(self, f):
+        self.f = f
+
+    #// 方法 __call__ 用户将 实例对象 转换(turn into) 为 可调用的(callables)
+    #// 在 python 中, 可调用的对象 除了是 function 对象, 还可以是 其他对象.
+    def __call__(self):
+        print("Decorating", self.f.__name__)
+        self.f()
+
+@decorator2
+def foo():
+    print("inside foo()")
+
+foo()
+
 
 
