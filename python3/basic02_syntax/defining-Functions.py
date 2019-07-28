@@ -187,4 +187,29 @@ print(type(f))  # <class 'function'>
 
 
 
+#// ---------------------------------------------------------------------------------------------------
+#// 从 python3.5 开始(New in version 3.5), 可以在定义函数时 指定类型信息, 见
+#//  https://docs.python.org/3/library/typing.html
+
+def greeting(name: str) -> str:
+    return 'Hello ' + name
+
+print(greeting('Tom'))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
