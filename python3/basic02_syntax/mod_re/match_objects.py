@@ -12,6 +12,8 @@ print(m.group(0))  # 输出: ٣٤٥۳,  所以如果没有指定 ASCII flag, \d 
                    # https://docs.python.org/3.6/library/re.html
                    # https://docs.python.org/3.6/howto/regex.html
 
+# 字符串的 字面量 表示方式见:
+# https://docs.python.org/3.6/reference/lexical_analysis.html#literals
 
 
 
