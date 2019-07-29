@@ -77,8 +77,19 @@ python\.exe
 '''
 
 
+m = re.search(r'^(?P<first>A'
+              r'(?P<second>B)'
+              r'(?P<three>C))$', 'ABC')
+if m:
+    print(m.group())
+    print(m.groups())
+    print(m.groupdict())
 
-
+''' 结果输出:
+ABC
+('ABC', 'B', 'C')
+{'first': 'ABC', 'second': 'B', 'three': 'C'}
+'''
 
 
 
