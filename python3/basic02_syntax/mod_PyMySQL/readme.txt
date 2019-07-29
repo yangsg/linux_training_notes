@@ -1,8 +1,19 @@
 
+Requirements
+    Python – one of the following:
+        CPython : 2.7 and >= 3.4
+        PyPy : Latest version
+    MySQL Server – one of the following:
+        MySQL >= 5.5
+        MariaDB >= 5.5
+
 
 
 https://pypi.org/project/PyMySQL/
 https://github.com/PyMySQL/PyMySQL/
+https://pymysql.readthedocs.io/en/latest/modules/connections.html
+https://pymysql.readthedocs.io/en/latest/modules/cursors.html
+
 
 https://stackoverflow.com/questions/7929364/python-best-practice-and-securest-to-connect-to-mysql-and-execute-queries
 https://stackoverflow.com/questions/2548493/how-do-i-get-the-id-after-insert-into-mysql-database-with-python
