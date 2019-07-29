@@ -6,6 +6,7 @@ https://github.com/PyMySQL/PyMySQL/
 
 https://stackoverflow.com/questions/7929364/python-best-practice-and-securest-to-connect-to-mysql-and-execute-queries
 https://stackoverflow.com/questions/2548493/how-do-i-get-the-id-after-insert-into-mysql-database-with-python
+https://stackoverflow.com/questions/77552/id-is-a-bad-variable-name-in-python
 
 
 
