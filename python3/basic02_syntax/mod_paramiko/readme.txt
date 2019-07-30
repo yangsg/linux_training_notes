@@ -14,10 +14,10 @@ https://stackoverflow.com/questions/3562403/how-can-you-get-the-ssh-return-code-
                 client.connect('blahblah.com')
 
                 stdin, stdout, stderr = client.exec_command("uptime")
-                print stdout.channel.recv_exit_status()    # status is 0
+                print(stdout.channel.recv_exit_status())    # status is 0
 
                 stdin, stdout, stderr = client.exec_command("oauwhduawhd")
-                print stdout.channel.recv_exit_status()    # status is 127
+                print(stdout.channel.recv_exit_status())    # status is 127
 ---------------------------------------------------------------------------------------------------
 
 https://github.com/PacktPublishing/Python-Network-Programming-Cookbook-Second-Edition/blob/master/Chapter06/6_3_print_remote_cpu_info.py
@@ -45,6 +45,18 @@ https://www.cnblogs.com/zhangxinqi/p/8372774.html
       Location: /root/tutorial-venv/lib/python3.6/site-packages
       Requires: pynacl, bcrypt, cryptography
       Required-by:
+
+
+// 配置免密登录
+// 参见笔记:  https://github.com/yangsg/linux_training_notes/tree/master/openssh_server_basic
+[root@python3lang ~]# ssh-keygen    # 如果还不存在 ssh 使用的 RSA 非对称秘钥对, 则使用 该命令生成之
+[root@python3lang ~]# tree .ssh
+      .ssh
+      ├── id_rsa
+      └── id_rsa.pub
+
+[root@python3lang ~]# ssh-copy-id root@192.168.175.100
+
 
 
 
