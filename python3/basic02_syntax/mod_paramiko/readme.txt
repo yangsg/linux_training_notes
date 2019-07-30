@@ -23,6 +23,8 @@ https://stackoverflow.com/questions/3562403/how-can-you-get-the-ssh-return-code-
 https://github.com/PacktPublishing/Python-Network-Programming-Cookbook-Second-Edition/blob/master/Chapter06/6_3_print_remote_cpu_info.py
 https://www.programcreek.com/python/example/4561/paramiko.SSHClient
 https://www.cnblogs.com/zhangxinqi/p/8372774.html
+https://www.cnblogs.com/python-nameless/p/6855804.html
+
 
 
 
