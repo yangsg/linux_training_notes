@@ -70,8 +70,44 @@ Windows上XShell客户端:
 
 
 
+---------------------------------------------------------------------------------------------------
+网上资料:
+
+Where is the SSH Server Fingerprint generated/stored?
+    https://askubuntu.com/questions/76337/where-is-the-ssh-server-fingerprint-generated-stored
+
+Calculate RSA key fingerprint
+    https://stackoverflow.com/questions/9607295/calculate-rsa-key-fingerprint
+
+SSH key-type, rsa, dsa, ecdsa, are there easy answers for which to choose when?
+    https://security.stackexchange.com/questions/23383/ssh-key-type-rsa-dsa-ecdsa-are-there-easy-answers-for-which-to-choose-when
+
+rsa dsa ecdsa 哪个好
+    https://developer.aliyun.com/ask/126574?spm=a2c6h.13159736
 
 
+[root@python3lang ~]# grep -Ei 'HostKey' /etc/ssh/sshd_config
+      HostKey /etc/ssh/ssh_host_rsa_key  <----- 这些 key files 都是在安装 openssh-server package 时自动生成的
+      #HostKey /etc/ssh/ssh_host_dsa_key
+      HostKey /etc/ssh/ssh_host_ecdsa_key
+      HostKey /etc/ssh/ssh_host_ed25519_key
+
+// 利用 public key 查看 指纹(fingerprint), # 注: master 的 ip: 192.168.175.100
+// -l      Show fingerprint of specified public key file.
+[root@master ~]# ssh-keygen -l -f /etc/ssh/ssh_host_ecdsa_key.pub
+    256 SHA256:0wZaw1B2PpNE444Oszvpuk8H23eSIi/S4dotH1Ns5yw no comment (ECDSA)   <---------
+
+// -E fingerprint_hash #指定显示 key fingerprints时的hash算法. 合法的选项值为 “md5” 和 “sha256”.  默认为 “sha256”.
+[root@master ~]# ssh-keygen -E md5 -lf /etc/ssh/ssh_host_ecdsa_key.pub
+      256 MD5:04:0d:cf:28:f8:41:17:2e:b3:03:cc:68:4c:26:2c:3f no comment (ECDSA)  <---
+
+
+// 在主机 python3lang 通过 ssh 连接 master, 观察 master 提供的主机指纹信息
+[root@python3lang ~]# ssh root@192.168.175.100
+    The authenticity of host '192.168.175.100 (192.168.175.100)' can't be established.
+    ECDSA key fingerprint is SHA256:0wZaw1B2PpNE444Oszvpuk8H23eSIi/S4dotH1Ns5yw.   <--------
+    ECDSA key fingerprint is MD5:04:0d:cf:28:f8:41:17:2e:b3:03:cc:68:4c:26:2c:3f.  <---
+    Are you sure you want to continue connecting (yes/no)?
 
 
 
