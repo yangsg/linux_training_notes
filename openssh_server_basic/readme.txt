@@ -42,6 +42,7 @@ Windows上XShell客户端:
 -----------
 // 实现客户端免密登录
 // 针对linux系统
+// 注: ssh-keygen 不带任何参数时, 默认生成 用于 SSH protocol 2 的 2048 bits 的 RSA key
 [root@client ~]# ssh-keygen
 [root@client ~]# ls -l .ssh/id_rsa .ssh/id_rsa.pub
 [root@client ~]# ssh-copy-id root@192.168.175.10    #将公钥copy给远程服务器
