@@ -14,8 +14,8 @@ class User(Base):
         return "<User(name='%s', fullname='%s', nickname='%s')>" % (
             self.name, self.fullname, self.nickname)
 
-def adding_and_updating_objects():
 
+def adding_and_updating_objects():
     session = Session()
     ed_user = User(name='ed', fullname='Ed Jones', nickname='edsnickname')
     session.add(ed_user)
@@ -36,7 +36,7 @@ def adding_and_updating_objects():
     '''
     print(ed_user is our_user)  # 输出 True, 证明 变量 ed_user 和 our_user 引用同一对象
 
-    # 一次性 添加 过个对象
+    # 一次性 添加 多个对象
     session.add_all([
         User(name='wendy', fullname='Wendy Williams', nickname='windy'),
         User(name='mary', fullname='Mary Contrary', nickname='mary'),
@@ -65,6 +65,22 @@ def adding_and_updating_objects():
     '''
 
     print(ed_user.id)
+    '''
+       After the Session inserts new rows in the database,
+       all newly generated identifiers and database-generated defaults become
+       available on the instance, either immediately or via load-on-first-access.
+       In this case, the entire row was re-loaded on access because
+       a new transaction was begun after we issued commit().
+       SQLAlchemy by default refreshes data from a previous
+       transaction the first time it’s accessed within a new transaction,
+       so that the most recent state is available.
+       The level of reloading is configurable as is described in Using the Session.
+    '''
+
+    '''
+    Quickie Intro to Object States
+        https://docs.sqlalchemy.org/en/13/orm/session_state_management.html#session-object-states
+    '''
 
     ''' 观察 sqlalchemy 在背后 生成 和 执行的语句, 可以观察到, 在 执行 session.commit() 后, 隐式的 开启了 一个新的 事务
     2019-07-31 19:41:47,904 INFO sqlalchemy.engine.base.Engine UPDATE user SET nickname=%(nickname)s WHERE user.id = %(user_id)s
