@@ -31,6 +31,9 @@ Glossary
     https://docs.sqlalchemy.org/en/13/glossary.html#term-dbapi
 
 
+关于 session (重要)
+    https://docs.sqlalchemy.org/en/13/orm/session_basics.html#session-frequently-asked-questions
+
 ---------------------------------------------------------------------------------------------------
 
 版本支持信息:
@@ -63,6 +66,21 @@ Glossary
 (tutorial-venv) [root@python3lang ~]# python -c 'import sqlalchemy; print(sqlalchemy.__version__)'
       1.3.6
 
+// 安装 PyMySQL (注: SQLAlchemy 本身是一个 ORM 框架, 其需要特定的database driver, 这好比 java中的 Hibernate 或 MyBatis 需要 jdbc driver 一样)
+(tutorial-venv) [root@python3lang ~]# pip install PyMySQL
+(tutorial-venv) [root@python3lang ~]# pip show PyMySQL
+      Name: PyMySQL
+      Version: 0.9.3
+      Summary: Pure Python MySQL Driver
+      Home-page: https://github.com/PyMySQL/PyMySQL/
+      Author: yutaka.matsubara
+      Author-email: yutaka.matsubara@gmail.com
+      License: "MIT"
+      Location: /root/tutorial-venv/lib/python3.6/site-packages
+      Requires:
+      Required-by:
+
+
 ---------------------------------------------------------------------------------------------------
 
 安装 一台 mysql 服务器:
@@ -80,11 +98,13 @@ Glossary
 [root@master ~]# ip addr show ens33  | awk '/inet / {print $2}'
       192.168.175.100/24
 
+// 创建 user 并 授权
 mysql> USE mysql
 mysql> CREATE USER IF NOT EXISTS 'root'@'192.168.175.20' IDENTIFIED BY 'WWW.1.com';
 mysql> GRANT ALL ON *.* TO 'root'@'192.168.175.20';
 
-
+// 创建 学习用的 数据库
+mysql> CREATE DATABASE db_test01 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 
 
