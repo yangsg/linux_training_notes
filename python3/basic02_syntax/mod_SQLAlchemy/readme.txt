@@ -65,6 +65,24 @@ Glossary
 
 ---------------------------------------------------------------------------------------------------
 
+安装 一台 mysql 服务器:
+参考如下 等 笔记:
+    https://github.com/yangsg/linux_training_notes/tree/master/mysql_mariadb/mysql_02_basic/replication.dir/006-mha4mysql-semi-sync-gtid-utf8mb4-rpm
+
+
+[root@master ~]# rpm -q mysql-community-server
+    mysql-community-server-5.7.26-1.el7.x86_64
+
+
+相关主机 ip 信息:
+[root@python3lang ~]# ip addr show ens33  | awk '/inet / {print $2}'
+      192.168.175.20/24
+[root@master ~]# ip addr show ens33  | awk '/inet / {print $2}'
+      192.168.175.100/24
+
+mysql> USE mysql
+mysql> CREATE USER IF NOT EXISTS 'root'@'192.168.175.20' IDENTIFIED BY 'WWW.1.com';
+mysql> GRANT ALL ON *.* TO 'root'@'192.168.175.20';
 
 
 
