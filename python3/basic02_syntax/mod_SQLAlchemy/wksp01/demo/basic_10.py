@@ -803,7 +803,7 @@ def counting():
 
 
 if __name__ == '__main__':
-    # is_reinitialize_db_needed = True
+    #is_reinitialize_db_needed = True
     is_reinitialize_db_needed = False
     if is_reinitialize_db_needed:
         drop_table('user')
@@ -812,7 +812,7 @@ if __name__ == '__main__':
 
         adding_and_updating_objects()
 
-        rolling_back()
+        #rolling_back()
 
     # query---------------------------------------------------------------------------------------------------
     querying()
