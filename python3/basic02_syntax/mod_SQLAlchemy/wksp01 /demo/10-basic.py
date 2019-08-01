@@ -448,6 +448,214 @@ def querying():
     session.close()
 
 
+'''
+ https://docs.sqlalchemy.org/en/13/orm/tutorial.html#returning-lists-and-scalars
+    A number of methods on Query immediately issue SQL and return a value
+    containing loaded database results. Here’s a brief tour:
+'''
+
+
+def returning_lists_and_scalars():
+    session = Session()
+    print_header()
+    '''
+        https://docs.sqlalchemy.org/en/13/orm/query.html#sqlalchemy.orm.query.Query.all
+
+    1) all() returns a list:
+
+        SELECT users.id AS users_id,
+            users.name AS users_name,
+            users.fullname AS users_fullname,
+            users.nickname AS users_nickname
+        FROM users
+        WHERE users.name LIKE ? ORDER BY users.id
+        ('%ed',)
+
+    '''
+    query = session.query(User).filter(User.name.like('%ed')).order_by(User.id)
+    print(query.all())
+    '''
+        [<User(name='ed', fullname='Ed Jones', nickname='eddie')>,
+          <User(name='fred', fullname='Fred Flintstone', nickname='freddy')>]
+    '''
+
+    print_header()
+    '''
+        https://docs.sqlalchemy.org/en/13/orm/query.html#sqlalchemy.orm.query.Query.first
+
+    2) first() applies a limit of one and returns the first result as a scalar:
+
+        SELECT users.id AS users_id,
+                users.name AS users_name,
+                users.fullname AS users_fullname,
+                users.nickname AS users_nickname
+        FROM users
+        WHERE users.name LIKE ? ORDER BY users.id
+         LIMIT ? OFFSET ?
+        ('%ed', 1, 0)
+
+    '''
+    print(query.first())
+    '''
+    <User(name='ed', fullname='Ed Jones', nickname='eddie')>
+    '''
+
+    print_header()
+    '''
+        https://docs.sqlalchemy.org/en/13/orm/query.html#sqlalchemy.orm.query.Query.one
+
+    one() 的 使用场景:
+       The one() method is great for systems that expect to handle
+       “no items found” versus “multiple items found” differently;
+       such as a RESTful web service, which may want to raise
+       a “404 not found” when no results are found,
+       but raise an application error when multiple results are found.
+
+    3) one() fully fetches all rows, and if not exactly one object identity
+       or composite row is present in the result, raises an error.
+       With multiple rows found:
+    '''
+    # user = query.one()  # one() 在 检索到 多行 时 会 raise error "MultipleResultsFound"
+    '''
+        Traceback (most recent call last):
+        ...
+        MultipleResultsFound: Multiple rows were found for one()
+    '''
+
+    '''
+      With no rows found ,
+        则 raise error： NoResultFound
+    '''
+    # user = query.filter(User.id == 99).one()  #  one() 在没有检索到时 会 raise error "NoResultFound"
+
+    '''
+
+    one()
+
+        SELECT user.id AS user_id,
+               user.name AS user_name,
+               user.fullname AS user_fullname,
+               user.nickname AS user_nickname
+        FROM user
+        WHERE user.name LIKE %(name_1)s AND
+              user.id = %(id_1)s ORDER BY user.id
+
+        {'name_1': '%ed', 'id_1': 1}
+    '''
+    # user = query.filter(User.id == 1).one()
+    # print(user)
+    '''
+    <User(name='ed', fullname='Ed Jones', nickname='eddie')>
+    '''
+
+    '''
+        https://docs.sqlalchemy.org/en/13/orm/query.html#sqlalchemy.orm.query.Query.one_or_none
+
+    one_or_none() 类似于 one(), 但是其 在 没有 检索到 results 时, 仅返回 None 而非 raise an error;
+
+        one_or_none() is like one(), except that if no results are found,
+        it doesn’t raise an error; it just returns None. Like one(),
+        however, it does raise an error if multiple results are found.
+    '''
+
+    print_header()
+    '''
+    4) scalar() invokes the one() method, and upon success returns the first column of the row:
+
+        https://docs.sqlalchemy.org/en/13/orm/query.html#sqlalchemy.orm.query.Query.scalar
+
+        SELECT user.id AS user_id
+        FROM user
+        WHERE user.name = %(name_1)s ORDER BY user.id
+
+        {'name_1': 'ed'}
+    '''
+    query = session.query(User.id).filter(User.name == 'ed').order_by(User.id)
+    print(query.scalar())
+    '''
+        1
+    '''
+
+    session.close()
+
+
+'''
+using_textual_sql
+
+    Literal strings can be used flexibly with Query,
+    by specifying their use with the text() construct,
+    which is accepted by most applicable methods.
+    For example, filter() and order_by():
+'''
+
+
+# https://docs.sqlalchemy.org/en/13/orm/tutorial.html#using-textual-sql
+def using_textual_sql():
+    session = Session()
+
+    print_header()
+    '''
+    SELECT users.id AS users_id,
+        users.name AS users_name,
+        users.fullname AS users_fullname,
+        users.nickname AS users_nickname
+    FROM users
+    WHERE id<224 ORDER BY id
+    ()
+    '''
+    for user in session.query(User).filter(text("id<224")).order_by(text("id")).all():
+        print(user.name)
+        '''
+        ed
+        wendy
+        mary
+        fred
+        '''
+
+    print_header()
+    '''
+    绑定参数, 通过 形如 :name 的方式来 传递参数
+        Bind parameters can be specified with string-based SQL,
+        using a colon. To specify the values, use the params() method:
+
+       SELECT user.id AS user_id,
+           user.name AS user_name,
+           user.fullname AS user_fullname,
+           user.nickname AS user_nickname
+       FROM user
+       WHERE id<%(value)s and name=%(name)s ORDER BY user.id
+
+       {'value': 224, 'name': 'fred'}
+    '''
+    user = session.query(User).filter(text("id<:value and name=:name")).params(value=224, name='fred').order_by(
+        User.id).one()
+    print(user)
+    '''
+    <User(name='fred', fullname='Fred Flintstone', nickname='freddy')>
+    '''
+
+    '''
+    通过 from_statement() 使用 完整的 基于 string 的 (sql)语句
+        To use an entirely string-based statement, a text() construct
+        representing a complete statement can be passed to from_statement().
+        Without additional specifiers, the columns in the string SQL
+        are matched to the model columns based on name, such as below
+        where we use just an asterisk to represent loading all columns:
+    '''
+    print_header()
+
+    '''
+    SELECT * FROM user where name=%(name)s
+    {'name': 'ed'}
+    '''
+    users = session.query(User).from_statement(
+        text("SELECT * FROM user where name=:name")).params(name='ed').all()
+    print(users)
+    '''
+    [<User(name='ed', fullname='Ed Jones', nickname='eddie')>]
+    '''
+
+
 if __name__ == '__main__':
     # is_reinitialize_db_needed = True
     is_reinitialize_db_needed = False
@@ -462,3 +670,5 @@ if __name__ == '__main__':
 
     # query---------------------------------------------------------------------------------------------------
     querying()
+    returning_lists_and_scalars()
+    using_textual_sql()
