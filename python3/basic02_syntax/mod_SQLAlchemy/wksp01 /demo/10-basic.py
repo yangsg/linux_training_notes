@@ -1,6 +1,7 @@
 from collections import Iterable
 
 from sqlalchemy import Column, Integer, String, inspect, text
+from sqlalchemy.orm import aliased
 
 from demo.dbutil import Base, Session, engine
 
@@ -223,6 +224,9 @@ def querying():
 
     print_header()
     '''
+    KeyedTuple class
+    https://docs.sqlalchemy.org/en/13/orm/query.html#sqlalchemy.util.KeyedTuple
+
        The tuples returned by Query are named tuples, supplied by the KeyedTuple class,
        and can be treated much like an ordinary Python object.
        The names are the same as the attribute’s name for an attribute,
@@ -242,6 +246,57 @@ def querying():
         <User(name='wendy', fullname='Wendy Williams', nickname='windy')> wendy
         <User(name='mary', fullname='Mary Contrary', nickname='mary')> mary
         <User(name='fred', fullname='Fred Flintstone', nickname='freddy')> fred
+        '''
+
+    print_header()
+    '''
+    SELECT users.name AS name_label
+    FROM users
+    ()
+    '''
+    for row in session.query(User.name.label('name_label')).all():
+        print(row.name_label)
+        '''
+        ed
+        wendy
+        mary
+        fred
+        '''
+
+    print_header()
+    '''
+    SELECT user.name AS name_label, user.fullname AS fullname_label
+    '''
+    for row in session.query(User.name.label('name_label'), User.fullname.label('fullname_label')).all():
+        print(f'{row.name_label:<20}, {row.fullname_label:>20}')
+        '''
+        ed                  ,             Ed Jones
+        wendy               ,       Wendy Williams
+        mary                ,        Mary Contrary
+        fred                ,      Fred Flintstone
+        '''
+
+    print_header()
+    '''
+    aliased()
+
+        https://docs.sqlalchemy.org/en/13/orm/query.html#sqlalchemy.orm.aliased
+
+    SELECT user_alias.id AS user_alias_id,
+        user_alias.name AS user_alias_name,
+        user_alias.fullname AS user_alias_fullname,
+        user_alias.nickname AS user_alias_nickname
+    FROM users AS user_alias
+    ()
+    '''
+    user_alias = aliased(User, name='user_alias')
+    for row in session.query(user_alias, user_alias.name).all():
+        print(row.user_alias)
+        '''
+        <User(name='ed', fullname='Ed Jones', nickname='eddie')>
+        <User(name='wendy', fullname='Wendy Williams', nickname='windy')>
+        <User(name='mary', fullname='Mary Contrary', nickname='mary')>
+        <User(name='fred', fullname='Fred Flintstone', nickname='freddy')>
         '''
 
     session.close()
