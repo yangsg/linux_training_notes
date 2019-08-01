@@ -98,7 +98,7 @@ def adding_and_updating_objects():
     2019-07-31 19:41:48,012 INFO sqlalchemy.engine.base.Engine {'name': 'fred', 'fullname': 'Fred Flintstone', 'nickname': 'freddy'}
     2019-07-31 19:41:48,013 INFO sqlalchemy.engine.base.Engine COMMIT
     2019-07-31 19:41:48,016 INFO sqlalchemy.engine.base.Engine BEGIN (implicit)  <---- 观察
-    2019-07-31 19:41:48,016 INFO sqlalchemy.engine.base.Engine SELECT user.id AS user_id, user.name AS user_name, user.fullname AS user_fullname, user.nickname AS user_nickname 
+    2019-07-31 19:41:48,016 INFO sqlalchemy.engine.base.Engine SELECT user.id AS user_id, user.name AS user_name, user.fullname AS user_fullname, user.nickname AS user_nickname
     FROM user
     WHERE user.id = %(param_1)s
     2019-07-31 19:41:48,016 INFO sqlalchemy.engine.base.Engine {'param_1': 9}
@@ -298,6 +298,152 @@ def querying():
         <User(name='mary', fullname='Mary Contrary', nickname='mary')>
         <User(name='fred', fullname='Fred Flintstone', nickname='freddy')>
         '''
+
+    print_header()
+    '''
+    LIMIT 和 OFFSET
+
+        Basic operations with Query include issuing LIMIT and OFFSET,
+        most conveniently using Python array slices and typically in conjunction with ORDER BY:
+
+        SELECT users.id AS users_id,
+               users.name AS users_name,
+               users.fullname AS users_fullname,
+               users.nickname AS users_nickname
+        FROM users ORDER BY users.id
+        LIMIT ? OFFSET ?
+        (2, 1)
+        此处计算方式:
+             2 = 3 - 1
+             1 = 1
+    '''
+    for u in session.query(User).order_by(User.id)[1:3]:
+        print(u, u.id)
+        '''
+        <User(name='wendy', fullname='Wendy Williams', nickname='windy')>
+        <User(name='mary', fullname='Mary Contrary', nickname='mary')>
+        '''
+
+    print_header()
+    '''
+    filter_by keyword arguments
+
+        and filtering results, which is accomplished either with filter_by(),
+        which uses keyword arguments:
+
+    SELECT users.name AS users_name FROM users
+    WHERE users.fullname = ?
+    ('Ed Jones',)
+    '''
+    for name, in session.query(User.name).filter_by(fullname='Ed Jones'):
+        print(name)
+        '''
+        ed
+        '''
+
+    print_header()
+    '''
+    filter()
+
+        …or filter(), which uses more flexible SQL expression language constructs.
+        These allow you to use regular Python operators with the class-level attributes on your mapped class:
+
+    SELECT users.name AS users_name FROM users
+    WHERE users.fullname = ?
+    ('Ed Jones',)
+    '''
+    for name, in session.query(User.name).filter(User.fullname == 'Ed Jones'):
+        print(name)
+        '''
+        ed
+        '''
+
+    print_header()
+    '''
+    The Query object is fully generative, meaning that most method
+    calls return a new Query object upon which further criteria may be added.
+    For example, to query for users named “ed” with a full name of “Ed Jones”,
+    you can call filter() twice, which joins criteria using AND:
+
+       SELECT users.id AS users_id,
+            users.name AS users_name,
+            users.fullname AS users_fullname,
+            users.nickname AS users_nickname
+        FROM users
+        WHERE users.name = ? AND users.fullname = ?
+        ('ed', 'Ed Jones')
+    '''
+    for user in session.query(User).filter(User.name == 'ed').filter(User.fullname == 'Ed Jones'):
+        print(user)
+        '''
+        <User(name='ed', fullname='Ed Jones', nickname='eddie')>
+        '''
+
+    '''
+    Common Filter Operators
+
+        https://docs.sqlalchemy.org/en/13/orm/tutorial.html#common-filter-operators
+
+    Here’s a rundown of some of the most common operators used in filter():
+
+    1) equals:
+        query.filter(User.name == 'ed')
+    2) not equals:
+        query.filter(User.name != 'ed')
+    3) LIKE:
+        query.filter(User.name.like('%ed%'))
+    4) ILIKE (case-insensitive LIKE):
+        query.filter(User.name.ilike('%ed%'))
+
+         注: 大多数后端 数据库 都不直接支持 ILIKE, 针对这些数据库,
+             the ColumnOperators.ilike() operator 会 结合 LIKE 与 sql 函数 LOWER
+             来实现该效果
+    5) IN:
+        query.filter(User.name.in_(['ed', 'wendy', 'jack']))
+
+        # works with query objects too:
+        query.filter(User.name.in_(
+            session.query(User.name).filter(User.name.like('%ed%'))
+        ))
+
+    6) NOT IN:
+        query.filter(~User.name.in_(['ed', 'wendy', 'jack']))
+
+    7) IS NULL:
+        query.filter(User.name == None)
+
+        # alternatively, if pep8/linters are a concern
+        query.filter(User.name.is_(None))
+    8) IS NOT NULL:
+        query.filter(User.name != None)
+
+        # alternatively, if pep8/linters are a concern
+        query.filter(User.name.isnot(None))
+
+    9) AND:
+              注: Make sure you use and_() and not the Python and operator!
+        # use and_()
+        from sqlalchemy import and_
+        query.filter(and_(User.name == 'ed', User.fullname == 'Ed Jones'))
+
+        # or send multiple expressions to .filter()
+        query.filter(User.name == 'ed', User.fullname == 'Ed Jones')
+
+        # or chain multiple filter()/filter_by() calls
+        query.filter(User.name == 'ed').filter(User.fullname == 'Ed Jones')
+
+    10) OR:
+               注: Make sure you use or_() and not the Python or operator!
+        from sqlalchemy import or_
+        query.filter(or_(User.name == 'ed', User.name == 'wendy'))
+
+    11) MATCH:
+        query.filter(User.name.match('wendy'))
+
+        注: match() uses a database-specific MATCH or CONTAINS function;
+           its behavior will vary by backend and is not available on some backends such as SQLite.
+
+    '''
 
     session.close()
 
