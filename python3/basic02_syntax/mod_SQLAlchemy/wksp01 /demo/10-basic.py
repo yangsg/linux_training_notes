@@ -1,6 +1,4 @@
-from collections import Iterable
-
-from sqlalchemy import Column, Integer, String, inspect, text
+from sqlalchemy import Column, Integer, String, inspect, text, func
 from sqlalchemy.orm import aliased
 
 from demo.dbutil import Base, Session, engine
@@ -655,6 +653,154 @@ def using_textual_sql():
     [<User(name='ed', fullname='Ed Jones', nickname='eddie')>]
     '''
 
+    print_header()
+    '''
+    TextClause.columns()
+
+    更多示例见:
+        https://docs.sqlalchemy.org/en/13/core/sqlelement.html#sqlalchemy.sql.expression.TextClause.columns
+        https://docs.sqlalchemy.org/en/13/core/tutorial.html#sqlexpression-text
+
+
+        Matching columns on name works for simple cases but can become unwieldy
+        when dealing with complex statements that contain duplicate column names
+        or when using anonymized ORM constructs that don’t easily match to
+        specific names. Additionally, there is typing behavior present
+        in our mapped columns that we might find necessary when
+        handling result rows. For these cases, the text() construct
+        allows us to link its textual SQL to Core or ORM-mapped column
+        expressions positionally; we can achieve this by passing column
+        expressions as positional arguments to the TextClause.columns() method:
+
+
+        SELECT name, id, fullname, nickname FROM user where name=%(name)s
+        {'name': 'ed'}
+    '''
+    stmt = text("SELECT name, id, fullname, nickname FROM user where name=:name")
+    stmt = stmt.columns(User.name, User.id, User.fullname, User.nickname)
+    users = session.query(User).from_statement(stmt).params(name='ed').all()
+    print(users)
+    '''
+    [ < User(name='ed', fullname='Ed Jones', nickname='eddie') >]
+    '''
+
+    print_header()
+
+    '''
+    指明 返回 特定的 columns
+        When selecting from a text() construct,
+        the Query may still specify what columns and entities are to be returned;
+        instead of query(User) we can also ask for the columns individually, as in any other case:
+
+        SELECT name, id FROM user where name=%(name)s
+
+        {'name': 'ed'}
+    '''
+    stmt = text("SELECT name, id FROM user where name=:name")
+    stmt = stmt.columns(User.name, User.id)
+    data = session.query(User.id, User.name).from_statement(stmt).params(name='ed').all()
+    print(data)
+    '''
+        [(1, 'ed')
+    '''
+
+    session.close()
+
+
+# https://docs.sqlalchemy.org/en/13/orm/tutorial.html#counting
+#   Query includes a convenience method for counting called count():
+def counting():
+    session = Session()
+
+    print_header()
+    '''
+     注: 就向如下 生成的语句那样, 使用 Query 的 count() 方法时 SQLAlchemy 总是
+         会 将 我们 查询的 数据  置于 一个 子查询(a subquery) 中. 然后
+         再 根据 数据的 行数 来得到 我们想要的 count. 所以如果想要使用更
+         简单的 形如 SELECT count(*) FROM table 的 查询语句, 则需要明确
+         的指定 这种 简单的方式, 而不是使用 SQLAlchemy 的 count() 方法.
+
+        SELECT count(*) AS count_1
+        FROM (SELECT user.id AS user_id,
+                     user.name AS user_name,
+                     user.fullname AS user_fullname,
+                     user.nickname AS user_nickname
+              FROM user
+              WHERE user.name LIKE %(name_1)s) AS anon_1
+
+        {'name_1': '%ed'}
+
+    如下这段话 解释了 Query 的 count函数 粗暴的使用 子查询 计算 count 的 原因:
+        Counting on count()
+            Query.count() used to be a very complicated method
+            when it would try to guess whether or not a subquery
+            was needed around the existing query,
+            and in some exotic cases it wouldn’t do the right thing.
+            Now that it uses a simple subquery every time,
+            it’s only two lines long and always returns the right answer.
+            Use func.count() if a particular statement
+            absolutely cannot tolerate the subquery being present.
+    '''
+    count = session.query(User).filter(User.name.like('%ed')).count()
+    print(count)
+    '''
+    2
+    '''
+
+    print_header()
+    '''
+    使用更加灵活的 func.count()
+
+        For situations where the “thing to be counted” needs to be
+        indicated specifically, we can specify the “count” function directly
+        using the expression func.count(), available from the func construct.
+        Below we use it to return the count of each distinct user name:
+
+    '''
+
+    print_header()
+    '''
+    SELECT count(user.name) AS count_1, user.name AS user_name
+    FROM user GROUP BY user.name
+    '''
+    data = session.query(func.count(User.name), User.name).group_by(User.name).all()
+    print(data)
+    '''
+    [(1, 'ed'), (1, 'fred'), (1, 'mary'), (1, 'wendy')]
+    '''
+
+
+    print_header()
+    '''
+    使用 我们 最 简单的  SELECT count(*) FROM table 方式:
+
+        To achieve our simple SELECT count(*) FROM table, we can apply it as:
+
+        SELECT count(%(count_2)s) AS count_1 FROM user
+    '''
+    count = session.query(func.count('*')).select_from(User).scalar()
+    print(count)
+    '''
+    4
+    '''
+
+    print_header()
+    '''
+    如果 直接根据 User 的 主键(primary key) 来计算 count, 则还可以去掉 select_from() 的调用.
+
+        The usage of select_from() can be removed if
+        we express the count in terms of the User primary key directly:
+
+        SELECT count(user.id) AS count_1 FROM user
+    '''
+    count = session.query(func.count(User.id)).scalar()
+    print(count)
+    '''
+    4
+    '''
+
+    session.close()
+
 
 if __name__ == '__main__':
     # is_reinitialize_db_needed = True
@@ -672,3 +818,4 @@ if __name__ == '__main__':
     querying()
     returning_lists_and_scalars()
     using_textual_sql()
+    counting()
