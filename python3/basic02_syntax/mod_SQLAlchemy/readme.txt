@@ -9,6 +9,10 @@ https://docs.sqlalchemy.org/en/13/intro.html#installation
 https://stackoverflow.com/questions/tagged/sqlalchemy
 
 
+Table of Contents
+    https://docs.sqlalchemy.org/en/13/contents.html
+
+
 SQLAlchemy ORM
     https://docs.sqlalchemy.org/en/13/orm/index.html
 
