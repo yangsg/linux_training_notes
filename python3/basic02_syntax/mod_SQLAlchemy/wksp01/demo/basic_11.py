@@ -698,6 +698,46 @@ def eager_loading():
     session.close()
 
 
+# https://docs.sqlalchemy.org/en/13/orm/tutorial.html#deleting
+def deleting():
+    session = Session()
+
+    print_header()
+    '''
+    非级联删除的 例子
+
+       此时 删除的 相关语句:
+       第一步: 先将 从表中的 对应的 外键字段 设置为 NULL
+        UPDATE address SET user_id=%(user_id)s WHERE address.id = %(address_id)s
+        ({'user_id': None, 'address_id': 1}, {'user_id': None, 'address_id': 2})
+
+        第二步: 删除 主表 中的 对应行
+        DELETE FROM user WHERE user.id = %(id)s
+        {'id': 5}
+    '''
+    jack = session.query(User).filter_by(name='jack').one()
+    session.delete(jack)
+    count = session.query(User).filter_by(name='jack').count()
+    print(count)
+    '''
+    0
+    '''
+
+    count = session.query(Address).filter(
+        Address.email_address.in_(['jack@google.com', 'j25@yahoo.com'])
+    ).count()
+    print(count)
+    '''
+    2
+    '''
+
+    '''
+    可以看到, 删除时, SQLAlchemy 不会做任何 级联删除的 假设, 先给出一个 非 级联删除的例子, 如果需要级联删除效果,则需要显示告诉它.
+    '''
+    # session.commit()  # 这里仅演示, 所以没有 执行 commit
+    session.close()
+
+
 if __name__ == '__main__':
     # is_reinitialize_db_needed = True
     is_reinitialize_db_needed = False
@@ -713,3 +753,5 @@ if __name__ == '__main__':
     selecting_entities_from_subqueries()
     using_exists()
     eager_loading()
+
+    deleting()
