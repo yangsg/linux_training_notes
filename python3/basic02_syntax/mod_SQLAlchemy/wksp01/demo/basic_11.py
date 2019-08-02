@@ -128,7 +128,7 @@ def working_with_related_objects():
         is now loaded and behaves just like an ordinary list.
         We’ll cover ways to optimize the loading of this collection in a bit.
     '''
-    print(jack.addresses)
+    print(jack.addresses)   # 此处 应用 延迟加载(lazy loading), 此时才会发送 sql 语句.
 
     session.close()
 
