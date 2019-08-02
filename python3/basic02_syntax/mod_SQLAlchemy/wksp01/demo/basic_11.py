@@ -233,6 +233,8 @@ def querying_with_joins():
     https://docs.sqlalchemy.org/en/13/orm/query.html#sqlalchemy.orm.query.Query.join
     '''
 
+
+    print_header()
     '''
     What does Query select from if there’s multiple entities?
 
@@ -242,6 +244,24 @@ def querying_with_joins():
         the first entity in the list of JOINs, use the Query.select_from() method:
 
         query = session.query(User, Address).select_from(Address).join(User)
+
+       SELECT user.id AS user_id,
+              user.name AS user_name,
+              user.fullname AS user_fullname,
+              user.nickname AS user_nickname,
+              address.id AS address_id,
+              address.email_address AS address_email_address,
+              address.user_id AS address_user_id
+        FROM address INNER JOIN user
+            ON user.id = address.user_id
+
+           {}
+    '''
+    data = session.query(User, Address).select_from(Address).join(User).all()
+    print(data)
+    '''
+    [(<User(name='jack', fullname='Jack Bean', nickname='gjffdd')>, <Address(email_address='jack@google.com')>),
+    (<User(name='jack', fullname='Jack Bean', nickname='gjffdd')>, <Address(email_address='j25@yahoo.com')>)]
     '''
 
     session.close()
