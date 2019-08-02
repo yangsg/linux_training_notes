@@ -2,7 +2,7 @@ from sqlalchemy import Table, Column, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from demo.basic_12_delete_cascade import User
-from demo.dbutil import Base, engine
+from demo.dbutil import Base, engine, Session, print_header
 
 # https://docs.sqlalchemy.org/en/13/orm/tutorial.html#building-a-many-to-many-relationship
 
@@ -115,9 +115,134 @@ User.posts = relationship(BlogPost, back_populates="author", lazy="dynamic")
 
 # https://docs.sqlalchemy.org/en/13/orm/tutorial.html#building-a-many-to-many-relationship
 def building_a_many_to_many_relationship():
-    pass
+    session = Session()
+
+    # Usage is not too different from what we’ve been doing. Let’s give Wendy some blog posts:
+    wendy = session.query(User).filter_by(name='wendy').one()
+    post = BlogPost("Wendy's Blog Post", "This is a test", wendy)
+    session.add(post)
+
+    '''
+    We’re storing keywords uniquely in the database, but we know that we
+    don’t have any yet, so we can just create them:
+    '''
+
+    post.keywords.append(Keyword('wendy'))
+    post.keywords.append(Keyword('firstpost'))
+
+    print_header()
+    '''
+    We can now look up all blog posts with the keyword ‘firstpost’.
+    We’ll use the any operator to locate “blog posts where
+    any of its keywords has the keyword string ‘firstpost’”:
+    '''
+    '''
+    相关语句:
+    INSERT INTO keyword (keyword) VALUES (%(keyword)s)
+    {'keyword': 'wendy'}
+
+    INSERT INTO keyword (keyword) VALUES (%(keyword)s)
+    {'keyword': 'firstpost'}
+
+    INSERT INTO post (user_id, headline, body) VALUES (%(user_id)s, %(headline)s, %(body)s)
+    {'user_id': 2, 'headline': "Wendy's Blog Post", 'body': 'This is a test'}
+
+    INSERT INTO post_keyword_rel (post_id, keyword_id) VALUES (%(post_id)s, %(keyword_id)s)
+    ({'post_id': 1, 'keyword_id': 1}, {'post_id': 1, 'keyword_id': 2})
+
+
+    SELECT
+            post.id       AS post_id      ,
+            post.user_id  AS post_user_id ,
+            post.headline AS post_headline,
+            post.body     AS post_body
+    FROM
+            post
+    WHERE   EXISTS
+            (SELECT
+                    1
+            FROM
+                    post_keyword_rel,
+                    keyword
+            WHERE   post.id             = post_keyword_rel.post_id
+                    AND keyword.id      = post_keyword_rel.keyword_id
+                    AND keyword.keyword = %(keyword_1)s
+            )
+
+    {'keyword_1': 'firstpost'}
+    '''
+    session.query(BlogPost).filter(BlogPost.keywords.any(keyword='firstpost')).all()
+
+    print_header()
+    '''
+    If we want to look up posts owned by the user wendy, we can tell the query to narrow down to that User object as a parent:
+    '''
+    '''
+        SELECT
+                post.id       AS post_id      ,
+                post.user_id  AS post_user_id ,
+                post.headline AS post_headline,
+                post.body     AS post_body
+        FROM
+                post
+        WHERE   %(param_1)s = post.user_id
+                AND
+                (EXISTS
+                        (SELECT
+                                1
+                        FROM
+                                post_keyword_rel,
+                                keyword
+                        WHERE   post.id             = post_keyword_rel.post_id
+                                AND keyword.id      = post_keyword_rel.keyword_id
+                                AND keyword.keyword = %(keyword_1)s
+                        ))
+
+        {'param_1': 2, 'keyword_1': 'firstpost'}
+    '''
+    blogposts = session.query(BlogPost).filter(BlogPost.author == wendy).filter(
+        BlogPost.keywords.any(keyword='firstpost')).all()
+    print(blogposts)
+    '''
+    [BlogPost("Wendy's Blog Post", 'This is a test', <User(name='wendy', fullname='Wendy Williams', nickname='windy')>)]
+    '''
+
+    print_header()
+    '''
+    Or we can use Wendy’s own posts relationship, which is a “dynamic” relationship, to query straight from there:
+
+    SELECT
+            post.id       AS post_id      ,
+            post.user_id  AS post_user_id ,
+            post.headline AS post_headline,
+            post.body     AS post_body
+    FROM
+            post
+    WHERE   %(param_1)s = post.user_id
+            AND
+            (EXISTS
+                    (SELECT
+                            1
+                    FROM
+                            post_keyword_rel,
+                            keyword
+                    WHERE   post.id             = post_keyword_rel.post_id
+                            AND keyword.id      = post_keyword_rel.keyword_id
+                            AND keyword.keyword = %(keyword_1)s
+                    ))
+
+    {'param_1': 2, 'keyword_1': 'firstpost'}
+    '''
+    posts = wendy.posts.filter(BlogPost.keywords.any(keyword='firstpost')).all()
+    print(posts)
+    '''
+    [BlogPost("Wendy's Blog Post", 'This is a test', <User(name='wendy', fullname='Wendy Williams', nickname='windy')>)]
+    '''
+
+    session.close()
 
 
 if __name__ == '__main__':
-    print('*' * 10)
     Base.metadata.create_all(engine)
+
+    building_a_many_to_many_relationship()
