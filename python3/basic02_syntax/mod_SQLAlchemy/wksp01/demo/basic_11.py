@@ -1,5 +1,5 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, ForeignKey, func
+from sqlalchemy.orm import relationship, aliased
 
 from demo.basic_10 import User, print_header
 from demo.dbutil import Base, Session, engine
@@ -233,7 +233,6 @@ def querying_with_joins():
     https://docs.sqlalchemy.org/en/13/orm/query.html#sqlalchemy.orm.query.Query.join
     '''
 
-
     print_header()
     '''
     What does Query select from if there’s multiple entities?
@@ -271,6 +270,82 @@ def querying_with_joins():
 def using_aliases():
     session = Session()
 
+    print_header()
+    '''
+    别名函数 aliased
+
+        在一条sql 语句中 同一 table 被多次引用时 很有用(如自连接查询等)
+
+    SELECT
+            user.name               AS user_name              ,
+            address_1.email_address AS address_1_email_address,
+            address_2.email_address AS address_2_email_address
+    FROM
+            user
+    INNER JOIN address AS address_1 ON user.id = address_1.user_id
+    INNER JOIN address AS address_2 ON user.id = address_2.user_id
+    WHERE   address_1.email_address            = %(email_address_1)s
+            AND address_2.email_address        = %(email_address_2)s
+
+
+        {'email_address_1': 'jack@google.com', 'email_address_2': 'j25@yahoo.com'}
+    '''
+    adalias1 = aliased(Address)
+    adalias2 = aliased(Address)
+    for username, email1, email2 in \
+            session.query(User.name, adalias1.email_address, adalias2.email_address). \
+                    join(adalias1, User.addresses). \
+                    join(adalias2, User.addresses). \
+                    filter(adalias1.email_address == 'jack@google.com'). \
+                    filter(adalias2.email_address == 'j25@yahoo.com'):
+        print(username, email1, email2)
+        '''
+        jack jack@google.com j25@yahoo.com
+        '''
+    session.close()
+
+
+# https://docs.sqlalchemy.org/en/13/orm/tutorial.html#using-subqueries
+def using_subqueries():
+    session = Session()
+
+    '''
+    整个 子查询语句:
+        SELECT
+                user.id              AS user_id      ,
+                user.name            AS user_name    ,
+                user.fullname        AS user_fullname,
+                user.nickname        AS user_nickname,
+                anon_1.address_count AS anon_1_address_count
+        FROM
+                user
+        LEFT OUTER JOIN
+                (SELECT
+                        address.user_id    AS user_id,
+                        count(%(count_1)s) AS address_count
+                FROM
+                        address
+                GROUP BY
+                        address.user_id
+                ) AS anon_1 ON user.id = anon_1.user_id
+        ORDER BY
+                user.id
+
+        {'count_1': '*'}
+    '''
+    stmt = session.query(Address.user_id, func.count('*').label('address_count')
+                         ).group_by(Address.user_id).subquery()
+
+    for u, count in session.query(User, stmt.c.address_count
+                                  ).outerjoin(stmt, User.id == stmt.c.user_id).order_by(User.id):
+        print(u, count)
+        '''
+        <User(name='ed', fullname='Ed Jones', nickname='eddie')> None
+        <User(name='wendy', fullname='Wendy Williams', nickname='windy')> None
+        <User(name='mary', fullname='Mary Contrary', nickname='mary')> None
+        <User(name='fred', fullname='Fred Flintstone', nickname='freddy')> None
+        <User(name='jack', fullname='Jack Bean', nickname='gjffdd')> 2
+        '''
     session.close()
 
 
@@ -284,3 +359,5 @@ if __name__ == '__main__':
 
     querying_with_joins()
     using_aliases()
+
+    using_subqueries()
