@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, func, exists
-from sqlalchemy.orm import relationship, aliased
+from sqlalchemy.orm import relationship, aliased, selectinload
 
 from demo.basic_10 import User, print_header
 from demo.dbutil import Base, Session, engine
@@ -128,7 +128,7 @@ def working_with_related_objects():
         is now loaded and behaves just like an ordinary list.
         We’ll cover ways to optimize the loading of this collection in a bit.
     '''
-    print(jack.addresses)   # 此处 应用 延迟加载(lazy loading), 此时才会发送 sql 语句.
+    print(jack.addresses)  # 此处 应用 延迟加载(lazy loading), 此时才会发送 sql 语句.
 
     session.close()
 
@@ -492,6 +492,7 @@ def using_exists():
 
     session.close()
 
+
 '''
 一些常用 的 关系 运算符:
 
@@ -524,6 +525,62 @@ Common Relationship Operators
         session.query(Address).with_parent(someuser, 'addresses')
 '''
 
+
+# https://docs.sqlalchemy.org/en/13/orm/tutorial.html#eager-loading
+# Query.options()
+# https://docs.sqlalchemy.org/en/13/orm/query.html#sqlalchemy.orm.query.Query.options
+def eager_loading():
+    session = Session()
+
+    print_header()
+    '''
+    Selectin Load
+           https://docs.sqlalchemy.org/en/13/orm/tutorial.html#selectin-load
+
+        In this case we’d like to indicate that User.addresses should load eagerly.
+        A good choice for loading a set of objects as well as their related collections
+        is the orm.selectinload() option, which emits a second SELECT statement
+        that fully loads the collections associated with the results just loaded.
+        The name “selectin” originates from the fact that the SELECT statement
+        uses an IN clause in order to locate related rows for multiple objects at once:
+
+
+        第 1 条语句: 查询 user
+            SELECT
+                    user.id       AS user_id      ,
+                    user.name     AS user_name    ,
+                    user.fullname AS user_fullname,
+                    user.nickname AS user_nickname
+            FROM
+                    user
+            WHERE   user.name = %(name_1)s
+
+        {'name_1': 'jack'}
+
+        第 2 条语句： 查询 关联的 Address
+            SELECT
+                    address.user_id       AS address_user_id,
+                    address.id            AS address_id     ,
+                    address.email_address AS address_email_address
+            FROM
+                    address
+            WHERE   address.user_id IN (%(primary_keys_1)s)
+            ORDER BY
+                    address.user_id,
+                    address.id
+
+        {'primary_keys_1': 5}
+    '''
+    jack = session.query(User).options(selectinload(User.addresses)).filter_by(name='jack').one()
+    print(jack)
+    '''
+    <User(name='jack', fullname='Jack Bean', nickname='gjffdd')>
+    '''
+
+
+    session.close()
+
+
 if __name__ == '__main__':
     # is_reinitialize_db_needed = True
     is_reinitialize_db_needed = False
@@ -538,3 +595,4 @@ if __name__ == '__main__':
     using_subqueries()
     selecting_entities_from_subqueries()
     using_exists()
+    eager_loading()
