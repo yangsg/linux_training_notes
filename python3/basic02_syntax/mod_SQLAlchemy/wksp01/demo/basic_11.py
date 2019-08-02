@@ -349,6 +349,48 @@ def using_subqueries():
     session.close()
 
 
+# https://docs.sqlalchemy.org/en/13/orm/tutorial.html#selecting-entities-from-subqueries
+def selecting_entities_from_subqueries():
+    session = Session()
+
+    print_header()
+    '''
+    整个 sql 语句:
+    SELECT
+            user.id              AS user_id             ,
+            user.name            AS user_name           ,
+            user.fullname        AS user_fullname       ,
+            user.nickname        AS user_nickname       ,
+            anon_1.id            AS anon_1_id           ,
+            anon_1.email_address AS anon_1_email_address,
+            anon_1.user_id       AS anon_1_user_id
+    FROM
+            user
+    INNER JOIN
+            (SELECT
+                    address.id            AS id           ,
+                    address.email_address AS email_address,
+                    address.user_id       AS user_id
+            FROM
+                    address
+            WHERE   address.email_address != %(email_address_1)s
+            ) AS anon_1 ON user.id = anon_1.user_id
+
+    {'email_address_1': 'j25@yahoo.com'}
+    '''
+    stmt = session.query(Address).filter(Address.email_address != 'j25@yahoo.com').subquery()
+    adalias = aliased(Address, stmt)
+    for user, address in session.query(User, adalias).join(adalias, User.addresses):
+        print(user)
+        print(address)
+        '''
+        <User(name='jack', fullname='Jack Bean', nickname='gjffdd')>
+        <Address(email_address='jack@google.com')>
+        '''
+
+    session.close()
+
+
 if __name__ == '__main__':
     # is_reinitialize_db_needed = True
     is_reinitialize_db_needed = False
@@ -361,3 +403,4 @@ if __name__ == '__main__':
     using_aliases()
 
     using_subqueries()
+    selecting_entities_from_subqueries()
