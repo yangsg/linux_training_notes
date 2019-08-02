@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, func, exists
-from sqlalchemy.orm import relationship, aliased, selectinload
+from sqlalchemy.orm import relationship, aliased, selectinload, joinedload, contains_eager
 
 from demo.basic_10 import User, print_header
 from demo.dbutil import Base, Session, engine
@@ -529,6 +529,7 @@ Common Relationship Operators
 # https://docs.sqlalchemy.org/en/13/orm/tutorial.html#eager-loading
 # Query.options()
 # https://docs.sqlalchemy.org/en/13/orm/query.html#sqlalchemy.orm.query.Query.options
+# https://docs.sqlalchemy.org/en/13/orm/loading_relationships.html
 def eager_loading():
     session = Session()
 
@@ -577,6 +578,122 @@ def eager_loading():
     <User(name='jack', fullname='Jack Bean', nickname='gjffdd')>
     '''
 
+    print_header()
+    '''
+    Joined Load
+            https://docs.sqlalchemy.org/en/13/orm/tutorial.html#joined-load
+
+        The other automatic eager loading function is more well known and
+        is called orm.joinedload(). This style of loading emits a JOIN,
+        by default a LEFT OUTER JOIN, so that the lead object as well as
+        the related object or collection is loaded in one step.
+        We illustrate loading the same addresses collection in this way -
+        note that even though the User.addresses collection on jack
+        is actually populated right now, the query will emit the extra join regardless:
+
+            SELECT
+                    user.id                 AS user_id                ,
+                    user.name               AS user_name              ,
+                    user.fullname           AS user_fullname          ,
+                    user.nickname           AS user_nickname          ,
+                    address_1.id            AS address_1_id           ,
+                    address_1.email_address AS address_1_email_address,
+                    address_1.user_id       AS address_1_user_id
+            FROM
+                    user
+            LEFT OUTER JOIN address AS address_1 ON user.id = address_1.user_id
+            WHERE   user.name                               = %(name_1)s
+            ORDER BY
+                    address_1.id
+
+
+        {'name_1': 'jack'}
+
+    +---------+-----------+---------------+---------------+--------------+-------------------------+-------------------+
+    | user_id | user_name | user_fullname | user_nickname | address_1_id | address_1_email_address | address_1_user_id |
+    +---------+-----------+---------------+---------------+--------------+-------------------------+-------------------+
+    |       5 | jack      | Jack Bean     | gjffdd        |            1 | jack@google.com         |                 5 |
+    |       5 | jack      | Jack Bean     | gjffdd        |            2 | j25@yahoo.com           |                 5 |
+    +---------+-----------+---------------+---------------+--------------+-------------------------+-------------------+
+
+        Note that even though the OUTER JOIN resulted in two rows,
+        we still only got one instance of User back. This is because
+        Query applies a “uniquing” strategy, based on object identity,
+        to the returned entities. This is specifically so that joined eager loading
+        can be applied without affecting the query results.
+
+        注:  selectinload() 更适合 用于 加载 related collections,
+             而  joinedload() 更适合于 多对一 (many-to-one) 的 relationships,
+             因为对于 the lead 和 the related object, 都仅只有 one row 被 加载.
+
+        While joinedload() has been around for a long time,
+        selectinload() is a newer form of eager loading.
+        selectinload() tends to be more appropriate for loading related collections
+        while joinedload() tends to be better suited for many-to-one relationships,
+        due to the fact that only one row is loaded for both the lead and the related object.
+        Another form of loading, subqueryload(), also exists, which can be used
+        in place of selectinload() when making use of composite primary keys on certain backends.
+    '''
+    jack = session.query(User).options(joinedload(User.addresses)).filter_by(name='jack').one()
+    print(jack)
+    print(jack.addresses)
+    '''
+    <User(name='jack', fullname='Jack Bean', nickname='gjffdd')>
+    [<Address(email_address='jack@google.com')>, <Address(email_address='j25@yahoo.com')>]
+    '''
+    '''
+    joinedload() is not a replacement for join()
+
+        The join created by joinedload() is anonymously aliased such that
+        it does not affect the query results. An Query.order_by() or Query.filter()
+        call cannot reference these aliased tables - so-called “user space”
+        joins are constructed using Query.join(). The rationale for this
+        is that joinedload() is only applied in order to affect how related
+        objects or collections are loaded as an optimizing detail - it
+        can be added or removed with no impact on actual results. See the section
+        The Zen of Joined Eager Loading for a detailed description of how this is used.
+    '''
+
+    print_header()
+    '''
+    Explicit Join + Eagerload
+        https://docs.sqlalchemy.org/en/13/orm/tutorial.html#explicit-join-eagerload
+
+        A third style of eager loading is when we are constructing a JOIN
+        explicitly in order to locate the primary rows, and would like
+        to additionally apply the extra table to a related object or collection
+        on the primary object. This feature is supplied via the orm.contains_eager()
+        function, and is most typically useful for pre-loading the many-to-one
+        object on a query that needs to filter on that same object. Below we
+        illustrate loading an Address row as well as the related User object,
+        filtering on the User named “jack” and using orm.contains_eager()
+        to apply the “user” columns to the Address.user attribute:
+
+
+            SELECT
+                    user.id               AS user_id              ,
+                    user.name             AS user_name            ,
+                    user.fullname         AS user_fullname        ,
+                    user.nickname         AS user_nickname        ,
+                    address.id            AS address_id           ,
+                    address.email_address AS address_email_address,
+                    address.user_id       AS address_user_id
+            FROM
+                    address
+            INNER JOIN user ON user.id = address.user_id
+            WHERE   user.name          = %(name_1)s
+
+       {'name_1': 'jack'}
+    '''
+    jacks_addresses = session.query(Address).join(Address.user).filter(User.name == 'jack').options(
+        contains_eager(Address.user)).all()
+
+    print(jacks_addresses)
+    print(jacks_addresses[0].user)
+    '''
+    [<Address(email_address='jack@google.com')>, <Address(email_address='j25@yahoo.com')>]
+    <User(name='jack', fullname='Jack Bean', nickname='gjffdd')>
+    '''
 
     session.close()
 
