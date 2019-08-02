@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, func
+from sqlalchemy import Column, Integer, String, ForeignKey, func, exists
 from sqlalchemy.orm import relationship, aliased
 
 from demo.basic_10 import User, print_header
@@ -391,6 +391,108 @@ def selecting_entities_from_subqueries():
     session.close()
 
 
+# https://docs.sqlalchemy.org/en/13/orm/tutorial.html#using-exists
+def using_exists():
+    session = Session()
+
+    print_header()
+    '''
+    SELECT
+            user.name AS user_name
+    FROM
+            user
+    WHERE   EXISTS
+            (SELECT * FROM address WHERE address.user_id = user.id
+            )
+
+    {}
+    '''
+    stmt = exists().where(Address.user_id == User.id)
+    for name, in session.query(User.name).filter(stmt):
+        print(name)
+        '''
+        jack
+        '''
+
+    print_header()
+    '''
+    一些 自动生成 EXISTS 子句的 特性
+
+    any()
+      如上示例中 包含 EXISTS 的语句 可以使用 User.addresses.any():
+
+        SELECT
+                user.name AS user_name
+        FROM
+                user
+        WHERE   EXISTS
+                (SELECT 1 FROM address WHERE user.id = address.user_id
+                )
+
+        {}
+    '''
+    for name, in session.query(User.name).filter(User.addresses.any()):
+        print(name)
+        '''
+        jack
+        '''
+
+    print_header()
+    '''
+    any() takes criterion as well, to limit the rows matched:
+
+        SELECT
+                user.name AS user_name
+        FROM
+                user
+        WHERE   EXISTS
+                (SELECT
+                        1
+                FROM
+                        address
+                WHERE   user.id                      = address.user_id
+                        AND address.email_address LIKE %(email_address_1)s
+                )
+
+        {'email_address_1': '%google%'}
+    '''
+    for name, in session.query(User.name).filter(User.addresses.any(Address.email_address.like('%google%'))):
+        print(name)
+        '''
+        jack
+        '''
+
+    print_header()
+    '''
+    has() is the same operator as any() for many-to-one relationships (note the ~ operator here too, which means “NOT”):
+
+    SELECT
+            address.id            AS address_id           ,
+            address.email_address AS address_email_address,
+            address.user_id       AS address_user_id
+    FROM
+            address
+    WHERE   NOT
+            (EXISTS
+                    (SELECT
+                            1
+                    FROM
+                            user
+                    WHERE   user.id       = address.user_id
+                            AND user.name = %(name_1)s
+                    ))
+
+    {'name_1': 'jack'}
+    '''
+    data = session.query(Address).filter(~Address.user.has(User.name == 'jack')).all()
+    print(data)
+    '''
+    []
+    '''
+
+    session.close()
+
+
 if __name__ == '__main__':
     # is_reinitialize_db_needed = True
     is_reinitialize_db_needed = False
@@ -404,3 +506,4 @@ if __name__ == '__main__':
 
     using_subqueries()
     selecting_entities_from_subqueries()
+    using_exists()
