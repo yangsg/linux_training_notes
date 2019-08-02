@@ -492,6 +492,37 @@ def using_exists():
 
     session.close()
 
+'''
+一些常用 的 关系 运算符:
+
+Common Relationship Operators
+
+    https://docs.sqlalchemy.org/en/13/orm/tutorial.html#common-relationship-operators
+
+1) __eq__() (many-to-one “equals” comparison):
+        query.filter(Address.user == someuser)
+
+2) __ne__() (many-to-one “not equals” comparison):
+        query.filter(Address.user != someuser)
+
+3) IS NULL (many-to-one comparison, also uses __eq__()):
+        query.filter(Address.user == None)
+
+4) contains() (used for one-to-many collections):
+        query.filter(User.addresses.contains(someaddress))
+
+5) any() (used for collections):
+        query.filter(User.addresses.any(Address.email_address == 'bar'))
+
+        # also takes keyword arguments:
+        query.filter(User.addresses.any(email_address='bar'))
+
+6) has() (used for scalar references):
+        query.filter(Address.user.has(name='ed'))
+
+7) Query.with_parent() (used for any relationship):
+        session.query(Address).with_parent(someuser, 'addresses')
+'''
 
 if __name__ == '__main__':
     # is_reinitialize_db_needed = True
