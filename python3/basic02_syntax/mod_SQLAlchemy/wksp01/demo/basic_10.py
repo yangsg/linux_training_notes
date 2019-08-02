@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, inspect, text, func
 from sqlalchemy.orm import aliased
 
-from demo.dbutil import Base, Session, engine
+from demo.dbutil import Base, Session, engine, print_header
 
 
 class User(Base):
@@ -165,14 +165,6 @@ def drop_table(tablename):
     session = Session()
     session.execute(f'drop table if exists {tablename}')
     session.close()
-
-
-def print_header(msg=None):
-    if msg:
-        print(msg)
-
-    print('\n' * 2)
-    print(('-' * 100 + '\n') * 4)
 
 
 # https://docs.sqlalchemy.org/en/13/orm/tutorial.html#querying
@@ -769,7 +761,6 @@ def counting():
     [(1, 'ed'), (1, 'fred'), (1, 'mary'), (1, 'wendy')]
     '''
 
-
     print_header()
     '''
     使用 我们 最 简单的  SELECT count(*) FROM table 方式:
@@ -803,7 +794,7 @@ def counting():
 
 
 if __name__ == '__main__':
-    #is_reinitialize_db_needed = True
+    # is_reinitialize_db_needed = True
     is_reinitialize_db_needed = False
     if is_reinitialize_db_needed:
         drop_table('user')
@@ -812,7 +803,7 @@ if __name__ == '__main__':
 
         adding_and_updating_objects()
 
-        #rolling_back()
+        # rolling_back()
 
     # query---------------------------------------------------------------------------------------------------
     querying()

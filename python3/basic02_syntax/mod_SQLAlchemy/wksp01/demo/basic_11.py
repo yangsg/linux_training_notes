@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, func, exists
 from sqlalchemy.orm import relationship, aliased, selectinload, joinedload, contains_eager
 
-from demo.basic_10 import User, print_header
-from demo.dbutil import Base, Session, engine
+from demo.basic_10 import User
+from demo.dbutil import Base, Session, engine, print_header
 
 
 # Building a Relationship
