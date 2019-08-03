@@ -212,7 +212,7 @@ Creating the Polls app
 (tutorial-venv) [root@python3lang mysite]# vim polls/urls.py
       from django.urls import path
 
-      from mysite.polls import views
+      from . import views
 
       urlpatterns = [
           path('', views.index, name='index'),
