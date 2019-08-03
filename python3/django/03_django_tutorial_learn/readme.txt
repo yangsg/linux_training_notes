@@ -178,7 +178,8 @@ mysql> CREATE DATABASE db_django_01 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicod
 (tutorial-venv) [root@python3lang mysite]# python manage.py runserver 192.168.175.20:8000
 
 
-
+// 测试:
+    浏览器访问: http://192.168.175.20:8000
 
 
 
