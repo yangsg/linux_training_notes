@@ -41,7 +41,7 @@ mysql 版本需求:
     小心: 千万不要在事务中 混合使用 支持事务 和 不支持事务的表, 这会导致数据完整性和一致性的问题,
           因为 不支持事务的表 在 rollback 时所做的修改无法被撤销.
 
-mysqlclient 版本需求:
+mysqlclient 版本需求:  见 https://pypi.org/project/mysqlclient/
   Django requires mysqlclient 1.3.13 or later.
 
 关于 timezone 时区的支持:
@@ -52,6 +52,19 @@ mysqlclient 版本需求:
 
 Table names:
     使用小写的 表名
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ---------------------------------------------------------------------------------------------------
@@ -98,6 +111,7 @@ Table names:
 
 
 // 在 mysql server 上创建 一个 学习用的 database
+// 参考:   https://github.com/yangsg/linux_training_notes/tree/master/python3/basic02_syntax/mod_SQLAlchemy
 mysql> CREATE DATABASE db_django_01 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 // 配置 Django2.2 使用 mysql 数据库, 同时顺便 也把 ALLOWED_HOSTS 配置了
@@ -141,6 +155,7 @@ mysql> CREATE DATABASE db_django_01 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicod
 
 
 // 安装 mysql-devel package (因为 Django 推荐使用 mysqlclient, 而 mysqlclient 又依赖于 mysql-devel)
+// 见  https://pypi.org/project/mysqlclient/
 [root@python3lang ~]# yum clean metadata
 [root@python3lang ~]# yum -y install mysql-devel
 
