@@ -211,6 +211,17 @@ https://stackoverflow.com/questions/635869/can-yum-tell-me-which-of-my-repositor
 
 
 ---------------------------------------------------------------------------------------------------
+下载 搭建 Django2.2 需要的 mysql-devel 包 (因为 Django2.2 推荐使用 mysqlclient 时, 而 mysqlclient 又依赖 mysql-devel)
+
+
+[root@localyumrepo ~]# yum install mysql-devel              --downloadonly   --downloaddir=/var/www/html/local_yum_repo_dir
+
+// 更新生成 本地仓库的 meta data 信息
+[root@localyumrepo ~]# createrepo /var/www/html/local_yum_repo_dir/
+
+
+
+---------------------------------------------------------------------------------------------------
 
 
 
