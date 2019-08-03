@@ -25,7 +25,9 @@ SECRET_KEY = '$km-%7^stmorfs@g=71b+dcow64a4lhg&)0)=q!8238xqb4m$+'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '192.168.175.20',
+]
 
 
 # Application definition
@@ -73,13 +75,27 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
+# Django2.2 中使用的 sqlite3 版本与 centos7 无法兼容,
+# 所以也不用 再继续浪费大量的时间去寻找 解决方案了(因为很可能都无法成功)
+# 所以这里 直接 改用 mysql 数据库
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#     }
+# }
+
+# 使用 mysql 数据库
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'db_django_01',
+        'USER': 'root',
+        'PASSWORD': 'WWW.1.com',
+        'HOST': '192.168.175.100',
+        'PORT': '3306',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators

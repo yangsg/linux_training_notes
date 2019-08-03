@@ -73,11 +73,13 @@ Table names:
       Requires: sqlparse, pytz
       Required-by:
 
+// 查看 django 版本
 (tutorial-venv) [root@python3lang ~]# python -m django --version
     2.2
 
 (tutorial-venv) [root@python3lang ~]# cd /root/linux_training_notes/python3/django/03_django_tutorial_learn/django-2.2-wksp01
 
+// 创建 一个新的 Django project
 (tutorial-venv) [root@python3lang django-2.2-wksp01]# django-admin startproject mysite
 (tutorial-venv) [root@python3lang django-2.2-wksp01]# tree
       .
@@ -89,6 +91,76 @@ Table names:
               ├── urls.py      <--- The URL declarations for this Django project; 见 https://docs.djangoproject.com/en/2.2/topics/http/urls/
               └── wsgi.py      <--- An entry-point for WSGI-compatible web servers to serve your project. 见 https://docs.djangoproject.com/en/2.2/howto/deployment/wsgi/
 
+
+
+(tutorial-venv) [root@python3lang django-2.2-wksp01]# cd mysite/
+(tutorial-venv) [root@python3lang mysite]# python manage.py runserver 192.168.175.20:8000
+
+
+// 在 mysql server 上创建 一个 学习用的 database
+mysql> CREATE DATABASE db_django_01 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+// 配置 Django2.2 使用 mysql 数据库, 同时顺便 也把 ALLOWED_HOSTS 配置了
+(tutorial-venv) [root@python3lang mysite]# vim mysite/settings.py
+
+                  ALLOWED_HOSTS = [
+                      '192.168.175.20',
+                  ]
+
+                  # Django2.2 中使用的 sqlite3 版本与 centos7 无法兼容,
+                  # 所以也不用 再继续浪费大量的时间去寻找 解决方案了(因为很可能都无法成功)
+                  # 所以这里 直接 改用 mysql 数据库
+                  # DATABASES = {
+                  #     'default': {
+                  #         'ENGINE': 'django.db.backends.sqlite3',
+                  #         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+                  #     }
+                  # }
+
+                  # 使用 mysql 数据库
+                  DATABASES = {
+                      'default': {
+                          'ENGINE': 'django.db.backends.mysql',
+                          'NAME': 'db_django_01',
+                          'USER': 'root',
+                          'PASSWORD': 'WWW.1.com',
+                          'HOST': '192.168.175.100',
+                          'PORT': '3306',
+                      }
+                  }
+
+
+
+// 配置 本地 yum 源, 参考 https://github.com/yangsg/linux_training_notes/tree/master/local_yum_repo_server/100-localyumserver
+[root@python3lang ~]# vim /etc/yum.repos.d/000-local-yum.repo
+      [000-local-yum]
+      name=000-local-yum
+      baseurl=http://192.168.175.10/local_yum_repo_dir/
+      enabled=1
+      gpgcheck=0
+
+
+// 安装 mysql-devel package (因为 Django 推荐使用 mysqlclient, 而 mysqlclient 又依赖于 mysql-devel)
+[root@python3lang ~]# yum clean metadata
+[root@python3lang ~]# yum -y install mysql-devel
+
+// 安装 mysqlclient
+(tutorial-venv) [root@python3lang mysite]# pip install mysqlclient
+(tutorial-venv) [root@python3lang mysite]# pip show mysqlclient
+      Name: mysqlclient
+      Version: 1.4.2.post1
+      Summary: Python interface to MySQL
+      Home-page: https://github.com/PyMySQL/mysqlclient-python
+      Author: Inada Naoki
+      Author-email: songofacandy@gmail.com
+      License: GPL
+      Location: /root/tutorial-venv/lib/python3.6/site-packages
+      Requires:
+      Required-by:
+
+
+// 启动 Django web 服务:
+(tutorial-venv) [root@python3lang mysite]# python manage.py runserver 192.168.175.20:8000
 
 
 
