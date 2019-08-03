@@ -218,6 +218,18 @@ Creating the Polls app
           path('', views.index, name='index'),
       ]
 
+(tutorial-venv) [root@python3lang mysite]# tree polls/
+      polls/
+      ├── admin.py
+      ├── apps.py
+      ├── __init__.py
+      ├── migrations
+      │   └── __init__.py
+      ├── models.py
+      ├── tests.py
+      ├── urls.py   <------
+      └── views.py
+
 
 (tutorial-venv) [root@python3lang mysite]# vim mysite/urls.py
       from django.contrib import admin
