@@ -174,7 +174,7 @@ mysql> CREATE DATABASE db_django_01 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicod
       Required-by:
 
 
-// 启动 Django web 服务:
+// 启动 Django web 服务: 见 https://docs.djangoproject.com/en/2.2/ref/django-admin/#django-admin-runserver
 (tutorial-venv) [root@python3lang mysite]# python manage.py runserver 192.168.175.20:8000
 
 
@@ -182,12 +182,55 @@ mysql> CREATE DATABASE db_django_01 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicod
     浏览器访问: http://192.168.175.20:8000
 
 
+---------------------------------------------------------------------------------------------------
+在 project 中 创建 app
+
+Creating the Polls app
+
+    https://docs.djangoproject.com/en/2.2/intro/tutorial01/#creating-the-polls-app
+
+(tutorial-venv) [root@python3lang mysite]# ls
+    manage.py  mysite
+
+(tutorial-venv) [root@python3lang mysite]# python manage.py startapp polls
+(tutorial-venv) [root@python3lang mysite]# ls
+    manage.py  mysite  polls
+
+(tutorial-venv) [root@python3lang mysite]# tree polls/
+      polls/
+      ├── admin.py
+      ├── apps.py
+      ├── __init__.py
+      ├── migrations
+      │   └── __init__.py
+      ├── models.py
+      ├── tests.py
+      └── views.py
 
 
 
+(tutorial-venv) [root@python3lang mysite]# vim polls/urls.py
+      from django.urls import path
+
+      from mysite.polls import views
+
+      urlpatterns = [
+          path('', views.index, name='index'),
+      ]
 
 
+(tutorial-venv) [root@python3lang mysite]# vim mysite/urls.py
+      from django.contrib import admin
+      from django.urls import path
 
+      urlpatterns = [
+          path('admin/', admin.site.urls),
+      ]
+
+
+(tutorial-venv) [root@python3lang mysite]# python manage.py runserver 192.168.175.20:8000
+
+浏览器访问 http://192.168.175.20:8000/polls/
 
 
 ---------------------------------------------------------------------------------------------------
