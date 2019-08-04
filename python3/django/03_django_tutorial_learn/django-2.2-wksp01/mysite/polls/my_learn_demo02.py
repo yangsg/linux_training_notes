@@ -1,3 +1,8 @@
+'''
+示例来自:
+    https://docs.djangoproject.com/en/2.2/intro/tutorial02/#playing-with-the-api
+'''
+
 from polls.models import Choice, Question
 
 # Make sure our __str__() addition worked.

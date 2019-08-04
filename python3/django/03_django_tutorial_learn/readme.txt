@@ -688,6 +688,9 @@ Python 3.6.8 (default, Jul 24 2019, 13:57:26)
 Type "help", "copyright", "credits" or "license" for more information.
 (InteractiveConsole)
 
+          见:
+          https://github.com/yangsg/linux_training_notes/blob/master/python3/django/03_django_tutorial_learn/django-2.2-wksp01/mysite/polls/my_learn_demo02.py
+
                 >>> from polls.models import Choice, Question
 
                 # Make sure our __str__() addition worked.
