@@ -34,6 +34,19 @@ ALLOWED_HOSTS = [
 # https://docs.djangoproject.com/en/2.2/intro/tutorial02/
 # Django 为了方便 默认会 包含一些 常用的 apps
 INSTALLED_APPS = [
+    # 通过包含 polls app 的 配置类 PollsConfig 的引用信息,
+    # 告诉 Django 安装了 polls app.
+    # 相关的命令:
+    #        python manage.py makemigrations polls
+    #        python manage.py sqlmigrate polls 0001
+    #        python manage.py check polls
+    #        python manage.py migrate
+    #  https://docs.djangoproject.com/en/2.2/ref/django-admin/#makemigrations
+    #  https://docs.djangoproject.com/en/2.2/ref/django-admin/#django-admin-sqlmigrate
+    #  https://docs.djangoproject.com/en/2.2/ref/django-admin/#check
+    #  https://docs.djangoproject.com/en/2.2/ref/django-admin/#django-admin-migrate
+    'polls.apps.PollsConfig',  #<-----
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
