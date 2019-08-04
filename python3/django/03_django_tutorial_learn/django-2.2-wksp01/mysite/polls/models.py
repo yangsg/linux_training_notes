@@ -21,6 +21,18 @@ class Question(models.Model):
     #  If this field isn’t provided, Django will use the machine-readable name.
     pub_date = models.DateTimeField('date published')
 
+    '''
+    添加 __str__ 方法
+    https://docs.djangoproject.com/en/2.2/intro/tutorial02/#playing-with-the-api
+        It’s important to add __str__() methods to your models,
+        not only for your own convenience when dealing with the interactive prompt,
+        but also because objects’ representations are used throughout
+        Django’s automatically-generated admin.
+    '''
+
+    def __str__(self):
+        return self.question_text
+
 
 class Choice(models.Model):
     # 外键
@@ -29,3 +41,11 @@ class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     choice_text = models.CharField(max_length=200)
     votes = models.IntegerField(default=0)
+
+    '''
+    添加 __str__ 方法
+    https://docs.djangoproject.com/en/2.2/intro/tutorial02/#playing-with-the-api
+    '''
+
+    def __str__(self):
+        return self.choice_text
