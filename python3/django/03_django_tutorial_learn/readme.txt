@@ -907,6 +907,71 @@ In our poll application, we’ll have the following four views:
 
 
 
+--------------------------------------------------
+Writing more views
+
+    https://docs.djangoproject.com/en/2.2/intro/tutorial03/#writing-more-views
+
+(tutorial-venv) [root@python3lang mysite]# vim polls/views.py
+
+        def detail(request, question_id):
+            return HttpResponse("You're looking at question %s." % question_id)
+
+        def results(request, question_id):
+            response = "You're looking at the results of question %s."
+            return HttpResponse(response % question_id)
+
+        def vote(request, question_id):
+            return HttpResponse("You're voting on question %s." % question_id)
+
+
+// Wire these new views into the polls.urls module by adding the following path() calls:
+(tutorial-venv) [root@python3lang mysite]# vim polls/urls.py
+
+          from django.urls import path
+
+          from . import views
+
+          urlpatterns = [
+              # ex: /polls/
+              path('', views.index, name='index'),
+              # ex: /polls/5/
+              path('<int:question_id>/', views.detail, name='detail'),
+              # ex: /polls/5/results/
+              path('<int:question_id>/results/', views.results, name='results'),
+              # ex: /polls/5/vote/
+              path('<int:question_id>/vote/', views.vote, name='vote'),
+          ]
+
+
+
+    重启 server 并 用浏览器访问:
+        http://192.168.175.20:8000/polls/34/
+        http://192.168.175.20:8000/polls/34/results/
+        http://192.168.175.20:8000/polls/34/vote/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
