@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     #  https://docs.djangoproject.com/en/2.2/ref/django-admin/#django-admin-sqlmigrate
     #  https://docs.djangoproject.com/en/2.2/ref/django-admin/#check
     #  https://docs.djangoproject.com/en/2.2/ref/django-admin/#django-admin-migrate
-    'polls.apps.PollsConfig',  #<-----
+    'polls.apps.PollsConfig',  # <-----
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -66,6 +66,42 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'mysite.urls'
+
+'''
+https://docs.djangoproject.com/en/2.2/intro/tutorial03/#write-views-that-actually-do-something
+
+First, create a directory called templates in your polls directory.
+Django will look for templates in there.
+
+(tutorial-venv) [root@python3lang mysite]# mkdir polls/templates
+
+    Your project’s TEMPLATES setting describes how Django will load and render templates.
+    The default settings file configures a DjangoTemplates backend whose APP_DIRS option
+    is set to True. By convention DjangoTemplates looks for a “templates” subdirectory
+    in each of the INSTALLED_APPS.
+
+    Within the templates directory you have just created, create another
+    directory called polls, and within that create a file called index.html.
+    In other words, your template should be at polls/templates/polls/index.html.
+    Because of how the app_directories template loader works as described above,
+    you can refer to this template within Django simply as polls/index.html.
+
+(tutorial-venv) [root@python3lang mysite]# mkdir -p  polls/templates/polls
+(tutorial-venv) [root@python3lang mysite]# vim polls/templates/polls/index.html
+
+如下这段描述 解释了 为什么在 目录 polls/templates/ 下 还要创建 与 app 同名的 polls/ 目录
+    Template namespacing (Template 的 名字空间)
+
+        Now we might be able to get away with putting our templates directly
+        in polls/templates (rather than creating another polls subdirectory),
+        but it would actually be a bad idea. Django will choose the first
+        template it finds whose name matches, and if you had a template
+        with the same name in a different application, Django would be unable
+        to distinguish between them. We need to be able to point Django
+        at the right one, and the easiest way to ensure this is by namespacing them.
+        That is, by putting those templates inside another directory
+        named for the application itself.
+'''
 
 TEMPLATES = [
     {

@@ -950,11 +950,123 @@ Writing more views
         http://192.168.175.20:8000/polls/34/results/
         http://192.168.175.20:8000/polls/34/vote/
 
+    '''
+     url 匹配 处理流程:
+         When somebody requests a page from your website – say,
+         “/polls/34/”, Django will load the mysite.urls Python module
+         because it’s pointed to by the ROOT_URLCONF setting.
+         It finds the variable named urlpatterns and traverses the patterns
+         in order. After finding the match at 'polls/', it strips off
+         the matching text ("polls/") and sends the remaining
+         text – "34/" – to the ‘polls.urls’ URLconf for further processing.
+         There it matches '<int:question_id>/', resulting
+         in a call to the detail() view like so:
+
+         detail(request=<HttpRequest object>, question_id=34)
+
+         The question_id=34 part comes from <int:question_id>.
+         Using angle brackets “captures” part of the URL and sends it as
+         a keyword argument to the view function. The :question_id> part
+         of the string defines the name that will be used to identify the matched pattern,
+         and the <int: part is a converter that determines what patterns
+         should match this part of the URL path.
+    '''
 
 
 
+--------------------------------------------------
+Write views that actually do something
+
+    https://docs.djangoproject.com/en/2.2/intro/tutorial03/#write-views-that-actually-do-something
+
+First, create a directory called templates in your polls directory.
+Django will look for templates in there.
 
 
+// 创建 polls/templates 目录
+(tutorial-venv) [root@python3lang mysite]# mkdir polls/templates
+
+
+// 观察一下 mysite/settings.py 中 的 TEMPLATES 配置
+(tutorial-venv) [root@python3lang mysite]# less mysite/settings.py
+
+          TEMPLATES = [
+              {
+                  'BACKEND': 'django.template.backends.django.DjangoTemplates',
+                  'DIRS': [],
+                  'APP_DIRS': True,
+                  'OPTIONS': {
+                      'context_processors': [
+                          'django.template.context_processors.debug',
+                          'django.template.context_processors.request',
+                          'django.contrib.auth.context_processors.auth',
+                          'django.contrib.messages.context_processors.messages',
+                      ],
+                  },
+              },
+          ]
+
+
+
+(tutorial-venv) [root@python3lang mysite]# mkdir -p  polls/templates/polls
+(tutorial-venv) [root@python3lang mysite]# vim polls/templates/polls/index.html
+
+      {% if latest_question_list %}
+          <ul>
+          {% for question in latest_question_list %}
+              <li><a href="/polls/{{ question.id }}/">{{ question.question_text }}</a></li>
+          {% endfor %}
+          </ul>
+      {% else %}
+          <p>No polls are available.</p>
+      {% endif %}
+
+
+    Your project’s TEMPLATES setting describes how Django will load and render templates.
+    The default settings file configures a DjangoTemplates backend whose APP_DIRS option
+    is set to True. By convention DjangoTemplates looks for a “templates” subdirectory
+    in each of the INSTALLED_APPS.
+
+    Within the templates directory you have just created, create another
+    directory called polls, and within that create a file called index.html.
+    In other words, your template should be at polls/templates/polls/index.html.
+    Because of how the app_directories template loader works as described above,
+    you can refer to this template within Django simply as polls/index.html.
+
+
+如下这段描述 解释了 为什么在 目录 polls/templates/ 下 还要创建 与 app 同名的 polls/ 目录
+    Template namespacing (Template 的 名字空间)
+
+        Now we might be able to get away with putting our templates directly
+        in polls/templates (rather than creating another polls subdirectory),
+        but it would actually be a bad idea. Django will choose the first
+        template it finds whose name matches, and if you had a template
+        with the same name in a different application, Django would be unable
+        to distinguish between them. We need to be able to point Django
+        at the right one, and the easiest way to ensure this is by namespacing them.
+        That is, by putting those templates inside another directory
+        named for the application itself.
+
+
+// Now let’s update our index view in polls/views.py to use the template:
+(tutorial-venv) [root@python3lang mysite]# vim polls/views.py
+
+      from django.http import HttpResponse
+      from django.template import loader
+
+      from .models import Question
+
+
+      def index(request):
+          latest_question_list = Question.objects.order_by('-pub_date')[:5]
+          template = loader.get_template('polls/index.html')
+          context = {
+              'latest_question_list': latest_question_list,
+          }
+          return HttpResponse(template.render(context, request))
+
+
+重启 server 并使用 浏览器访问: http://192.168.175.20:8000/polls/
 
 
 
