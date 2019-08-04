@@ -575,6 +575,60 @@ mysql> select * from  django_migrations;   #Django 通过 表 django_migrations 
         // they’re also usable by other developers and in production.
 
     更多 manage.py 相关的信息见  https://docs.djangoproject.com/en/2.2/ref/django-admin/
+
+
+--------------------------------------------------
+Playing with the API
+
+      https://docs.djangoproject.com/en/2.2/intro/tutorial02/#playing-with-the-api
+
+
+(tutorial-venv) [root@python3lang mysite]# python manage.py shell
+Python 3.6.8 (default, Jul 24 2019, 13:57:26)
+[GCC 4.8.5 20150623 (Red Hat 4.8.5-36)] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+(InteractiveConsole)
+>>> import os
+>>> print(os.environ['DJANGO_SETTINGS_MODULE'])
+mysite.settings  <----- 观察
+
+    如上命令中 manage.py 设置了环境变量 DJANGO_SETTINGS_MODULE, which gives Django the Python import path to your mysite/settings.py file.
+
+            >>> from polls.models import Choice, Question     # Import the model classes we just wrote.
+
+            # No questions are in the system yet.
+            >>> Question.objects.all()
+            <QuerySet []>
+
+            # Create a new Question.
+            # Support for time zones is enabled in the default settings file, so
+            # Django expects a datetime with tzinfo for pub_date. Use timezone.now()
+            # instead of datetime.datetime.now() and it will do the right thing.
+            >>> from django.utils import timezone
+            >>> q = Question(question_text="What's new?", pub_date=timezone.now())   #<--- 注:这里使用的是 timezone.now(),因为启用了时区支持
+
+            # Save the object into the database. You have to call save() explicitly.
+            >>> q.save()
+
+            # Now it has an ID.
+            >>> q.id
+            1
+
+            # Access model field values via Python attributes.
+            >>> q.question_text
+            "What's new?"
+            >>> q.pub_date
+            datetime.datetime(2019, 8, 4, 7, 22, 19, 276409, tzinfo=<UTC>)
+
+            # Change values by changing the attributes, then calling save().
+            >>> q.question_text = "What's up?"
+            >>> q.save()
+
+            # objects.all() displays all the questions in the database.
+            >>> Question.objects.all()
+            <QuerySet [<Question: Question object (1)>]>
+
+
 ---------------------------------------------------------------------------------------------------
 
 
