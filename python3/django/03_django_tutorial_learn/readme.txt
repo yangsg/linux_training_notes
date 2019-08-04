@@ -883,6 +883,28 @@ Writing your first Django app, part 3
 
 
 
+A view is a “type” of Web page in your Django application that generally serves a specific function and has a specific template.
+
+In our poll application, we’ll have the following four views:
+
+在 poll application 示例中, 包含 如下 4 个 views:
+    1) Question “index” page    – displays the latest few questions.
+    2) Question “detail” page   – displays a question text, with no results but with a form to vote.
+    3) Question “results” page  – displays results for a particular question.
+    4) Vote action              – handles voting for a particular choice in a particular question.
+
+  In Django, web pages and other content are delivered by views. Each view is represented
+  by a simple Python function (or method, in the case of class-based views).
+  Django will choose a view by examining the URL that’s requested
+  (to be precise, the part of the URL after the domain name).
+
+  A URL pattern is simply the general form of a URL - for example: /newsarchive/<year>/<month>/.
+
+  To get from a URL to a view, Django uses what are known as ‘URLconfs’. A URLconf maps URL patterns to views.
+
+  更多关于 URLconf 的信息见:
+        https://docs.djangoproject.com/en/2.2/topics/http/urls/
+
 
 
 
