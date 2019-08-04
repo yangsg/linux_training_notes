@@ -1068,11 +1068,30 @@ Django will look for templates in there.
 
 重启 server 并使用 浏览器访问: http://192.168.175.20:8000/polls/
 
+--------------------------------------------------
+A shortcut: render()
+
+    https://docs.djangoproject.com/en/2.2/intro/tutorial03/#a-shortcut-render
+
+
+(tutorial-venv) [root@python3lang mysite]# vim polls/views.py
+
+        from django.shortcuts import render
+
+        from .models import Question
+
+
+        def index(request):
+            latest_question_list = Question.objects.order_by('-pub_date')[:5]
+            context = {'latest_question_list': latest_question_list}
+            return render(request, 'polls/index.html', context)
 
 
 
+--------------------------------------------------
+Raising a 404 error
 
-
+      https://docs.djangoproject.com/en/2.2/intro/tutorial03/#a-shortcut-render
 
 
 

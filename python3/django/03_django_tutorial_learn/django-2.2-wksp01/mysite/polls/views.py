@@ -18,8 +18,8 @@ def index(request):
     return HttpResponse(output)
 '''
 
-
 # https://docs.djangoproject.com/en/2.2/intro/tutorial03/#write-views-that-actually-do-something
+'''
 def index(request):
     latest_question_list = Question.objects.order_by('-pub_date')[:5]
     template = loader.get_template('polls/index.html')
@@ -27,6 +27,14 @@ def index(request):
         'latest_question_list': latest_question_list,
     }
     return HttpResponse(template.render(context, request))
+'''
+
+
+# https://docs.djangoproject.com/en/2.2/intro/tutorial03/#a-shortcut-render
+def index(request):
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    context = {'latest_question_list': latest_question_list}
+    return render(request, 'polls/index.html', context)
 
 
 '''
