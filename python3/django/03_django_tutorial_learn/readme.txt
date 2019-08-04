@@ -247,6 +247,83 @@ Creating the Polls app
 
 ---------------------------------------------------------------------------------------------------
 
+  https://docs.djangoproject.com/en/2.2/intro/tutorial02/
+
+为了方便, Django 默认会在 mysite/settings.py 配置文件的 INSTALLED_APPS 中包含如下 常用的 apps:
+
+        django.contrib.admin         – The admin site. You’ll use it shortly.
+        django.contrib.auth          – An authentication system.
+        django.contrib.contenttypes  – A framework for content types.
+        django.contrib.sessions      – A session framework.
+        django.contrib.messages      – A messaging framework.
+        django.contrib.staticfiles   – A framework for managing static files.
+
+  Some of these applications make use of at least one database table,
+  though, so we need to create the tables in the database beforewe can use them.
+  To do that, run the following command:
+
+// 创建数据库表:
+// 命令 migrate 会查找 mysite/settings.py 中 INSTALLED_APPS 的设置并
+// 根据 mysite/settings.py 中的 database 设置 创建必要的 database tables
+// 和  the database migrations shipped with the app (we’ll cover those later).
+(tutorial-venv) [root@python3lang mysite]# python manage.py migrate
+
+        Operations to perform:
+          Apply all migrations: admin, auth, contenttypes, sessions
+        Running migrations:
+          Applying contenttypes.0001_initial... OK
+          Applying auth.0001_initial... OK
+          Applying admin.0001_initial... OK
+          Applying admin.0002_logentry_remove_auto_add... OK
+          Applying admin.0003_logentry_add_action_flag_choices... OK
+          Applying contenttypes.0002_remove_content_type_name... OK
+          Applying auth.0002_alter_permission_name_max_length... OK
+          Applying auth.0003_alter_user_email_max_length... OK
+          Applying auth.0004_alter_user_username_opts... OK
+          Applying auth.0005_alter_user_last_login_null... OK
+          Applying auth.0006_require_contenttypes_0002... OK
+          Applying auth.0007_alter_validators_add_error_messages... OK
+          Applying auth.0008_alter_user_username_max_length... OK
+          Applying auth.0009_alter_user_last_name_max_length... OK
+          Applying auth.0010_alter_group_name_max_length... OK
+          Applying auth.0011_update_proxy_permissions... OK
+          Applying sessions.0001_initial... OK
+
+
+
+mysql> use db_django_01;
+mysql> show tables;      # 查看数据库中 如上命令 `python manage.py migrate` 创建的 数据表
+
+    +----------------------------+
+    | Tables_in_db_django_01     |
+    +----------------------------+
+    | auth_group                 |
+    | auth_group_permissions     |
+    | auth_permission            |
+    | auth_user                  |
+    | auth_user_groups           |
+    | auth_user_user_permissions |
+    | django_admin_log           |
+    | django_content_type        |
+    | django_migrations          |
+    | django_session             |
+    +----------------------------+
+
+  可通过如下语句观察 表中的数据:
+          select * from  auth_group;
+          select * from  auth_group_permissions;
+          select * from  auth_permission;
+          select * from  auth_user;
+          select * from  auth_user_groups;
+          select * from  auth_user_user_permissions;
+          select * from  django_admin_log;
+          select * from  django_content_type;
+          select * from  django_migrations;
+          select * from  django_session;
+
+---------------------------------------------------------------------------------------------------
+
+
 
 
 

@@ -30,6 +30,9 @@ ALLOWED_HOSTS = [
 
 # Application definition
 
+# https://docs.djangoproject.com/en/2.2/ref/settings/#std:setting-INSTALLED_APPS
+# https://docs.djangoproject.com/en/2.2/intro/tutorial02/
+# Django 为了方便 默认会 包含一些 常用的 apps
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
