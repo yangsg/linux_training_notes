@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import models
 
 # Create your models here.
@@ -5,6 +7,7 @@ from django.db import models
 # https://docs.djangoproject.com/en/2.2/ref/models/instances/#django.db.models.Model
 # https://docs.djangoproject.com/en/2.2/ref/models/fields/#django.db.models.Field
 # https://docs.djangoproject.com/en/2.2/ref/models/fields/#charfield
+from django.utils import timezone
 
 '''
 The name of each Field instance (e.g. question_text or pub_date) is the field’s name,
@@ -33,6 +36,22 @@ class Question(models.Model):
     def __str__(self):
         return self.question_text
 
+    '''
+    添加 一个 仅用于 演示用的  was_published_recently 方法:
+        https://docs.djangoproject.com/en/2.2/intro/tutorial02/#playing-with-the-api
+
+        Note the addition of import datetime and from django.utils import timezone,
+        to reference Python’s standard datetime module and Django’s time-zone-related
+        utilities in django.utils.timezone, respectively. If you aren’t familiar with
+        time zone handling in Python, you can learn more in the time zone support docs.
+
+        关于 Time zones:
+            https://docs.djangoproject.com/en/2.2/topics/i18n/timezones/
+    '''
+
+    def was_published_recently(self):
+        return self.pub_date >= timezone.now() - datetime.timedelta(days=1)
+
 
 class Choice(models.Model):
     # 外键
@@ -44,7 +63,7 @@ class Choice(models.Model):
 
     '''
     添加 __str__ 方法
-    https://docs.djangoproject.com/en/2.2/intro/tutorial02/#playing-with-the-api
+        https://docs.djangoproject.com/en/2.2/intro/tutorial02/#playing-with-the-api
     '''
 
     def __str__(self):

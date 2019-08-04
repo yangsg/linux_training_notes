@@ -106,6 +106,7 @@ Table names:
 
 
 
+// 启动 Django 自带的 server, 该 自带的 server 仅用于 开发环境(development) 而非 生产环境(production)
 (tutorial-venv) [root@python3lang django-2.2-wksp01]# cd mysite/
 (tutorial-venv) [root@python3lang mysite]# python manage.py runserver 192.168.175.20:8000
 
@@ -594,6 +595,9 @@ mysite.settings  <----- 观察
 
     如上命令中 manage.py 设置了环境变量 DJANGO_SETTINGS_MODULE, which gives Django the Python import path to your mysite/settings.py file.
 
+    见:
+      https://github.com/yangsg/linux_training_notes/blob/master/python3/django/03_django_tutorial_learn/django-2.2-wksp01/mysite/polls/my_learn_demo01.py
+
             >>> from polls.models import Choice, Question     # Import the model classes we just wrote.
 
             # No questions are in the system yet.
@@ -627,6 +631,216 @@ mysite.settings  <----- 观察
             # objects.all() displays all the questions in the database.
             >>> Question.objects.all()
             <QuerySet [<Question: Question object (1)>]>
+
+
+
+
+// 为 models 添加 __str__ 方法:
+//   It’s important to add __str__() methods to your models,
+//   not only for your own convenience when dealing with the interactive prompt,
+//   but also because objects’ representations are used throughout Django’s automatically-generated admin.
+// https://github.com/yangsg/linux_training_notes/blob/master/python3/django/03_django_tutorial_learn/django-2.2-wksp01/mysite/polls/models.py
+
+(tutorial-venv) [root@python3lang mysite]# vim polls/models.py
+
+        from django.db import models
+
+        class Question(models.Model):
+            # ...
+            def __str__(self):
+                return self.question_text
+
+        class Choice(models.Model):
+            # ...
+            def __str__(self):
+                return self.choice_text
+
+
+
+
+// 添加 一个 仅用于 演示用的  was_published_recently 方法:
+//    Note these are normal Python methods. Let’s add a custom method, just for demonstration:
+// https://github.com/yangsg/linux_training_notes/blob/master/python3/django/03_django_tutorial_learn/django-2.2-wksp01/mysite/polls/models.py
+(tutorial-venv) [root@python3lang mysite]# vim polls/models.py
+
+          import datetime
+
+          from django.db import models
+          from django.utils import timezone
+
+
+          class Question(models.Model):
+              # ...
+              def was_published_recently(self):
+                  return self.pub_date >= timezone.now() - datetime.timedelta(days=1)
+
+        // 注:
+        // Note the addition of import datetime and from django.utils import timezone,
+        // to reference Python’s standard datetime module and Django’s time-zone-related
+        // utilities in django.utils.timezone, respectively. If you aren’t familiar with
+        // time zone handling in Python, you can learn more in the time zone support docs.
+
+
+
+(tutorial-venv) [root@python3lang mysite]# python manage.py shell
+Python 3.6.8 (default, Jul 24 2019, 13:57:26)
+[GCC 4.8.5 20150623 (Red Hat 4.8.5-36)] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+(InteractiveConsole)
+
+                >>> from polls.models import Choice, Question
+
+                # Make sure our __str__() addition worked.
+                >>> Question.objects.all()
+                <QuerySet [<Question: What's up?>]>
+
+                # Django provides a rich database lookup API that's entirely driven by
+                # keyword arguments.
+                >>> Question.objects.filter(id=1)
+                <QuerySet [<Question: What's up?>]>
+                >>> Question.objects.filter(question_text__startswith='What')
+                <QuerySet [<Question: What's up?>]>
+
+                # Get the question that was published this year.
+                >>> from django.utils import timezone
+                >>> current_year = timezone.now().year
+                >>> Question.objects.get(pub_date__year=current_year)
+                <Question: What's up?>
+
+                # Request an ID that doesn't exist, this will raise an exception.
+                >>> Question.objects.get(id=2)
+                Traceback (most recent call last):
+                  File "<console>", line 1, in <module>
+                  File "/root/tutorial-venv/lib/python3.6/site-packages/django/db/models/manager.py", line 82, in manager_method
+                    return getattr(self.get_queryset(), name)(*args, **kwargs)
+                  File "/root/tutorial-venv/lib/python3.6/site-packages/django/db/models/query.py", line 408, in get
+                    self.model._meta.object_name
+                polls.models.Question.DoesNotExist: Question matching query does not exist.
+
+                # Lookup by a primary key is the most common case, so Django provides a
+                # shortcut for primary-key exact lookups.
+                # The following is identical to Question.objects.get(id=1).
+                >>> Question.objects.get(pk=1)
+                <Question: What's up?>
+
+                # Make sure our custom method worked.
+                >>> q = Question.objects.get(pk=1)
+                >>> q.was_published_recently()
+                True
+
+                # Give the Question a couple of Choices. The create call constructs a new
+                # Choice object, does the INSERT statement, adds the choice to the set
+                # of available choices and returns the new Choice object. Django creates
+                # a set to hold the "other side" of a ForeignKey relation
+                # (e.g. a question's choice) which can be accessed via the API.
+                >>> q = Question.objects.get(pk=1)
+
+                # Display any choices from the related object set -- none so far.
+                >>> q.choice_set.all()
+                <QuerySet []>
+
+                # Create three choices.
+                >>> q.choice_set.create(choice_text='Not much', votes=0)
+                <Choice: Not much>
+                >>> q.choice_set.create(choice_text='The sky', votes=0)
+                <Choice: The sky>
+                >>> c = q.choice_set.create(choice_text='Just hacking again', votes=0)
+
+                # Choice objects have API access to their related Question objects.
+                >>> c.question
+                <Question: What's up?>
+
+                # And vice versa: Question objects get access to Choice objects.
+                >>> q.choice_set.all()
+                <QuerySet [<Choice: Not much>, <Choice: The sky>, <Choice: Just hacking again>]>
+
+                # The API automatically follows relationships as far as you need.
+                # Use double underscores to separate relationships.
+                # This works as many levels deep as you want; there's no limit.
+                # Find all Choices for any question whose pub_date is in this year
+                # (reusing the 'current_year' variable we created above).
+                >>> q.choice_set.count()
+                3
+
+                # The API automatically follows relationships as far as you need.
+                # Use double underscores to separate relationships.
+                # This works as many levels deep as you want; there's no limit.
+                # Find all Choices for any question whose pub_date is in this year
+                # (reusing the 'current_year' variable we created above).
+                >>> Choice.objects.filter(question__pub_date__year=current_year)
+                <QuerySet [<Choice: Not much>, <Choice: The sky>, <Choice: Just hacking again>]>
+
+                # Let's delete one of the choices. Use delete() for that.
+                >>> c = q.choice_set.filter(choice_text__startswith='Just hacking')
+                >>> c.delete()
+                (1, {'polls.Choice': 1})
+
+
+              更多 model 的关联对象 信息见:
+              For more information on model relations, see Accessing related objects.
+                  https://docs.djangoproject.com/en/2.2/ref/models/relations/
+
+              更多 通过 API 使用 双下划线 执行 字段查找 的 信息见:
+              For more on how to use double underscores to perform field lookups via the API, see Field lookups.
+                    https://docs.djangoproject.com/en/2.2/topics/db/queries/#field-lookups-intro
+
+              更多 database API 相关信息见:
+              For full details on the database API, see our Database API reference.
+                  https://docs.djangoproject.com/en/2.2/topics/db/queries/
+
+
+
+
+
+--------------------------------------------------
+Introducing the Django Admin
+
+    https://docs.djangoproject.com/en/2.2/intro/tutorial02/#introducing-the-django-admin
+
+
+                    Philosophy
+
+                    Generating admin sites for your staff or clients to add, change, and delete content
+                    is tedious work that doesn’t require much creativity. For that reason,
+                    Django entirely automates creation of admin interfaces for models.
+
+                    Django was written in a newsroom environment, with a very clear
+                    separation between “content publishers” and the “public” site.
+                    Site managers use the system to add news stories, events, sports scores, etc.,
+                    and that content is displayed on the public site. Django solves
+                    the problem of creating a unified interface for site administrators to edit content.
+
+                    The admin isn’t intended to be used by site visitors. It’s for site managers.
+
+
+// 创建一个管理用户( Creating an admin user )
+(tutorial-venv) [root@python3lang mysite]# python manage.py createsuperuser
+          Username (leave blank to use 'root'): admin  <======= 输入用户名
+          Email address: admin@example.com  <======= 输入 email 地址
+          Password:     <====== 输入密码
+          Password (again):  <======== 重新输入密码
+          Superuser created successfully.
+
+                '''
+                mysql> select id, username, email from auth_user;
+                +----+----------+-------------------+
+                | id | username | email             |
+                +----+----------+-------------------+
+                |  1 | admin    | admin@example.com |
+                +----+----------+-------------------+
+                '''
+
+// Start the development server
+//   The Django admin site is activated by default. Let’s start the development server and explore it.
+(tutorial-venv) [root@python3lang mysite]# python manage.py runserver 192.168.175.20:8000
+
+    浏览器访问:  http://192.168.175.20:8000/admin/
+          则 打开 Django administration 的 登录界面
+
+
+
+
+
 
 
 ---------------------------------------------------------------------------------------------------
