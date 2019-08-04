@@ -842,11 +842,46 @@ Introducing the Django Admin
 
 
 
+--------------------------------------------------
+Enter the admin site
+
+    https://docs.djangoproject.com/en/2.2/intro/tutorial02/#enter-the-admin-site
+
+    在 Django admin index page 可以看到  groups 和 users,
+    它们是由 Django 自带的 django.contrib.auth 应用提供的
+
+
+--------------------------------------------------
+Make the poll app modifiable in the admin
+
+    https://docs.djangoproject.com/en/2.2/intro/tutorial02/#make-the-poll-app-modifiable-in-the-admin
+    https://docs.djangoproject.com/en/2.2/intro/tutorial02/#explore-the-free-admin-functionality
+
+But where’s our poll app? It’s not displayed on the admin index page.
+
+// 在 Django administration 网页 为  'Question' model 提供 管理接口(即管理 'Question' model 用的增删改查的 html 控件)
+// Just one thing to do: we need to tell the admin that Question objects have an admin interface.
+// To do this, open the polls/admin.py file, and edit it to look like this:
+(tutorial-venv) [root@python3lang mysite]# vim polls/admin.py
+
+          from django.contrib import admin
+
+          from .models import Question
+
+          admin.site.register(Question)
+
+
+
 
 
 
 
 ---------------------------------------------------------------------------------------------------
+Writing your first Django app, part 3
+
+    https://docs.djangoproject.com/en/2.2/intro/tutorial03/
+
+
 
 
 
