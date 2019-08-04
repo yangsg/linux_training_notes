@@ -1,0 +1,10 @@
+<!-- https://docs.djangoproject.com/en/2.2/intro/tutorial03/#write-views-that-actually-do-something -->
+{% if latest_question_list %}
+    <ul>
+    {% for question in latest_question_list %}
+        <li><a href="/polls/{{ question.id }}/">{{ question.question_text }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No polls are available.</p>
+{% endif %}
