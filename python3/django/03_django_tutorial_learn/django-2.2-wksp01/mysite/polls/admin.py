@@ -8,3 +8,6 @@ from .models import Question
 # to tell the admin that Question objects have an admin interface.
 # 在 Django administration 网页 为  'Question' model 提供 管理接口(即管理 'Question' model 用的增删改查的 html 控件)
 admin.site.register(Question)
+
+# 其他相关设置:
+# https://docs.djangoproject.com/en/2.2/intro/tutorial07/#customize-the-admin-form
