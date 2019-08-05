@@ -1094,19 +1094,152 @@ Raising a 404 error
       https://docs.djangoproject.com/en/2.2/intro/tutorial03/#a-shortcut-render
 
 
+(tutorial-venv) [root@python3lang mysite]# vim polls/views.py
+
+      from django.http import Http404
+      from django.shortcuts import render
+
+      from .models import Question
+      # ...
+      def detail(request, question_id):
+          try:
+              question = Question.objects.get(pk=question_id)
+          except Question.DoesNotExist:
+              raise Http404("Question does not exist")
+          return render(request, 'polls/detail.html', {'question': question})
+
+
+(tutorial-venv) [root@python3lang mysite]# vim polls/templates/polls/detail.html
+
+      {{ question }}
+
+
+    重启 server 浏览器访问
+          http://192.168.175.20:8000/polls/1/
+          http://192.168.175.20:8000/polls/99/   <-- 404 的情况
 
 
 
 
+--------------------------------------------------
+A shortcut: get_object_or_404()
+
+      get_list_or_404()
+
+    https://docs.djangoproject.com/en/2.2/intro/tutorial03/#a-shortcut-get-object-or-404
+    https://docs.djangoproject.com/en/2.2/topics/http/shortcuts/#django.shortcuts.get_object_or_404
+
+(tutorial-venv) [root@python3lang mysite]# vim polls/views.py
+
+      from django.shortcuts import get_object_or_404, render
+
+      from .models import Question
+      # ...
+      def detail(request, question_id):
+          question = get_object_or_404(Question, pk=question_id)
+          return render(request, 'polls/detail.html', {'question': question})
 
 
+        '''
+        The get_object_or_404() function takes a Django model as its first argument
+        and an arbitrary number of keyword arguments, which it passes to the get()
+        function of the model’s manager. It raises Http404 if the object doesn’t exist.
+
+        Django 提供 get_object_or_404() 是基于 Django 的松耦合的 设计哲学
+        Philosophy
+
+                Why do we use a helper function get_object_or_404() instead of automatically
+                catching the ObjectDoesNotExist exceptions at a higher level, or having
+                the model API raise Http404 instead of ObjectDoesNotExist?
+
+                Because that would couple the model layer to the view layer.
+                One of the foremost design goals of Django is to maintain loose coupling.
+                Some controlled coupling is introduced in the django.shortcuts module.
+
+        There’s also a get_list_or_404() function, which works just as get_object_or_404()
+        – except using filter() instead of get(). It raises Http404 if the list is empty.
+        '''
+
+--------------------------------------------------
+Use the template system
+
+    https://docs.djangoproject.com/en/2.2/intro/tutorial03/#use-the-template-system
 
 
+(tutorial-venv) [root@python3lang mysite]# vim polls/templates/polls/detail.html
+
+            <h1>{{ question.question_text }}</h1>
+            <ul>
+            {% for choice in question.choice_set.all %}
+                <li>{{ choice.choice_text }}</li>
+            {% endfor %}
+            </ul>
+
+        <!--
+        https://docs.djangoproject.com/en/2.2/intro/tutorial03/#use-the-template-system
+
+        使用模板系统
+
+        模板系统 采用 dot-lookup 语法访问变量属性.
+            大概的查找顺序为:
+                首先执行 a dictionary 查找, 如失败，则执行
+                an attribute 查找, 如果失败, 则执行
+                a list-index 查找
+
+        The template system uses dot-lookup syntax to access variable attributes.
+        In the example of {{ question.question_text }}, first Django does a dictionary
+        lookup on the object question. Failing that, it tries an attribute
+        lookup – which works, in this case. If attribute lookup had failed,
+        it would’ve tried a list-index lookup.
+
+        Method-calling happens in the {% for %} loop: question.choice_set.all is interpreted
+        as the Python code question.choice_set.all(), which returns an iterable of Choice
+        objects and is suitable for use in the {% for %} tag.
+
+        更多 template 的信息见:
+            https://docs.djangoproject.com/en/2.2/topics/templates/
+        -->
+
+--------------------------------------------------
+
+Removing hardcoded URLs in templates
+
+    https://docs.djangoproject.com/en/2.2/intro/tutorial03/#removing-hardcoded-urls-in-templates
 
 
+(tutorial-venv) [root@python3lang mysite]# vim polls/templates/polls/index.html
 
+        <!--
+        Bad Practice
+        <li><a href="/polls/{{ question.id }}/">{{ question.question_text }}</a></li>
+        -->
+        <!--
+        https://docs.djangoproject.com/en/2.2/intro/tutorial03/#removing-hardcoded-urls-in-templates
 
+        根据 Django 弱耦合 的设计哲学, 应该 使用 类似 {% url 'detail' question.id %} 的
+        方式实现链接引用而不应采用硬编码的方式直接将 url 嵌入到 template 中.
 
+        The problem with this hardcoded, tightly-coupled approach is that it becomes
+        challenging to change URLs on projects with a lot of templates. However,
+        since you defined the name argument in the path() functions in the polls.urls module,
+        you can remove a reliance on specific URL paths defined in your url
+        configurations by using the {% url %} template tag:
+
+        <li><a href="{% url 'detail' question.id %}">{{ question.question_text }}</a></li>
+
+        The way this works is by looking up the URL definition as specified in the polls.urls module.
+        You can see exactly where the URL name of ‘detail’ is defined below:
+
+                # the 'name' value as called by the {% url %} template tag
+                path('<int:question_id>/', views.detail, name='detail'),
+        -->
+        <-- Best Practice -->
+        <li><a href="{% url 'detail' question.id %}">{{ question.question_text }}</a></li>
+
+--------------------------------------------------
+Namespacing URL names
+
+    https://docs.djangoproject.com/en/2.2/intro/tutorial03/#namespacing-url-names
 
 
 

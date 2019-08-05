@@ -7,6 +7,8 @@ urlpatterns = [
     path('', views.index, name='index'),  # https://docs.djangoproject.com/en/2.2/ref/urls/#django.urls.path
     # https://docs.djangoproject.com/en/2.2/intro/tutorial03/#writing-more-views
     # ex: /polls/5/
+    # https://docs.djangoproject.com/en/2.2/intro/tutorial03/#removing-hardcoded-urls-in-templates
+    # the 'name' value as called by the {% url %} template tag
     path('<int:question_id>/', views.detail, name='detail'),
     # ex: /polls/5/results/
     path('<int:question_id>/results/', views.results, name='results'),

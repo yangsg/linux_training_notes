@@ -1,5 +1,5 @@
-from django.http import HttpResponse
-from django.shortcuts import render
+from django.http import HttpResponse, Http404
+from django.shortcuts import render, get_object_or_404
 
 # Create your views here.
 from django.template import loader
@@ -55,10 +55,51 @@ https://docs.djangoproject.com/en/2.2/intro/tutorial03/
 
 '''
 
-
+'''
 # https://docs.djangoproject.com/en/2.2/intro/tutorial03/#writing-more-views
+# https://docs.djangoproject.com/en/2.2/ref/request-response/#django.http.HttpResponse
 def detail(request, question_id):
     return HttpResponse("You're looking at question %s." % question_id)
+'''
+
+'''
+# https://docs.djangoproject.com/en/2.2/intro/tutorial03/#raising-a-404-error
+def detail(request, question_id):
+    try:
+        question = Question.objects.get(pk=question_id)
+    except Question.DoesNotExist:
+        raise Http404("Question does not exist")
+    return render(request, 'polls/detail.html', {'question': question})
+'''
+
+'''
+    https://docs.djangoproject.com/en/2.2/intro/tutorial03/#a-shortcut-get-object-or-404
+    https://docs.djangoproject.com/en/2.2/topics/http/shortcuts/#django.shortcuts.get_object_or_404
+    https://docs.djangoproject.com/en/2.2/topics/http/shortcuts/#django.shortcuts.get_list_or_404
+
+The get_object_or_404() function takes a Django model as its first argument
+and an arbitrary number of keyword arguments, which it passes to the get()
+function of the model’s manager. It raises Http404 if the object doesn’t exist.
+
+Django 提供 get_object_or_404() 是基于 Django 的松耦合的 设计哲学
+Philosophy
+
+        Why do we use a helper function get_object_or_404() instead of automatically
+        catching the ObjectDoesNotExist exceptions at a higher level, or having
+        the model API raise Http404 instead of ObjectDoesNotExist?
+
+        Because that would couple the model layer to the view layer.
+        One of the foremost design goals of Django is to maintain loose coupling.
+        Some controlled coupling is introduced in the django.shortcuts module.
+
+There’s also a get_list_or_404() function, which works just as get_object_or_404()
+– except using filter() instead of get(). It raises Http404 if the list is empty.
+'''
+
+
+def detail(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+    return render(request, 'polls/detail.html', {'question': question})
 
 
 def results(request, question_id):

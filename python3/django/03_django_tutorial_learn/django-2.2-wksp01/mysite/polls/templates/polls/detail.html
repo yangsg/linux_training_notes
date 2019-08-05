@@ -1,0 +1,35 @@
+<!-- https://docs.djangoproject.com/en/2.2/intro/tutorial03/#raising-a-404-error -->
+<!-- {{ question }} -->
+
+<!--
+https://docs.djangoproject.com/en/2.2/intro/tutorial03/#use-the-template-system
+
+使用模板系统
+
+模板系统 采用 dot-lookup 语法访问变量属性.
+    大概的查找顺序为:
+        首先执行 a dictionary 查找, 如失败，则执行
+        an attribute 查找, 如果失败, 则执行
+        a list-index 查找
+
+The template system uses dot-lookup syntax to access variable attributes.
+In the example of {{ question.question_text }}, first Django does a dictionary
+lookup on the object question. Failing that, it tries an attribute
+lookup – which works, in this case. If attribute lookup had failed,
+it would’ve tried a list-index lookup.
+
+Method-calling happens in the {% for %} loop: question.choice_set.all is interpreted
+as the Python code question.choice_set.all(), which returns an iterable of Choice
+objects and is suitable for use in the {% for %} tag.
+
+更多 template 的信息见:
+    https://docs.djangoproject.com/en/2.2/topics/templates/
+-->
+<h1>{{ question.question_text }}</h1>
+<ul>
+{% for choice in question.choice_set.all %}
+    <li>{{ choice.choice_text }}</li>
+{% endfor %}
+</ul>
+
+
