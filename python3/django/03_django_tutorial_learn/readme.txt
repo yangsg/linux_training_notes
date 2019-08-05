@@ -35,6 +35,7 @@ mysql 相关:
 
           https://stackoverflow.com/questions/34777755/how-to-config-django-using-pymysql-as-driver
           https://github.com/PyMySQL/PyMySQL/issues/790
+          https://stackoverflow.com/questions/43102442/whats-the-difference-between-mysqldb-mysqlclient-and-mysql-connector-python
 
           You can import pymsql so it presents as MySQLdb. You'll need to do this before any django code is run,
           so put this in your manage.py file
