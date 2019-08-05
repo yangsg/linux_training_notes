@@ -186,6 +186,13 @@ class DetailView(generic.DetailView):
     #   default template name.
     template_name = 'polls/detail.html'
 
+    # https://docs.djangoproject.com/en/2.2/intro/tutorial05/#testing-the-detailview
+    def get_queryset(self):
+        """
+        Excludes any questions that aren't published yet.
+        """
+        return Question.objects.filter(pub_date__lte=timezone.now())
+
 
 '''
 def results(request, question_id):
