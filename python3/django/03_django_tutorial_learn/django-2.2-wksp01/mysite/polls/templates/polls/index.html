@@ -2,6 +2,7 @@
 {% if latest_question_list %}
     <ul>
     {% for question in latest_question_list %}
+        {% comment "Optional note" %}
         <!--
         Bad Practice
         <li><a href="/polls/{{ question.id }}/">{{ question.question_text }}</a></li>
@@ -30,6 +31,7 @@
         <!--
         <li><a href="{% url 'detail' question.id %}">{{ question.question_text }}</a></li>
         -->
+        {% endcomment %}
         <!--
         Namespacing URL names
             https://docs.djangoproject.com/en/2.2/intro/tutorial03/#namespacing-url-names

@@ -4,6 +4,7 @@ from django.shortcuts import render, get_object_or_404
 # Create your views here.
 from django.template import loader
 from django.urls import reverse
+from django.utils import timezone
 from django.views import generic
 
 from .models import Question, Choice
@@ -65,9 +66,19 @@ class IndexView(generic.ListView):
     # it’s a lot easier to just tell Django to use the variable you want.
     context_object_name = 'latest_question_list'
 
+    '''
     def get_queryset(self):
         """Return the last five published questions."""
         return Question.objects.order_by('-pub_date')[:5]
+    '''
+
+    # https://docs.djangoproject.com/en/2.2/intro/tutorial05/#improving-our-view
+    def get_queryset(self):
+        """
+        Return the last five published questions (not including those set to be
+        published in the future).
+        """
+        return Question.objects.filter(pub_date__lte=timezone.now()).order_by('-pub_date')[:5]
 
 
 '''
@@ -157,6 +168,7 @@ Respectively, those two views abstract the concepts of
 
 
 '''
+
 
 class DetailView(generic.DetailView):
     # https://docs.djangoproject.com/en/2.2/intro/tutorial04/#amend-views
