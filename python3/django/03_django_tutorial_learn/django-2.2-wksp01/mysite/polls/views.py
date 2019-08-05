@@ -4,6 +4,7 @@ from django.shortcuts import render, get_object_or_404
 # Create your views here.
 from django.template import loader
 from django.urls import reverse
+from django.views import generic
 
 from .models import Question, Choice
 
@@ -30,12 +31,43 @@ def index(request):
     return HttpResponse(template.render(context, request))
 '''
 
-
+''' 改用 IndexView
 # https://docs.djangoproject.com/en/2.2/intro/tutorial03/#a-shortcut-render
 def index(request):
     latest_question_list = Question.objects.order_by('-pub_date')[:5]
     context = {'latest_question_list': latest_question_list}
     return render(request, 'polls/index.html', context)
+'''
+
+
+# https://docs.djangoproject.com/en/2.2/intro/tutorial04/#use-generic-views-less-code-is-better
+# https://docs.djangoproject.com/en/2.2/intro/tutorial04/#amend-views
+# https://docs.djangoproject.com/en/2.2/ref/class-based-views/generic-display/#django.views.generic.list.ListView
+#  更多 generic views 的信息, 见:
+#     https://docs.djangoproject.com/en/2.2/topics/class-based-views/
+class IndexView(generic.ListView):
+    # https://docs.djangoproject.com/en/2.2/intro/tutorial04/#amend-views
+    # 类似于 DetailView, the ListView generic view 默认使用
+    # 的 template 名为 <app name>/<model name>_list.html, 在我们的例子中
+    # 即为 polls/question_list.html,
+    # 我们可以使用 template_name 告诉 ListView 使用指定的 template 'polls/index.html'
+    template_name = 'polls/index.html'
+    # 修改 属性 context_object_name (如果不修改, 其值此处 默认为  'question_list')
+    # In previous parts of the tutorial, the templates have
+    # been provided with a context that contains the question
+    # and latest_question_list context variables. For DetailView the question
+    # variable is provided automatically – since we’re using a Django model(Question),
+    # Django is able to determine an appropriate name for the context variable.
+    # However, for ListView, the automatically generated context variable is question_list.
+    # To override this we provide the context_object_name attribute, specifying
+    # that we want to use latest_question_list instead. As an alternative approach,
+    # you could change your templates to match the new default context variables – but
+    # it’s a lot easier to just tell Django to use the variable you want.
+    context_object_name = 'latest_question_list'
+
+    def get_queryset(self):
+        """Return the last five published questions."""
+        return Question.objects.order_by('-pub_date')[:5]
 
 
 '''
@@ -97,10 +129,50 @@ There’s also a get_list_or_404() function, which works just as get_object_or_4
 – except using filter() instead of get(). It raises Http404 if the list is empty.
 '''
 
-
+''' 改用 DetailView
 def detail(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
     return render(request, 'polls/detail.html', {'question': question})
+'''
+
+'''
+# https://docs.djangoproject.com/en/2.2/intro/tutorial04/#use-generic-views-less-code-is-better
+# https://docs.djangoproject.com/en/2.2/intro/tutorial04/#amend-views
+# https://docs.djangoproject.com/en/2.2/ref/class-based-views/generic-display/#django.views.generic.detail.DetailView
+#  更多 generic views 的信息, 见:
+#     https://docs.djangoproject.com/en/2.2/topics/class-based-views/
+
+We’re using two generic views here: ListView and DetailView.
+Respectively, those two views abstract the concepts of
+“display a list of objects” and “display a detail page for a particular type of object.”
+
+修改 model 属性
+- Each generic view needs to know what model it will be acting upon.
+  This is provided using the model attribute.
+
+- The DetailView generic view expects the primary key value captured
+  from the URL to be called "pk", so we’ve changed question_id to pk for the generic views.
+
+        path('<int:pk>/', views.DetailView.as_view(), name='detail'),
+
+
+'''
+
+class DetailView(generic.DetailView):
+    # https://docs.djangoproject.com/en/2.2/intro/tutorial04/#amend-views
+    # In previous parts of the tutorial, the templates have been provided with
+    # a context that contains the question and latest_question_list context variables.
+    # For DetailView the question variable is provided automatically – since
+    # we’re using a Django model (Question), Django is able to determine an
+    # appropriate name for the context variable.
+    model = Question
+    # https://docs.djangoproject.com/en/2.2/intro/tutorial04/#amend-views
+    #   默认 the DetailView generic view 使用的 template 名为
+    #   <app name>/<model name>_detail.html, 在我们的的应用中,
+    #   则 默认为 polls/question_detail.html, 而属性 template_name
+    #   可用于告诉 Django 使用指定的 template name 非不是使用自动生成的
+    #   default template name.
+    template_name = 'polls/detail.html'
 
 
 '''
@@ -109,11 +181,20 @@ def results(request, question_id):
     return HttpResponse(response % question_id)
 '''
 
-
+''' 改用 ResultsView
 # https://docs.djangoproject.com/en/2.2/intro/tutorial04/#write-a-simple-form
 def results(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
     return render(request, 'polls/results.html', {'question': question})
+'''
+
+
+# https://docs.djangoproject.com/en/2.2/intro/tutorial04/#use-generic-views-less-code-is-better
+# https://docs.djangoproject.com/en/2.2/intro/tutorial04/#amend-views
+# https://docs.djangoproject.com/en/2.2/ref/class-based-views/generic-display/#django.views.generic.detail.DetailView
+class ResultsView(generic.DetailView):
+    model = Question
+    template_name = 'polls/results.html'
 
 
 '''

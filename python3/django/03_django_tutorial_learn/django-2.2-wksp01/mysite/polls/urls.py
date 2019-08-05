@@ -23,6 +23,7 @@ go ahead and add an app_name to set the application namespace:
 #  的方式来 引用 url 而不用再担心 不同 app 的 url 名字冲突的问题
 app_name = 'polls'  # 定义 app 的 名字空间(app namespace)
 
+'''
 urlpatterns = [
     # ex: /polls/
     path('', views.index, name='index'),  # https://docs.djangoproject.com/en/2.2/ref/urls/#django.urls.path
@@ -36,6 +37,19 @@ urlpatterns = [
     # ex: /polls/5/vote/
     path('<int:question_id>/vote/', views.vote, name='vote'),
 ]
+'''
+# https://docs.djangoproject.com/en/2.2/intro/tutorial04/#use-generic-views-less-code-is-better
+urlpatterns = [
+    path('', views.IndexView.as_view(), name='index'),
+    # 注意如下 2 行代码中的 url pattern 从  <question_id> 修改为了 <pk>
+    # https://docs.djangoproject.com/en/2.2/intro/tutorial04/#amend-views
+    # The DetailView generic view expects the primary key value captured
+    # from the URL to be called "pk", so we’ve changed question_id to pk for the generic views.
+    path('<int:pk>/', views.DetailView.as_view(), name='detail'),
+    path('<int:pk>/results/', views.ResultsView.as_view(), name='results'),
+    path('<int:question_id>/vote/', views.vote, name='vote'),
+]
+
 
 '''
     https://docs.djangoproject.com/en/2.2/intro/tutorial03/#writing-more-views
