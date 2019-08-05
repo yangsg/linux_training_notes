@@ -2,6 +2,27 @@ from django.urls import path
 
 from . import views
 
+'''
+Namespacing URL names
+
+    https://docs.djangoproject.com/en/2.2/intro/tutorial03/#namespacing-url-names
+
+The tutorial project has just one app, polls. In real Django projects, there might be five,
+ten, twenty apps or more. How does Django differentiate the URL names between them? For example,
+the polls app has a detail view, and so might an app on the same project that is
+for a blog. How does one make it so that Django knows which app view to create
+for a url when using the {% url %} template tag?
+
+The answer is to add namespaces to your URLconf. In the polls/urls.py file,
+go ahead and add an app_name to set the application namespace:
+
+'''
+# 定义 app 的 application namespace
+# 有了 app 的 名字空间后, 就可以使用如:
+#  <li><a href="{% url 'polls:detail' question.id %}">{{ question.question_text }}</a></li>
+#  的方式来 引用 url 而不用再担心 不同 app 的 url 名字冲突的问题
+app_name = 'polls'   # 定义 app 的 名字空间(app namespace)
+
 urlpatterns = [
     # ex: /polls/
     path('', views.index, name='index'),  # https://docs.djangoproject.com/en/2.2/ref/urls/#django.urls.path

@@ -1233,7 +1233,7 @@ Removing hardcoded URLs in templates
                 # the 'name' value as called by the {% url %} template tag
                 path('<int:question_id>/', views.detail, name='detail'),
         -->
-        <-- Best Practice -->
+        <!-- 一种改良版本, 注: 这还不是 最佳实践, 最佳实践是 还应该同时采用 命令空间的 url(Namespacing URL names) -->
         <li><a href="{% url 'detail' question.id %}">{{ question.question_text }}</a></li>
 
 --------------------------------------------------
@@ -1241,12 +1241,27 @@ Namespacing URL names
 
     https://docs.djangoproject.com/en/2.2/intro/tutorial03/#namespacing-url-names
 
+(tutorial-venv) [root@python3lang mysite]# vim polls/urls.py
+
+          from django.urls import path
+
+          from . import views
+
+          app_name = 'polls'  # 定义 app 的 名字空间(app namespace)
+          urlpatterns = [
+              path('', views.index, name='index'),
+              path('<int:question_id>/', views.detail, name='detail'),
+              path('<int:question_id>/results/', views.results, name='results'),
+              path('<int:question_id>/vote/', views.vote, name='vote'),
+          ]
 
 
+(tutorial-venv) [root@python3lang mysite]# vim polls/templates/polls/index.html
+    <!-- Best Practice -->
+    <li><a href="{% url 'polls:detail' question.id %}">{{ question.question_text }}</a></li>
 
 
-
-
+----------------------------------------------------------------------------------------------------
 
 
 
