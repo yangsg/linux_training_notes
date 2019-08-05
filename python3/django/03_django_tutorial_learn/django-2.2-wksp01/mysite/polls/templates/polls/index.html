@@ -1,3 +1,12 @@
+<!--
+https://docs.djangoproject.com/en/2.2/intro/tutorial06/#customize-your-app-s-look-and-feel
+https://docs.djangoproject.com/en/2.2/howto/static-files/
+https://docs.djangoproject.com/en/2.2/ref/contrib/staticfiles/
+-->
+{% comment "Optional note" %} <!-- 标记 {% load static %} 用于生成 url 的绝对路径  --> {% endcomment %}
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'polls/style.css' %}">
+
 <!-- https://docs.djangoproject.com/en/2.2/intro/tutorial03/#write-views-that-actually-do-something -->
 {% if latest_question_list %}
     <ul>
