@@ -31,9 +31,10 @@ mysql 相关:
        关于在 Django 中使用 pymysql 的问题:
            虽然也许可以在 Django 中使用 pymysql, 但 极度不推荐 这么做, 而还是应该使用 Django 官网推荐的方式.
            因为 通常 官网推荐的方式 如果出现 兼容等相关的 bug 问题, 一般官方都会 努力去做 bug 修复,
-           而官方没有推荐或说明的, 则官方也就 不会 给出 bug 修复的承诺.
+           而官方没有推荐或说明的, 则官方也就 不会 给出 bug 修复或改进的承诺.
 
           https://stackoverflow.com/questions/34777755/how-to-config-django-using-pymysql-as-driver
+          https://github.com/PyMySQL/PyMySQL/issues/790
 
           You can import pymsql so it presents as MySQLdb. You'll need to do this before any django code is run,
           so put this in your manage.py file
