@@ -1,5 +1,8 @@
 
 
+https://docs.djangoproject.com/en/2.2/intro/whatsnext/
+
+
 
 Django documentation
     https://docs.djangoproject.com/en/2.2/
