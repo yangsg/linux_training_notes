@@ -1279,6 +1279,35 @@ Namespacing URL names
 
 
 ----------------------------------------------------------------------------------------------------
+Writing your first Django app, part 4
+
+    https://docs.djangoproject.com/en/2.2/intro/tutorial04/#writing-your-first-django-app-part-4
+
+
+(tutorial-venv) [root@python3lang mysite]# vim polls/templates/polls/detail.html
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

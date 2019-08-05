@@ -21,7 +21,7 @@ go ahead and add an app_name to set the application namespace:
 # 有了 app 的 名字空间后, 就可以使用如:
 #  <li><a href="{% url 'polls:detail' question.id %}">{{ question.question_text }}</a></li>
 #  的方式来 引用 url 而不用再担心 不同 app 的 url 名字冲突的问题
-app_name = 'polls'   # 定义 app 的 名字空间(app namespace)
+app_name = 'polls'  # 定义 app 的 名字空间(app namespace)
 
 urlpatterns = [
     # ex: /polls/

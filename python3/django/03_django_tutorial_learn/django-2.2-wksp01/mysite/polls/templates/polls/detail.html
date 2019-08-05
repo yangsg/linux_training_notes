@@ -1,3 +1,4 @@
+{% comment "Optional note" %}
 <!-- https://docs.djangoproject.com/en/2.2/intro/tutorial03/#raising-a-404-error -->
 <!-- {{ question }} -->
 
@@ -25,11 +26,43 @@ objects and is suitable for use in the {% for %} tag.
 更多 template 的信息见:
     https://docs.djangoproject.com/en/2.2/topics/templates/
 -->
+<!--
 <h1>{{ question.question_text }}</h1>
 <ul>
 {% for choice in question.choice_set.all %}
     <li>{{ choice.choice_text }}</li>
 {% endfor %}
 </ul>
+-->
+{% endcomment %}
 
+<h1>{{ question.question_text }}</h1>
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<!--
+Write a simple form
+    https://docs.djangoproject.com/en/2.2/intro/tutorial04/#write-a-simple-form
+
+注: Whenever you create a form that alters data server-side, use method="post".
+    This tip isn’t specific to Django; it’s just good Web development practice.
+
+    forloop.counter indicates how many times the for tag has gone through its loop
+
+使用 {% csrf_token %} 防止 csrf 攻击:
+    Since we’re creating a POST form (which can have the effect of modifying data),
+    we need to worry about Cross Site Request Forgeries. Thankfully,
+    you don’t have to worry too hard, because Django comes with a very
+    easy-to-use system for protecting against it. In short, all POST forms
+    that are targeted at internal URLs should use the {% csrf_token %} template tag.
+-->
+
+<form action="{% url 'polls:vote' question.id %}" method="post">
+    {% csrf_token %}
+    {% for choice in question.choice_set.all %}
+    <input type="radio" name="choice" id="choice{{ forloop.counter }}" value="{{ choice.id }}">
+    <label for="choice{{ forloop.counter }}">{{ choice.choice_text }}</label><br>
+    {% endfor %}
+    <input type="submit" value="Vote">
+</form>
 
