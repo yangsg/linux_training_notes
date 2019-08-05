@@ -37,7 +37,7 @@ class Question(models.Model):
         return self.question_text
 
     '''
-    添加 一个 仅用于 演示用的  was_published_recently 方法:
+    添加 一个 仅用于 演示用(后面会写一个测试用例对其进行测试)的  was_published_recently 方法, :
         https://docs.djangoproject.com/en/2.2/intro/tutorial02/#playing-with-the-api
 
         Note the addition of import datetime and from django.utils import timezone,
@@ -49,8 +49,16 @@ class Question(models.Model):
             https://docs.djangoproject.com/en/2.2/topics/i18n/timezones/
     '''
 
+    ''' 带 bug 的 was_published_recently
     def was_published_recently(self):
         return self.pub_date >= timezone.now() - datetime.timedelta(days=1)
+    '''
+
+    # https://docs.djangoproject.com/en/2.2/intro/tutorial05/#fixing-the-bug
+    # (tutorial-venv) [root@python3lang mysite]# python manage.py test polls
+    def was_published_recently(self):
+        now = timezone.now()
+        return now - datetime.timedelta(days=1) <= self.pub_date <= now
 
 
 class Choice(models.Model):
