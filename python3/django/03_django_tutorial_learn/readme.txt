@@ -1,6 +1,8 @@
 
 
 https://docs.djangoproject.com/en/2.2/intro/whatsnext/
+https://docs.djangoproject.com/en/2.2/topics/
+https://docs.djangoproject.com/en/2.2/ref/
 
 
 
