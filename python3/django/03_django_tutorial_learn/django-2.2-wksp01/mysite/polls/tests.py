@@ -229,3 +229,40 @@ class QuestionDetailViewTests(TestCase):
         url = reverse('polls:detail', args=(past_question.id,))
         response = self.client.get(url)
         self.assertContains(response, past_question.question_text)
+
+
+'''
+Ideas for more tests
+    https://docs.djangoproject.com/en/2.2/intro/tutorial05/#ideas-for-more-tests
+
+When testing, more is better
+    https://docs.djangoproject.com/en/2.2/intro/tutorial05/#when-testing-more-is-better
+
+    As long as your tests are sensibly arranged, they won’t become unmanageable.
+    Good rules-of-thumb include having:
+
+        - a separate TestClass for each model or view
+        - a separate test method for each set of conditions you want to test
+        - test method names that describe their function
+
+Further testing
+    https://docs.djangoproject.com/en/2.2/intro/tutorial05/#further-testing
+
+Selenium
+    http://seleniumhq.org/
+Django includes LiveServerTestCase to facilitate integration with tools like Selenium.
+    https://docs.djangoproject.com/en/2.2/topics/testing/tools/#django.test.LiveServerTestCase
+
+continuous integration
+    https://en.wikipedia.org/wiki/Continuous_integration
+
+Integration with coverage.py
+    https://docs.djangoproject.com/en/2.2/topics/testing/advanced/#topics-testing-code-coverage
+
+
+更多 Django 测试相关的 信息 见:
+        https://docs.djangoproject.com/en/2.2/topics/testing/
+
+
+
+'''
