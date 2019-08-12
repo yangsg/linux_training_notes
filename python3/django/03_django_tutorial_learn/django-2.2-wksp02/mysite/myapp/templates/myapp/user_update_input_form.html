@@ -1,0 +1,8 @@
+<h1>修改 user</h1>
+<form action="{% url 'myapp:user_update' form.id.value %}" method="post">
+    {% csrf_token %}
+    id: <input name="id" type="text" value="{{ form.id.value }}" readonly="readonly" /><br />
+    username: <input name="name" type="text" value="{{ form.name.value | default_if_none:'' }}"/><br />
+    password: <input name="password" type="password" value="{{ form.password.value | default_if_none:'' }}"/><br />
+    <input type="submit" value="提交"/>
+</form>

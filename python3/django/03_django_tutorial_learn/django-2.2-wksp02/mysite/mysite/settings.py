@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     #  https://docs.djangoproject.com/en/2.2/ref/django-admin/#django-admin-sqlmigrate
     #  https://docs.djangoproject.com/en/2.2/ref/django-admin/#check
     #  https://docs.djangoproject.com/en/2.2/ref/django-admin/#django-admin-migrate
+    'myapp.apps.MyappConfig',  # <------
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -154,3 +156,26 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "staticfiles"),
+]
+print(os.path.join(BASE_DIR, "staticfiles"))
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/tmp/debug.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}

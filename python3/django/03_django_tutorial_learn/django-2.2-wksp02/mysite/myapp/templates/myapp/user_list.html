@@ -1,0 +1,37 @@
+user list page
+{# https://stackoverflow.com/questions/35825114/django-where-to-store-global-static-files-and-templates #}
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/global.css' %}"/>
+
+<style>
+    table, th, td {
+        border: 1px solid black;
+    }
+
+    td {
+        width: 60px;
+    }
+</style>
+<h1></h1>
+<table id="userlist_table">
+    <tr>
+        <th>id</th>
+        <th>name</th>
+        <th>password</th>
+        <th></th>
+        <th></th>
+    </tr>
+    {% for user in user_list %}
+    <tr>
+        <td>{{user.id}}</td>
+        <td>{{user.name}}</td>
+        <td>{{user.password}}</td>
+        <td><a href="{% url 'myapp:user_update' user.id %}">update</a></td>
+        <td><a href="{% url 'myapp:user_delete' user.id %}">delete</a></td>
+    </tr>
+    {% endfor %}
+</table>
+
+<a href="{% url 'myapp:user_create'%}">
+    <h3>user create</h3>
+</a>

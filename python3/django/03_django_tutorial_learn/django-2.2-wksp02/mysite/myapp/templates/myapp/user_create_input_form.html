@@ -1,0 +1,7 @@
+<h1>添加 user</h1>
+<form action="{% url 'myapp:user_create' %}" method="post">
+    {% csrf_token %}
+    username: <input name="name" type="text" value="{{ form.name.value | default_if_none:'' }}" /><br />
+    password: <input name="password" type="password" /><br />
+    <input type="submit" value="提交"/>
+</form>

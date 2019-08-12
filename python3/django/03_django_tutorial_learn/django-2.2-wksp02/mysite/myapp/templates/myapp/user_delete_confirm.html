@@ -1,0 +1,9 @@
+<h1>删除 user</h1>
+<form action="{% url 'myapp:user_delete' form.id.value %}" method="post">
+    {% csrf_token %}
+    id: <input name="id" type="text" value="{{ form.id.value }}" disabled/><br/>
+    username: <input name="name" type="text" value="{{ form.name.value | default_if_none:'' }}" disabled/><br/>
+    password: <input name="password" type="password" value="{{ form.password.value | default_if_none:'' }}"
+                     disabled/><br/>
+    <input type="submit" value="确定删除"/>
+</form>
