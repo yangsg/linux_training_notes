@@ -12,4 +12,5 @@ urlpatterns = [
     path('user/create/', views.UserCreate.as_view(), name='user_create'),
     path('user/update/<int:id>/', views.UserUpdate.as_view(), name='user_update'),
     path('user/delete/<int:id>/', views.UserDelete.as_view(), name='user_delete'),
+    path('user/name_existed_check/', views.UserNameExistedCheck.as_view(), name='name_existed_check'),
 ]

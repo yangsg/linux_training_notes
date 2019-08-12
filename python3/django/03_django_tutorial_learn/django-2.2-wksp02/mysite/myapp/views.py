@@ -1,6 +1,6 @@
 import logging
 
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 
 # Create your views here.
@@ -27,6 +27,22 @@ class UserDetail(View):
     def get(self, request):
         pass
         # user_list = User.objects.get(pk=)
+
+
+class UserNameExistedCheck(View):
+    def post(self, request):
+        name = request.POST.get('name')
+        if not name:
+            return JsonResponse({
+                'error_msg': '没有提供用户名'
+            }, status=400)
+
+        is_existed = User.objects.filter(name__iexact=name).exists()
+
+        if request.is_ajax():
+            return JsonResponse({'is_existed': is_existed})
+        else:
+            return HttpResponse(f'is_existed: {is_existed}')
 
 
 class UserCreate(View):

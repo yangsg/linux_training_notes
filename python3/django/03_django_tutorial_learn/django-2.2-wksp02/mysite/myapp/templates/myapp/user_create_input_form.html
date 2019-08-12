@@ -1,7 +1,43 @@
+<style>
+    .msg {
+        display: none;
+    }
+
+    .msg.error {
+        color: red;
+        display: inline;
+    }
+
+    .msg.success {
+        color: green;
+        display: inline;
+    }
+</style>
+
 <h1>添加 user</h1>
-<form action="{% url 'myapp:user_create' %}" method="post">
+{% load static %}
+<form id="user-create-form" action="{% url 'myapp:user_create' %}" method="post">
     {% csrf_token %}
-    username: <input name="name" type="text" value="{{ form.name.value | default_if_none:'' }}" /><br />
-    password: <input name="password" type="password" /><br />
+    <div>
+        username: <input id="name-input" name="name" type="text" value="{{ form.name.value | default_if_none:'' }}"
+                         data-ajax-check-url="{% url 'myapp:name_existed_check' %}"/>
+        <span id="name-input-msg" class="msg"></span>
+    </div>
+
+    <div>
+    password: <input name="password" type="password"/>
+    </div>
     <input type="submit" value="提交"/>
 </form>
+
+<script src="{% static 'vender/javascript/jquery-3.4.1.js' %}"></script>
+<script src="{% static 'javascript/global.js' %}"></script>
+<script>
+    $(document).ready(function () {
+        common.init();
+    });
+</script>
+
+<script src="{% static 'myapp/user.js' %}"></script>
+
+
