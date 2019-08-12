@@ -38,6 +38,11 @@ CREATE DATABASE db_django_02 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
       (tutorial-venv) [root@python3lang mysite]# python manage.py runserver 192.168.175.20:8000
 
 
+一个在 javascript 中使用 Django 的 reverse 功能的插件:
+    django-js-reverse 0.9.1
+
+      https://pypi.org/project/django-js-reverse/
+      https://github.com/ierror/django-js-reverse
 
 
 
