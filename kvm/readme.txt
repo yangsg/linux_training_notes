@@ -197,6 +197,86 @@ Intel (VT-x): VT-x represents Intel's technology for virtualization on the x86 p
 
 
 
+---------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------------------------
+kvm
+
+
+https://www.linuxtechi.com/install-kvm-hypervisor-on-centos-7-and-rhel-7/
+
+
+
+// 查看主机信息
+[root@host ~]# uname -a
+Linux host 3.10.0-693.el7.x86_64 #1 SMP Tue Aug 22 21:09:27 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
+
+[root@host ~]# cat /etc/redhat-release
+CentOS Linux release 7.4.1708 (Core)
+
+
+// 查看 CPU 是否支持 Hardware Virtualization
+[root@host ~]# grep -E '(vmx|svm)' /proc/cpuinfo
+
+// 或 使用如下方式查看 (此例仅针对 intel 的 cpu)
+[root@host ~]# lscpu | grep VT-x
+    Virtualization:        VT-x
+
+
+// 安装 kvm 相关的 packages
+[root@host ~]# yum -y install qemu-kvm qemu-img virt-manager libvirt libvirt-python libvirt-client virt-install virt-viewer bridge-utils
+
+
+[root@host ~]# systemctl start libvirtd
+[root@host ~]# systemctl enable libvirtd
+[root@host ~]# systemctl status libvirtd
+
+        ● libvirtd.service - Virtualization daemon
+           Loaded: loaded (/usr/lib/systemd/system/libvirtd.service; enabled; vendor preset: enabled)
+           Active: active (running) since Wed 2019-08-14 00:48:59 CST; 4min 2s ago
+             Docs: man:libvirtd(8)
+                   https://libvirt.org
+         Main PID: 2184 (libvirtd)
+           CGroup: /system.slice/libvirtd.service
+                   ├─2184 /usr/sbin/libvirtd
+                   ├─2286 /usr/sbin/dnsmasq --conf-file=/var/lib/libvirt/dnsmasq/default.conf --leasefile-ro --dhcp-script=/usr/libexec/libvirt_leaseshelper
+                   └─2287 /usr/sbin/dnsmasq --conf-file=/var/lib/libvirt/dnsmasq/default.conf --leasefile-ro --dhcp-script=/usr/libexec/libvirt_leaseshelper
+
+        Aug 14 00:48:59 host systemd[1]: Started Virtualization daemon.
+        Aug 14 00:49:00 host dnsmasq[2286]: started, version 2.76 cachesize 150
+        Aug 14 00:49:00 host dnsmasq[2286]: compile time options: IPv6 GNU-getopt DBus no-i18n IDN DHCP DHCPv6 no-Lua TFTP no-conntrack ipset auth no-DNSSEC loop-detect inotify
+        Aug 14 00:49:00 host dnsmasq-dhcp[2286]: DHCP, IP range 192.168.122.2 -- 192.168.122.254, lease time 1h
+        Aug 14 00:49:00 host dnsmasq-dhcp[2286]: DHCP, sockets bound exclusively to interface virbr0
+        Aug 14 00:49:00 host dnsmasq[2286]: reading /etc/resolv.conf
+        Aug 14 00:49:00 host dnsmasq[2286]: using nameserver 192.168.175.2#53
+        Aug 14 00:49:00 host dnsmasq[2286]: read /etc/hosts - 2 addresses
+        Aug 14 00:49:00 host dnsmasq[2286]: read /var/lib/libvirt/dnsmasq/default.addnhosts - 0 addresses
+        Aug 14 00:49:00 host dnsmasq-dhcp[2286]: read /var/lib/libvirt/dnsmasq/default.hostsfile
+
+
+// 查看模块是否被 loaded
+[root@host ~]# lsmod | grep kvm
+
+      kvm_intel             170086  0
+      kvm                   566340  1 kvm_intel
+      irqbypass              13503  1 kvm
+
+// In Case you have Minimal CentOS 7 and RHEL 7 installation , then virt-manger will not start for that you need to install x-window package.
+[root@host ~]# yum -y install "@X Window System" xorg-x11-xauth xorg-x11-fonts-* xorg-x11-utils
+
+
+// 通过 xshell 远程登录 到 host 主机, 再执行 命令 virt-manager 可打开其 图形管理终端
+      不过需要先配置 xshell 支持 x11 forwarding 功能:  [文件] -> [属性] -> [连接] -> [ssh] -> [隧道] -> 分别选中 [转发X11连接到] 和 [Xmanager]
+[c:\~]$ ssh root@192.168.175.30
+[root@host ~]# virt-manager
+
 
 
 
