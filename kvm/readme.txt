@@ -333,17 +333,23 @@ CentOS Linux release 7.4.1708 (Core)
 
 
 ---------------------------------------------------------------------------------------------------
+使用 命令 virt-install
 
-
-virt-install
-
+// 可以查阅 更多 详细信息
 [root@host ~]# man virt-install
 
 // 通过 --option=? 的形式可以查看 对应 argument 的  sub options
 [root@host ~]# virt-install --disk=?
 
-
-
+// 在 kvm 上 安装 一个 centos7.4 操作系统
+[root@host ~]# virt-install \
+  --name vm01-centos7.4-64 \
+  --graphics vnc,listen=0.0.0.0,port=5920,keymap=en_us \
+  --memory 512,maxmemory=1024 \
+  --vcpus 1,maxvcpus=2 \
+  --disk path=/var/lib/libvirt/images/vm01-centos7.4-64.img,size=8,format=qcow2 \
+  --network bridge=virbr0 \
+  --cdrom /tmp/CentOS-7.4-x86_64-Everything-1708.iso
 
 
 
