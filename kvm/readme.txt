@@ -345,6 +345,14 @@ virt-install
 
 
 
+---------------------------------------------------------------------------------------------------
+学习过程中 遇到的问题:
+
+      https://communities.vmware.com/thread/541258
+      https://www.centos.org/forums/viewtopic.php?t=49229
+
+
+
 
 
 
