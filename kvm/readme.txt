@@ -353,8 +353,105 @@ CentOS Linux release 7.4.1708 (Core)
 
 
 
+安装完成后重启, 查看相关进程:
+[root@host ~]# ps -elf | grep qemu-kvm
+        6 S qemu       2600      1  2  80   0 - 462041 poll_s 13:36 ?       00:01:48 /usr/libexec/qemu-kvm -name vm01-centos7.4-64 -S -machine pc-i440fx-rhel7.0.0,accel=kvm,usb=off,dump-guest-core=off -cpu Broadwell-IBRS,-hle,-rtm -m 1024 -realtime mlock=off -smp 1,maxcpus=2,sockets=2,cores=1,threads=1 -uuid b06b39da-30ca-4905-be1c-e3db5783bed8 -no-user-config -nodefaults -chardev socket,id=charmonitor,path=/var/lib/libvirt/qemu/domain-5-vm01-centos7.4-64/monitor.sock,server,nowait -mon chardev=charmonitor,id=monitor,mode=control -rtc base=utc,driftfix=slew -global kvm-pit.lost_tick_policy=delay -no-hpet -no-shutdown -global PIIX4_PM.disable_s3=1 -global PIIX4_PM.disable_s4=1 -boot strict=on -device ich9-usb-ehci1,id=usb,bus=pci.0,addr=0x4.0x7 -device ich9-usb-uhci1,masterbus=usb.0,firstport=0,bus=pci.0,multifunction=on,addr=0x4 -device ich9-usb-uhci2,masterbus=usb.0,firstport=2,bus=pci.0,addr=0x4.0x1 -device ich9-usb-uhci3,masterbus=usb.0,firstport=4,bus=pci.0,addr=0x4.0x2 -device virtio-serial-pci,id=virtio-serial0,bus=pci.0,addr=0x5 -drive file=/var/lib/libvirt/images/vm01-centos7.4-64.img,format=qcow2,if=none,id=drive-virtio-disk0 -device virtio-blk-pci,scsi=off,bus=pci.0,addr=0x6,drive=drive-virtio-disk0,id=virtio-disk0,bootindex=1 -drive if=none,id=drive-ide0-0-0,readonly=on -device ide-cd,bus=ide.0,unit=0,drive=drive-ide0-0-0,id=ide0-0-0 -netdev tap,fd=26,id=hostnet0,vhost=on,vhostfd=28 -device virtio-net-pci,netdev=hostnet0,id=net0,mac=52:54:00:ad:ce:4e,bus=pci.0,addr=0x3 -chardev pty,id=charserial0 -device isa-serial,chardev=charserial0,id=serial0 -chardev socket,id=charchannel0,path=/var/lib/libvirt/qemu/channel/target/domain-5-vm01-centos7.4-64/org.qemu.guest_agent.0,server,nowait -device virtserialport,bus=virtio-serial0.0,nr=1,chardev=charchannel0,id=channel0,name=org.qemu.guest_agent.0 -device usb-tablet,id=input0,bus=usb.0,port=1 -vnc 0.0.0.0:20 -k en-us -vga cirrus -device virtio-balloon-pci,id=balloon0,bus=pci.0,addr=0x7 -object rng-random,id=objrng0,filename=/dev/urandom -device virtio-rng-pci,rng=objrng0,id=rng0,bus=pci.0,addr=0x8 -msg timestamp=on
 
 
+---------------------------------------------------------------------------------------------------
+
+[root@host ~]# man virsh   # Virtual Shell
+
+[root@host ~]# virsh list    #list domains
+ Id    Name                           State
+ ----------------------------------------------------
+  5     vm01-centos7.4-64              running
+
+[root@host ~]# virsh list --all   #list inactive & active domains
+ Id    Name                           State
+----------------------------------------------------
+ 5     vm01-centos7.4-64              running
+
+
+// 如果直接 键入 virsh, 可以进入 virsh 的 交互模式
+[root@host ~]# virsh
+        Welcome to virsh, the virtualization interactive terminal.
+
+        Type:  'help' for help with commands
+               'quit' to quit
+
+        virsh # help list
+          NAME
+            list - list domains
+
+--------------------------------------------------
+如下是连接 GuestOS 的 各种方式 (注: 通过 console 连接方式的配置针对 centos6 和 centos7 略有不同, 因为其采用的Grub的版本不同)
+
+
+      ------------------------------
+      连接方式 1): 通过 virt-manager, 然后加 图形界面选中对应的 Guest Machine, 并 点击 Open 工具按钮
+      [root@host ~]# virt-manager
+
+
+      ------------------------------
+      连接方式 2): 通过 virt-viewer
+      [root@host ~]# virt-viewer vm01-centos7.4-64
+
+      ------------------------------
+      连接方式 3): 通过 vncviewer
+
+      [root@host ~]# yum provides '*bin/vncviewer'
+      [root@host ~]# yum -y install tigervnc
+      [root@host ~]# man vncviewer
+
+      [root@host ~]# ps -elf | grep qemu-kvm | grep -E -o -- '-vnc[[:space:]]+[[:digit:]\.]+:[[:digit:]]+'
+            -vnc 0.0.0.0:20
+
+      [root@host ~]# netstat -anptu | grep qemu-kvm
+            tcp        0      0 0.0.0.0:5920            0.0.0.0:*               LISTEN      6021/qemu-kvm
+
+      // 使用 vncviewer 连接 GuestOS
+      [root@host ~]# vncviewer 192.168.175.30:5920
+
+                  按 F8 可以 显示 the context menu
+
+          当然, 通过 windows 操作系统 上的 'VNC Viewer' 客户端软件也是可以连接的
+
+
+      ------------------------------
+      连接方式 4): 通过 console 方式 连接 kvm 安装的 centos7 (此例仅正对 centos7, 因centos7 采用grub2)
+
+      // 编辑 grub 的参数配置文件
+      [root@localhost ~]# vim /etc/sysconfig/grub
+            GRUB_CMDLINE_LINUX="rd.lvm.lv=centos/root rd.lvm.lv=centos/swap rhgb quiet console=ttyS0"
+
+      // 重做(remake) grub2的配置文件
+      [root@localhost ~]# grub2-mkconfig -o /boot/grub2/grub.cfg
+      [root@localhost ~]# reboot
+
+
+      [root@host ~]# virsh console vm01-centos7.4-64
+
+              Connected to domain vm01-centos7.4-64
+              Escape character is ^]
+                  <======================= 直接回车
+              CentOS Linux 7 (Core)
+              Kernel 3.10.0-693.el7.x86_64 on an x86_64
+
+              localhost login: root
+              Password:
+              Last login: Wed Aug 14 17:03:19 on ttyS0
+              [root@localhost ~]# exit
+              logout
+
+              CentOS Linux 7 (Core)
+              Kernel 3.10.0-693.el7.x86_64 on an x86_64
+
+              localhost login: <======================= 按 Ctrl + ] 返回到 HostOS
+
+      ------------------------------
+
+--------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------
 学习过程中 遇到的问题:
