@@ -449,9 +449,160 @@ CentOS Linux release 7.4.1708 (Core)
 
               localhost login: <======================= 按 Ctrl + ] 返回到 HostOS
 
-      ------------------------------
 
---------------------------------------------------
+
+---------------------------------------------------------------------------------------------------
+
+kvm 中,
+从动态的角度看, 活动的 virtual machine 对应于 一个 qemu-kvm 进程,
+从静态的角度看, virtual machine = 配置文件 + 磁盘文件
+
+
+[root@host ~]# ls /var/lib/libvirt/images/
+    vm01-centos7.4-64.img
+
+[root@host ~]# ls -l /var/lib/libvirt/images/
+    -rw------- 1 qemu qemu 8591507456 Aug 14 18:03 vm01-centos7.4-64.img
+
+[root@host ~]# tree -L 1 /var/lib/libvirt/
+
+          /var/lib/libvirt/
+          ├── boot
+          ├── dnsmasq
+          ├── filesystems
+          ├── images  <----------
+          ├── lxc
+          ├── network
+          ├── qemu
+          └── swtpm
+
+
+[root@host ~]# tree -L 1 /etc/libvirt/
+          /etc/libvirt/
+          ├── libvirt-admin.conf
+          ├── libvirt.conf
+          ├── libvirtd.conf
+          ├── lxc.conf
+          ├── nwfilter
+          ├── qemu     <----------
+          ├── qemu.conf
+          ├── qemu-lockd.conf
+          ├── secrets
+          ├── storage  <----------
+          ├── virtlockd.conf
+          └── virtlogd.conf
+
+[root@host ~]# ls /etc/libvirt/qemu
+      networks  vm01-centos7.4-64.xml  <--- 这里的 xml 文件为现有的 虚拟机的 配置文件
+               注: 如果需要修改配置,不要手动直接修改(如用vim)这些配置文件, 而应通过 virsh edit <domain> 这种方式来修改
+
+
+    --------------------------------------------------------------------------------
+    |设置开机自启的语法:   virsh autostart [--disable] domain
+    |                       Configure a domain to be automatically started at boot.
+    |
+    |                       The option --disable disables autostarting.
+    --------------------------------------------------------------------------------
+
+
+[root@host ~]# virsh help
+
+[root@host ~]# virsh list
+ Id    Name                           State
+----------------------------------------------------
+ 7     vm01-centos7.4-64              running
+
+// 设置 虚拟客户机(即 Domain) 开机 自动启动 (其实就是在 /etc/libvirt/qemu/autostart/ 目录下为 指定的虚拟机建立配置文件的软连接文件)
+[root@host ~]# virsh autostart vm01-centos7.4-64
+      Domain vm01-centos7.4-64 marked as autostarted
+
+[root@host ~]# ls -l /etc/libvirt/qemu/autostart/
+    lrwxrwxrwx 1 root root 39 Aug 14 19:35 vm01-centos7.4-64.xml -> /etc/libvirt/qemu/vm01-centos7.4-64.xml
+
+
+
+
+---------------------------------------------------------------------------------------------------
+
+[root@host ~]# virsh help | grep list
+    domblklist                     list all domain blocks
+    domiflist                      list all domain virtual interfaces
+    list                           list domains
+    iface-list                     list physical host interfaces
+    nwfilter-list                  list network filters
+    nwfilter-binding-list          list network filter bindings
+    net-list                       list networks
+    nodedev-list                   enumerate devices on this host
+    secret-list                    list secrets
+    snapshot-list                  List snapshots for a domain
+    pool-list                      list pools
+    vol-list                       list vols
+
+[root@host libvirt]# virsh help | grep edit
+    edit                           edit XML configuration for a domain
+    managedsave-edit               edit XML for a domain's managed save state file
+    save-image-edit                edit XML for a domain's saved state file
+    iface-edit                     edit XML configuration for a physical host interface
+    nwfilter-edit                  edit XML configuration for a network filter
+    net-edit                       edit XML configuration for a network
+    snapshot-edit                  edit XML for a snapshot
+    pool-edit                      edit XML configuration for a storage pool
+
+
+------------------------------
+// 查看 网络 相关 信息 和 配置文件
+[root@host ~]# virsh net-list
+     Name                 State      Autostart     Persistent
+    ----------------------------------------------------------
+     default              active     yes           yes
+
+[root@host ~]# ls /etc/libvirt/qemu/networks/
+      autostart  default.xml <--- 该 xml 为网络的配置文件
+
+[root@host ~]# ls -l /etc/libvirt/qemu/networks/autostart/
+      lrwxrwxrwx 1 root root 14 Aug 14 00:40 default.xml -> ../default.xml
+
+
+
+------------------------------
+// 查看 存储(storage) 相关 信息 和 配置文件
+[root@host ~]# virsh pool-list   #查看存储(storage)池
+
+     Name                 State      Autostart
+    -------------------------------------------
+     default              active     yes
+     root                 active     yes
+     tmp                  active     yes
+
+
+[root@host ~]# ls /etc/libvirt/storage/
+      autostart  default.xml  root.xml  tmp.xml
+
+[root@host ~]# ls -l /etc/libvirt/storage/autostart/
+
+      lrwxrwxrwx 1 root root 32 Aug 14 01:00 default.xml -> /etc/libvirt/storage/default.xml
+      lrwxrwxrwx 1 root root 29 Aug 14 12:59 root.xml -> /etc/libvirt/storage/root.xml
+      lrwxrwxrwx 1 root root 28 Aug 14 13:11 tmp.xml -> /etc/libvirt/storage/tmp.xml
+
+
+
+
+
+---------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ---------------------------------------------------------------------------------------------------
 学习过程中 遇到的问题:
