@@ -209,8 +209,13 @@ Intel (VT-x): VT-x represents Intel's technology for virtualization on the x86 p
 ---------------------------------------------------------------------------------------------------
 kvm
 
+本例是 在 VMware® Workstation 15 Pro 上的 以 minimal 方式安装的 centos7.4 上安装 kvm
 
 https://www.linuxtechi.com/install-kvm-hypervisor-on-centos-7-and-rhel-7/
+
+// 启用 vmware 的 virtual matchine 中的 cpu 的 虚拟化支持功能:
+右键 该 centos7.4 对应的虚拟主机 -> [设置...] -> [处理器] -> 勾选上[虚拟化 Intel VT-x/EPT 或 AMD-V/RVI(V)]
+
 
 
 
