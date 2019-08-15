@@ -865,12 +865,149 @@ kvm 网络管理
 
 
 
+--------------------------------------------------
+
+[root@host ~]# virsh --help | grep interface
+    attach-interface               attach network interface   <---- 添加网卡
+    detach-interface               detach network interface   <---- 删除网卡
+    domif-setlink                  set link state of a virtual interface
+    domiftune                      get/set parameters of a virtual interface
+    domcontrol                     domain control interface state
+    domif-getlink                  get link state of a virtual interface
+    domifaddr                      Get network interfaces' addresses for a running domain
+    domiflist                      list all domain virtual interfaces
+    domifstat                      get network interface stats for a domain
+ Interface (help keyword 'interface')
+    iface-begin                    create a snapshot of current interfaces settings, which can be later committed (iface-commit) or restored (iface-rollback)
+    iface-define                   define an inactive persistent physical host interface or modify an existing persistent one from an XML file
+    iface-destroy                  destroy a physical host interface (disable it / "if-down")
+    iface-dumpxml                  interface information in XML
+    iface-edit                     edit XML configuration for a physical host interface
+    iface-list                     list physical host interfaces
+    iface-mac                      convert an interface name to interface MAC address
+    iface-name                     convert an interface MAC address to interface name
+    iface-start                    start a physical host interface (enable it / "if-up")
+    iface-undefine                 undefine a physical host interface (remove it from configuration)
 
 
 
+[root@host ~]# virsh attach-interface --help
+          NAME
+            attach-interface - attach network interface
+
+          SYNOPSIS
+            attach-interface <domain> <type> <source> [--target <string>] [--mac <string>] [--script <string>] [--model <string>] [--inbound <string>] [--outbound <string>] [--persistent] [--config] [--live] [--current] [--print-xml] [--managed]
+
+          DESCRIPTION
+            Attach new network interface.
+
+          OPTIONS
+            [--domain] <string>  domain name, id or uuid
+            [--type] <string>  network interface type
+            [--source] <string>  source of network interface
+            --target <string>  target network name
+            --mac <string>   MAC address
+            --script <string>  script used to bridge network interface
+            --model <string>  model type
+            --inbound <string>  control domain's incoming traffics
+            --outbound <string>  control domain's outgoing traffics
+            --persistent     make live change persistent  (立即 + 永久)
+            --config         affect next boot       (保存配置，重启生效)
+            --live           affect running domain  (立刻生效,但不保存, 临时修改, 重启后所做修改会丢失)
+            --current        affect current domain
+            --print-xml      print XML document rather than attach the interface
+            --managed        libvirt will automatically detach/attach the device from/to host
+
+
+[root@host ~]# virsh help | grep dom
+
+// 查看网卡
+[root@host ~]# virsh domiflist vm01-centos7.4-64
+
+      Interface  Type       Source     Model       MAC
+      -------------------------------------------------------
+      vnet0      bridge     virbr0     virtio      52:54:00:ad:ce:4e <---kvm虚拟机网卡的 mac 地址以 52:54:00 开始
+
+
+// 通过 命令行 添加网卡
+[root@host ~]# virsh attach-interface vm01-centos7.4-64 --type network --source default --model virtio --persistent
+      Interface attached successfully
+
+        注: type 为 network 时的 意思: network to indicate connection via a libvirt virtual network
+
+
+[root@host ~]# virsh domiflist vm01-centos7.4-64
+      Interface  Type       Source     Model       MAC
+      -------------------------------------------------------
+      vnet0      bridge     virbr0     virtio      52:54:00:ad:ce:4e
+      vnet1      network    default    virtio      52:54:00:a3:19:8b
+
+
+[root@host ~]# virsh detach-interface --help
+    NAME
+      detach-interface - detach network interface
+
+    SYNOPSIS
+      detach-interface <domain> <type> [--mac <string>] [--persistent] [--config] [--live] [--current]
+
+    DESCRIPTION
+      Detach network interface.
+
+    OPTIONS
+      [--domain] <string>  domain name, id or uuid
+      [--type] <string>  network interface type
+      --mac <string>   MAC address
+      --persistent     make live change persistent
+      --config         affect next boot
+      --live           affect running domain
+      --current        affect current domain
+
+
+// 通过命令行删除网卡
+[root@host ~]#  virsh detach-interface vm01-centos7.4-64 --type network --mac 52:54:00:a3:19:8b --persistent
+    Interface detached successfully
+
+[root@host ~]# virsh domiflist vm01-centos7.4-64
+
+    Interface  Type       Source     Model       MAC
+    -------------------------------------------------------
+    vnet0      bridge     virbr0     virtio      52:54:00:ad:ce:4e
+
+
+---------------------------------------------------------------------------------------------------
+kvm 网络模式
+
+1、NAT模式
+2、桥接模式
+3、隔离模式
+4、路由模式
 
 
 
+  1、NAT模式
+
+      virtual machine 01 | <-----> default 交换机,自带dhcp, 192.168.122.0/24 <-----> virbr0 192.168.122.1 <----> 物理网卡 <---->
+      virtual machine 02 |
+
+
+[root@host ~]# cat /proc/sys/net/ipv4/ip_forward
+    1
+
+[root@host ~]# iptables -t nat -nL
+
+      Chain POSTROUTING (policy ACCEPT)
+      target     prot opt source               destination
+      RETURN     all  --  192.168.122.0/24     224.0.0.0/24
+      RETURN     all  --  192.168.122.0/24     255.255.255.255
+      MASQUERADE  tcp  --  192.168.122.0/24    !192.168.122.0/24     masq ports: 1024-65535
+      MASQUERADE  udp  --  192.168.122.0/24    !192.168.122.0/24     masq ports: 1024-65535
+      MASQUERADE  all  --  192.168.122.0/24    !192.168.122.0/24
+
+
+kvm 中 nat 模式 网络通信的 常规 3 个要点: (注: 网络故障排错一般根据 网络参考模型的 从下往上 排查, 好比建房子时从下往上盖)
+   1) 虚拟机正确设置网关
+   2) 物理机开启路由转发功能 (通过网卡 virbr0 才会转发数据包)
+   3) 物理机启用 nat 功能 (通过物理网卡 以 snat 或 dnat 连通其他网络)
 
 
 
