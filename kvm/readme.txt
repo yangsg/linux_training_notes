@@ -982,8 +982,11 @@ kvm 网络模式
 3、隔离模式
 4、路由模式
 
+    https://blog.csdn.net/gsl371/article/details/78662258
+    https://www.jianshu.com/p/ed0ce43374e6
 
---------------------------------------------------
+
+--------------------------------------------------------------------------------
   1、NAT模式
 
       virtual machine 01 | <-----> default 交换机,自带dhcp, 192.168.122.0/24 <-----> virbr0 192.168.122.1 <----> 物理网卡 <---->
@@ -1100,13 +1103,132 @@ kvm 中 nat 模式 网络通信的 常规 3 个要点: (注: 网络故障排错�
      default              active     yes           yes
 
 
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------
+2、桥接模式
+
+            virtual machine 01  |
+            virtual machine 02  | <---------------------> 桥接网络(网卡) <-------------------->
+                                |
+                      物理网卡  |
+
+
+
+      https://www.jianshu.com/p/ed0ce43374e6
+      https://www.cnblogs.com/hukey/p/11246126.html
+
+
+
+创建桥接(bridge)网卡
+
+      注意：
+          1、NetworkManager服务关闭 [nmcli]
+          2、物理网卡手工配置IP参数
+
+// 关闭 NetworkManager 服务
+[root@host ~]# systemctl stop NetworkManager
+[root@host ~]# systemctl disable NetworkManager
+[root@host ~]# systemctl mask NetworkManager
+
+// 手工配置 物理网卡的 ip 参数
+[root@host ~]# vim /etc/sysconfig/network-scripts/ifcfg-ens33
+
+      TYPE=Ethernet
+      BOOTPROTO=none
+      NAME=ens33
+      DEVICE=ens33
+      ONBOOT=yes
+
+      IPADDR=192.168.175.30
+      PREFIX=24
+      GATEWAY=192.168.175.2
+      DNS1=192.168.175.2
+
+[root@host ~]# systemctl restart network
+
+
+
+[root@host ~]# virsh help | grep bridge
+    iface-bridge                   create a bridge device and attach an existing network device to it
+    iface-unbridge                 undefine a bridge device after detaching its slave device
+
+
+[root@host ~]# virsh iface-bridge ens33 br1
+      Created bridge br1 with attached device ens33
+      Bridge interface br1 started
+
+
+// 查看 如上命令 对 网络配置 产生的变化
+
+[root@host ~]# cat /etc/sysconfig/network-scripts/ifcfg-ens33
+
+        DEVICE=ens33
+        ONBOOT=yes
+
+
+        BRIDGE="br1"
+
+[root@host ~]# cat /etc/sysconfig/network-scripts/ifcfg-br1
+        DEVICE="br1"
+        ONBOOT="yes"
+        TYPE="Bridge"
+        BOOTPROTO="none"
+        IPADDR="192.168.175.30"
+        NETMASK="255.255.255.0"
+        GATEWAY="192.168.175.2"
+        STP="on"
+        DELAY="0"
+
+[root@host ~]# ip addr show ens33
+
+    2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast master br1 state UP qlen 1000  <--- 观察 master br1
+        link/ether 00:0c:29:ba:d6:a5 brd ff:ff:ff:ff:ff:ff
+
+[root@host ~]# ip addr show br1
+
+    10: br1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP qlen 1000
+        link/ether 00:0c:29:ba:d6:a5 brd ff:ff:ff:ff:ff:ff
+        inet 192.168.175.30/24 brd 192.168.175.255 scope global br1
+           valid_lft forever preferred_lft forever
+        inet6 fe80::20c:29ff:feba:d6a5/64 scope link
+           valid_lft forever preferred_lft forever
+
+
+
+--------------------------------------------------
+删除桥接网卡
+
+      https://www.cnblogs.com/hukey/p/11246126.html
+      https://unix.stackexchange.com/questions/353697/how-do-i-assign-static-ips-for-host-bridge-and-guest
+
+
+
+[root@host ~]# brctl show
+
+    bridge name     bridge id               STP enabled     interfaces
+    br1             8000.000c29bad6a5       yes             ens33
+    virbr0          8000.5254004e4b68       yes             virbr0-nic
+                                                        vnet0
+
+[root@host ~]# virsh iface-unbridge br1
+    Device ens33 un-attached from bridge br1
+    Interface ens33 started
+
+[root@host ~]# brctl show
+    bridge name     bridge id               STP enabled     interfaces
+    virbr0          8000.5254004e4b68       yes             virbr0-nic
+                                                            vnet0
+
 --------------------------------------------------
 
 
-
-
-
---------------------------------------------------
 
 
 
