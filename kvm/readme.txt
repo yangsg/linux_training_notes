@@ -831,6 +831,50 @@ https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/vi
 
 
 
+
+
+---------------------------------------------------------------------------------------------------
+kvm 网络管理
+
+    --------------------------------------------------
+    关于 virtio:
+
+        https://wiki.libvirt.org/page/Virtio
+        https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/virtualization_host_configuration_and_guest_installation_guide/chap-virtualization_host_configuration_and_guest_installation_guide-para_virtualized_drivers
+        http://www.zeta.systems/blog/2018/07/03/Installing-Virtio-Drivers-In-Windows-On-KVM/
+
+          virtio 是 kvm 的 virtual machine 的 半虚拟化设备驱动,
+          半虚拟化驱动程序可提高计算机的性能，减少 I/O 延迟(可理解为绕过了虚拟的物理层)并将吞吐量提高到接近裸机级别。
+
+
+    Virtio
+
+        So-called "full virtualization" is a nice feature because it allows you to run any operating system virtualized.
+        However, it's slow because the hypervisor has to emulate actual physical devices such as RTL8139 network cards .
+        This emulation is both complicated and inefficient.
+
+        Virtio is a virtualization standard for network and disk device drivers where just the guest's
+        device driver "knows" it is running in a virtual environment, and cooperates with the hypervisor.
+        This enables guests to get high performance network and disk operations,
+        and gives most of the performance benefits of paravirtualization.
+
+        Note that virtio is different, but architecturally similar to, Xen paravirtualized device drivers
+        (such as the ones that you can install in a Windows guest to make it go faster under Xen).
+        Also similar is VMWare's Guest Tools.
+    --------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
 ---------------------------------------------------------------------------------------------------
 学习过程中 遇到的问题:
 
