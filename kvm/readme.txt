@@ -589,8 +589,10 @@ kvm 中,
 
 
 ---------------------------------------------------------------------------------------------------
-
 kvm cpu 热添加: 动态调整(添加) cpu 个数
+
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-managing_guest_virtual_machines_with_virsh-displaying_per_guest_virtual_machine_information#sect-Displaying_per_guest_virtual_machine_information-Configuring_virtual_CPU_count
+
 
     注: 如果要添加 cpu, 最稳妥的做法还是在 关机的时候 静态添加
 
@@ -714,13 +716,91 @@ kvm cpu 热添加: 动态调整(添加) cpu 个数
 
 
 ---------------------------------------------------------------------------------------------------
+kvm 内存气球技术:  在线调整内存大小
+
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-manipulating_the_domain_xml-devices#sect-Devices-Memory_balloon_device
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-managing_guest_virtual_machines_with_virsh-displaying_per_guest_virtual_machine_information#sect-Displaying_per_guest_virtual_machine_information-Configuring_virtual_CPU_count
 
 
+    前提: 最大内存量
 
-kvm 内存气球技术
+// 确认虚拟机支持内存气球的驱动
+[root@host ~]# virsh dumpxml vm01-centos7.4-64  | grep -C 2 memballoon
+
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x0'/>
+    </video>
+    <memballoon model='virtio'>  <------- 观察这里
+      <alias name='balloon0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>
+    </memballoon>
+    <rng model='virtio'>
+      <backend model='random'>/dev/urandom</backend>
+
+// 查看内存设置信息
+[root@host ~]# virsh dumpxml vm01-centos7.4-64  | grep -in 'memory'
+      4:  <memory unit='KiB'>1048576</memory>   <----- 最大内存, 可通过命令 virsh setmaxmem 修改
+      5:  <currentMemory unit='KiB'>524288</currentMemory> <---- 当前内存, 可通过命令 virsh setmem 修改
+
+    命令 virsh setmem 的用法见 `virsh help setmem` 或 `man virsh` 或 见:
+        https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-Managing_guest_virtual_machines_with_virsh-Displaying_per_guest_virtual_machine_information#sect-Displaying_per_guest_virtual_machine_information-Configuring_memory_allocation
+
+    命令 virsh setmaxmem 的用法见 `virsh help setmaxmem` 或 `man virsh` 或 见:
+        https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-Managing_guest_virtual_machines_with_virsh-Displaying_per_guest_virtual_machine_information#sect-Displaying_per_guest_virtual_machine_information-Changing_the_memory_allocation_for_the_domain
 
 
+          The following case-insensitive suffixes can be used to select a specific scale:
+                单位:
+                         b, byte  byte      1
+                         KB       kilobyte  1,000
+                         k, KiB   kibibyte  1,024
+                         MB       megabyte  1,000,000
+                         M, MiB   mebibyte  1,048,576
+                         GB       gigabyte  1,000,000,000
+                         G, GiB   gibibyte  1,073,741,824
+                         TB       terabyte  1,000,000,000,000
+                         T, TiB   tebibyte  1,099,511,627,776
+                         PB       petabyte  1,000,000,000,000,000
+                         P, PiB   pebibyte  1,125,899,906,842,624
+                         EB       exabyte   1,000,000,000,000,000,000
+                         E, EiB   exbibyte  1,152,921,504,606,846,976
 
+              Note that all values will be rounded up to the nearest kibibyte by libvirt, and may be
+              further rounded to the granularity supported by the hypervisor. Some hypervisors also
+              enforce a minimum, such as 4000KiB (or 4000 x 210 or 4,096,000 bytes).
+              The units for this value are determined by the optional attribute memory unit,
+              which defaults to the kibibytes (KiB) as a unit of measure where
+              the value given is multiplied by 210 or blocks of 1024 bytes.
+
+            警告(Warning):
+                If modifying the <currentMemory> value, make sure to leave sufficient memory for the guest OS to work properly.
+                If the set value is too low, the guest may become unstable.
+
+
+// 查看当前内存气球大小
+[root@host ~]# virsh qemu-monitor-command vm01-centos7.4-64 --hmp info balloon
+      balloon: actual=512
+
+// 调整 内存 气球
+[root@host ~]# virsh qemu-monitor-command vm01-centos7.4-64 --hmp balloon 1024
+[root@host ~]# virsh qemu-monitor-command vm01-centos7.4-64 --hmp info balloon
+      balloon: actual=1024
+
+// 查看 balloon 相关信息
+[root@host ~]# virsh domstats --balloon  vm01-centos7.4-64
+
+      Domain: 'vm01-centos7.4-64'
+        balloon.current=1048576
+        balloon.maximum=1048576
+        balloon.swap_in=0
+        balloon.swap_out=0
+        balloon.major_fault=179
+        balloon.minor_fault=150424
+        balloon.unused=933416
+        balloon.available=1016104
+        balloon.last-update=1565837755
+        balloon.rss=412048
+
+---------------------------------------------------------------------------------------------------
 
 
 
