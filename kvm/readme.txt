@@ -588,6 +588,15 @@ kvm 中,
 
 
 
+------------------------------
+[root@host ~]# virsh domblklist vm01-centos7.4-64   # Get device block stats for a running domain.
+      Target     Source
+      ------------------------------------------------
+      vda        /var/lib/libvirt/images/vm01-centos7.4-64.img
+      hda        -
+
+
+
 ---------------------------------------------------------------------------------------------------
 kvm cpu 热添加: 动态调整(添加) cpu 个数
 
@@ -801,11 +810,23 @@ https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/vi
         balloon.rss=412048
 
 ---------------------------------------------------------------------------------------------------
+强制关机
+
+// 执行 子命令 destroy 实现类似于 拔电源的 效果
+// this does not delete any storage volumes used by the guest, and if the domain is persistent, it can be restarted later.
+[root@host ~]# virsh destroy vm01-centos7.4-64    #直接终止虚拟机,没有给 domain OS任何反应机会, 效果相当于在 物理机上 直接拔掉电源线.
+
+    Immediately terminate the domain domain.  This doesn't give the domain OS any chance to react, and it's the equivalent of ripping the power cord out on a physical machine.
 
 
+---------------------------------------------------------------------------------------------------
+取消 domain 的定义 (即删除 domain 的 配置(定义)文件)
+
+// 删除 vm01-centos7.4-64 的配置文件 /etc/libvirt/qemu/vm01-centos7.4-64.xml, (注: 如果不加相应选项, 该命令不会删除其对应的 storage image 文件)
+[root@host ~]# virsh undefine vm01-centos7.4-64
 
 
-
+      Undefine a domain. If the domain is running, this converts it to a transient domain, without stopping it. If the domain is inactive, the domain configuration is removed.
 
 
 
