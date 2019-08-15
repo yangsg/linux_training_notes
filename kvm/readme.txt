@@ -983,7 +983,7 @@ kvm 网络模式
 4、路由模式
 
 
-
+--------------------------------------------------
   1、NAT模式
 
       virtual machine 01 | <-----> default 交换机,自带dhcp, 192.168.122.0/24 <-----> virbr0 192.168.122.1 <----> 物理网卡 <---->
@@ -1008,6 +1008,109 @@ kvm 中 nat 模式 网络通信的 常规 3 个要点: (注: 网络故障排错�
    1) 虚拟机正确设置网关
    2) 物理机开启路由转发功能 (通过网卡 virbr0 才会转发数据包)
    3) 物理机启用 nat 功能 (通过物理网卡 以 snat 或 dnat 连通其他网络)
+
+
+
+--------------------------------------------------
+通过命令行工具创建网络
+
+
+1) 准备一个网络的配置文件
+[root@host ~]# ls /etc/libvirt/qemu/networks/
+      autostart  default.xml
+
+[root@host ~]# cp /etc/libvirt/qemu/networks/default.xml /etc/libvirt/qemu/networks/nat_network_01.xml
+
+[root@host networks]# uuidgen
+      4ec94fab-0086-4597-9efb-07efcc906fd2
+
+[root@host ~]# vim /etc/libvirt/qemu/networks/nat_network_01.xml
+      <!--
+      WARNING: THIS IS AN AUTO-GENERATED FILE. CHANGES TO IT ARE LIKELY TO BE
+      OVERWRITTEN AND LOST. Changes to this xml configuration should be made using:
+        virsh net-edit nat_network_01
+      or other application using the libvirt API.
+      -->
+
+      <network>
+        <name>nat_network_01</name>
+        <uuid>4ec94fab-0086-4597-9efb-07efcc906fd2</uuid>
+        <forward mode='nat'/>
+        <bridge name='virbr1' stp='on' delay='0'/>
+        <mac address='52:54:00:33:e7:68'/>
+        <domain name='nat_network_01'/>
+        <ip address='192.168.111.1' netmask='255.255.255.0'>
+          <dhcp>
+            <range start='192.168.111.2' end='192.168.111.254'/>
+          </dhcp>
+        </ip>
+      </network>
+
+
+2) 定义网络
+// 定义网络
+[root@host ~]# virsh net-define  /etc/libvirt/qemu/networks/nat_network_01.xml
+      Network nat_network_01 defined from /etc/libvirt/qemu/networks/nat_network_01.xml
+
+[root@host ~]# virsh net-list --all
+
+     Name                 State      Autostart     Persistent
+    ----------------------------------------------------------
+     default              active     yes           yes
+     nat_network_01       inactive   no            yes  <----观察 (非活动, inactive)
+
+// 启动网络
+[root@host ~]# virsh net-start nat_network_01
+    Network nat_network_01 started
+
+// 设置开机 自动启动 网络
+[root@host ~]# virsh net-autostart nat_network_01
+      Network nat_network_01 marked as autostarted
+
+
+[root@host ~]# virsh net-list
+
+     Name                 State      Autostart     Persistent
+    ----------------------------------------------------------
+     default              active     yes           yes
+     nat_network_01       active     yes           yes   <----- 观察(active 且 autostart 为 yes)
+
+
+
+--------------------------------------------------
+删除网络
+
+[root@host ~]# virsh net-list --all
+
+     Name                 State      Autostart     Persistent
+    ----------------------------------------------------------
+     default              active     yes           yes
+     nat_network_01       active     yes           yes
+
+[root@host ~]# virsh net-destroy nat_network_01
+    Network nat_network_01 destroyed
+
+[root@host ~]# virsh net-undefine nat_network_01
+    Network nat_network_01 has been undefined
+
+[root@host ~]# virsh net-list --all
+
+     Name                 State      Autostart     Persistent
+    ----------------------------------------------------------
+     default              active     yes           yes
+
+
+--------------------------------------------------
+
+
+
+
+
+--------------------------------------------------
+
+
+
+
 
 
 
