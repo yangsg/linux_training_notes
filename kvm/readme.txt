@@ -473,7 +473,7 @@ kvm 中,
           ├── images  <----------
           ├── lxc
           ├── network
-          ├── qemu
+          ├── qemu      (Quick Emulator)
           └── swtpm
 
 
@@ -590,8 +590,134 @@ kvm 中,
 
 ---------------------------------------------------------------------------------------------------
 
+kvm cpu 热添加: 动态调整(添加) cpu 个数
+
+    注: 如果要添加 cpu, 最稳妥的做法还是在 关机的时候 静态添加
+
+  https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-managing_guest_virtual_machines_with_virsh-displaying_per_guest_virtual_machine_information#sect-Displaying_per_guest_virtual_machine_information-Configuring_virtual_CPU_count
+  https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/7.0_release_notes/chap-red_hat_enterprise_linux-7.0_release_notes-virtualization
+
+  https://serverfault.com/questions/457250/kvm-and-libvirt-how-do-i-hotplug-a-new-virtio-disk/457259
+  https://www.unixarena.com/2015/12/linux-kvm-how-to-add-remove-vcpu-to-guest-on-fly.html/
 
 
+前提: 设置 cpu 最大个数
+      仅针对 centos7 以上的系统
+
+        重要提示: Hot unplugging vCPUs is not supported on Red Hat Enterprise Linux 7.
+
+[root@host ~]# virsh help | grep info
+    domfsinfo                      Get information of domain's mounted filesystems.
+    domjobinfo                     domain job information
+    dumpxml                        domain information in XML
+    iothreadinfo                   view domain IOThreads
+    managedsave-dumpxml            Domain information of managed save state file in XML
+    save-image-dumpxml             saved state domain information in XML
+    schedinfo                      show/set scheduler parameters
+    vcpuinfo                       detailed domain vcpu information
+    domblkinfo                     domain block device size information
+    dominfo                        domain information
+    nodeinfo                       node information
+    sysinfo                        print the hypervisor sysinfo
+    iface-dumpxml                  interface information in XML
+    nwfilter-dumpxml               network filter information in XML
+    nwfilter-binding-dumpxml       network filter information in XML
+    net-dhcp-leases                print lease info for a given network
+    net-dumpxml                    network information in XML
+    net-info                       network information
+    snapshot-info                  snapshot information
+    pool-dumpxml                   pool information in XML
+    pool-info                      storage pool information
+    vol-dumpxml                    vol information in XML
+    vol-info                       storage vol information
+
+
+[root@host ~]# virsh dumpxml vm01-centos7.4-64  | grep -in vcpu
+      6:  <vcpu placement='static' current='1'>2</vcpu>   <---- 当前虚拟 cpu 个数为 1, 最大个数为 2
+
+
+[root@host ~]# virsh dominfo vm01-centos7.4-64
+    Id:             1
+    Name:           vm01-centos7.4-64
+    UUID:           b06b39da-30ca-4905-be1c-e3db5783bed8
+    OS Type:        hvm
+    State:          running
+    CPU(s):         1      <---- 当前 vcpu 个数
+    CPU time:       33.0s
+    Max memory:     1048576 KiB
+    Used memory:    524288 KiB
+    Persistent:     yes
+    Autostart:      enable
+    Managed save:   no
+    Security model: none
+    Security DOI:   0
+
+
+子命令 setvcpus 的语法格式:  virsh setvcpus {domain-name, domain-id or domain-uuid} count [[--config] [--live] | [--current]] [--maximum] [--guest]
+
+选项说明:
+    --config: If the --config flag is specified, the change is made to the stored XML configuration
+              for the guest virtual machine, and will only take effect when the guest is started.
+
+    --live: If --live is specified, the guest virtual machine must be active, and the change takes place immediately.
+            This option will allow hot plugging of a vCPU.
+            Both the --config and --live flags may be specified together if supported by the hypervisor.
+
+    --current: If --current is specified, the flag affects the current guest virtual machine state.
+
+        When no flags are specified, the --live flag is assumed. The command will fail if
+        the guest virtual machine is not active. In addition, if no flags are specified,
+        it is up to the hypervisor whether the --config flag is also assumed.
+        This determines whether the XML configuration is adjusted to make the change persistent.
+
+    --maximum: The --maximum flag controls the maximum number of virtual CPUs that can be hot-plugged
+               the next time the guest virtual machine is booted. Therefore,
+               it can only be used with the --config flag, not with the --live flag.
+
+        Note that count cannot exceed the number of CPUs assigned to the guest virtual machine.
+
+    --guest: If --guest is specified, the flag modifies the CPU state in the current guest virtual machine.
+
+
+// 热添加 vcpu 个数 为 2
+[root@host ~]# virsh setvcpus vm01-centos7.4-64 2 --live
+
+[root@host ~]# virsh dominfo vm01-centos7.4-64
+    Id:             1
+    Name:           vm01-centos7.4-64
+    UUID:           b06b39da-30ca-4905-be1c-e3db5783bed8
+    OS Type:        hvm
+    State:          running
+    CPU(s):         2      <---- 当前 vcpu 个数 (注: 实际是否真实生效最好还是在 GuestOS 中执行 lscpu 命令实际确认一下)
+    CPU time:       38.1s
+    Max memory:     1048576 KiB
+    Used memory:    524288 KiB
+    Persistent:     yes
+    Autostart:      enable
+    Managed save:   no
+    Security model: none
+    Security DOI:   0
+
+// 显示 vcpu 信息
+[root@host ~]# virsh vcpuinfo vm01-centos7.4-64
+      VCPU:           0
+      CPU:            1
+      State:          running
+      CPU time:       33.5s
+      CPU Affinity:   yy
+
+      VCPU:           1
+      CPU:            1
+      State:          running
+      CPU time:       1.1s
+      CPU Affinity:   yy
+
+
+---------------------------------------------------------------------------------------------------
+
+
+
+kvm 内存气球技术
 
 
 
