@@ -1137,7 +1137,6 @@ kvm 中 nat 模式 网络通信的 常规 3 个要点: (注: 网络故障排错�
 // 关闭 NetworkManager 服务
 [root@host ~]# systemctl stop NetworkManager
 [root@host ~]# systemctl disable NetworkManager
-[root@host ~]# systemctl mask NetworkManager
 
 // 手工配置 物理网卡的 ip 参数
 [root@host ~]# vim /etc/sysconfig/network-scripts/ifcfg-ens33
@@ -1161,7 +1160,7 @@ kvm 中 nat 模式 网络通信的 常规 3 个要点: (注: 网络故障排错�
     iface-bridge                   create a bridge device and attach an existing network device to it
     iface-unbridge                 undefine a bridge device after detaching its slave device
 
-
+// 利用 物理网卡创建 bridge
 [root@host ~]# virsh iface-bridge ens33 br1
       Created bridge br1 with attached device ens33
       Bridge interface br1 started
@@ -1205,7 +1204,7 @@ kvm 中 nat 模式 网络通信的 常规 3 个要点: (注: 网络故障排错�
 
 
 --------------------------------------------------
-删除桥接网卡
+删除桥接网卡(方式一)
 
       https://www.cnblogs.com/hukey/p/11246126.html
       https://unix.stackexchange.com/questions/353697/how-do-i-assign-static-ips-for-host-bridge-and-guest
@@ -1219,7 +1218,7 @@ kvm 中 nat 模式 网络通信的 常规 3 个要点: (注: 网络故障排错�
     virbr0          8000.5254004e4b68       yes             virbr0-nic
                                                         vnet0
 
-[root@host ~]# virsh iface-unbridge br1
+[root@host ~]# virsh iface-unbridge br1  #注: 该命令执行后更新的 ifcfg-ens33 文件内容可能并不是我们喜欢的风格, 所以之后可以自己手动修改并重新应用
     Device ens33 un-attached from bridge br1
     Interface ens33 started
 
@@ -1229,8 +1228,59 @@ kvm 中 nat 模式 网络通信的 常规 3 个要点: (注: 网络故障排错�
                                                             vnet0
 
 --------------------------------------------------
+删除桥接网卡(方式二)
+
+      https://www.cnblogs.com/hukey/p/11246126.html
+      https://unix.stackexchange.com/questions/353697/how-do-i-assign-static-ips-for-host-bridge-and-guest
 
 
+[root@host ~]# ls /etc/sysconfig/network-scripts/ | grep ifcfg-
+      ifcfg-br1
+      ifcfg-ens33
+      ifcfg-lo
+
+[root@host ~]# brctl show
+    bridge name     bridge id               STP enabled     interfaces
+    br1             8000.000c29bad6a5       yes             ens33
+    virbr0          8000.5254004e4b68       yes             virbr0-nic
+                                                            vnet0
+// 禁用 br1 网卡
+[root@host ~]# ifconfig br1 down  #或 使用命令 `ip link set br1 down`
+
+// 删除桥接网卡
+[root@host ~]# brctl delbr br1    #注: 该命令并不会删除 ifcfg-br1 配置文件
+
+// 手动删除桥接配置文件
+[root@host ~]# rm /etc/sysconfig/network-scripts/ifcfg-br1
+      rm: remove regular file ‘/etc/sysconfig/network-scripts/ifcfg-br1’? y
+
+// 重新手动设置 物理网卡的配置文件
+[root@host ~]# vim /etc/sysconfig/network-scripts/ifcfg-ens33
+
+      TYPE=Ethernet
+      BOOTPROTO=none
+      DEVICE=ens33
+      NAME=ens33
+      ONBOOT=yes
+
+      IPADDR=192.168.175.30
+      PREFIX=24
+      GATEWAY=192.168.175.2
+      DNS1=192.168.175.2
+
+// 重新启动 NetworkManager 服务
+[root@host ~]# systemctl start NetworkManager
+[root@host ~]# systemctl enable NetworkManager
+
+      //如果不打算启动 或 使用 NetworkManager, 可通过如下两种方式之一(注意其中的区别):
+        [root@host ~]# ifdown ens33; ifup ens33  # 此处的 ifdown 可能有点多余,不过在 ens33 已经处于 up 的情况下先执行 ifdown 在接着执行 ifup 效果类似于 先 reload 配置 再 ifup
+      //或
+        [root@host ~]# systemctl restart network
+
+
+
+
+--------------------------------------------------
 
 
 
