@@ -1154,6 +1154,8 @@ kvm 中 nat 模式 网络通信的 常规 3 个要点: (注: 网络故障排错�
 
 [root@host ~]# systemctl restart network
 
+// (可选操作) 将 ifcfg-ens33 备份一份 (注意: 需要以 .bak 作为后缀, 当然还有其他几个可用的后缀, 不过这里用 .bak 比较好)
+[root@host ~]# cp /etc/sysconfig/network-scripts/ifcfg-ens33 /etc/sysconfig/network-scripts/ifcfg-ens33.bak
 
 
 [root@host ~]# virsh help | grep bridge
