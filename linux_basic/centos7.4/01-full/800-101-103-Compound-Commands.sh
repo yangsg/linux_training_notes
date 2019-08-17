@@ -78,3 +78,24 @@ echo $?
 #//               The && and || operators do not evaluate expression2 if the value of expression1 is sufficient to determine the return value of the entire conditional expression.
 
 
+#//----------------------------------------------------------
+#示例:
+str='a   b'
+if [[ $str =~ ^a[[:space:]]{3}b$ ]];  # 该示例输出 empty or blank, 证明在  [[ expression ]] 中缺失没有执行 Word splitting 操作
+#              此处操作符右边的正则表达式千万不要加引号(从bash 3.2开始), 否则其被视为字符串而非一个正则表达式
+#              书籍 <Advanced Bash-Scripting Guide> 中有许多示例使用的是 bash 3.2 以前版本的语法,所以这一点要特别小心.
+#              或则 可以直接参考 <The Linux Command Line>
+then
+  echo empty or blank
+fi
+
+[root@host ~]# [[ '   ' =~ ^[[:space:]]*$ ]] && echo empty or blank
+empty or blank
+
+[root@host ~]# [[ "$s" =~ ^[[:space:]]*$ ]] && echo empty or blank
+empty or blank
+
+
+
+
+
