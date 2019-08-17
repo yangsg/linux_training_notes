@@ -450,6 +450,17 @@ CentOS Linux release 7.4.1708 (Core)
               localhost login: <======================= 按 Ctrl + ] 返回到 HostOS
 
 
+---------------------------------------------------------------------------------------------------
+
+// 启动 kvm 中的 虚拟机
+[root@host ~]# virsh start vm01-centos7.4-64
+Domain vm01-centos7.4-64 started
+
+
+// 优雅的 关闭 kvm 中的虚拟机
+[root@host ~]# virsh shutdown vm01-centos7.4-64
+Domain vm01-centos7.4-64 is being shutdown
+
 
 ---------------------------------------------------------------------------------------------------
 
