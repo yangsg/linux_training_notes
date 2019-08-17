@@ -1281,8 +1281,303 @@ kvm 中 nat 模式 网络通信的 常规 3 个要点: (注: 网络故障排错�
 
 
 
+---------------------------------------------------------------------------------------------------
+kvm存储管理
+
+
+
+一、磁盘管理
+
 
 --------------------------------------------------
+添加硬盘
+
+[root@host ~]# virsh help | grep list
+    domblklist                     list all domain blocks
+    domiflist                      list all domain virtual interfaces
+    list                           list domains
+    iface-list                     list physical host interfaces
+    nwfilter-list                  list network filters
+    nwfilter-binding-list          list network filter bindings
+    net-list                       list networks
+    nodedev-list                   enumerate devices on this host
+    secret-list                    list secrets
+    snapshot-list                  List snapshots for a domain
+    pool-list                      list pools
+    vol-list                       list vols
+
+
+
+[root@host ~]# virsh domblklist vm01-centos7.4-64
+
+      Target     Source
+      ------------------------------------------------
+      vda        /var/lib/libvirt/images/vm01-centos7.4-64.img  <---- 磁盘镜像文件
+      hda        -                                              <---- 光驱
+
+[root@host ~]# virsh help | grep disk
+    attach-disk                    attach disk device
+    blockpull                      Populate a disk from its backing image.
+    detach-disk                    detach disk device
+
+
+
+语法: qemu-img create [-f fmt] [-o options] filename [size]
+
+[root@host ~]# ls /var/lib/libvirt/images/
+      vm01-centos7.4-64.img
+
+// 创建 新的 disk image 文件
+[root@host ~]# qemu-img create -f qcow2 /var/lib/libvirt/images/disk01.img 2G
+      Formatting '/var/lib/libvirt/images/disk01.img', fmt=qcow2 size=2147483648 encryption=off cluster_size=65536 lazy_refcounts=off
+
+[root@host ~]# ls /var/lib/libvirt/images/
+      disk01.img  vm01-centos7.4-64.img
+
+
+[root@host ~]# virsh attach-disk --help
+
+// 将如上 创建的 新的 disk image 文件 添加为 磁盘
+[root@host ~]# virsh attach-disk vm01-centos7.4-64 --source /var/lib/libvirt/images/disk01.img --target vdb --cache writeback --subdriver qcow2 --persistent
+    Disk attached successfully
+
+        --------------------------------------------------
+        --cache 选项参数解释:
+
+              https://linuxconfig.org/improve-hard-drive-write-speed-with-write-back-caching
+              https://blog.csdn.net/dylloveyou/article/details/71515880
+
+
+          writeback:
+                                                                   batch transfer and write(减少磁盘I/O,性能更好)
+                cpu ---> ram  ----> [hard drive's cache memory]  ------------------------------------>  [hard drive's data block]
+
+
+          writethrough:
+                                                                   immediately transfer and write(不容易出现 data loss,更安全)
+                cpu ---> ram  ----> [hard drive's cache memory]  ------------------------------------>  [hard drive's data block]
+
+        --------------------------------------------------
+
+
+[root@host ~]# virsh domblklist vm01-centos7.4-64   #还可以在 virtual machine 中 执行 lsblk 实际查看一下效果
+      Target     Source
+      ------------------------------------------------
+      vda        /var/lib/libvirt/images/vm01-centos7.4-64.img
+      vdb        /var/lib/libvirt/images/disk01.img   <-------- 新添加的磁盘
+      hda        -
+
+
+
+--------------------------------------------------
+删除硬盘
+
+[root@host ~]# virsh detach-disk vm01-centos7.4-64 vdb --persistent
+    Disk detached successfully
+
+
+[root@host ~]# virsh domblklist vm01-centos7.4-64
+
+    Target     Source
+    ------------------------------------------------
+    vda        /var/lib/libvirt/images/vm01-centos7.4-64.img
+    hda        -
+
+
+
+---------------------------------------------------------------------------------------------------
+
+二、存储池 storage pool
+
+      https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/storage_pools#storage_pool_creating
+
+  存储kvm主机磁盘镜像的位置
+
+    类型：
+      基于本地目录
+      基于共享存储
+
+
+
+[root@host ~]# virsh pool-list
+
+     Name                 State      Autostart
+    -------------------------------------------
+     default              active     yes
+     root                 active     yes
+     tmp                  active     yes
+
+
+[root@host ~]# ls /etc/libvirt/storage/
+      autostart  default.xml  root.xml  tmp.xml
+
+
+[root@host ~]# virsh pool-dumpxml default
+
+      <pool type='dir'>
+        <name>default</name>
+        <uuid>289e3ef6-1834-4ea9-86a6-d0cdec3569e8</uuid>
+        <capacity unit='bytes'>78889873408</capacity>
+        <allocation unit='bytes'>12339929088</allocation>
+        <available unit='bytes'>66549944320</available>
+        <source>
+        </source>
+        <target>
+          <path>/var/lib/libvirt/images</path>
+          <permissions>
+            <mode>0711</mode>
+            <owner>0</owner>
+            <group>0</group>
+          </permissions>
+        </target>
+      </pool>
+
+
+[root@host ~]# ls /var/lib/libvirt/images
+      disk01.img  vm01-centos7.4-64.img
+
+
+
+[root@host ~]# virsh pool-info default
+      Name:           default
+      UUID:           289e3ef6-1834-4ea9-86a6-d0cdec3569e8
+      State:          running
+      Persistent:     yes
+      Autostart:      yes
+      Capacity:       73.47 GiB
+      Allocation:     11.49 GiB
+      Available:      61.98 GiB
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------------------------
+kvm 迁移: KVM MIGRATION
+
+centos7:
+    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/chap-kvm_live_migration
+
+centos6:
+    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/virtualization_administration_guide/chap-virtualization_administration_guide-kvm_live_migration
+
+
+迁移定义: 发送 guest 虚拟机的 内存状态 和 任何虚拟化的 devices 到 目的 host physical machine.
+    Migration works by sending the state of the guest virtual machine's memory and
+    any virtualized devices to a destination host physical machine. It is recommended to use shared,
+    networked storage to store the guest's images to be migrated.
+    It is also recommended to use libvirt-managed storage pools
+    for shared storage when migrating virtual machines.
+
+在线迁移(online migration, with live (running) guests)
+离线迁移(offline migration,with non-live (shut-down) guests)
+
+
+在线迁移的工作机制:
+      In a live migration, the guest virtual machine continues to run on the source host machine,
+      while the guest's memory pages are transferred to the destination host machine.
+      During migration, KVM monitors the source for any changes in pages it has already transferred,
+      and begins to transfer these changes when all of the initial pages have been transferred.
+      KVM also estimates transfer speed during migration, so when the remaining amount
+      of data to transfer will reaches a certain configurable period of time (10ms by default),
+      KVM suspends the original guest virtual machine, transfers the remaining data,
+      and resumes the same guest virtual machine on the destination host physical machine.
+
+离线迁移的工作机制:
+      In contrast, a non-live migration (offline migration) suspends the guest virtual machine
+      and then copies the guest's memory to the destination host machine. The guest
+      is then resumed on the destination host machine and the memory the guest used
+      on the source host machine is freed. The time it takes to complete such a migration
+      only depends on network bandwidth and latency. If the network is experiencing
+      heavy use or low bandwidth, the migration will take much longer. Note that if
+      the original guest virtual machine modifies pages faster than KVM can transfer
+      them to the destination host physical machine, offline migration must be used,
+      as live migration would never complete.
+
+Migration 适用场景:
+   - Load balancing: 将 Guest virtual machines 迁移到 负载低 或 性能更好的 host machine 上.
+   - Hardware independence: 如 host physical machine 硬件升级操作时 可安全为 guest virtual machines 迁移到 other host physical machines上,
+                            减少 downtime (宕机时间).
+   - Energy saving
+   - Geographic migration: 迁移到其他地方(如 减少延迟 或 其他原因)
+
+
+Migration 条件和限制:
+    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-kvm_live_migration-live_migration_requirements
+
+--------------------------------------------------
+迁移条件:
+      1) A guest virtual machine installed on shared storage using one of the following protocols:
+            [Fibre Channel-based LUNs, iSCSI, NFS, GFS2, 'SCSI RDMA protocols (SCSI RCP): the block export protocol used in Infiniband and 10GbE iWARP adapters']
+
+      2) Make sure that the libvirtd service is enabled and running.
+          # systemctl enable libvirtd.service
+          # systemctl restart libvirtd.service
+
+
+      3) The ability to migrate effectively is dependant on the parameter setting in the /etc/libvirt/libvirtd.conf file.
+         必要时修改libvirtd.conf file 必要的参数并重启 libvirtd)
+      4) The migration platforms and versions should be checked against Table 15.1, “Live Migration Compatibility”
+         迁移的平台 和 版本兼容, 见:
+            https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-KVM_live_migration-Live_migration_and_Red_Hat_Enterprise_Linux_version_compatibility_#tabl-Live_migration_and_Red_Hat_Enterprise_Linux_version_compatibility_-Live_Migration_Compatibility
+
+      5) Use a separate system exporting the shared storage medium. Storage should not
+         reside on either of the two host physical machines used for the migration.
+            使用第 3 方独立系统(即两台 src 和 dest host physical machines 之外的第三台主机)上 导出的 共享存储媒介
+
+      6) Shared storage must mount at the same location on source and destination systems.
+         The mounted directory names must be identical. Although it is possible to keep the images using
+         different paths, it is not recommended. Note that, if you intend to use virt-manager
+         to perform the migration, the path names must be identical. If you intend to use virsh
+         to perform the migration, different network configurations and mount directories
+         can be used with the help of --xml option or pre-hooks . For more information on pre-hooks,
+         see the libvirt upstream documentation, and
+         for more information on the XML option, see Chapter 23, Manipulating the Domain XML.
+            共享存储在 src 和 dest 系统上的 挂载点 路径 应该 相同(这是最佳实践).
+
+      7) 针对 a public bridge+tap network 上 guest virtual machine 迁移的条件:
+           When migration is attempted on an existing guest virtual machine in a public bridge+tap network,
+           the source and destination host machines must be located on the same network.
+           Otherwise, the guest virtual machine network will not operate after migration.
+--------------------------------------------------
+迁移限制 (Migration Limitations)
+      Guest virtual machine migration has the following limitations when used on Red Hat Enterprise Linux with virtualization technology based on KVM:
+
+          1) Point to point migration – must be done manually to designate destination hypervisor from originating hypervisor
+          2) No validation or roll-back is available
+          3) Determination of target may only be done manually
+          4) Storage migration cannot be performed live on Red Hat Enterprise Linux 7,
+             but you can migrate storage while the guest virtual machine is powered down.
+             Live storage migration is available on Red Hat Virtualization. Call your service representative for details.
+
+      Note:
+        If you are migrating a guest machine that has virtio devices on it, make sure to
+        set the number of vectors on any virtio device on either platform to 32 or fewer.
+        For detailed information, see Section 23.17, “Devices”.
+
+            https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-Manipulating_the_domain_xml-Devices
+
+
+
+--------------------------------------------------
+redhat 在线迁移版本的兼容 表格 和 可能的 issue 见:
+
+      https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-kvm_live_migration-live_migration_and_red_hat_enterprise_linux_version_compatibility_
+
+
+--------------------------------------------------
+共享存储的设置示例:
+
+    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-kvm_live_migration-shared_storage_example_nfs_for_a_simple_migration
+
+本示例 适用 NFS 仅是为了 简单方便, 实际中 iSCSI storage 才是更好的选择.
+  iSCSI storage is a better choice for large deployments.
+
+  iSCSI storage 的 配置信息见:
+        https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/storage_pools#storage_pool_params_iSCSI-based
 
 
 
