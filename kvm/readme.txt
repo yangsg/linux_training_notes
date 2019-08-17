@@ -1638,8 +1638,49 @@ NFS storage
 
 
 
+TODO: 完成 offline 和 online 迁移的 示例
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ---------------------------------------------------------------------------------------------------
+qemu-img工具的使用
+
+
+[root@host ~]# qemu-img --help
+
+Supported formats:
+    vvfat vpc vmdk vhdx vdi ssh sheepdog rbd raw host_cdrom host_floppy host_device file qed qcow2
+    qcow parallels nbd iscsi gluster dmg tftp ftps ftp https http cloop bochs blkverify blkdebug
+
+
+  管理磁盘镜像文件
+
+1、创建磁盘镜像文件
+  格式：
+    raw
+      一次性分配所有磁盘空间
+    qcow2
+      稀疏文件格式
+      快照snapshot
+      后端镜像、差量镜像
+      加密
+      压缩
 
 
 
