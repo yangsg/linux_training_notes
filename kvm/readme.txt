@@ -1581,6 +1581,67 @@ redhat 在线迁移版本的兼容 表格 和 可能的 issue 见:
 
 
 
+NFS storage
+
+
+[root@nfs_server ~]# ip addr show ens33  | awk '/inet / {print $2}'  # 查看 ip 地址
+      192.168.175.111/24
+
+
+// 安装 nfs-utils
+[root@nfs_server ~]# yum -y install nfs-utils
+
+// 启动并设置开机自启
+[root@nfs_server ~]# systemctl start nfs-server
+[root@nfs_server ~]# systemctl enable nfs-server
+
+[root@nfs4server ~]# netstat -anptu | grep 2049
+[root@nfs4server ~]# netstat -aptu  | grep nfs
+
+// 准备目录并导出
+[root@nfs_server ~]# mkdir -p /var/lib/libvirt/images
+[root@nfs_server ~]# chmod o+w /var/lib/libvirt/images
+
+[root@nfs_server ~]# vim /etc/exports
+
+      # man 5 exports   #/EXAMPLE
+      # exportfs -rav   #man exportfs  #/EXAMPLES
+
+      # 示例demo: 注意给目录 /nfs4_share/data/ 合适的权限,包括mount磁盘时提供合适的options
+      # /nfs4_share/data/  192.168.175.10(rw,sync,no_root_squash)  192.168.2.0/24(rw,root_squash,anonuid=150,anongid=100)
+
+      # 使用 NFS storage 时 导出时必须加 sync 参数
+      #    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-kvm_live_migration-shared_storage_example_nfs_for_a_simple_migration
+      # it is required that the synch parameter is enabled. This is required for proper export of the NFS storage.
+      /var/lib/libvirt/images 192.168.175.30(rw,no_root_squash,sync) 192.168.175.40(rw,no_root_squash,sync)
+
+
+// 重新导出 配置中的 所有 文件系统
+[root@nfs_server ~]# exportfs -rav
+    exporting 192.168.175.30:/var/lib/libvirt/images
+    exporting 192.168.175.40:/var/lib/libvirt/images
+
+        # 注: 如果要关闭 导出的 配置中的所有文件系统, 可以使用命令 `exportfs -auv`
+
+
+// 注: kvm 所在的 host physical machine 不需要重复安装 nfs-utils 了,
+//     因为其作为 libvirt 相关包的 依赖已经被 安装好了
+[root@host ~]# rpm -q nfs-utils
+      nfs-utils-1.3.0-0.61.el7.x86_64
+[root@host ~]# rpm -q --whatrequires nfs-utils
+      libvirt-daemon-driver-storage-core-4.5.0-10.el7_6.12.x86_64  <---可以看到, libvirt-daemon-driver-storage-core 依赖于 nfs-utils
+
+// 显示 nfs_server 共享出来的 文件系统列表
+[root@host ~]# showmount -e 192.168.175.111
+      Export list for 192.168.175.111:
+      /var/lib/libvirt/images 192.168.175.40,192.168.175.30
+
+
+
+
+---------------------------------------------------------------------------------------------------
+
+
 
 
 
