@@ -96,5 +96,34 @@ fn_echo_positional_parameters  a b
 fn_echo_positional_parameters  a b e f g
 fn_echo_positional_parameters  a b e f g 'h i j k l m n'
 
+
+function fn_is_empty_or_blank() {
+  [[ "$1" =~ ^[[:space:]]*$ ]]
+}
+
+[root@host ~]# fn_is_empty_or_blank aaaa
+[root@host ~]# echo $?
+1
+[root@host ~]# fn_is_empty_or_blank $aaaa
+[root@host ~]# echo $?
+0
+[root@host ~]# fn_is_empty_or_blank "$aaaa"
+[root@host ~]# echo $?
+0
+[root@host ~]# aaaa='      '
+[root@host ~]# fn_is_empty_or_blank "$aaaa"
+[root@host ~]# echo $?
+0
+[root@host ~]# aaaa='something'
+[root@host ~]# fn_is_empty_or_blank "$aaaa"
+[root@host ~]# echo $?
+1
+[root@host ~]# fn_is_empty_or_blank
+[root@host ~]# echo $?
+0
+
+
+
+
 # function 的更多用法见 《Advanced Bash-Scripting Guide》
 
