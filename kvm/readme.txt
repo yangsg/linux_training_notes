@@ -206,6 +206,7 @@ Intel (VT-x): VT-x represents Intel's technology for virtualization on the x86 p
 
 
 
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_getting_started_guide/chap-Virtualization_Getting_Started-Products#sec-Virtualization_Getting_Started-Products-kvm_and_virt
 ---------------------------------------------------------------------------------------------------
 kvm
 
