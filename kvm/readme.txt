@@ -236,6 +236,8 @@ CentOS Linux release 7.4.1708 (Core)
     Virtualization:        VT-x
 
 
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-installing_the_virtualization_packages-installing_virtualization_packages_on_an_existing_red_hat_enterprise_linux_system
+
 // 安装 kvm 相关的 packages
 [root@host ~]# yum -y install qemu-kvm qemu-img virt-manager libvirt libvirt-python libvirt-client virt-install virt-viewer bridge-utils
 
