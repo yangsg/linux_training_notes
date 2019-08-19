@@ -1001,6 +1001,8 @@ kvm 网络模式
 --------------------------------------------------------------------------------
   1、NAT模式
 
+      https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-virtual_networking-network_address_translation
+
       virtual machine 01 | <-----> default 交换机,自带dhcp, 192.168.122.0/24 <-----> virbr0 192.168.122.1 <----> 物理网卡 <---->
       virtual machine 02 |
 
@@ -1125,6 +1127,8 @@ kvm 中 nat 模式 网络通信的 常规 3 个要点: (注: 网络故障排错�
 
 --------------------------------------------------------------------------------
 2、桥接模式
+
+      https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-bridge-mode
 
             virtual machine 01  |
             virtual machine 02  | <---------------------> 桥接网络(网卡) <-------------------->
