@@ -123,6 +123,29 @@ function fn_is_empty_or_blank() {
 0
 
 
+# usage:
+#      fn_has_same_content file1 file2
+# eg:
+#    fn_has_same_content a.txt b.txt
+function fn_is_file_content_same {
+  local v_file1="$1"
+  local v_file2="$2"
+  local v_sum1="$(fn_md5sum $v_file1)"
+  local v_sum2="$(fn_md5sum $v_file2)"
+
+  [ "$v_sum1" = "$v_sum2" ]
+}
+
+# usage:
+# 语法: fn_md5sum file
+# eg:
+#    fn_md5sum a.txt  # 输出: 0f723ae7f9bf07744445e93ac5595156
+function fn_md5sum() {
+  local v_file="$1"
+  local v_sum=$(md5sum "$v_file" | awk '{print $1}')
+  echo $v_sum
+}
+
 
 
 # function 的更多用法见 《Advanced Bash-Scripting Guide》
