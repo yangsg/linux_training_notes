@@ -13,16 +13,19 @@
 
 [root@localhost ~]# cat /etc/sysconfig/network-scripts/ifcfg-eth0
 
-    DEVICE=ens33
-    NAME=ens33
+    DEVICE=eth0
+    NAME=eth0
     TYPE=Ethernet
-    BOOTPROTO=dhcp
+    BOOTPROTO=none
     ONBOOT=yes
 
 [root@localhost ~]# vim /etc/ssh/sshd_config
 
         GSSAPIAuthentication no
         UseDNS no
+
+合理的初始化基本的环境:
+    安装好相关的软件, 配置好相关的配置 (如关闭防火墙 和 selinux, 备份设置好 yum源 等等)
 
 
 
@@ -46,7 +49,28 @@
 
 
 
+// 编写脚本 (该脚本仅是一个简单示例, 还并不友好和完美)
+[root@host ~]# vim /opt/kvm-templates/centos7.4/kvm.sh
+     具体内容见:
+        https://github.com/yangsg/linux_training_notes/blob/master/kvm/10-template-make-and-apply/opt/kvm-templates/centos7.4/kvm.sh
 
+
+[root@host ~]# chattr +i /opt/kvm-templates/centos7.4/kvm.sh
+[root@host ~]# lsattr /opt/kvm-templates/centos7.4/kvm.sh
+      ----i----------- /opt/kvm-templates/centos7.4/kvm.sh
+
+
+// 执行 脚本创建 2 台 Guest 虚拟机
+[root@host ~]# bash /opt/kvm-templates/centos7.4/kvm.sh
+虚拟机数量: 2
+2
+
+// 启动虚拟机
+[root@host ~]# virsh start centos_1
+      Domain centos_1 started
+
+// 连接虚拟机
+[root@host ~]# ssh root@192.168.122.10
 
 
 
