@@ -1885,6 +1885,42 @@ Supported formats:
 
 
 ---------------------------------------------------------------------------------------------------
+克隆 virt-clone
+
+    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/cloning-a-vm
+    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/cloning_virtual_machines#Preparing_a_VM_for_cloning
+    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-Guest_virtual_machine_disk_access_with_offline_tools-Using_virt_sysprep
+
+
+先关闭(shutdown) 要被克隆的 Guest虚拟机
+
+[root@host ~]# man virt-clone   #包含了一些说明和示例
+
+    DESCRIPTION
+           virt-clone is a command line tool for cloning existing virtual machine images using the "libvirt" hypervisor
+           management library. It will copy the disk images of any existing virtual machine, and define a new guest with an
+           identical virtual hardware configuration. Elements which require uniqueness will be updated to avoid a clash
+           between old and new guests.
+
+           By default, virt-clone will show an error if the necessary information to clone the guest is not provided. The
+           --auto-clone option will generate all needed input, aside from the source guest to clone.
+
+           Please note, virt-clone does not change anything _inside_ the guest OS, it only duplicates disks and does host
+           side changes. So things like changing passwords, changing static IP address, etc are outside the scope of this
+           tool. For these types of changes, please see virt-sysprep.
+
+              virt-clone 不会修改 guest OS 中的 任何东西, 其仅 复制 disks 且
+              执行 host side 的 修改(即 xml 配置定义中如 name, uuid, mac, vnc port 和 source file(image镜像文件)路径修改).
+
+
+// 方式一
+[root@host ~]# virt-clone  --original centos_1  --auto-clone
+
+// 方式二
+[root@host ~]# virt-clone --connect qemu:///system --original centos_1 --name my_centos_1-clone-7.4-64 --file /var/lib/libvirt/images/new_centos_1.img
+
+
+---------------------------------------------------------------------------------------------------
 学习过程中 遇到的问题:
 
       https://communities.vmware.com/thread/541258
