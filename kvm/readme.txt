@@ -1394,7 +1394,7 @@ kvm存储管理
 [root@host ~]# ls /var/lib/libvirt/images/
       vm01-centos7.4-64.img
 
-// 创建 新的 disk image 文件
+// 创建 新的 disk image 文件(作为磁盘)
 [root@host ~]# qemu-img create -f qcow2 /var/lib/libvirt/images/disk01.img 2G
       Formatting '/var/lib/libvirt/images/disk01.img', fmt=qcow2 size=2147483648 encryption=off cluster_size=65536 lazy_refcounts=off
 
@@ -1456,7 +1456,10 @@ kvm存储管理
 
 二、存储池 storage pool
 
+      https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/virtualization_administration_guide/chap-virtualization_administration_guide-storage_pools-storage_pools
       https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/storage_pools#storage_pool_creating
+
+      不同类型的存储池 创建方式有差异, 具体见官网
 
   存储kvm主机磁盘镜像的位置
 
@@ -1514,6 +1517,132 @@ kvm存储管理
       Capacity:       73.47 GiB
       Allocation:     11.49 GiB
       Available:      61.98 GiB
+
+
+--------------------------------------------------
+使用 virsh 创建基于目录的 存储池
+
+    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/virtualization_administration_guide/sect-virtualization-storage_pools-creating-local_directories-virsh
+
+
+
+------------------------------
+创建基于目录的存储池, 方式一:
+// 定义基于 目录 (dir) 的存储池
+[root@host ~]# virsh pool-define-as guest_images dir - - - - "/guest_images"
+Pool guest_images defined
+
+        关于 占位符 '- - - -' 的解释见:
+            https://unix.stackexchange.com/questions/216837/virsh-and-creating-storage-pools-what-is-sourcepath
+
+     如上命令等价于命令:  virsh pool-define-as guest_images --type dir --target /guest_images
+
+
+[root@host ~]# virsh pool-list --all
+
+     Name                 State      Autostart
+    -------------------------------------------
+     default              active     yes
+     guest_images         inactive   no
+     root                 active     yes
+     tmp                  active     yes
+
+// 创建 存储池 guest_images 对应的目录
+[root@host ~]# virsh pool-build guest_images
+    Pool guest_images built
+
+[root@host ~]# ls -ld /guest_images/
+drwx--x--x 2 root root 6 Aug 20 16:48 /guest_images/
+
+// 启动存储池
+[root@host ~]# virsh pool-start guest_images
+    Pool guest_images started
+
+// 设置自动启动存储池 (Autostart configures the libvirtd service to start the storage pool when the service starts.)
+[root@host ~]# virsh pool-autostart guest_images
+      Pool guest_images marked as autostarted
+
+// 查看存储池信息
+[root@host ~]# virsh pool-info guest_images
+      Name:           guest_images
+      UUID:           0b43b427-6b42-4143-915a-6818f4ec202f
+      State:          running
+      Persistent:     yes    <---- If you want the pool to be accessible even if the guest virtual machine is not running, make sure that Persistent is reported as yes
+      Autostart:      yes    <---- If you want the pool to start automatically when the service starts, make sure that Autostart is reported as yes
+      Capacity:       73.47 GiB
+      Allocation:     13.51 GiB
+      Available:      59.96 GiB
+
+
+
+
+------------------------------
+创建基于目录的存储池, 方式二: 直接根据 定义配置文件创建
+
+
+[root@host ~]# mkdir /guest_images
+[root@host ~]# chown root:root /guest_images/
+[root@host ~]# chmod 700 /guest_images/
+
+[root@host ~]# vim /etc/libvirt/storage/guest_images.xml
+    <pool type='dir'>
+      <name>guest_images</name>
+      <uuid>6054083c-70f5-422e-8d1d-61e3a17f03b7</uuid>
+      <capacity unit='bytes'>0</capacity>
+      <allocation unit='bytes'>0</allocation>
+      <available unit='bytes'>0</available>
+      <source>
+      </source>
+      <target>
+        <path>/guest_images</path>
+      </target>
+    </pool>
+
+[root@host ~]# virsh pool-define /etc/libvirt/storage/guest_images.xml
+
+[root@host ~]# virsh pool-list --all
+
+     Name                 State      Autostart
+    -------------------------------------------
+     default              active     yes
+     guest_images         inactive   no
+     root                 active     yes
+     tmp                  active     yes
+
+
+
+[root@host ~]# virsh pool-start guest_images
+[root@host ~]# virsh pool-autostart guest_images
+
+[root@host ~]# virsh pool-info guest_images
+      Name:           guest_images
+      UUID:           6054083c-70f5-422e-8d1d-61e3a17f03b7
+      State:          running
+      Persistent:     yes
+      Autostart:      yes
+      Capacity:       73.47 GiB
+      Allocation:     13.51 GiB
+      Available:      59.96 GiB
+
+
+
+
+--------------------------------------------------
+删除基于目录(dir) 的存储池
+      https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/virtualization_administration_guide/delete-dir-storage-pool-virsh
+
+// 停止存储池 (stop the storage pool and release any resources in use by it.)
+[root@host ~]# virsh pool-destroy guest_images
+
+// (可选操作) 删除存储池 guest_images 对应的目录
+[root@host ~]# virsh pool-delete guest_images
+
+// 删除定义配置文件(Remove the storage pool's definition)
+[root@host ~]# virsh pool-undefine guest_images
+
+--------------------------------------------------
+
+
 
 
 
