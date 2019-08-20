@@ -1920,6 +1920,12 @@ Supported formats:
 [root@host ~]# virt-clone --connect qemu:///system --original centos_1 --name my_centos_1-clone-7.4-64 --file /var/lib/libvirt/images/new_centos_1.img
 
 
+对应基于差量镜像的Guest虚拟机, 如果做 off-line的 迁移(migrate), 可以先 shutdown Guest虚拟机,
+clone 出 image 镜像文件, 然后利用原始的 Guest虚拟机的 配置文件和 该克隆的 image 镜像文件来
+在 destination 的 kvm host 物理机上 define 出 对应的迁移版本的 Guest虚拟机. 此时,
+该克隆的 image 镜像文件在 destination 上需要 rename 为与原始 image 文件名相同(即与 xml 中的
+image file 的路径中的名字对应).
+
 ---------------------------------------------------------------------------------------------------
 学习过程中 遇到的问题:
 
