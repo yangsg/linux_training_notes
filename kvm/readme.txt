@@ -239,7 +239,10 @@ CentOS Linux release 7.4.1708 (Core)
 https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-installing_the_virtualization_packages-installing_virtualization_packages_on_an_existing_red_hat_enterprise_linux_system
 
 // 安装 kvm 相关的 packages
-[root@host ~]# yum -y install qemu-kvm qemu-img virt-manager libvirt libvirt-python libvirt-client virt-install virt-viewer bridge-utils
+[root@host ~]# yum -y install qemu-kvm qemu-img virt-manager libvirt libvirt-python libvirt-client virt-install virt-viewer bridge-utils libguestfs-tools
+
+注: libguestfs-tools 包 中包含工具如 guestfish 等 可以
+    在 Guest虚拟处于 shutdown 状态时直接修改 Guest虚拟机的文件系统中的文件,对于自动化配置IP时很有用.
 
 
 [root@host ~]# systemctl start libvirtd
