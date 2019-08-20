@@ -1890,6 +1890,10 @@ Supported formats:
     https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/cloning-a-vm
     https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/cloning_virtual_machines#Preparing_a_VM_for_cloning
     https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-Guest_virtual_machine_disk_access_with_offline_tools-Using_virt_sysprep
+    https://www.unixarena.com/2015/12/how-to-clone-a-kvm-virtual-machines-and-reset-the-vm.html/
+    https://linuxconfig.org/how-to-clone-kvm-based-virtual-machines-on-redhat-linux
+    https://linuxconfig.org/how-to-create-and-manage-kvm-virtual-machines-from-cli
+
 
 
 先关闭(shutdown) 要被克隆的 Guest虚拟机
