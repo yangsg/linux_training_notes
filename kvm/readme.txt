@@ -242,7 +242,7 @@ https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/vi
 [root@host ~]# yum -y install qemu-kvm qemu-img virt-manager libvirt libvirt-python libvirt-client virt-install virt-viewer bridge-utils libguestfs-tools
 
 注: libguestfs-tools 包 中包含工具如 guestfish 等 可以
-    在 Guest虚拟处于 shutdown 状态时直接修改 Guest虚拟机的文件系统中的文件,对于自动化配置IP时很有用.
+    在 Guest虚拟机处于 shutdown 状态时直接修改 Guest虚拟机的文件系统中的文件,对于自动化配置IP时很有用.
 
 
 [root@host ~]# systemctl start libvirtd
@@ -1296,9 +1296,55 @@ kvm 中 nat 模式 网络通信的 常规 3 个要点: (注: 网络故障排错�
 [root@host ~]# systemctl enable NetworkManager
 
       //如果不打算启动 或 使用 NetworkManager, 可通过如下两种方式之一(注意其中的区别):
-        [root@host ~]# ifdown ens33; ifup ens33  # 此处的 ifdown 可能有点多余,不过在 ens33 已经处于 up 的情况下先执行 ifdown 在接着执行 ifup 效果类似于 先 reload 配置 再 ifup
+        [root@host ~]# ifdown ens33; ifup ens33  # 此处的 ifdown 可能有点多余,不过在 ens33 已经处于 up 的情况下先执行 ifdown 再接着执行 ifup 效果类似于 先 reload 配置 再 ifup
       //或
         [root@host ~]# systemctl restart network
+
+
+
+---------------------------------------------------------------------------------------------------
+3、隔离模式
+
+    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-networking_protocols-isolated_mode
+
+--------------------------------------------------
+创建隔离网络:
+[root@host ~]# vim /etc/libvirt/qemu/networks/my_isolate_net01.xml
+
+    <network>
+      <name>my_isolate_net01</name>
+      <uuid>e62f93f2-bbcd-4603-b59f-284b405fed1d</uuid>
+      <bridge name='virbr1' stp='on' delay='0'/>
+      <mac address='52:54:00:28:19:8d'/>
+      <domain name='my_isolate_net01'/>
+      <ip address='192.168.100.1' netmask='255.255.255.0'>
+        <dhcp>
+          <range start='192.168.100.128' end='192.168.100.254'/>
+        </dhcp>
+      </ip>
+    </network>
+
+
+[root@host ~]# virsh net-define /etc/libvirt/qemu/networks/my_isolate_net01.xml
+[root@host ~]# virsh net-start my_isolate_net01
+[root@host ~]# virsh net-autostart my_isolate_net01
+
+[root@host ~]# virsh net-list --all
+
+     Name                 State      Autostart     Persistent
+    ----------------------------------------------------------
+     default              active     yes           yes
+     my_isolate_net01     active     yes           yes
+
+
+--------------------------------------------------
+删除隔离网络:
+
+[root@host ~]# virsh net-destroy  my_isolate_net01
+[root@host ~]# virsh net-undefine my_isolate_net01
+
+
+
 
 
 
