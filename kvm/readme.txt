@@ -1879,8 +1879,98 @@ Supported formats:
       压缩
 
 
+[root@host ~]# mkdir /data
+
+// 创建磁盘文件(默认 format 为 raw)
+[root@host ~]# qemu-img create /data/disk01.img 2G
+    Formatting '/data/disk01.img', fmt=raw size=2147483648
+
+// 创建格式为 qcow2 的磁盘文件
+[root@host ~]# qemu-img create -f qcow2 /data/disk02.img 2G
+      Formatting '/data/disk02.img', fmt=qcow2 size=2147483648 encryption=off cluster_size=65536 lazy_refcounts=off
 
 
+[root@host ~]# qemu-img info /data/disk01.img
+      image: /data/disk01.img
+      file format: raw
+      virtual size: 2.0G (2147483648 bytes)
+      disk size: 0
+
+[root@host ~]# qemu-img info /data/disk02.img
+
+      image: /data/disk02.img
+      file format: qcow2
+      virtual size: 2.0G (2147483648 bytes)
+      disk size: 196K
+      cluster_size: 65536
+      Format specific information:
+          compat: 1.1
+          lazy refcounts: false
+
+
+
+[root@host ~]# ls -lh /data/
+total 196K
+-rw-r--r-- 1 root root 2.0G Aug 21 13:26 disk01.img
+-rw-r--r-- 1 root root 193K Aug 21 13:27 disk02.img
+
+
+
+--------------------------------------------------
+qemu-img 管理快照: list, create, apply and delete
+
+条件:
+    关机状态
+    qcow2格式
+
+
+语法: qemu-img snapshot [-q] [-l | -a snapshot | -c snapshot | -d snapshot] filename
+           is the name of the snapshot to create, apply or delete
+
+       -a  applies a snapshot (revert disk to saved state)
+
+       -c  creates a snapshot
+
+       -d  deletes a snapshot
+
+       -l  lists all snapshots in the given image
+
+
+// 创建 磁盘快照
+[root@host ~]# qemu-img snapshot -c centos_1.qcow2-img-snapshot01 /var/lib/libvirt/images/centos_1.qcow2
+
+// 列出 磁盘快照
+[root@host ~]# qemu-img snapshot -l /var/lib/libvirt/images/centos_1.qcow2
+    Snapshot list:
+    ID        TAG                 VM SIZE                DATE       VM CLOCK
+    1         centos_1.qcow2-img-snapshot01      0 2019-08-21 13:37:18   00:00:00.000
+
+// 应用 磁盘快照
+[root@host ~]# qemu-img snapshot -a centos_1.qcow2-img-snapshot01 /var/lib/libvirt/images/centos_1.qcow2
+
+// 删除 磁盘快照
+[root@host ~]# qemu-img snapshot -d centos_1.qcow2-img-snapshot01 /var/lib/libvirt/images/centos_1.qcow2
+
+
+--------------------------------------------------
+后端镜像和差量镜像:
+
+通常用于虚拟机模板，快速创建虚拟机
+
+[root@host ~]# qemu-img create -f qcow2 -b /var/lib/libvirt/images/vm-base-centos7.4-64.qcow2 /var/lib/libvirt/images/diff_disk01.qcow2
+      Formatting '/var/lib/libvirt/images/diff_disk01.qcow2', fmt=qcow2 size=8589934592 backing_file='/var/lib/libvirt/images/vm-base-centos7.4-64.qcow2' encryption=off cluster_size=65536 lazy_refcounts=off
+
+
+[root@host ~]# qemu-img info /var/lib/libvirt/images/diff_disk01.qcow2
+      image: /var/lib/libvirt/images/diff_disk01.qcow2  <----- 存储差异的部分
+      file format: qcow2
+      virtual size: 8.0G (8589934592 bytes)
+      disk size: 196K
+      cluster_size: 65536
+      backing file: /var/lib/libvirt/images/vm-base-centos7.4-64.qcow2  <------ backing file 可用于模板
+      Format specific information:
+          compat: 1.1
+          lazy refcounts: false
 
 
 
