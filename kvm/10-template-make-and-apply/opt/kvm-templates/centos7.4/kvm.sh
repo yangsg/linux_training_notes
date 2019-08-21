@@ -147,7 +147,7 @@ _EOF_
 
 # update_network_deprecated 中的方式配置ip 很多时候都不起作用(虽然偶尔有效果),
 # 所以最好不要使用这种方式, 所有最稳妥 的方式是使用 如函数 update_network 中
-# guestfish(libguestfs) 这种方式 直接修改 Guest virtual machine 中文件系统中配置文件的方式
+# guestfish(libguestfs) 这种方式 直接修改 Guest virtual machine 中文件系统中配置文件
 #    https://serverfault.com/questions/101292/libvirt-change-dhcp-setup-without-restarting
 #    https://www.cyberciti.biz/faq/linux-kvm-libvirt-dnsmasq-dhcp-static-ip-address-configuration-for-guest-os/
 function update_network_deprecated() {
