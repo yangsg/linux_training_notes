@@ -270,6 +270,40 @@ https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/vi
 
 ----------------------------------------------------------------------------------------------------
 
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+其他:
+
+// 如果不想执行 在线(live, online)迁移, 则可结合使用选项 --offline 和 --persistent 执行离线迁移:
+[root@kvm_src_host ~]# virsh migrate --offline --persistent  vm01-centos7.4-64 qemu+ssh://192.168.175.50/system
+
+
+    选项解释:
+      --offline - migrates domain definition without starting the domain on destination and without
+                  stopping it on source host. Offline migration may be used with
+                  inactive domains and it must be used with the --persistent option.
+
+      --persistent - leaves the domain persistent on destination host physical machine
+
+
+
+[root@kvm_dst_host ~]# virsh list --all
+     Id    Name                           State
+    ----------------------------------------------------
+     -     vm01-centos7.4-64              shut off
+
+
+
+----------------------------------------------------------------------------------------------------
+其他笔记:
+    https://github.com/yangsg/linux_training_notes/tree/master/kvm/10-template-make-and-apply
+
+
+
 网上资料:
 
     https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-kvm_live_migration-shared_storage_example_nfs_for_a_simple_migration
