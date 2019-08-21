@@ -1,10 +1,20 @@
 
-----------------------------------------------------------------------------------------------------
-准备 一台独立的 nfs server 用于共享存储
 
+ip 信息:
 
 [root@nfs_server ~]# ip addr show ens33  | awk '/inet / {print $2}'  # 查看 ip 地址
-192.168.175.111/24
+    192.168.175.111/24
+
+[root@kvm_src_host ~]# ip addr show ens33  | awk '/inet / {print $2}'  # 查看 ip 地址
+    192.168.175.40/24
+
+[root@kvm_dst_host ~]# ip addr show ens33  | awk '/inet / {print $2}'  # 查看 ip 地址
+    192.168.175.50/24
+
+
+
+----------------------------------------------------------------------------------------------------
+准备 一台独立的 nfs server 用于共享存储
 
 // 安装 nfs-utils
 [root@nfs_server ~]# yum -y install nfs-utils
