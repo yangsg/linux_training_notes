@@ -1931,6 +1931,79 @@ clone 出 image 镜像文件, 然后利用原始的 Guest虚拟机的 配置文�
 image file 的路径中的名字对应).
 
 ---------------------------------------------------------------------------------------------------
+快照 Snapshots: 虚拟化技术中的 "月光宝盒" 或 "伊邪那岐"
+
+    Snapshots take the disk, memory, and device state of a guest virtual
+    machine at a specified point in time, and save it for future use.
+
+https://www.linuxtechi.com/create-revert-delete-kvm-virtual-machine-snapshot-virsh-command/
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-managing_guest_virtual_machines_with_virsh-managing_snapshots
+
+
+重要: rhel7 仅支持在 Guest虚拟机  paused 或 powered down 时创建快照.
+        Red Hat Enterprise Linux 7 only supports creating snapshots while
+        the guest virtual machine is paused or powered down. Creating snapshots
+        of running guests (also known as live snapshots) is available
+        on Red Hat Virtualization. For details, call your service representative.
+
+kvm 的 Snapshots 需要 磁盘格式为 Qcow2.
+将 raw 转换为 Qcow2 的命令如: qemu-img convert -f raw -O qcow2 image-name.img image-name.qcow2
+
+
+[root@host ~]# virsh list --all
+ Id    Name                           State
+----------------------------------------------------
+ -     centos_1                       shut off
+ -     centos_1-clone                 shut off
+ -     centos_2                       shut off
+ -     centos_2-clone                 shut off
+ -     my_centos_1-clone-7.4-64       shut off
+
+// 创建 domain 'centos_1' 的快照 (注意创建之前保持 'centos_1' 处于  pause 或 shutdown 的状态)
+[root@host ~]# virsh snapshot-create-as --domain centos_1 --name centos_1_snap01 --description "snap before upgrade gcc version"
+    Domain snapshot centos_1_snap01 created
+
+[root@host ~]# find  /var/lib/libvirt/qemu/snapshot/
+      /var/lib/libvirt/qemu/snapshot/
+      /var/lib/libvirt/qemu/snapshot/centos_1
+      /var/lib/libvirt/qemu/snapshot/centos_1/centos_1_snap01.xml  <-----
+
+
+// 列出 domain 'centos_1' 的快照
+[root@host ~]# virsh snapshot-list centos_1
+
+   Name                 Creation Time             State
+  ------------------------------------------------------------
+   centos_1_snap01      2019-08-21 10:59:01 +0800 shutoff
+
+// 显示 domain 'centos_1' 相应快照的详细信息
+[root@host ~]# virsh snapshot-info --domain centos_1 --snapshotname centos_1_snap01
+    Name:           centos_1_snap01
+    Domain:         centos_1
+    Current:        yes
+    State:          shutoff
+    Location:       internal
+    Parent:         -
+    Children:       0
+    Descendants:    0
+    Metadata:       yes
+
+
+// 还原(Revert / Restore)快照
+[root@host ~]# virsh snapshot-revert centos_1 centos_1_snap01
+
+
+[root@host ~]# virsh snapshot-list --domain centos_1
+     Name                 Creation Time             State
+    ------------------------------------------------------------
+     centos_1_snap01      2019-08-21 10:59:01 +0800 shutoff
+
+// 删除快照
+[root@host ~]# virsh snapshot-delete --domain centos_1 --snapshotname centos_1_snap01
+    Domain snapshot centos_1_snap01 deleted
+
+
+---------------------------------------------------------------------------------------------------
 学习过程中 遇到的问题:
 
       https://communities.vmware.com/thread/541258
