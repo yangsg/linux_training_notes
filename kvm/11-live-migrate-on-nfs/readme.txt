@@ -300,7 +300,7 @@ https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/vi
 
 ----------------------------------------------------------------------------------------------------
 其他笔记:
-    https://github.com/yangsg/linux_training_notes/tree/master/kvm/10-template-make-and-apply
+    https://github.com/yangsg/linux_training_notes/tree/master/kvm
 
 
 
