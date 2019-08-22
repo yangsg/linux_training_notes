@@ -5,6 +5,8 @@ http://www.linuxvirtualserver.org/whatis.html
 
 https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/index
 
+LVS: Linux Virtual Server
+
 
 
 VRRP 协议:
