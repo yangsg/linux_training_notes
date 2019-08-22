@@ -191,7 +191,7 @@
 
 
 // 在 virtual service 上 添加 real server
-//   语法: ipvsadm -a -t service-address -r server-address [options]
+//   语法: ipvsadm -a|e -t|u|f service-address -r server-address [options]
 
 [root@lsv_director ~]# ipvsadm -a -t 192.168.175.100:80 -r 192.168.40.101:80 -m
 [root@lsv_director ~]# ipvsadm -a -t 192.168.175.100:80 -r 192.168.40.102:80 -m
@@ -201,7 +201,8 @@
           --tcp-service  -t service-address   service-address is host[:port]
           --real-server  -r server-address    server-address is host (and port)
           --masquerading -m                   masquerading (NAT)
-
+          --weight       -w weight            capacity of real server (weight 为 0 through to 65535. The default is 1.)
+                                                                       weight 为 0 时 表示不再接受 new job 但仍为 既有的 jobs 提供服务
 
 [root@lsv_director ~]# ipvsadm -L -n
 
@@ -249,11 +250,89 @@
 [root@lsv_director ~]# systemctl start ipvsadm    # 注意, 文件 /etc/sysconfig/ipvsadm-config 中的配置可能会影响 ipvsadm.service 的某些行为
 [root@lsv_director ~]# systemctl enable ipvsadm
 
+
+至此, 一个简单的 nat 路由方式的 lvs 搭建完成
 ---------------------------------------------------------------------------------------------------
 
 
 
 
+
+
+---------------------------------------------------------------------------------------------------
+测试一下其他 某些 调度算法 或 选项
+
+--------------------------------------------------
+// 测试一下 wrr
+[root@lsv_director ~]# ipvsadm -E -t 192.168.175.100:80 -s wrr
+[root@lsv_director ~]# ipvsadm -e -t 192.168.175.100:80 -r 192.168.40.102:80 -m -w 4
+
+[root@lsv_director ~]# ipvsadm -L -n
+      IP Virtual Server version 1.2.1 (size=4096)
+      Prot LocalAddress:Port Scheduler Flags
+        -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+      TCP  192.168.175.100:80 wrr
+        -> 192.168.40.101:80            Masq    1      0          0
+        -> 192.168.40.102:80            Masq    4      0          0
+
+[root@lsv_director ~]# for i in {1..10}; do curl 192.168.175.100:80; done
+      lvs_real_server02
+      lvs_real_server02
+      lvs_real_server02
+      lvs_real_server01
+      lvs_real_server02
+      lvs_real_server02
+      lvs_real_server02
+      lvs_real_server02
+      lvs_real_server01
+      lvs_real_server02
+
+[root@lsv_director ~]# ipvsadm -L -n
+      IP Virtual Server version 1.2.1 (size=4096)
+      Prot LocalAddress:Port Scheduler Flags
+        -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+      TCP  192.168.175.100:80 wrr
+        -> 192.168.40.101:80            Masq    1      0          2
+        -> 192.168.40.102:80            Masq    4      0          8
+
+--------------------------------------------------
+// 测试一下 sh
+[root@lsv_director ~]# ipvsadm -E -t 192.168.175.100:80 -s sh
+[root@lsv_director ~]# ipvsadm -e -t 192.168.175.100:80 -r 192.168.40.102:80 -m -w 1
+
+[root@lsv_director ~]# ipvsadm -L -n
+      IP Virtual Server version 1.2.1 (size=4096)
+      Prot LocalAddress:Port Scheduler Flags
+        -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+      TCP  192.168.175.100:80 sh
+        -> 192.168.40.101:80            Masq    1      0          0
+        -> 192.168.40.102:80            Masq    1      0          0
+
+[root@lsv_director ~]# for i in {1..10}; do curl 192.168.175.100:80; done
+      lvs_real_server02
+      lvs_real_server02
+      lvs_real_server02
+      lvs_real_server02
+      lvs_real_server02
+      lvs_real_server02
+      lvs_real_server02
+      lvs_real_server02
+      lvs_real_server02
+      lvs_real_server02
+
+
+[root@lsv_director ~]# ipvsadm -L -n
+      IP Virtual Server version 1.2.1 (size=4096)
+      Prot LocalAddress:Port Scheduler Flags
+        -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+      TCP  192.168.175.100:80 sh
+        -> 192.168.40.101:80            Masq    1      0          0
+        -> 192.168.40.102:80            Masq    1      0          10
+
+
+
+
+--------------------------------------------------
 
 
 ---------------------------------------------------------------------------------------------------
