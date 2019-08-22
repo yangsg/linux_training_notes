@@ -60,6 +60,39 @@
 [root@lsv_director ~]# rpm -q ipvsadm
       ipvsadm-1.27-7.el7.x86_64
 
+[root@lsv_director ~]# rpm -ql ipvsadm
+
+          /etc/sysconfig/ipvsadm-config           <----
+          /usr/lib/systemd/system/ipvsadm.service <----
+          /usr/sbin/ipvsadm                       <----
+          /usr/sbin/ipvsadm-restore               <----
+          /usr/sbin/ipvsadm-save                  <----
+          /usr/share/doc/ipvsadm-1.27
+          /usr/share/doc/ipvsadm-1.27/README      <----
+          /usr/share/man/man8/ipvsadm-restore.8.gz
+          /usr/share/man/man8/ipvsadm-save.8.gz
+          /usr/share/man/man8/ipvsadm.8.gz
+
+
+// 查看一下 service unit file 内容
+[root@lsv_director ~]# cat /usr/lib/systemd/system/ipvsadm.service
+      [Unit]
+      Description=Initialise the Linux Virtual Server
+      After=syslog.target network.target
+
+      [Service]
+      Type=oneshot
+      ExecStart=/bin/bash -c "exec /sbin/ipvsadm-restore < /etc/sysconfig/ipvsadm"
+      ExecStop=/bin/bash -c "exec /sbin/ipvsadm-save -n > /etc/sysconfig/ipvsadm"
+      ExecStop=/sbin/ipvsadm -C
+      RemainAfterExit=yes
+
+      [Install]
+      WantedBy=multi-user.target
+
+
+
+
 
 // 查看帮助
 [root@lsv_director ~]# man ipvsadm   # 在线 man page 见:   https://linux.die.net/man/8/ipvsadm
@@ -133,12 +166,100 @@
           --sched-flags  -b flags             scheduler flags (comma-separated)
 
 
+// 在 vip 上 添加 虚拟服务 (Add  a  virtual  service)
+//   语法:  ipvsadm -A|E -t|u|f service-address [-s scheduler] [-p [timeout]] [-M netmask] [--pe persistence_engine] [-b sched-flags]
+[root@lsv_director ~]# ipvsadm -A -t 192.168.175.100:80 -s rr  #注: -s scheduler 中 scheduler 默认为 wlc, 此处采用 rr 仅是为了方便测试观察效果
+
+      注:
+          --add-service     -A        add virtual service with options
+          --tcp-service  -t service-address   service-address is host[:port]
+          --scheduler    -s scheduler         one of rr|wrr|lc|wlc|lblc|lblcr|dh|sh|sed|nq,
+
+
+// 查看效果(以数字显示)
+[root@lsv_director ~]# ipvsadm -L -n
+    IP Virtual Server version 1.2.1 (size=4096)
+    Prot LocalAddress:Port Scheduler Flags
+      -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+    TCP  192.168.175.100:80 rr   <------- 观察
+
+[root@lsv_director ~]# ipvsadm -L
+    IP Virtual Server version 1.2.1 (size=4096)
+    Prot LocalAddress:Port Scheduler Flags
+      -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+    TCP  localhost:http rr
+
+
+// 在 virtual service 上 添加 real server
+//   语法: ipvsadm -a -t service-address -r server-address [options]
+
+[root@lsv_director ~]# ipvsadm -a -t 192.168.175.100:80 -r 192.168.40.101:80 -m
+[root@lsv_director ~]# ipvsadm -a -t 192.168.175.100:80 -r 192.168.40.102:80 -m
+
+        注:
+          --add-server      -a        add real server with options
+          --tcp-service  -t service-address   service-address is host[:port]
+          --real-server  -r server-address    server-address is host (and port)
+          --masquerading -m                   masquerading (NAT)
+
+
+[root@lsv_director ~]# ipvsadm -L -n
+
+      IP Virtual Server version 1.2.1 (size=4096)
+      Prot LocalAddress:Port Scheduler Flags
+        -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+      TCP  192.168.175.100:80 rr
+        -> 192.168.40.101:80            Masq    1      0          0
+        -> 192.168.40.102:80            Masq    1      0          0
+
+
+// 测试一下
+[root@localhost ~]# for i in $(seq 6); do curl 192.168.175.100:80; done
+      lvs_real_server02
+      lvs_real_server01
+      lvs_real_server02
+      lvs_real_server01
+      lvs_real_server02
+      lvs_real_server01
+
+// 查看一下 the virtual server table 相关信息
+[root@lsv_director ~]# ipvsadm -L -n
+    IP Virtual Server version 1.2.1 (size=4096)
+    Prot LocalAddress:Port Scheduler Flags
+      -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+    TCP  192.168.175.100:80 rr
+      -> 192.168.40.101:80            Masq    1      0          12
+      -> 192.168.40.102:80            Masq    1      0          12
+
+
+// 在 stdout 上显示 the IPVS table
+[root@lsv_director ~]# ipvsadm-save
+      -A -t localhost:http -s rr
+      -a -t localhost:http -r localhost:http -m -w 1
+      -a -t localhost:http -r localhost:http -m -w 1
+
+[root@lsv_director ~]# ipvsadm-save -n    #-n     print out the table in numeric format.
+      -A -t 192.168.175.100:80 -s rr
+      -a -t 192.168.175.100:80 -r 192.168.40.101:80 -m -w 1
+      -a -t 192.168.175.100:80 -r 192.168.40.102:80 -m -w 1
+
+
+[root@lsv_director ~]# touch /etc/sysconfig/ipvsadm
+[root@lsv_director ~]# ipvsadm-save > /etc/sysconfig/ipvsadm
+[root@lsv_director ~]# systemctl start ipvsadm    # 注意, 文件 /etc/sysconfig/ipvsadm-config 中的配置可能会影响 ipvsadm.service 的某些行为
+[root@lsv_director ~]# systemctl enable ipvsadm
+
+---------------------------------------------------------------------------------------------------
 
 
 
 
 
 
+---------------------------------------------------------------------------------------------------
+
+https://www.server-world.info/en/note?os=CentOS_7&p=lvs
+https://www.server-world.info/en/note?os=CentOS_6&p=lvs
 
 
 
