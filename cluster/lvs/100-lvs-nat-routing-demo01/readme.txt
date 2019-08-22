@@ -11,11 +11,18 @@
                                                      |
     client  <---------->  lsv_director <------------>|
                    <->vip: 192.168.175.100           |
-                      dip: 192.168.40.100<->        |
+                      dip: 192.168.40.100<->         |
                                                      |
                                                      |--- lvs_real_server02
                                                              rip:    192.168.40.102
                                                              gateway:192.168.40.100
+
+查看 lsv_director 服务器的ip信息:
+    [root@lsv_director ~]# ip addr show ens33  | awk '/inet / {print $2}'  # 查看 ip 地址
+        192.168.175.100/24
+    [root@lsv_director ~]# ip addr show ens37  | awk '/inet / {print $2}'  # 查看 ip 地址
+        192.168.40.100/24
+
 
 
 ---------------------------------------------------------------------------------------------------
