@@ -1175,6 +1175,12 @@ num  target     prot opt source               destination
 
 
 =================================================================================
+一些 打标记 --set-mark 的应用场景:
+      https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/4/html-single/Virtual_Server_Administration/index.html
+      https://www.lisenet.com/2015/setting-up-a-load-balancing-lvs-direct-routing-cluster-with-piranha/
+      http://www.austintek.com/LVS/LVS-HOWTO/HOWTO/LVS-HOWTO.fwmark.html
+
+
 模块(module): -m mark
 [root@basic ~]# man iptables-extensions   #/^   mark
    mark

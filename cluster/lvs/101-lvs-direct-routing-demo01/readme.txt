@@ -486,15 +486,174 @@ https://www.iyunv.com/thread-658681-1-1.html
 
 
 ---------------------------------------------------------------------------------------------------
+其他知识点
+---------------------------------------------------------------------------------------------------
+
+   -c, --connection
+          Connection output. The list command with this option will list current IPVS connections.
+
+
+[root@lvs_director ~]# ipvsadm -L -n -c
+    IPVS connection entries
+    pro expire state       source             virtual            destination
+    TCP 04:56  NONE        192.168.175.30:0   192.168.175.100:80 192.168.175.102:80
+    TCP 01:55  FIN_WAIT    192.168.175.30:41724 192.168.175.100:80 192.168.175.102:80
+    TCP 01:55  FIN_WAIT    192.168.175.30:41734 192.168.175.100:80 192.168.175.102:80
+    TCP 01:55  FIN_WAIT    192.168.175.30:41720 192.168.175.100:80 192.168.175.102:80
+
+---------------------------------------------------------------------------------------------------
+persistent 持久性
+
+
+ -p, --persistent [timeout]
+        Specify  that  a virtual service is persistent. If this option is specified, multiple requests from a client are redirected to the same real
+        server selected for the first request.  Optionally, the timeout of persistent sessions may be specified  given  in  seconds,  otherwise  the
+        default  of  300  seconds  will be used. This option may be used in conjunction with protocols such as SSL or FTP where it is important that
+        clients consistently connect with the same real server.
+
+        Note: If a virtual service is to handle FTP connections then persistence must be set for the virtual service if Direct Routing or Tunnelling
+        is  used  as the forwarding mechanism. If Masquerading is used in conjunction with an FTP service than persistence is not necessary, but the
+        ip_vs_ftp kernel module must be used.  This module may be manually inserted into the kernel using insmod(8).
+
+
+[root@lvs_director ~]# ipvsadm -E -t 192.168.175.100:80 -s rr -p 300   # 单位: seconds 秒
+
+
+[root@lvs_director ~]# ipvsadm-save -n
+
+      -A -t 192.168.175.100:80 -s rr -p 300
+      -a -t 192.168.175.100:80 -r 192.168.175.102:80 -g -w 1
+      -a -t 192.168.175.100:80 -r 192.168.175.103:80 -g -w 1
+
+[root@lvs_director ~]# ipvsadm -L -n
+
+      IP Virtual Server version 1.2.1 (size=4096)
+      Prot LocalAddress:Port Scheduler Flags
+        -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+      TCP  192.168.175.100:80 rr persistent 300  <---- 观察
+        -> 192.168.175.102:80           Route   1      0          0
+        -> 192.168.175.103:80           Route   1      0          210
+
+
+[root@client ~]# for i in {1..10}; do curl 192.168.175.100:80; done
+      vs_real_server02
+      vs_real_server02
+      vs_real_server02
+      vs_real_server02
+      vs_real_server02
+      vs_real_server02
+      vs_real_server02
+      vs_real_server02
+      vs_real_server02
+      vs_real_server02
 
 
 
+----------------------------------------------------------------------------------------------------
+防火墙标记/端口亲缘性
+
+
+       -f, --fwmark-service integer
+              Use  a  firewall-mark,  an  integer  value  greater than zero, to denote a virtual service instead of an
+              address, port and protocol (UDP or TCP). The marking of packets with a firewall-mark is configured using
+              the  -m|--mark option to iptables(8). It can be used to build a virtual service associated with the same
+              real servers, covering multiple IP address, port and protocol triplets. If IPv6 addresses are used,  the
+              -6 option must be used.
+
+              Using  firewall-mark  virtual  services  provides  a convenient method of grouping together different IP
+              addresses, ports and protocols into a single virtual service. This is useful for both  simplifying  con‐
+              figuration if a large number of virtual services are required and grouping persistence across what would
+              otherwise be multiple virtual services.
+
+
+    https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/4/html-single/Virtual_Server_Administration/index.html
+    https://www.lisenet.com/2015/setting-up-a-load-balancing-lvs-direct-routing-cluster-with-piranha/
+
+    https://www.linuxtopia.org/online_books/linux_system_administration/redhat_cluster_configuration_and_management/s1-lvs-ftp.html
+    http://www.austintek.com/LVS/LVS-HOWTO/HOWTO/LVS-HOWTO.fwmark.html
+
+        fwmark is a way of aggregating an arbitary collection of VIP:port services
+        into one virtual service (the entry made with ipvsadm -A). Thus a virtual
+        service could be composed of multiple VIP:ports (e.g. VIP1:port1, VIP2:port2...VIPn:portn).
+        This is usefull if the client needs to connect to all of the VIP:port services together on one realserver.
+
+  Common uses for fwmark are
+
+        aggregate VIP:http and VIP:https, so that when a client fills their shopping cart on VIP:http
+        and they move to VIP:https (to give their credit card information), they will stay on the same realserver.
+
+        with multi-port services like ftp (there are some wrinkles with ftp, since the 2nd port calls
+        from the realserver rather than from the client - read the setup of ftp elsewhere in this section and in ftp).
+
+        when the realserver is a squid. All traffic to port 80 (for all IPs) is aggregated with a fwmark.
+
+    A minor advantage is that a realserver can be added, removed and re-weighted with one ipvsadm command.
+    To enable fwmark, the packets coming into the director have to be labelled with a fwmark
+    (some bits are flipped in the tcp packet). This is done with iptables (or ipchains).
+
+
+[root@lvs_real_server01 ~]# yum -y install vsftpd
+[root@lvs_real_server01 ~]# vim /etc/vsftpd/vsftpd.conf
+    pasv_min_port=10000
+    pasv_max_port=20000
+
+[root@lvs_real_server01 ~]# systemctl start vsftpd
+[root@lvs_real_server01 ~]# systemctl enable vsftpd
 
 
 
+[root@lvs_real_server02 ~]# yum -y install vsftpd
+[root@lvs_real_server02 ~]# vim /etc/vsftpd/vsftpd.conf
+    pasv_min_port=10000
+    pasv_max_port=20000
+
+[root@lvs_real_server02 ~]# systemctl start vsftpd
+[root@lvs_real_server02 ~]# systemctl enable vsftpd
 
 
+[root@lvs_director ~]# iptables -t mangle -A PREROUTING -p tcp -d 192.168.175.100 --dport 21 -j MARK --set-mark 21
+[root@lvs_director ~]# iptables -t mangle -A PREROUTING -p tcp -d 192.168.175.100 --dport 10000:20000 -j MARK --set-mark 21
 
+[root@lvs_director ~]# ipvsadm -C
+[root@lvs_director ~]# ipvsadm -A -f 21 -s rr -p 300
+[root@lvs_director ~]# ipvsadm -a -f 21 -r 192.168.175.102 -g
+[root@lvs_director ~]# ipvsadm -a -f 21 -r 192.168.175.103 -g
+
+[root@lvs_director ~]# ipvsadm -L -n
+
+      IP Virtual Server version 1.2.1 (size=4096)
+      Prot LocalAddress:Port Scheduler Flags
+        -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+      FWM  21 rr persistent 300
+        -> 192.168.175.102:0            Route   1      0          0
+        -> 192.168.175.103:0            Route   1      0          0
+
+
+[root@lvs_director ~]# ipvsadm-save -n
+    -A -f 21 -s rr -p 300
+    -a -f 21 -r 192.168.175.102:0 -g -w 1
+    -a -f 21 -r 192.168.175.103:0 -g -w 1
+
+[root@client ~]# yum -y install ftp
+
+// 登录并执行一些操作, 见 https://github.com/yangsg/linux_training_notes/tree/master/ftp/anon7ftp7server
+[root@client ~]# ftp 192.168.175.100
+
+
+[root@lvs_director ~]# ipvsadm -L -n -c
+        IPVS connection entries
+        pro expire state       source             virtual            destination
+        TCP 01:33  FIN_WAIT    192.168.175.30:58678 192.168.175.100:13294 192.168.175.103:13294
+        TCP 01:33  FIN_WAIT    192.168.175.30:49000 192.168.175.100:15229 192.168.175.103:15229
+        TCP 01:34  FIN_WAIT    192.168.175.30:45193 192.168.175.100:18541 192.168.175.103:18541
+        TCP 01:41  FIN_WAIT    192.168.175.30:48020 192.168.175.100:21 192.168.175.103:21
+        TCP 01:34  FIN_WAIT    192.168.175.30:34689 192.168.175.100:15209 192.168.175.103:15209
+        TCP 01:33  FIN_WAIT    192.168.175.30:46546 192.168.175.100:12901 192.168.175.103:12901
+        IP  00:35  NONE        192.168.175.30:0   0.0.0.21:0         192.168.175.103:0
+        TCP 01:29  FIN_WAIT    192.168.175.30:33506 192.168.175.100:19324 192.168.175.103:19324
+        TCP 01:35  FIN_WAIT    192.168.175.30:38834 192.168.175.100:19188 192.168.175.103:19188
+        TCP 14:37  ESTABLISHED 192.168.175.30:48024 192.168.175.100:21 192.168.175.103:21
+        TCP 01:21  FIN_WAIT    192.168.175.30:48022 192.168.175.100:21 192.168.175.103:21
 
 
 
