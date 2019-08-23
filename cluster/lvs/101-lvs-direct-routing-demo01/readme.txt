@@ -1,5 +1,5 @@
 
-
+https://github.com/yangsg/linux_training_notes/tree/master/cluster/lvs
 
 ---------------------------------------------------------------------------------------------------
 拓扑结构如下图所示, 同时配置好时间同步, 在 real server 上安装好 演示用的 httpd 软件
@@ -396,7 +396,91 @@
 
 
 
+---------------------------------------------------------------------------------------------------
+测试一下其他 某些 调度算法 或 选项
 
+--------------------------------------------------
+// 测试一下 wrr
+[root@lvs_director ~]# ipvsadm -C
+[root@lvs_director ~]# ipvsadm -A -t 192.168.175.100:80 -s wrr
+[root@lvs_director ~]# ipvsadm -a -t 192.168.175.100:80 -r 192.168.175.102 -g -w 4
+[root@lvs_director ~]# ipvsadm -a -t 192.168.175.100:80 -r 192.168.175.103 -g
+
+
+[root@lvs_director ~]# ipvsadm -L -n
+    IP Virtual Server version 1.2.1 (size=4096)
+    Prot LocalAddress:Port Scheduler Flags
+      -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+    TCP  192.168.175.100:80 wrr
+      -> 192.168.175.102:80           Route   4      0          5
+      -> 192.168.175.103:80           Route   1      0          5
+
+
+
+[root@client ~]# for i in {1..10}; do curl 192.168.175.100:80; done
+        vs_real_server02
+        vs_real_server01
+        vs_real_server01
+        vs_real_server01
+        vs_real_server01
+        vs_real_server02
+        vs_real_server01
+        vs_real_server01
+        vs_real_server01
+        vs_real_server01
+
+
+[root@lvs_director ~]# ipvsadm -L -n
+      IP Virtual Server version 1.2.1 (size=4096)
+      Prot LocalAddress:Port Scheduler Flags
+        -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+      TCP  192.168.175.100:80 wrr
+        -> 192.168.175.102:80           Route   4      0          8
+        -> 192.168.175.103:80           Route   1      0          2
+
+
+--------------------------------------------------
+// 测试一下 sh
+[root@lvs_director ~]# ipvsadm -E -t 192.168.175.100:80 -s sh
+[root@lvs_director ~]# ipvsadm -e -t 192.168.175.100:80 -r 192.168.175.102 -g -w 1
+
+
+[root@lvs_director ~]# ipvsadm -L -n
+    IP Virtual Server version 1.2.1 (size=4096)
+    Prot LocalAddress:Port Scheduler Flags
+      -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+    TCP  192.168.175.100:80 sh
+      -> 192.168.175.102:80           Route   1      0          8
+      -> 192.168.175.103:80           Route   1      0          2
+
+[root@client ~]# for i in {1..10}; do curl 192.168.175.100:80; done
+      vs_real_server02
+      vs_real_server02
+      vs_real_server02
+      vs_real_server02
+      vs_real_server02
+      vs_real_server02
+      vs_real_server02
+      vs_real_server02
+      vs_real_server02
+      vs_real_server02
+
+
+[root@lvs_director ~]# ipvsadm -L -n
+      IP Virtual Server version 1.2.1 (size=4096)
+      Prot LocalAddress:Port Scheduler Flags
+        -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+      TCP  192.168.175.100:80 sh
+        -> 192.168.175.102:80           Route   1      0          0
+        -> 192.168.175.103:80           Route   1      0          10
+
+
+
+
+--------------------------------------------------
+
+
+---------------------------------------------------------------------------------------------------
 
 
 
