@@ -2,6 +2,7 @@
 
 http://www.linuxvirtualserver.org/
 http://www.linuxvirtualserver.org/whatis.html
+http://www.linuxvirtualserver.org/zh/index.html
 
 https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/index
 
