@@ -9,7 +9,7 @@
                                                      |       rip:    192.168.40.101
                                                      |       gateway:192.168.40.100
                                                      |
-    client  <---------->  lsv_director <------------>|
+    client  <---------->  lvs_director <------------>|
                    <->vip: 192.168.175.100           |
                       dip: 192.168.40.100<->         |
                                                      |
@@ -17,10 +17,10 @@
                                                              rip:    192.168.40.102
                                                              gateway:192.168.40.100
 
-查看 lsv_director 服务器的ip信息:
-    [root@lsv_director ~]# ip addr show ens33  | awk '/inet / {print $2}'  # 查看 ip 地址
+查看 lvs_director 服务器的ip信息:
+    [root@lvs_director ~]# ip addr show ens33  | awk '/inet / {print $2}'  # 查看 ip 地址
         192.168.175.100/24
-    [root@lsv_director ~]# ip addr show ens37  | awk '/inet / {print $2}'  # 查看 ip 地址
+    [root@lvs_director ~]# ip addr show ens37  | awk '/inet / {print $2}'  # 查看 ip 地址
         192.168.40.100/24
 
 
@@ -35,7 +35,7 @@
 [root@lvs_real_server01 ~]# systemctl enable httpd
 
 // 测试一下是否可以正常访问
-[root@lsv_director ~]# curl 192.168.40.101
+[root@lvs_director ~]# curl 192.168.40.101
     lvs_real_server01
 
 
@@ -45,29 +45,29 @@
 [root@lvs_real_server02 ~]# systemctl enable httpd
 
 // 测试一下是否可以正常访问
-[root@lsv_director ~]# curl 192.168.40.102
+[root@lvs_director ~]# curl 192.168.40.102
     lvs_real_server02
 
 ---------------------------------------------------------------------------------------------------
-配置 lsv_director server:
+配置 lvs_director server:
 
 // 启用 ip_forward 功能
-[root@lsv_director ~]# vim /etc/sysctl.conf
+[root@lvs_director ~]# vim /etc/sysctl.conf
       net.ipv4.ip_forward=1
 
     注: 可使用命令 `echo 1 > /proc/sys/net/ipv4/ip_forward`  或 `sysctl -w net.ipv4.ip_forward=1` 临时启用路由转发功能
 
-[root@lsv_director ~]# sysctl -p   #  当-p没有接文件路径时，则默认加载文件/etc/sysctl.conf中的配置
+[root@lvs_director ~]# sysctl -p   #  当-p没有接文件路径时，则默认加载文件/etc/sysctl.conf中的配置
       net.ipv4.ip_forward = 1
 
 
 
 // 下载 the virtual server table in the Linux kernel 的管理工具
-[root@lsv_director ~]# yum -y install ipvsadm
-[root@lsv_director ~]# rpm -q ipvsadm
+[root@lvs_director ~]# yum -y install ipvsadm
+[root@lvs_director ~]# rpm -q ipvsadm
       ipvsadm-1.27-7.el7.x86_64
 
-[root@lsv_director ~]# rpm -ql ipvsadm
+[root@lvs_director ~]# rpm -ql ipvsadm
 
           /etc/sysconfig/ipvsadm-config           <----
           /usr/lib/systemd/system/ipvsadm.service <----
@@ -82,7 +82,7 @@
 
 
 // 查看一下 service unit file 内容
-[root@lsv_director ~]# cat /usr/lib/systemd/system/ipvsadm.service
+[root@lvs_director ~]# cat /usr/lib/systemd/system/ipvsadm.service
       [Unit]
       Description=Initialise the Linux Virtual Server
       After=syslog.target network.target
@@ -102,8 +102,8 @@
 
 
 // 查看帮助
-[root@lsv_director ~]# man ipvsadm   # 在线 man page 见:   https://linux.die.net/man/8/ipvsadm
-[root@lsv_director ~]# ipvsadm --help | less
+[root@lvs_director ~]# man ipvsadm   # 在线 man page 见:   https://linux.die.net/man/8/ipvsadm
+[root@lvs_director ~]# ipvsadm --help | less
 
         Usage:
           ipvsadm -A|E -t|u|f service-address [-s scheduler] [-p [timeout]] [-M netmask] [--pe persistence_engine] [-b sched-flags]
@@ -175,7 +175,7 @@
 
 // 在 vip 上 添加 虚拟服务 (Add  a  virtual  service)
 //   语法:  ipvsadm -A|E -t|u|f service-address [-s scheduler] [-p [timeout]] [-M netmask] [--pe persistence_engine] [-b sched-flags]
-[root@lsv_director ~]# ipvsadm -A -t 192.168.175.100:80 -s rr  #注: -s scheduler 中 scheduler 默认为 wlc, 此处采用 rr 仅是为了方便测试观察效果
+[root@lvs_director ~]# ipvsadm -A -t 192.168.175.100:80 -s rr  #注: -s scheduler 中 scheduler 默认为 wlc, 此处采用 rr 仅是为了方便测试观察效果
 
       注:
           --add-service     -A        add virtual service with options
@@ -184,13 +184,13 @@
 
 
 // 查看效果(以数字显示)
-[root@lsv_director ~]# ipvsadm -L -n
+[root@lvs_director ~]# ipvsadm -L -n
     IP Virtual Server version 1.2.1 (size=4096)
     Prot LocalAddress:Port Scheduler Flags
       -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
     TCP  192.168.175.100:80 rr   <------- 观察
 
-[root@lsv_director ~]# ipvsadm -L
+[root@lvs_director ~]# ipvsadm -L
     IP Virtual Server version 1.2.1 (size=4096)
     Prot LocalAddress:Port Scheduler Flags
       -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
@@ -200,8 +200,8 @@
 // 在 virtual service 上 添加 real server
 //   语法: ipvsadm -a|e -t|u|f service-address -r server-address [options]
 
-[root@lsv_director ~]# ipvsadm -a -t 192.168.175.100:80 -r 192.168.40.101:80 -m
-[root@lsv_director ~]# ipvsadm -a -t 192.168.175.100:80 -r 192.168.40.102:80 -m
+[root@lvs_director ~]# ipvsadm -a -t 192.168.175.100:80 -r 192.168.40.101:80 -m
+[root@lvs_director ~]# ipvsadm -a -t 192.168.175.100:80 -r 192.168.40.102:80 -m
 
         注:
           --add-server      -a        add real server with options
@@ -211,7 +211,7 @@
           --weight       -w weight            capacity of real server (weight 为 0 through to 65535. The default is 1.)
                                                                        weight 为 0 时 表示不再接受 new job 但仍为 既有的 jobs 提供服务
 
-[root@lsv_director ~]# ipvsadm -L -n
+[root@lvs_director ~]# ipvsadm -L -n
 
       IP Virtual Server version 1.2.1 (size=4096)
       Prot LocalAddress:Port Scheduler Flags
@@ -231,7 +231,7 @@
       lvs_real_server01
 
 // 查看一下 the virtual server table 相关信息
-[root@lsv_director ~]# ipvsadm -L -n
+[root@lvs_director ~]# ipvsadm -L -n
     IP Virtual Server version 1.2.1 (size=4096)
     Prot LocalAddress:Port Scheduler Flags
       -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
@@ -241,21 +241,21 @@
 
 
 // 在 stdout 上显示 the IPVS table
-[root@lsv_director ~]# ipvsadm-save
+[root@lvs_director ~]# ipvsadm-save
       -A -t localhost:http -s rr
       -a -t localhost:http -r localhost:http -m -w 1
       -a -t localhost:http -r localhost:http -m -w 1
 
-[root@lsv_director ~]# ipvsadm-save -n    #-n     print out the table in numeric format.
+[root@lvs_director ~]# ipvsadm-save -n    #-n     print out the table in numeric format.
       -A -t 192.168.175.100:80 -s rr
       -a -t 192.168.175.100:80 -r 192.168.40.101:80 -m -w 1
       -a -t 192.168.175.100:80 -r 192.168.40.102:80 -m -w 1
 
 
-[root@lsv_director ~]# touch /etc/sysconfig/ipvsadm
-[root@lsv_director ~]# ipvsadm-save > /etc/sysconfig/ipvsadm
-[root@lsv_director ~]# systemctl start ipvsadm    # 注意, 文件 /etc/sysconfig/ipvsadm-config 中的配置可能会影响 ipvsadm.service 的某些行为
-[root@lsv_director ~]# systemctl enable ipvsadm
+[root@lvs_director ~]# touch /etc/sysconfig/ipvsadm
+[root@lvs_director ~]# ipvsadm-save > /etc/sysconfig/ipvsadm
+[root@lvs_director ~]# systemctl start ipvsadm    # 注意, 文件 /etc/sysconfig/ipvsadm-config 中的配置可能会影响 ipvsadm.service 的某些行为
+[root@lvs_director ~]# systemctl enable ipvsadm
 
 
 至此, 一个简单的 nat 路由方式的 lvs 搭建完成
@@ -271,10 +271,10 @@
 
 --------------------------------------------------
 // 测试一下 wrr
-[root@lsv_director ~]# ipvsadm -E -t 192.168.175.100:80 -s wrr
-[root@lsv_director ~]# ipvsadm -e -t 192.168.175.100:80 -r 192.168.40.102:80 -m -w 4
+[root@lvs_director ~]# ipvsadm -E -t 192.168.175.100:80 -s wrr
+[root@lvs_director ~]# ipvsadm -e -t 192.168.175.100:80 -r 192.168.40.102:80 -m -w 4
 
-[root@lsv_director ~]# ipvsadm -L -n
+[root@lvs_director ~]# ipvsadm -L -n
       IP Virtual Server version 1.2.1 (size=4096)
       Prot LocalAddress:Port Scheduler Flags
         -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
@@ -282,7 +282,7 @@
         -> 192.168.40.101:80            Masq    1      0          0
         -> 192.168.40.102:80            Masq    4      0          0
 
-[root@lsv_director ~]# for i in {1..10}; do curl 192.168.175.100:80; done
+[root@lvs_director ~]# for i in {1..10}; do curl 192.168.175.100:80; done
       lvs_real_server02
       lvs_real_server02
       lvs_real_server02
@@ -294,7 +294,7 @@
       lvs_real_server01
       lvs_real_server02
 
-[root@lsv_director ~]# ipvsadm -L -n
+[root@lvs_director ~]# ipvsadm -L -n
       IP Virtual Server version 1.2.1 (size=4096)
       Prot LocalAddress:Port Scheduler Flags
         -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
@@ -304,10 +304,10 @@
 
 --------------------------------------------------
 // 测试一下 sh
-[root@lsv_director ~]# ipvsadm -E -t 192.168.175.100:80 -s sh
-[root@lsv_director ~]# ipvsadm -e -t 192.168.175.100:80 -r 192.168.40.102:80 -m -w 1
+[root@lvs_director ~]# ipvsadm -E -t 192.168.175.100:80 -s sh
+[root@lvs_director ~]# ipvsadm -e -t 192.168.175.100:80 -r 192.168.40.102:80 -m -w 1
 
-[root@lsv_director ~]# ipvsadm -L -n
+[root@lvs_director ~]# ipvsadm -L -n
       IP Virtual Server version 1.2.1 (size=4096)
       Prot LocalAddress:Port Scheduler Flags
         -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
@@ -315,7 +315,7 @@
         -> 192.168.40.101:80            Masq    1      0          0
         -> 192.168.40.102:80            Masq    1      0          0
 
-[root@lsv_director ~]# for i in {1..10}; do curl 192.168.175.100:80; done
+[root@lvs_director ~]# for i in {1..10}; do curl 192.168.175.100:80; done
       lvs_real_server02
       lvs_real_server02
       lvs_real_server02
@@ -328,7 +328,7 @@
       lvs_real_server02
 
 
-[root@lsv_director ~]# ipvsadm -L -n
+[root@lvs_director ~]# ipvsadm -L -n
       IP Virtual Server version 1.2.1 (size=4096)
       Prot LocalAddress:Port Scheduler Flags
         -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
