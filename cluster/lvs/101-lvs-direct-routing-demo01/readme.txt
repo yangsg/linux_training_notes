@@ -400,6 +400,11 @@ https://github.com/yangsg/linux_training_notes/tree/master/cluster/lvs
 测试一下其他 某些 调度算法 或 选项
 
 --------------------------------------------------
+
+https://www.iyunv.com/thread-658681-1-1.html
+      如果改规则的时候出现报错，内存分配问题（Memory allocation problem），解决办法，清掉规则，全部重新添加
+
+
 // 测试一下 wrr
 [root@lvs_director ~]# ipvsadm -C
 [root@lvs_director ~]# ipvsadm -A -t 192.168.175.100:80 -s wrr
