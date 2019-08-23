@@ -253,7 +253,7 @@
 
 
 [root@lvs_director ~]# touch /etc/sysconfig/ipvsadm
-[root@lvs_director ~]# ipvsadm-save > /etc/sysconfig/ipvsadm
+[root@lvs_director ~]# ipvsadm-save -n > /etc/sysconfig/ipvsadm
 [root@lvs_director ~]# systemctl start ipvsadm    # 注意, 文件 /etc/sysconfig/ipvsadm-config 中的配置可能会影响 ipvsadm.service 的某些行为
 [root@lvs_director ~]# systemctl enable ipvsadm
 
