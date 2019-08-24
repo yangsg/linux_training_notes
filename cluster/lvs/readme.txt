@@ -156,6 +156,24 @@ DR 模式: 直接路由模式, 顾名思义, real server 响应时直接返回�
 
 ----------------------------------------------------------------------------------------------------
 
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/ch-lvs-overview-vsa#s1-lvs-keepalived-VSA
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/ch-keepalived-overview-vsa
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/keepalived_install_example1
+
+
+keepalived
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
