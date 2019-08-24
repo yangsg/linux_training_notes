@@ -567,6 +567,7 @@ persistent 持久性
 
 
     https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/4/html-single/Virtual_Server_Administration/index.html
+    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-ftp-vsa
     https://www.lisenet.com/2015/setting-up-a-load-balancing-lvs-direct-routing-cluster-with-piranha/
 
     https://www.linuxtopia.org/online_books/linux_system_administration/redhat_cluster_configuration_and_management/s1-lvs-ftp.html
