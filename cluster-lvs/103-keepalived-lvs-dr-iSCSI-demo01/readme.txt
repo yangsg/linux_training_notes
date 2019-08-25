@@ -639,6 +639,25 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 [root@web02_server ~]# dir -p /var/www/html/
 
 
+[root@web01_server ~]# vim /etc/fstab
+
+      /dev/sdb1 /var/www/html/  ext4     defaults,_netdev        0 0
+
+
+[root@web01_server ~]# mount -a
+
+[root@web01_server ~]# df -hT
+    Filesystem              Type      Size  Used Avail Use% Mounted on
+    /dev/mapper/centos-root xfs        18G  1.9G   16G  11% /
+    devtmpfs                devtmpfs  478M     0  478M   0% /dev
+    tmpfs                   tmpfs     489M     0  489M   0% /dev/shm
+    tmpfs                   tmpfs     489M  6.7M  482M   2% /run
+    tmpfs                   tmpfs     489M     0  489M   0% /sys/fs/cgroup
+    /dev/sda1               xfs       197M  103M   95M  53% /boot
+    tmpfs                   tmpfs      98M     0   98M   0% /run/user/0
+    /dev/sdb1               ext4      7.8G   36M  7.3G   1% /var/www/html  <-----观察
+
+
 
 
 ----------------------------------------------------------------------------------------------------
