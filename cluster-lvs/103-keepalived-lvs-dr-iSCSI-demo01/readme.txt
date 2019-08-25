@@ -44,6 +44,10 @@ vip: 192.168.175.100  |                                                  |  |   
     参考:
           https://www.thegeekdiary.com/complete-guide-to-configuring-iscsi-in-centos-rhel-7/
           https://www.lisenet.com/2016/iscsi-target-and-initiator-configuration-on-rhel-7/
+          https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/Storage_Administration_Guide/ch24.html
+
+
+
 
 
 // 列出 磁盘
@@ -58,14 +62,15 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 /dev/sr0                     11:0    1 1024M  0 rom
 
 // 安装 targetcli
-[root@iscsi_share_storage ~]# yum install targetcli
+[root@iscsi_share_storage ~]# yum -y install targetcli
 [root@iscsi_share_storage ~]# systemctl start target
 [root@iscsi_share_storage ~]# systemctl enable target
 
-// 执行 targetcli 进入管理 shell,
+// 执行 targetcli 进入 交互式的管理 shell
 // 注: 因为 targetcli 是 storage targets 的 管理shell, 其由自己的目录和命令,
 //     其执行命令语法如下:
 //       [TARGET_PATH] COMMAND_NAME [OPTIONS]
+// 技巧: [tab] 键 可用于 自动补齐 或 提示
 
 [root@iscsi_share_storage ~]# targetcli
 /> help   <=========== 执行 help 命令查看帮助
@@ -108,7 +113,7 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 /> ls   <============== 显示 nodes trees
       o- / ......................................................................................................................... [...]
         o- backstores .............................................................................................................. [...]
-        | o- block .................................................................................................. [Storage Objects: 0]
+        | o- block ............(<------ 用于 block 类型的后端存储 的管理)............................................ [Storage Objects: 0]
         | o- fileio ................................................................................................. [Storage Objects: 0]
         | o- pscsi .................................................................................................. [Storage Objects: 0]
         | o- ramdisk ................................................................................................ [Storage Objects: 0]
@@ -140,7 +145,7 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 /> /iscsi  <========[tab]
       @last      bookmarks  cd         create     delete     exit       get        help       info       ls         pwd        refresh
       set        status     version
-/> /iscsi create iqn.2019-08.com.linux:WD-disk   <==========创建共享名称
+/> /iscsi create iqn.2019-08.com.linux:wd-disk   <==========创建共享名称
       Created target iqn.2019-08.com.linux:wd-disk.
       Created TPG 1.
       Global pref auto_add_default_portal=true
@@ -295,19 +300,67 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 
 
 
-[root@iscsi_share_storage ~]# targetcli
-/> /iscsi/iqn.2019-08.com.linux:wd-disk/tpg1
-      @last      bookmarks  cd         disable    enable     exit       get        help       info       ls         pwd        refresh
-      set        status
-/> /iscsi/iqn.2019-08.com.linux:wd-disk/tpg1 set
-      attribute  auth       global     parameter  group=
-  /> /iscsi/iqn.2019-08.com.linux:wd-disk/tpg1 set attribute
-      authentication=           cache_dynamic_acls=       default_cmdsn_depth=      default_erl=              demo_mode_discovery=
-      demo_mode_write_protect=  generate_node_acls=       login_timeout=            netif_timeout=            prod_mode_write_protect=
-      t10_pi=                   tpg_enabled_sendtargets=
-/> /iscsi/iqn.2019-08.com.linux:wd-disk/tpg1 set attribute authentication=0  <========禁用 authentication
-      Parameter authentication is now '0'.
-/> exit
+
+
+
+
+
+
+ 注: 如上所执行的命令还可以用如下 非交互式的方式来执行:
+      targetcli /backstores/block create name=disk01 dev=/dev/sdb    #创建 block 类型的后端存储
+      targetcli /iscsi create iqn.2019-08.com.linux:wd-disk          #创建 iSCSI target (initiator在login时会对其引用)
+      targetcli /iscsi/iqn.2019-08.com.linux:wd-disk/tpg1/luns create /backstores/block/disk01  #创建 storage object 的逻辑存储单元
+      targetcli /iscsi/iqn.2019-08.com.linux:wd-disk/tpg1/acls create iqn.2019-08.com.linux:client  # 创建 initiator 连接用的 ACL
+      targetcli /iscsi/iqn.2019-08.com.linux:wd-disk/tpg1/portals delete ip_address=0.0.0.0 ip_port=3260  #删除默认的入口
+      targetcli /iscsi/iqn.2019-08.com.linux:wd-disk/tpg1/portals create ip_address=192.168.175.130       #创建自定义的入口
+
+
+[root@iscsi_share_storage ~]# targetcli ls
+    o- / ......................................................................................................................... [...]
+      o- backstores .............................................................................................................. [...]
+      | o- block .................................................................................................. [Storage Objects: 1]
+      | | o- disk01 ........................................................................... [/dev/sdb (8.0GiB) write-thru activated]
+      | |   o- alua ................................................................................................... [ALUA Groups: 1]
+      | |     o- default_tg_pt_gp ....................................................................... [ALUA state: Active/optimized]
+      | o- fileio ................................................................................................. [Storage Objects: 0]
+      | o- pscsi .................................................................................................. [Storage Objects: 0]
+      | o- ramdisk ................................................................................................ [Storage Objects: 0]
+      o- iscsi ............................................................................................................ [Targets: 1]
+      | o- iqn.2019-08.com.linux:wd-disk ..................................................................................... [TPGs: 1]
+      |   o- tpg1 ............................................................................................... [no-gen-acls, no-auth]
+      |     o- acls .......................................................................................................... [ACLs: 1]
+      |     | o- iqn.2019-08.com.linux:client ......................................................................... [Mapped LUNs: 1]
+      |     |   o- mapped_lun0 ................................................................................ [lun0 block/disk01 (rw)]
+      |     o- luns .......................................................................................................... [LUNs: 1]
+      |     | o- lun0 ..................................................................... [block/disk01 (/dev/sdb) (default_tg_pt_gp)]
+      |     o- portals .................................................................................................... [Portals: 1]
+      |       o- 192.168.175.130:3260 ............................................................................................. [OK]
+      o- loopback ......................................................................................................... [Targets: 0]
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+
+[root@web02_server ~]# yum -y install iscsi-initiator-utils
+
+
+
+重要:
+  https://www.lisenet.com/2016/iscsi-target-and-initiator-configuration-on-rhel-7/
+      Note well that on the iSCSI initiator both services are needed.
+          The iscsid service is the main service that accesses all configuration files involved.
+          The iscsi service is the service that establishes the iSCSI connections.
+
+[root@web02_server ~]# systemctl start iscsi iscsid
+[root@web02_server ~]# systemctl enable iscsi iscsid
+
+[root@web02_server ~]# vim /etc/iscsi/initiatorname.iscsi
+      InitiatorName=iqn.2019-08.com.linux:client
 
 
 
@@ -326,6 +379,8 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 
 [root@web01_server ~]# iscsiadm -m discovery -t st -p 192.168.175.130:3260
       192.168.175.130:3260,1 iqn.2019-08.com.linux:wd-disk
+
+[root@web02_server ~]# iscsiadm -m node -T iqn.2019-08.com.linux:wd-disk -p 192.168.175.130:3260 -l
 
 
 
