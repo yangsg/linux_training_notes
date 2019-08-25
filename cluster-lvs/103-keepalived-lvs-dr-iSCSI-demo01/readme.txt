@@ -302,17 +302,22 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 
 
 
+   注: 如上所执行的命令还可以用如下 非交互式的方式来执行:
+        targetcli /backstores/block create name=disk01 dev=/dev/sdb    #创建 block 类型的后端存储
+        targetcli /iscsi create iqn.2019-08.com.linux:wd-disk          #创建 iSCSI target (initiator在login时会对其引用)
+        targetcli /iscsi/iqn.2019-08.com.linux:wd-disk/tpg1/luns create /backstores/block/disk01  #创建 storage object 的逻辑存储单元
+        targetcli /iscsi/iqn.2019-08.com.linux:wd-disk/tpg1/acls create iqn.2019-08.com.linux:client  # 创建 initiator 连接用的 ACL
+        targetcli /iscsi/iqn.2019-08.com.linux:wd-disk/tpg1/portals delete ip_address=0.0.0.0 ip_port=3260  #删除默认的入口
+        targetcli /iscsi/iqn.2019-08.com.linux:wd-disk/tpg1/portals create ip_address=192.168.175.130       #创建自定义的入口
+        targetcli saveconfig
+
+
+    注: 对于 使用 targetcli 做的 修改配置, 这些设置在 reboot 之后不会被保留 除非 显示的 调用了 saveconfig 或 通过在
+        全局首选项 auto_save_on_exit 为 true 时 退出(exit) 来隐式地调用 saveconfig.
+        更多细节 或 注意事项见 `man targetcli`
 
 
 
-
- 注: 如上所执行的命令还可以用如下 非交互式的方式来执行:
-      targetcli /backstores/block create name=disk01 dev=/dev/sdb    #创建 block 类型的后端存储
-      targetcli /iscsi create iqn.2019-08.com.linux:wd-disk          #创建 iSCSI target (initiator在login时会对其引用)
-      targetcli /iscsi/iqn.2019-08.com.linux:wd-disk/tpg1/luns create /backstores/block/disk01  #创建 storage object 的逻辑存储单元
-      targetcli /iscsi/iqn.2019-08.com.linux:wd-disk/tpg1/acls create iqn.2019-08.com.linux:client  # 创建 initiator 连接用的 ACL
-      targetcli /iscsi/iqn.2019-08.com.linux:wd-disk/tpg1/portals delete ip_address=0.0.0.0 ip_port=3260  #删除默认的入口
-      targetcli /iscsi/iqn.2019-08.com.linux:wd-disk/tpg1/portals create ip_address=192.168.175.130       #创建自定义的入口
 
 
 [root@iscsi_share_storage ~]# targetcli ls
