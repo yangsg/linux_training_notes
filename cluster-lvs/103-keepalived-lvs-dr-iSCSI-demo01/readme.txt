@@ -349,25 +349,6 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 
 
 
-----------------------------------------------------------------------------------------------------
-
-[root@web02_server ~]# yum -y install iscsi-initiator-utils
-
-
-
-重要:
-  https://www.lisenet.com/2016/iscsi-target-and-initiator-configuration-on-rhel-7/
-      Note well that on the iSCSI initiator both services are needed.
-          The iscsid service is the main service that accesses all configuration files involved.
-          The iscsi service is the service that establishes the iSCSI connections.
-
-[root@web02_server ~]# systemctl start iscsi iscsid
-[root@web02_server ~]# systemctl enable iscsi iscsid
-
-[root@web02_server ~]# vim /etc/iscsi/initiatorname.iscsi
-      InitiatorName=iqn.2019-08.com.linux:client
-
-
 
 ----------------------------------------------------------------------------------------------------
 
@@ -379,13 +360,49 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 [root@web01_server ~]# ls /etc/iscsi/
       initiatorname.iscsi  iscsid.conf
 
+
+  重要:
+    iscsid.service 和 iscsi.service 的作用:
+      https://www.lisenet.com/2016/iscsi-target-and-initiator-configuration-on-rhel-7/
+        Note well that on the iSCSI initiator both services are needed.
+            The iscsid service is the main service that accesses all configuration files involved.
+            The iscsi service is the service that establishes the iSCSI connections.
+
+
+// 配置 InitiatorName
+// 注: 修改了 文件 /etc/iscsi/iscsid.conf 或 /etc/iscsi/initiatorname.iscsi 后 一定要 restart iscsid 其修改的配置才会生效.
+//     更多详细见 `man iscsid`
 [root@web01_server ~]# vim /etc/iscsi/initiatorname.iscsi
       InitiatorName=iqn.2019-08.com.linux:client
 
+
+          注: 如下就是修改 /etc/iscsi/initiatorname.iscsi 后 没有 restart iscsid.service 时 login 时报的错误信息:
+          https://unix.stackexchange.com/questions/207534/iscsi-login-failed-with-error-24-could-not-log-in-to-all-portals
+            iscsiadm -m node -T iqn.2019-08.com.linux:wd-disk -p 192.168.175.130:3260 -l
+
+                Logging in to [iface: default, target: iqn.2019-08.com.linux:wd-disk, portal: 192.168.175.130,3260] (multiple)
+                iscsiadm: Could not login to [iface: default, target: iqn.2019-08.com.linux:wd-disk, portal: 192.168.175.130,3260].
+                iscsiadm: initiator reported error (24 - iSCSI login failed due to authorization failure)
+                iscsiadm: Could not log into all portals
+
+// 重新启动 iscsid
+// 注: 修改了 文件 /etc/iscsi/iscsid.conf 或 /etc/iscsi/initiatorname.iscsi 后 一定要 restart iscsid 其修改的配置才会生效.
+//     更多详细见 `man iscsid`
+[root@web01_server ~]# systemctl restart iscsid
+
+
+// 探测(Discover) target
 [root@web01_server ~]# iscsiadm -m discovery -t st -p 192.168.175.130:3260
       192.168.175.130:3260,1 iqn.2019-08.com.linux:wd-disk
 
-[root@web02_server ~]# iscsiadm -m node -T iqn.2019-08.com.linux:wd-disk -p 192.168.175.130:3260 -l
+// 登录 target (Log in to the target with the target IQN)
+[root@web01_server ~]# iscsiadm -m node -T iqn.2019-08.com.linux:wd-disk -p 192.168.175.130:3260 -l
+      Logging in to [iface: default, target: iqn.2019-08.com.linux:wd-disk, portal: 192.168.175.130,3260] (multiple)
+      Login to [iface: default, target: iqn.2019-08.com.linux:wd-disk, portal: 192.168.175.130,3260] successful.
+
+      如上命令等价于: (更多示例见 `man iscsiadm  #/^EXAMPLES`)
+        iscsiadm --mode node --targetname iqn.2019-08.com.linux:wd-disk --portal 192.168.175.130:3260 --login
+
 
 
 
