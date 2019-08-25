@@ -352,7 +352,7 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 
 ----------------------------------------------------------------------------------------------------
 
-[root@web01_server ~]# yum install -y iscsi-initiator-utils
+[root@web01_server ~]# yum -y install iscsi-initiator-utils
 
 [root@web01_server ~]# systemctl start iscsi iscsid
 [root@web01_server ~]# systemctl enable iscsi iscsid
@@ -564,7 +564,8 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 
 [root@web01_server ~]# vim /etc/fstab
 
-      /dev/sdb1 /var/www/html/  ext4     _netdev        0 0
+      /dev/sdb1 /var/www/html/  ext4     defaults,_netdev        0 0
+
 
 
 
@@ -588,7 +589,56 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 
 
 ----------------------------------------------------------------------------------------------------
-[root@web02_server ~]# yum install -y iscsi-initiator-utils
+[root@web02_server ~]# yum -y install iscsi-initiator-utils
+
+
+[root@web02_server ~]# systemctl start iscsi iscsid
+[root@web02_server ~]# systemctl enable iscsi iscsid
+
+[root@web02_server ~]# ls /etc/iscsi/
+    initiatorname.iscsi  iscsid.conf
+
+[root@web02_server ~]# vim /etc/iscsi/initiatorname.iscsi
+    InitiatorName=iqn.2019-08.com.linux:client
+
+[root@web02_server ~]# systemctl restart iscsid
+
+[root@web02_server ~]# iscsiadm -m discovery -t st -p 192.168.175.130:3260
+      192.168.175.130:3260,1 iqn.2019-08.com.linux:wd-disk
+
+[root@web02_server ~]# iscsiadm -m node -T iqn.2019-08.com.linux:wd-disk -p 192.168.175.130:3260 -l
+        Logging in to [iface: default, target: iqn.2019-08.com.linux:wd-disk, portal: 192.168.175.130,3260] (multiple)
+        Login to [iface: default, target: iqn.2019-08.com.linux:wd-disk, portal: 192.168.175.130,3260] successful.
+
+
+[root@web02_server ~]# lsblk -p
+    NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+    /dev/sda                      8:0    0   20G  0 disk
+    ├─/dev/sda1                   8:1    0  200M  0 part /boot
+    └─/dev/sda2                   8:2    0 19.8G  0 part
+      ├─/dev/mapper/centos-root 253:0    0 17.8G  0 lvm  /
+      └─/dev/mapper/centos-swap 253:1    0    2G  0 lvm  [SWAP]
+    /dev/sdb                      8:16   0    8G  0 disk  <---- 观察
+    └─/dev/sdb1                   8:17   0    8G  0 part  <----
+    /dev/sr0                     11:0    1 1024M  0 rom
+
+
+// 查看文件分区格式化信息(因为已经存在分区及文件系统, 所以在 web02_server 上可以直接了, 不要再做分区格式化操作了)
+[root@web02_server ~]# parted /dev/sdb print  # 使用 parted 命令查看分区表 信息(如类型, 是否存在...)
+    Model: LIO-ORG disk01 (scsi)
+    Disk /dev/sdb: 8590MB
+    Sector size (logical/physical): 512B/512B
+    Partition Table: gpt
+    Disk Flags:
+
+    Number  Start   End     Size    File system  Name              Flags
+     1      1049kB  8590MB  8589MB  ext4         Linux filesystem
+
+
+
+[root@web02_server ~]# dir -p /var/www/html/
+
+
 
 
 ----------------------------------------------------------------------------------------------------
