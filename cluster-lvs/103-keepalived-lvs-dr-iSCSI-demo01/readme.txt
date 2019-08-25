@@ -382,7 +382,7 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 
                 Logging in to [iface: default, target: iqn.2019-08.com.linux:wd-disk, portal: 192.168.175.130,3260] (multiple)
                 iscsiadm: Could not login to [iface: default, target: iqn.2019-08.com.linux:wd-disk, portal: 192.168.175.130,3260].
-                iscsiadm: initiator reported error (24 - iSCSI login failed due to authorization failure)
+                iscsiadm: initiator reported error (24 - iSCSI login failed due to authorization failure) <---- 注意这里
                 iscsiadm: Could not log into all portals
 
 // 重新启动 iscsid
@@ -402,6 +402,185 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 
       如上命令等价于: (更多示例见 `man iscsiadm  #/^EXAMPLES`)
         iscsiadm --mode node --targetname iqn.2019-08.com.linux:wd-disk --portal 192.168.175.130:3260 --login
+
+
+// 列出块设备
+[root@web01_server ~]# lsblk -p
+      NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+      /dev/sda                      8:0    0   20G  0 disk
+      ├─/dev/sda1                   8:1    0  200M  0 part /boot
+      └─/dev/sda2                   8:2    0 19.8G  0 part
+        ├─/dev/mapper/centos-root 253:0    0 17.8G  0 lvm  /
+        └─/dev/mapper/centos-swap 253:1    0    2G  0 lvm  [SWAP]
+      /dev/sdb                      8:16   0    8G  0 disk  <------ 观察
+      /dev/sr0                     11:0    1 1024M  0 rom
+
+
+
+[root@web01_server ~]# yum -y install gdisk
+
+[root@web01_server ~]# parted /dev/sdb print   # 使用 parted 命令查看分区表 信息(如类型, 是否存在...)
+      Error: /dev/sdb: unrecognised disk label
+      Model: LIO-ORG disk01 (scsi)
+      Disk /dev/sdb: 8590MB
+      Sector size (logical/physical): 512B/512B
+      Partition Table: unknown
+      Disk Flags:
+
+
+// 本示例为了简单点，打算直接将整个硬盘创建为一个分区.
+// 关于分区的更多信息见
+// https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/01-full/185-gdisk.txt
+[root@web01_server ~]# gdisk /dev/sdb
+      GPT fdisk (gdisk) version 0.8.10
+
+      Partition table scan:
+        MBR: not present
+        BSD: not present
+        APM: not present
+        GPT: not present
+
+      Creating new GPT entries.
+
+      Command (? for help): ?   <============键入 ? 查看帮助
+      b back up GPT data to a file
+      c change a partition's name
+      d delete a partition
+      i show detailed information on a partition
+      l list known partition types
+      n add a new partition
+      o create a new empty GUID partition table (GPT)
+      p print the partition table
+      q quit without saving changes
+      r recovery and transformation options (experts only)
+      s sort partitions
+      t change a partition's type code
+      v verify disk
+      w write table to disk and exit
+      x extra functionality (experts only)
+      ? print this menu
+
+      Command (? for help): p     <============== 查看分区表
+      Disk /dev/sdb: 16777216 sectors, 8.0 GiB
+      Logical sector size: 512 bytes
+      Disk identifier (GUID): 34D7860E-6312-4154-B838-FC97267D8F2B
+      Partition table holds up to 128 entries
+      First usable sector is 34, last usable sector is 16777182
+      Partitions will be aligned on 2048-sector boundaries
+      Total free space is 16777149 sectors (8.0 GiB)
+
+      Number  Start (sector)    End (sector)  Size       Code  Name
+
+      Command (? for help): n   <======== 选择菜单 n, 准备新建一个分区
+      Partition number (1-128, default 1): 1    <========= 设置分区 number
+      First sector (34-16777182, default = 2048) or {+-}size{KMGTP}: <=========== 设置 分区的 First sector, 这里使用默认的 2048, 保持对齐(aligned)
+      Last sector (2048-16777182, default = 16777182) or {+-}size{KMGTP}: <=======直接回车, 选择默认值
+      Current type is 'Linux filesystem'
+      Hex code or GUID (L to show codes, Enter = 8300): <========= 设置 Hex code, 这里直接回车表示选择 8300 Linux Filesystem(注意根据实际情况设置)
+      Changed type of partition to 'Linux filesystem'
+
+      Command (? for help): p <============== 查看当前分区表效果
+      Disk /dev/sdb: 16777216 sectors, 8.0 GiB
+      Logical sector size: 512 bytes
+      Disk identifier (GUID): 34D7860E-6312-4154-B838-FC97267D8F2B
+      Partition table holds up to 128 entries
+      First usable sector is 34, last usable sector is 16777182
+      Partitions will be aligned on 2048-sector boundaries
+      Total free space is 2014 sectors (1007.0 KiB)
+
+      Number  Start (sector)    End (sector)  Size       Code  Name
+         1            2048        16777182   8.0 GiB     8300  Linux filesystem
+
+      Command (? for help): w  <============ 保存修改到磁盘 并退出
+
+      Final checks complete. About to write GPT data. THIS WILL OVERWRITE EXISTING
+      PARTITIONS!!
+
+      Do you want to proceed? (Y/N): y <========= 确认保存并退出
+      OK; writing new GUID partition table (GPT) to /dev/sdb.
+      The operation has completed successfully.
+
+
+[root@web01_server ~]# partprobe -s /dev/sdb  # 通知请求 内核 重新读取 磁盘 /dev/sdb 的分区表(虽然好像 gdisk 保存退出时已经通知了kernel, 但保险起见还是执行一次 partprobe 较好)
+    /dev/sdb: gpt partitions 1
+
+
+[root@web01_server ~]# cat /proc/partitions   # 核心的分割纪录
+      major minor  #blocks  name
+
+         8        0   20971520 sda
+         8        1     204800 sda1
+         8        2   20765696 sda2
+        11        0    1048575 sr0
+       253        0   18665472 dm-0
+       253        1    2097152 dm-1
+         8       16    8388608 sdb
+         8       17    8387567 sdb1 <----- 观察
+
+
+// 格式化 (在 分区上 创建 文件系统)
+//   https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/01-full/190-mkfs.ext4.txt
+[root@web01_server ~]# mkfs.ext4 /dev/sdb1   # 在 分区 /dev/sdb1 上创建 ext4 文件系统
+      mke2fs 1.42.9 (28-Dec-2013)
+      Filesystem label=
+      OS type: Linux
+      Block size=4096 (log=2)
+      Fragment size=4096 (log=2)
+      Stride=0 blocks, Stripe width=1024 blocks
+      524288 inodes, 2096891 blocks
+      104844 blocks (5.00%) reserved for the super user
+      First data block=0
+      Maximum filesystem blocks=2147483648
+      64 block groups
+      32768 blocks per group, 32768 fragments per group
+      8192 inodes per group
+      Superblock backups stored on blocks:
+        32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632
+
+      Allocating group tables: done
+      Writing inode tables: done
+      Creating journal (32768 blocks): done
+      Writing superblocks and filesystem accounting information: done
+
+
+[root@web01_server ~]# blkid /dev/sdb1       # 使用命令 blkid 查看 分区 /dev/sdb1 的文件系统类型
+    /dev/sdb1: UUID="e3df86a6-6516-4cc0-8877-f7c46acc40a3" TYPE="ext4" PARTLABEL="Linux filesystem" PARTUUID="fc59e57f-3452-44ea-b047-6c7cb58d5b94"
+
+[root@web01_server ~]# file -sL /dev/sdb1    # 使用命令 file 查看 分区 /dev/sdb1 的文件系统类型
+    /dev/sdb1: Linux rev 1.0 ext4 filesystem data, UUID=e3df86a6-6516-4cc0-8877-f7c46acc40a3 (extents) (64bit) (large files) (huge files)
+
+
+
+[root@web01_server ~]# mkdir -p /var/www/html/
+
+//  https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/01-full/194-mount.txt
+[root@web01_server ~]# mount /dev/sdb1 /var/www/html/
+[root@web01_server ~]# mount | grep /var/www/html
+      /dev/sdb1 on /var/www/html type ext4 (rw,relatime,stripe=1024,data=ordered)
+
+[root@web01_server ~]# rmdir /var/www/html/lost+found/
+[root@web01_server ~]# umount /var/www/html/
+
+
+[root@web01_server ~]# vim /etc/fstab
+
+      /dev/sdb1 /var/www/html/  ext4     _netdev        0 0
+
+
+
+[root@web01_server ~]# mount -a   # 挂载 /etc/fstab 中 描述的 所有文件系统(包含关键字 noauto 的 行除外)
+[root@web01_server ~]# df -hT
+      Filesystem              Type      Size  Used Avail Use% Mounted on
+      /dev/mapper/centos-root xfs        18G  1.9G   16G  11% /
+      devtmpfs                devtmpfs  478M     0  478M   0% /dev
+      tmpfs                   tmpfs     489M     0  489M   0% /dev/shm
+      tmpfs                   tmpfs     489M  6.7M  482M   2% /run
+      tmpfs                   tmpfs     489M     0  489M   0% /sys/fs/cgroup
+      /dev/sda1               xfs       197M  103M   95M  53% /boot
+      tmpfs                   tmpfs      98M     0   98M   0% /run/user/0
+      /dev/sdb1               ext4      7.8G   36M  7.3G   1% /var/www/html   <---- 观察
+
+
 
 
 
