@@ -1050,6 +1050,172 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
             }
 
 
+----------------------------------------------------------------------------------------------------
+
+[root@lvs_director01 ~]# systemctl start keepalived
+[root@lvs_director01 ~]# systemctl enable keepalived
+
+[root@lvs_director02 ~]# systemctl start keepalived
+[root@lvs_director02 ~]# systemctl enable keepalived
+
+
+[root@lvs_director01 ~]# ip addr show ens33
+    2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+        link/ether 00:0c:29:f6:f0:83 brd ff:ff:ff:ff:ff:ff
+        inet 192.168.175.101/24 brd 192.168.175.255 scope global ens33
+           valid_lft forever preferred_lft forever
+        inet 192.168.175.100/32 scope global ens33  <---------观察 (VIP出现在当前扮演 master 角色的 director 上)
+           valid_lft forever preferred_lft forever
+        inet6 fe80::20c:29ff:fef6:f083/64 scope link
+           valid_lft forever preferred_lft forever
+
+[root@lvs_director02 ~]# ip addr show ens33
+    2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+        link/ether 00:0c:29:82:ac:0f brd ff:ff:ff:ff:ff:ff
+        inet 192.168.175.102/24 brd 192.168.175.255 scope global ens33
+           valid_lft forever preferred_lft forever
+        inet6 fe80::20c:29ff:fe82:ac0f/64 scope link
+           valid_lft forever preferred_lft forever
+
+
+// 查看 keepalived 根据 配置自动生成的 lvs 调度规则
+[root@lvs_director01 ~]# ipvsadm -L -n
+      IP Virtual Server version 1.2.1 (size=4096)
+      Prot LocalAddress:Port Scheduler Flags
+        -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+      TCP  192.168.175.100:80 rr persistent 300
+        -> 192.168.175.121:80           Route   1      0          0
+        -> 192.168.175.122:80           Route   1      0          0
+
+
+[root@lvs_director02 ~]# ipvsadm -L -n
+      IP Virtual Server version 1.2.1 (size=4096)
+      Prot LocalAddress:Port Scheduler Flags
+        -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+      TCP  192.168.175.100:80 rr persistent 300
+        -> 192.168.175.121:80           Route   1      0          0
+        -> 192.168.175.122:80           Route   1      0          0
+
+
+----------------------------------------------------------------------------------------------------
+测试:
+
+    注: 如下仅是简单的测试, 如果需要覆盖更多的 test case, 可能更好的选择是编写测试脚本来完成
+
+------------
+1) 测试服务正常访问:
+[root@client ~]# curl http://192.168.175.100:80
+    keepalived_lvs_dr_iscsi
+[root@client ~]# curl http://192.168.175.100:80
+    keepalived_lvs_dr_iscsi
+
+[root@lvs_director01 ~]# ipvsadm -L -n -c
+    IPVS connection entries
+    pro expire state       source             virtual            destination
+    TCP 01:26  FIN_WAIT    192.168.175.30:46242 192.168.175.100:80 192.168.175.122:80
+    TCP 04:26  NONE        192.168.175.30:0   192.168.175.100:80 192.168.175.122:80
+    TCP 01:24  FIN_WAIT    192.168.175.30:46240 192.168.175.100:80 192.168.175.122:80
+
+
+------------
+2) 测试 VIP 的 故障转移(failover)
+
+// 停止 lvs_director01 上的 keepalived 服务
+[root@lvs_director01 ~]# systemctl stop keepalived
+
+// 观察服务是否可以正常访问
+[root@client ~]# curl http://192.168.175.100:80
+    keepalived_lvs_dr_iscsi
+[root@client ~]# curl http://192.168.175.100:80
+    keepalived_lvs_dr_iscsi
+
+// 观察 VIP 是否从 lvs_director01  移动到了  移动到了 lvs_director02 上
+[root@lvs_director01 ~]# ip addr show ens33
+    2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+        link/ether 00:0c:29:f6:f0:83 brd ff:ff:ff:ff:ff:ff
+        inet 192.168.175.101/24 brd 192.168.175.255 scope global ens33
+           valid_lft forever preferred_lft forever  <------------ 观察(lvs_director01 上已经不存在VIP了
+        inet6 fe80::20c:29ff:fef6:f083/64 scope link
+           valid_lft forever preferred_lft forever
+
+
+[root@lvs_director02 ~]# ip addr show ens33
+    2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+        link/ether 00:0c:29:82:ac:0f brd ff:ff:ff:ff:ff:ff
+        inet 192.168.175.102/24 brd 192.168.175.255 scope global ens33
+           valid_lft forever preferred_lft forever
+        inet 192.168.175.100/32 scope global ens33  <--------观察(VIP 出现在了 lvs_director02 上)
+           valid_lft forever preferred_lft forever
+        inet6 fe80::20c:29ff:fe82:ac0f/64 scope link
+           valid_lft forever preferred_lft forever
+
+------------
+// 启动 keepalived, 看 VIP 是否可以从 lvs_director02 移动到 lvs_director01
+[root@lvs_director01 ~]# systemctl start keepalived
+
+[root@client ~]# curl http://192.168.175.100:80
+    keepalived_lvs_dr_iscsi
+[root@client ~]# curl http://192.168.175.100:80
+    keepalived_lvs_dr_iscsi
+
+[root@lvs_director01 ~]# ip addr show ens33
+    2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+        link/ether 00:0c:29:f6:f0:83 brd ff:ff:ff:ff:ff:ff
+        inet 192.168.175.101/24 brd 192.168.175.255 scope global ens33
+           valid_lft forever preferred_lft forever
+        inet 192.168.175.100/32 scope global ens33  <--------观察(VIP从 lvs_director02 移回到了 lvs_director01)
+           valid_lft forever preferred_lft forever
+        inet6 fe80::20c:29ff:fef6:f083/64 scope link
+           valid_lft forever preferred_lft forever
+
+
+[root@lvs_director02 ~]# ip addr show ens33
+    2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+        link/ether 00:0c:29:82:ac:0f brd ff:ff:ff:ff:ff:ff
+        inet 192.168.175.102/24 brd 192.168.175.255 scope global ens33
+           valid_lft forever preferred_lft forever
+        inet6 fe80::20c:29ff:fe82:ac0f/64 scope link
+           valid_lft forever preferred_lft forever
+
+
+------------
+3) 测试后端服务器的健康状态检查
+
+[root@lvs_director01 ~]# ipvsadm -L -n
+    IP Virtual Server version 1.2.1 (size=4096)
+    Prot LocalAddress:Port Scheduler Flags
+      -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+    TCP  192.168.175.100:80 rr persistent 300
+      -> 192.168.175.121:80           Route   1      0          0
+      -> 192.168.175.122:80           Route   1      0          0
+
+
+[root@web01_server ~]# systemctl stop httpd
+
+[root@lvs_director01 ~]# ipvsadm -L -n
+    IP Virtual Server version 1.2.1 (size=4096)
+    Prot LocalAddress:Port Scheduler Flags
+      -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+    TCP  192.168.175.100:80 rr persistent 300
+      -> 192.168.175.122:80           Route   1      0          0
+                         <-------观察(已经删除了 stop 掉的 web01_server 的调度)
+
+
+[root@web01_server ~]# systemctl start httpd
+
+[root@lvs_director01 ~]# ipvsadm -L -n
+    IP Virtual Server version 1.2.1 (size=4096)
+    Prot LocalAddress:Port Scheduler Flags
+      -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+    TCP  192.168.175.100:80 rr persistent 300
+      -> 192.168.175.121:80           Route   1      0          0 <------观察(重新添加恢复了 start 后的 web01_server的调度)
+      -> 192.168.175.122:80           Route   1      0          0
+
+
+
+
+
+
 
 
 
