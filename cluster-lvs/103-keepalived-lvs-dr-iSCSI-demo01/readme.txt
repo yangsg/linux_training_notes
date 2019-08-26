@@ -829,6 +829,10 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 
 // 安装 相应的软件 (注: 此时 ipvsadm 仅用于测试方便)
 [root@lvs_director01 ~]# yum -y install keepalived ipvsadm
+[root@lvs_director01 ~]# rpm -q keepalived ipvsadm
+      keepalived-1.3.5-8.el7_6.5.x86_64
+      ipvsadm-1.27-7.el7.x86_64
+
 
 
 // 查看一下 软件包 keepalived 中包含的文件
@@ -981,5 +985,74 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 
 // 安装 相应的软件 (注: 此时 ipvsadm 仅用于测试方便)
 [root@lvs_director02 ~]# yum -y install keepalived ipvsadm2
+[root@lvs_director02 ~]# rpm -q keepalived ipvsadm
+    keepalived-1.3.5-8.el7_6.5.x86_64
+    ipvsadm-1.27-7.el7.x86_64
+
+
+
+[root@lvs_director02 ~]# rsync -av root@192.168.175.101:/etc/keepalived/keepalived.conf  /etc/keepalived/keepalived.conf
+
+[root@lvs_director02 ~]# vim /etc/keepalived/keepalived.conf
+
+            ! Configuration File for keepalived
+            #man keepalived.conf
+            #https://www.systutorials.com/docs/linux/man/5-keepalived.conf/
+
+            global_defs {
+               router_id director02
+            }
+
+            #注: vrrp_instance 定义用于将 director(调度器) 加到虚拟组中,以实现互为备份
+            vrrp_instance web_service_group {
+                state BACKUP
+                interface ens33
+                virtual_router_id 55
+                priority 80    #选举 master 时,谁优先级高,谁就当 master(数字越大,优先级越高)
+                advert_int 1    # master 和 slave确定后, master 隔 advert_int 秒发送心跳信息
+                authentication {
+                    auth_type PASS
+                    auth_pass 1234
+                }
+                virtual_ipaddress {
+                    192.168.175.100
+                }
+            }
+
+            # 注: virtual_server 的定义仅在 keepalived 结合 lvs 时需要(用于帮助 lvs 生成负载均衡规则),
+            #     其他情况下是不需要的, 如 keepalived 结合 haproxy 时
+            virtual_server 192.168.175.100 80 {
+                delay_loop 6
+                lb_algo rr
+                lb_kind DR
+                persistence_timeout 300
+                protocol TCP
+
+                real_server 192.168.175.121 80 {
+                    weight 1
+                    TCP_CHECK {
+                        connect_timeout 3
+                        nb_get_retry 3
+                        delay_before_retry 3
+                        connect_port 80
+                    }
+                }
+
+                real_server 192.168.175.122 80 {
+                    weight 1
+                    TCP_CHECK {
+                        connect_timeout 3
+                        nb_get_retry 3
+                        delay_before_retry 3
+                        connect_port 80
+                    }
+                }
+            }
+
+
+
+
+
+
 
 
