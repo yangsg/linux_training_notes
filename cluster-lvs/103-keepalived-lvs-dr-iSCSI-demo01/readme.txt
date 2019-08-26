@@ -904,24 +904,82 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 [root@lvs_director01 ~]# cp /etc/keepalived/keepalived.conf /etc/keepalived/keepalived.conf.bak
 
 
-[root@lvs_director01 ~]# vim /etc/keepalived/keepalived.conf
+// keepalived 的文档:
+//      https://keepalived.org/doc/
+// keepalived 的 官网:
+//      https://www.keepalived.org/
+//  `man keepalived.conf`  其中 man page 包含了最详细的参数解释
+//   在线man page 见 https://www.systutorials.com/docs/linux/man/5-keepalived.conf/
+// 注: keepalived.conf 的 单行注释以 符号 '#' or '!' 开始
+[root@lvs_director01 ~]# vim /etc/keepalived/keepalived.conf    # https://www.keepalived.org/doc/configuration_synopsis.html
+
+            ! Configuration File for keepalived
+            #man keepalived.conf
+            #https://www.systutorials.com/docs/linux/man/5-keepalived.conf/
+
+            global_defs {
+               router_id director01
+            }
+
+            #注: vrrp_instance 定义用于将 director(调度器) 加到虚拟组中,以实现互为备份
+            vrrp_instance web_service_group {
+                state MASTER
+                interface ens33
+                virtual_router_id 55
+                priority 100    #选举 master 时,谁优先级高,谁就当 master(数字越大,优先级越高)
+                advert_int 1    # master 和 slave确定后, master 隔 advert_int 秒发送心跳信息
+                authentication {
+                    auth_type PASS
+                    auth_pass 1234
+                }
+                virtual_ipaddress {
+                    192.168.175.100
+                }
+            }
+
+            # 注: virtual_server 的定义仅在 keepalived 结合 lvs 时需要(用于帮助 lvs 生成负载均衡规则),
+            #     其他情况下是不需要的, 如 keepalived 结合 haproxy 时
+            virtual_server 192.168.175.100 80 {
+                delay_loop 6
+                lb_algo rr
+                lb_kind DR
+                persistence_timeout 300
+                protocol TCP
+
+                real_server 192.168.175.121 80 {
+                    weight 1
+                    TCP_CHECK {
+                        connect_timeout 3
+                        nb_get_retry 3
+                        delay_before_retry 3
+                        connect_port 80
+                    }
+                }
+
+                real_server 192.168.175.122 80 {
+                    weight 1
+                    TCP_CHECK {
+                        connect_timeout 3
+                        nb_get_retry 3
+                        delay_before_retry 3
+                        connect_port 80
+                    }
+                }
+            }
+
+
+----------------------------------------------------------------------------------------------------
+
+// 先手动测试一下 能否正常访问 后端的 real servers
+[root@lvs_director02 ~]# curl http://192.168.175.121:80
+    keepalived_lvs_dr_iscsi
+[root@lvs_director02 ~]# curl http://192.168.175.122:80
+    keepalived_lvs_dr_iscsi
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// 安装 相应的软件 (注: 此时 ipvsadm 仅用于测试方便)
+[root@lvs_director02 ~]# yum -y install keepalived ipvsadm2
 
 
