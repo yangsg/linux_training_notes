@@ -929,7 +929,7 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
             vrrp_instance web_service_group {
                 state MASTER
                 interface ens33
-                virtual_router_id 55
+                virtual_router_id 55   #作为 00-00-5E-00-01-XX 中的 XX, 所以范围为 0 到 255, 见 https://en.wikipedia.org/wiki/Virtual_Router_Redundancy_Protocol
                 priority 100    #选举 master 时,谁优先级高,谁就当 master(数字越大,优先级越高)
                 advert_int 1    # master 和 slave确定后, master 隔 advert_int 秒发送心跳信息
                 authentication {
