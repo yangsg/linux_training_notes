@@ -9,10 +9,85 @@ https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/lo
 LVS: Linux Virtual Server
 
 
-
+---------------------------------------------------------------------------------------------------
 VRRP 协议:
-https://en.wikipedia.org/wiki/Virtual_Router_Redundancy_Protocol
+    https://en.wikipedia.org/wiki/Virtual_Router_Redundancy_Protocol
+    http://www2.elo.utfsm.cl/~tel242/exp/04/VRRP_protocol.pdf
 
+    内容来自wiki:
+
+          The Virtual Router Redundancy Protocol (VRRP) is a computer networking protocol that provides
+          for automatic assignment of available Internet Protocol (IP) routers to participating hosts.
+          This increases the availability and reliability of routing paths via
+          automatic default gateway selections on an IP subnetwork.
+
+          The protocol achieves this by creation of virtual routers, which are an abstract
+          representation of multiple routers, i.e. master and backup routers, acting as a group.
+          The default gateway of a participating host is assigned to the virtual router
+          instead of a physical router. If the physical router that is routing packets
+          on behalf of the virtual router fails, another physical router is selected
+          to automatically replace it. The physical router that is forwarding packets
+          at any given time is called the master router.
+
+          VRRP provides information on the state of a router, not the routes
+          processed and exchanged by that router. Each VRRP instance is limited,
+          in scope, to a single subnet. It does not advertise IP routes beyond
+          that subnet or affect the routing table in any way. VRRP can be used in Ethernet,
+          MPLS and token ring networks with Internet Protocol Version 4 (IPv4), as well as IPv6.
+
+
+          Implementation (VRRP 实现)
+
+            A virtual router must use 00-00-5E-00-01-XX as its Media Access Control (MAC) address.
+            The last byte of the address (XX) is the Virtual Router IDentifier (VRID),
+            which is different for each virtual router in the network. This address
+            is used by only one physical router at a time, and it will reply with
+            this MAC address when an ARP request is sent for the virtual router's IP address.
+
+            Physical routers within the virtual router must communicate within themselves
+            using packets with multicast IP address 224.0.0.18 and IP protocol number 112.
+
+            Routers have a priority of between 1 and 254 and the router with the highest priority
+            will become the master. The default priority is 100; for MAC address owner the priority is always 255.
+
+          Elections of master routers(主路由选举)
+            A failure to receive a multicast packet from the master router for a period longer than three times
+            the advertisement timer causes the backup routers to assume that the master router is dead.
+            The virtual router then transitions into an unsteady state and an election process
+            is initiated to select the next master router from the backup routers.
+            This is fulfilled through the use of multicast packets.
+
+
+            Backup router(s) are only supposed to send multicast packets during an election process.
+            One exception to this rule is when a physical router is configured with a higher priority
+            than the current master, which means that on connection to the network it will preempt the master status.
+            This allows a system administrator to force a physical router to the master state immediately after booting,
+            for example when that particular router is more powerful than others within the virtual router.
+            The backup router with the highest priority becomes the master router by raising
+            its priority above that of the current master. It will then take responsibility for
+            routing packets sent to the virtual gateway's MAC address. In cases where backup routers
+            all have the same priority, the backup router with the highest IP address becomes the master router.
+
+
+            All physical routers acting as a virtual router must be in the same local area network (LAN) segment.
+            Communication within the virtual router takes place periodically. This period can be adjusted
+            by changing advertisement interval timers. The shorter the advertisement interval,
+            the shorter the black hole period, though at the expense of more traffic in the network.
+            Security is achieved by responding only to first hop packets, though other mechanisms
+            are provided to reinforce this, particularly against local attacks. Election process
+            is made orderly through the use of skew time, derived from a router's priority and
+            used to reduce the chance of the thundering herd problem occurring during election.
+            The skew time is given by the formula (256 − Priority)/256 (expressed in milliseconds).
+
+            Backup router utilization can be improved by load sharing. For more on this, see RFC 5798.
+
+
+            --------------------------
+            https://en.wikipedia.org/wiki/Thundering_herd_problem
+            Thundering herd problem
+
+
+---------------------------------------------------------------------------------------------------
 
 lvs 调度算法: (Keepalived Scheduling Algorithms)
     https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-scheduling-vsa
