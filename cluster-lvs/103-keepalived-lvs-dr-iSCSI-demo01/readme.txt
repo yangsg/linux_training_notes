@@ -636,7 +636,7 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 
 
 
-[root@web02_server ~]# dir -p /var/www/html/
+[root@web02_server ~]# mkdir -p /var/www/html/
 
 
 [root@web01_server ~]# vim /etc/fstab
