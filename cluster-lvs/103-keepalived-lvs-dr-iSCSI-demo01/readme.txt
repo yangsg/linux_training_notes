@@ -808,8 +808,103 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 
 
 
-----------------------------------------------------------------------------------------------------
 
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+配置 lvs_director01
+
+// 先手动测试一下 能否正常访问 后端的 real servers
+[root@lvs_director01 ~]# curl http://192.168.175.121:80
+    keepalived_lvs_dr_iscsi
+[root@lvs_director01 ~]# curl http://192.168.175.122:80
+    keepalived_lvs_dr_iscsi
+
+
+// 安装 相应的软件 (注: 此时 ipvsadm 仅用于测试方便)
+[root@lvs_director01 ~]# yum -y install keepalived ipvsadm
+
+
+// 查看一下 软件包 keepalived 中包含的文件
+[root@lvs_director01 ~]# rpm -ql keepalived | less
+
+            /etc/keepalived
+            /etc/keepalived/keepalived.conf   <------
+            /etc/sysconfig/keepalived
+            /usr/bin/genhash
+            /usr/lib/systemd/system/keepalived.service  <------
+            /usr/libexec/keepalived
+            /usr/sbin/keepalived
+            /usr/share/doc/keepalived-1.3.5
+            /usr/share/doc/keepalived-1.3.5/AUTHOR
+            /usr/share/doc/keepalived-1.3.5/CONTRIBUTORS
+            /usr/share/doc/keepalived-1.3.5/COPYING
+            /usr/share/doc/keepalived-1.3.5/ChangeLog
+            /usr/share/doc/keepalived-1.3.5/NOTE_vrrp_vmac.txt
+            /usr/share/doc/keepalived-1.3.5/README
+            /usr/share/doc/keepalived-1.3.5/TODO
+            /usr/share/doc/keepalived-1.3.5/keepalived.conf.SYNOPSIS  <---------------
+            /usr/share/doc/keepalived-1.3.5/samples  <--------------------------------
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.HTTP_GET.port
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.IPv6
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.SMTP_CHECK
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.SSL_GET
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.fwmark
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.inhibit
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.misc_check
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.misc_check_arg
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.quorum
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.sample
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.status_code
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.track_interface
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.virtual_server_group
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.virtualhost
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.vrrp
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.vrrp.localcheck
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.vrrp.lvs_syncd
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.vrrp.routes
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.vrrp.rules
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.vrrp.scripts
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.vrrp.static_ipaddress
+            /usr/share/doc/keepalived-1.3.5/samples/keepalived.conf.vrrp.sync
+            /usr/share/doc/keepalived-1.3.5/samples/sample.misccheck.smbcheck.sh
+            /usr/share/man/man1/genhash.1.gz
+            /usr/share/man/man5/keepalived.conf.5.gz
+            /usr/share/man/man8/keepalived.8.gz
+            /usr/share/snmp/mibs/KEEPALIVED-MIB.txt
+            /usr/share/snmp/mibs/VRRP-MIB.txt
+            /usr/share/snmp/mibs/VRRPv3-MIB.txt
+
+
+// 查看一下文件 keepalived.service
+[root@lvs_director01 ~]# cat /usr/lib/systemd/system/keepalived.service
+      [Unit]
+      Description=LVS and VRRP High Availability Monitor
+      After=syslog.target network-online.target
+
+      [Service]
+      Type=forking
+      PIDFile=/var/run/keepalived.pid
+      KillMode=process
+      EnvironmentFile=-/etc/sysconfig/keepalived
+      ExecStart=/usr/sbin/keepalived $KEEPALIVED_OPTIONS
+      ExecReload=/bin/kill -HUP $MAINPID
+
+      [Install]
+      WantedBy=multi-user.target
+
+
+// 修改 keepalived.conf 前先备份一份
+[root@lvs_director01 ~]# cp /etc/keepalived/keepalived.conf /etc/keepalived/keepalived.conf.bak
+
+
+[root@lvs_director01 ~]# vim /etc/keepalived/keepalived.conf
 
 
 
