@@ -12,6 +12,10 @@ keepalived 官方文档:
     https://www.keepalived.org/   <--- 官网, 不过 document 已经 被 deprecated 了
 
 
+  man keepalived.conf
+      https://www.systutorials.com/docs/linux/man/5-keepalived.conf/
+
+
 
 
 
