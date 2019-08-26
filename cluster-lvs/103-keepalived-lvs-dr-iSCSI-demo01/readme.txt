@@ -351,6 +351,8 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 
 
 ----------------------------------------------------------------------------------------------------
+配置 web01_server (与 iscsi 相关)
+
 
 [root@web01_server ~]# yum -y install iscsi-initiator-utils
 
@@ -588,7 +590,10 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 
 
 
+
 ----------------------------------------------------------------------------------------------------
+配置 web02_server (与 iscsi 相关)
+
 [root@web02_server ~]# yum -y install iscsi-initiator-utils
 
 
@@ -660,8 +665,14 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 
 
 
+
+
+
+
+
+
 ----------------------------------------------------------------------------------------------------
-配置 web01_server:
+配置 web01_server (与 lvs 相关)
 
     注: 一定要先设置好 arp_ignore 和 arp_announce 内核参数, 然后再去配置 vip
 
@@ -697,10 +708,11 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
         link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
         inet 127.0.0.1/8 scope host lo
            valid_lft forever preferred_lft forever
-        inet 192.168.175.100/32 brd 192.168.175.100 scope host lo  <----- 观察
+        inet 192.168.175.100/32 brd 192.168.175.100 scope host lo   <----- 观察
            valid_lft forever preferred_lft forever
         inet6 ::1/128 scope host
            valid_lft forever preferred_lft forever
+
 
 
 [root@web01_server ~]# route -n
@@ -710,17 +722,20 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
     192.168.175.0   0.0.0.0         255.255.255.0   U     100    0        0 ens33
 
 
+
+
 [root@web01_server ~]# yum -y install httpd
 [root@web01_server ~]# systemctl start httpd
 [root@web01_server ~]# systemctl enable httpd
 
-[root@web01_server ~]# echo 'web01_server' > /var/www/html/index.html
+[root@web01_server ~]# echo 'keepalived_lvs_dr_iscsi' > /var/www/html/index.html
 
 [root@web01_server ~]# curl http://192.168.175.121:80
-    web01_server
+    keepalived_lvs_dr_iscsi
+
 
 ----------------------------------------------------------------------------------------------------
-配置 web02_server:
+配置 web02_server (与 lvs 相关)
 
     注: 一定要先设置好 arp_ignore 和 arp_announce 内核参数, 然后再去配置 vip
 
@@ -756,12 +771,10 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
         link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
         inet 127.0.0.1/8 scope host lo
            valid_lft forever preferred_lft forever
-        inet 192.168.175.100/32 brd 192.168.175.100 scope host lo
+        inet 192.168.175.100/32 brd 192.168.175.100 scope host lo <----- 观察
            valid_lft forever preferred_lft forever
         inet6 ::1/128 scope host
            valid_lft forever preferred_lft forever
-
-
 
 [root@web02_server ~]# route -n
     Kernel IP routing table
@@ -771,14 +784,28 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 
 
 
+
+
 [root@web02_server ~]# yum -y install httpd
 [root@web02_server ~]# systemctl start httpd
 [root@web02_server ~]# systemctl enable httpd
 
-[root@web02_server ~]# echo 'web02_server' > /var/www/html/index.html
+// 因为前面 格式化磁盘时 使用的是单机文件系统, 所以这里这里需要重新挂载一下才能显示 /var/www/html/index.html .
+// 实际生产环境中 应该使用 集群文件系统
+[root@web02_server ~]# umount /var/www/html/
+[root@web02_server ~]# mount -a
+
+[root@web02_server ~]# ls /var/www/html/index.html
+    /var/www/html/index.html
+
+[root@web02_server ~]# systemctl restart httpd
 
 [root@web02_server ~]# curl http://192.168.175.122:80
-    web02_server
+    keepalived_lvs_dr_iscsi
+
+
+
+
 
 
 ----------------------------------------------------------------------------------------------------
