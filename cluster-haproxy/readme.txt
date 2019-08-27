@@ -35,6 +35,7 @@ keepalived 的工作方式:
         https://en.wikipedia.org/wiki/Virtual_Router_Redundancy_Protocol
 
 
+    (vrrp_instance)
 
   |--------virtual router(provide virtual service on VIP)--(mac:00-00-5E-00-01-XX, XX is the Virtual Router IDentifier (VRID) )--|
   |                     ^                                                                                                        |
@@ -43,7 +44,7 @@ keepalived 的工作方式:
   |                     |                                                                                                        |
   |                     |                                                                                                        |
   |               +--------------+                                     +---------------+                                         |
-  |               |   keepalived |                                     |  keepalived   |                                         |<--vrrp_instance
+  |               |   keepalived |                                     |  keepalived   |                                         |
   |               |--------------|       VRRP                          |---------------|                                         |
   |               |active router |  ---------------------------------> |passive router |                                         |
   |               +--------------+    advert at periodic intervals     +---------------+                                         |
