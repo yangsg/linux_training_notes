@@ -48,7 +48,7 @@ keepalived 的工作方式:
   |               +--------------+    advert at periodic intervals     +---------------+                                         |
   |                                  (if receive: ok, else if not receive: fail, then elect master and advert)                   |
   |                                                                                                                              |
-  |  On startup, all routers will join a multicast group.                                                                    |
+  |  On startup, all routers will join a multicast group.                                                                        |
   |                                                                                                                              |
   |  Physical routers within the virtual router must communicate within themselves                                               |
   |  using packets with multicast IP address 224.0.0.18 and IP protocol number 112                                               |
