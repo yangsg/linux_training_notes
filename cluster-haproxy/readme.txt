@@ -12,7 +12,7 @@ keepalived 官方文档:
     https://www.keepalived.org/   <--- 官网, 不过 document 已经 被 deprecated 了
 
 
-  man keepalived.conf
+  man keepalived.conf  <----较详细的配置解释
       https://www.systutorials.com/docs/linux/man/5-keepalived.conf/
 
 
@@ -48,14 +48,23 @@ keepalived 的工作方式:
   |               +--------------+    advert at periodic intervals     +---------------+                                         |
   |                                  (if receive: ok, else if not receive: fail, then elect master and advert)                   |
   |                                                                                                                              |
+  |  On startup, all routers will join a multicast group.                                                                    |
+  |                                                                                                                              |
   |  Physical routers within the virtual router must communicate within themselves                                               |
   |  using packets with multicast IP address 224.0.0.18 and IP protocol number 112                                               |
+  |                                                                                                                              |
   |                                                                                                                              |
   |                                                                                                                              |
   |------------------------------------------------------------------------------------------------------------------------------|
                          |
                          |
                          | load balance
+                         |
+                         |   The active router also dynamically monitors the overall health of the specific services
+                         |   on the real servers through three built-in health checks: simple TCP connect, HTTP, and HTTPS.
+                         |   For TCP connect, the active router will periodically check that it can connect to the
+                         |   real servers on a certain port. For HTTP and HTTPS, the active router
+                         |   will periodically fetch a URL on the real servers and verify its content.
                          |
                          |
   |---------------------server pool---------------------------------|
@@ -76,16 +85,61 @@ keepalived 的工作方式:
       simple timeout TCP connection, keepalived detects that the server
       has failed and removes it from the server pool.
 
+
+    双层配置: (适用于 static web pages)
+        https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/ch-keepalived-overview-vsa
+    三层配置: (three-tier Keepalived Load Balancer)
+      LVS router  ----->  real servers ------> shared data source
+            This topology is also recommended for websites that access a central, highly available database for transactions
+        https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-cm-vsa
+    keepalived 的调度算法：
+        https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-scheduling-vsa
+    keepalived 的路由方式:
+        https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-routing-vsa
+
+            A virtual server is a service configured to listen on a specific virtual IP
+            A VIP is also known as a floating IP addresses.
+    网络(ip和防火墙)配置:
+        https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-connect-vsa
+
+
+    多端口services(with fwmark and persistence):
+        https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-multi-vsa
+        https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-persistance-vsa#s2-lve-fwmarks-VSA
+
+
+
+
+
+
 ----------------------------------------------------------------------------------------------------------------------------------
+haproxy
+
+    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-haproxy-vsa
+
+
+      HAProxy offers load balanced services to HTTP and TCP-based services,
+      such as Internet-connected services and web-based applications.
 
 
 
+----------------------------------------------------------------------------------------------------------------------------------
+keepalived and haproxy  (keepalived 结合 haproxy)
+
+  https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s2-lvs-keepalived-haproxy-vsa
+
+    Administrators can use both Keepalived and HAProxy together for a more robust and
+    scalable high availability environment. Using the speed and scalability of HAProxy
+    to perform load balancing for HTTP and other TCP-based services in conjunction
+    with Keepalived failover services, administrators can increase availability
+    by distributing load across real servers as well as ensuring continuity
+    in the event of router unavailability by performing failover to backup routers.
+
+      keepalived 负责 routers 的故障转移(failover)
+      haproxy 为 基于 http 和 tcp 的 services 提供 负载均衡(load balance)
 
 
-
-
-
-
+----------------------------------------------------------------------------------------------------------------------------------
 
 
 

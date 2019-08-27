@@ -593,6 +593,29 @@ persistent 持久性
     (some bits are flipped in the tcp packet). This is done with iptables (or ipchains).
 
 
+        ------------------------------------------------------------
+        注: 如果在 DR 模式 或 Tun 模式下使用 virtual service 处理 ftp 连接时, 必须要设置 persistence.
+            如果是使用 NAT 模式 结合 FTP service 的方式, 则 persistence 不是必须的, 但是必须使用内核模块 ip_vs_ftp.
+            见 `man ipvsadm  #/       -p, --persistent [timeout]`
+
+                Note: If a virtual service is to handle FTP connections then persistence must be
+                set for the virtual service if Direct Routing or Tunnelling is  used  as the forwarding mechanism.
+                If Masquerading is used in conjunction with an FTP service than persistence is not necessary, but the
+                ip_vs_ftp kernel module must be used.  This module may be manually inserted into the kernel using insmod(8).
+
+
+            Note:
+              https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-ftp-vsa
+                In order to enable passive FTP connections, you must have the ip_vs_ftp kernel module loaded.
+                Run the following commands as an administrative user at a shell prompt
+                to load this module and and ensure that the module loads on a reboot:
+
+                    echo "ip_vs_ftp" >> /etc/modules-load.d/ip_vs_ftp.conf
+                    systemctl enable systemd-modules-load
+                    systemctl start systemd-modules-load
+        ------------------------------------------------------------
+
+
 [root@lvs_real_server01 ~]# yum -y install vsftpd
 [root@lvs_real_server01 ~]# vim /etc/vsftpd/vsftpd.conf
     pasv_min_port=10000
