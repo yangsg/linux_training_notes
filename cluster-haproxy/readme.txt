@@ -101,17 +101,23 @@ keepalived 的工作方式:
             A VIP is also known as a floating IP addresses.
     网络(ip和防火墙)配置:
         https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-connect-vsa
+        https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-fwm-sav-vsa
 
 
     多端口services(with fwmark and persistence):
         https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-multi-vsa
         https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-persistance-vsa#s2-lve-fwmarks-VSA
 
+      ftp:
+        https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-ftp-vsa
+
         使用 virtual service 处理 ftp 服务时, 如果 是使用 dr 或 tun 模式, 则 必须设置 persistent.
         如果使用 nat 模式, 则 persistent 不是必须的, 但此时必须使用 ip_vs_ftp kernel module.
         见:
             https://github.com/yangsg/linux_training_notes/tree/master/cluster-lvs/101-lvs-direct-routing-demo01
 
+    使用 keepalived (即 lvs)做负载均衡时的 条件:
+          https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/ch-lvs-setup-prereqs-vsa
 
 
 
@@ -143,6 +149,19 @@ keepalived and haproxy  (keepalived 结合 haproxy)
       keepalived 负责 routers 的故障转移(failover)
       haproxy 为 基于 http 和 tcp 的 services 提供 负载均衡(load balance)
 
+
+
+    3.7. turning on packet forwarding and nonlocal binding
+      https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-initial-setup-forwarding-vsa
+
+        Load balancing in HAProxy and Keepalived at the same time also requires the ability to bind
+        to an IP address that are nonlocal, meaning that it is not assigned to a device on the
+        local system. This allows a running load balancer instance to bind to an IP that is not local for failover.
+          启用路由转发:
+            net.ipv4.ip_forward = 1
+
+          启用非本地ip绑定:
+            net.ipv4.ip_nonlocal_bind = 1
 
 ----------------------------------------------------------------------------------------------------------------------------------
 
