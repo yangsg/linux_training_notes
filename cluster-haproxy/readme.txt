@@ -35,6 +35,7 @@ keepalived 的工作方式:
         https://en.wikipedia.org/wiki/Virtual_Router_Redundancy_Protocol
 
 
+
   |--------virtual router(provide virtual service on VIP)--(mac:00-00-5E-00-01-XX, XX is the Virtual Router IDentifier (VRID) )--|
   |                     ^                                                                                                        |
   |                     |                                                                                                        |
@@ -42,7 +43,7 @@ keepalived 的工作方式:
   |                     |                                                                                                        |
   |                     |                                                                                                        |
   |               +--------------+                                     +---------------+                                         |
-  |               |   keepalived |                                     |  keepalived   |                                         |
+  |               |   keepalived |                                     |  keepalived   |                                         |<--vrrp_instance
   |               |--------------|       VRRP                          |---------------|                                         |
   |               |active router |  ---------------------------------> |passive router |                                         |
   |               +--------------+    advert at periodic intervals     +---------------+                                         |
@@ -118,6 +119,13 @@ keepalived 的工作方式:
 
     使用 keepalived (即 lvs)做负载均衡时的 条件:
           https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/ch-lvs-setup-prereqs-vsa
+
+
+    keepalived 负载均衡的初始配置:
+          https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/ch-initial-setup-vsa
+          https://www.cnblogs.com/along1226/p/5027838.html
+
+            vrrp_sync_group
 
 
 
