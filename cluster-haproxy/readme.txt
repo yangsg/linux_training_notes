@@ -107,6 +107,11 @@ keepalived 的工作方式:
         https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-multi-vsa
         https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-persistance-vsa#s2-lve-fwmarks-VSA
 
+        使用 virtual service 处理 ftp 服务时, 如果 是使用 dr 或 tun 模式, 则 必须设置 persistent.
+        如果使用 nat 模式, 则 persistent 不是必须的, 但此时必须使用 ip_vs_ftp kernel module.
+        见:
+            https://github.com/yangsg/linux_training_notes/tree/master/cluster-lvs/101-lvs-direct-routing-demo01
+
 
 
 
