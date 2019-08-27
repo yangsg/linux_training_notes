@@ -73,6 +73,7 @@ net.ipv4.ip_forward = 0
 net.ipv4.ip_forward_use_pmtu = 0
 
 
+// 检查 net.ipv4.ip_forward 是否被 启用(enabled)
 [root@basic ~]# sysctl  net.ipv4.ip_forward   # 显示参数 net.ipv4.ip_forward 的值 (以键值对方式显示)
 net.ipv4.ip_forward = 0
 
