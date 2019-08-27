@@ -96,6 +96,7 @@ keepalived 的工作方式:
         https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-cm-vsa
     keepalived 的调度算法：
         https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-scheduling-vsa
+        https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/ch-initial-setup-vsa
     keepalived 的路由方式:
         https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/s1-lvs-routing-vsa
 
@@ -127,6 +128,12 @@ keepalived 的工作方式:
           https://www.cnblogs.com/along1226/p/5027838.html
 
             vrrp_sync_group
+
+    Note:
+      Accessing the virtual IP from the load balancers or one of the real servers
+      is not supported. Likewise, configuring a load balancer
+      on the same machines as a real server is not supported.
+
 
 
 
