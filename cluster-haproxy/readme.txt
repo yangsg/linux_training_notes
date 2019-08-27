@@ -29,12 +29,15 @@ haproxy 可以执行 tcp(4层)调度 或 http(7层) 调度
 lvs 属于 4层 调度
 nginx 属于 7 层调度
 
----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------
 keepalived 的工作方式:
         https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/ch-lvs-overview-vsa
+        https://en.wikipedia.org/wiki/Virtual_Router_Redundancy_Protocol
 
-  |-------------------------------------------virtual router(provide virtual service on VIP)-------------------------------------|
+
+  |--------virtual router(provide virtual service on VIP)--(mac:00-00-5E-00-01-XX, XX is the Virtual Router IDentifier (VRID) )--|
   |                     ^                                                                                                        |
+  |                     |                                                                                                        |
   |                     | keepalived starts LVS Service and and monitors the health of the services                              |
   |                     |                                                                                                        |
   |                     |                                                                                                        |
@@ -45,7 +48,8 @@ keepalived 的工作方式:
   |               +--------------+    advert at periodic intervals     +---------------+                                         |
   |                                  (if receive: ok, else if not receive: fail, then elect master and advert)                   |
   |                                                                                                                              |
-  |                                                                                                                              |
+  |  Physical routers within the virtual router must communicate within themselves                                               |
+  |  using packets with multicast IP address 224.0.0.18 and IP protocol number 112                                               |
   |                                                                                                                              |
   |                                                                                                                              |
   |------------------------------------------------------------------------------------------------------------------------------|
@@ -72,7 +76,7 @@ keepalived 的工作方式:
       simple timeout TCP connection, keepalived detects that the server
       has failed and removes it from the server pool.
 
----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------
 
 
 
