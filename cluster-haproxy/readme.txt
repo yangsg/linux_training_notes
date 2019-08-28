@@ -148,6 +148,8 @@ haproxy
       HAProxy offers load balanced services to HTTP and TCP-based services,
       such as Internet-connected services and web-based applications.
 
+    haproxy 自身的 调度算法:
+        https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/ch-haproxy-setup-vsa
 
 
 ----------------------------------------------------------------------------------------------------------------------------------
