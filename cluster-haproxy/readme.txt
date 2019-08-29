@@ -25,7 +25,9 @@ keepalived 官方文档:
       while HAProxy performs load balancing and high-availability services to TCP and HTTP applications.
 
 
-haproxy 可以执行 tcp(4层)调度 或 http(7层) 调度, 其 4 层也是模拟的,还是属于应用层的调度, 无法突破 socket 数量的限制
+haproxy 可以执行 tcp(4层)调度 或 http(7层) 调度, 其 4 层也是模拟的,
+        还是属于应用层的调度, 无法突破 socket 数量的限制.
+        haproxy 还支持 会话保持功能
 lvs 属于 4层 调度, 没有 socket 的概念, 不受 socket 数量的限制
 nginx 属于 7 层调度
 
