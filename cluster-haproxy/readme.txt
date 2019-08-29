@@ -6,6 +6,8 @@ https://www.haproxy.org/
 
 haproxy官方文档:
     https://cbonte.github.io/haproxy-dconv/
+    https://cbonte.github.io/haproxy-dconv/2.0/configuration.html#4.1
+    https://cbonte.github.io/haproxy-dconv/1.5/configuration.html#4.1
 
 keepalived 官方文档:
     https://keepalived.org/doc/   <--- 文档应该参考这里
