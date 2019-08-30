@@ -79,7 +79,8 @@
 [root@haproxy02 ~]# yum -y install keepalived  haproxy
 
 
-// 修改 logformat 让 httpd 能记录 真实的 client ip 而非 proxy 的 ip
+// 修改所有 httpd server 的  logformat 配置 让 httpd 能记录 真实的 client ip 而非 proxy 的 ip
+// 此仅演示了 bbs01 的修改
 [root@bbs01 ~]# vim /etc/httpd/conf/httpd.conf
 
     LogFormat "%{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
