@@ -506,9 +506,14 @@
 
 
 
+----------------------------------------------------------------------------------------------------
+
+访问统计报告页面:
+
+    http://192.168.175.100:9088/haproxy-status
 
 
-
+更多信息见 http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#9
 
 
 
@@ -518,5 +523,7 @@
 
   如果修改 /etc/haproxy/haproxy.cfg 时 没有修改端口, 可以尝试使用:
     systemctl reload haproxy
+
+
 
 
