@@ -624,18 +624,170 @@ nginx 结合 keepalived 做高可用
       Aug 31 17:44:41 nginx02 Keepalived_vrrp[17383]: VRRP_Instance(web_server_group) removing protocol VIPs  <----- 观察, VIP被抢占了
 
 
+
+
+
+
+
 ----------------------------------------------------------------------------------------------------
+非抢占式  nopreempt
+
+           VRRP will normally preempt a lower priority machine when a higher priority
+           machine comes online.  "nopreempt" allows the lower priority machine to
+           maintain the master role, even when a higher priority machine comes back
+           online.
+           NOTE: For this to work, the initial state of this entry must be BACKUP.
+
+
+[root@nginx01 ~]# systemctl stop nginx
+
+
+观察 [root@nginx01 ~]# tail -f /var/log/messages 的输出:
+
+        Aug 31 18:20:54 nginx01 systemd: Stopping The nginx HTTP and reverse proxy server...
+        Aug 31 18:20:54 nginx01 systemd: Stopped The nginx HTTP and reverse proxy server.
+        Aug 31 18:20:55 nginx01 Keepalived_vrrp[25515]: /usr/bin/killall -0 nginx exited with status 1
+        Aug 31 18:20:56 nginx01 Keepalived_vrrp[25515]: /usr/bin/killall -0 nginx exited with status 1
+        Aug 31 18:20:56 nginx01 Keepalived_vrrp[25515]: VRRP_Script(check_nginx_service) failed
+        Aug 31 18:20:57 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) Changing effective priority from 100 to 60
+        Aug 31 18:20:57 nginx01 Keepalived_vrrp[25515]: /usr/bin/killall -0 nginx exited with status 1
+        Aug 31 18:20:58 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) Received advert with higher priority 80, ours 60
+        Aug 31 18:20:58 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) Entering BACKUP STATE
+        Aug 31 18:20:58 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) removing protocol VIPs.
+        Aug 31 18:20:58 nginx01 Keepalived_vrrp[25515]: /usr/bin/killall -0 nginx exited with status 1
+        Aug 31 18:20:59 nginx01 Keepalived_vrrp[25515]: /usr/bin/killall -0 nginx exited with status 1
 
 
 
+观察 [root@nginx02 ~]# tail -f /var/log/messages 的输出:
+
+      Aug 31 18:20:58 nginx02 Keepalived_vrrp[17383]: VRRP_Instance(web_server_group) forcing a new MASTER election
+      Aug 31 18:20:59 nginx02 Keepalived_vrrp[17383]: VRRP_Instance(web_server_group) Transition to MASTER STATE
+      Aug 31 18:21:00 nginx02 Keepalived_vrrp[17383]: VRRP_Instance(web_server_group) Entering MASTER STATE
+      Aug 31 18:21:00 nginx02 Keepalived_vrrp[17383]: VRRP_Instance(web_server_group) setting protocol VIPs.
+      Aug 31 18:21:00 nginx02 Keepalived_vrrp[17383]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 18:21:00 nginx02 Keepalived_vrrp[17383]: VRRP_Instance(web_server_group) Sending/queueing gratuitous ARPs on ens33 for 192.168.175.100
+      Aug 31 18:21:00 nginx02 Keepalived_vrrp[17383]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 18:21:00 nginx02 Keepalived_vrrp[17383]: Sending gratuitous ARP on ens33 for 192.168.175.100
 
 
 
+[root@nginx01 ~]# systemctl start nginx
 
 
 
+观察 [root@nginx01 ~]# tail -f /var/log/messages 的输出:
+
+      Aug 31 18:22:06 nginx01 Keepalived_vrrp[25515]: /usr/bin/killall -0 nginx exited with status 1
+      Aug 31 18:22:07 nginx01 Keepalived_vrrp[25515]: /usr/bin/killall -0 nginx exited with status 1
+      Aug 31 18:22:07 nginx01 systemd: Starting The nginx HTTP and reverse proxy server...
+      Aug 31 18:22:07 nginx01 nginx: nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+      Aug 31 18:22:07 nginx01 nginx: nginx: configuration file /etc/nginx/nginx.conf test is successful
+      Aug 31 18:22:07 nginx01 systemd: Failed to read PID from file /run/nginx.pid: Invalid argument
+      Aug 31 18:22:07 nginx01 systemd: Started The nginx HTTP and reverse proxy server.
+      Aug 31 18:22:09 nginx01 Keepalived_vrrp[25515]: VRRP_Script(check_nginx_service) succeeded
+      Aug 31 18:22:09 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) Changing effective priority from 60 to 100  <---观察
+
+          可以注意到, 虽然 nginx01 的优先级 还原会了 100, 且 100 > 80, 但是
+          因为 nginx01 设置成为了 非抢占式(nopreempt), 所以其现在甘愿当从(backup),
+          并没有抢占 VIP (这是正常现象)
 
 
+// 在 nginx02 上查看 ip
+[root@nginx02 ~]# ip addr show ens33
+      2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+          link/ether 00:0c:29:82:ac:0f brd ff:ff:ff:ff:ff:ff
+          inet 192.168.175.102/24 brd 192.168.175.255 scope global ens33
+             valid_lft forever preferred_lft forever
+          inet 192.168.175.100/32 scope global ens33 <---观察(nginx01回来后nginx02并没有失去vip, 这时正常现象, 因为 nginx01 设置了 nopreempt)
+             valid_lft forever preferred_lft forever
+          inet6 fe80::20c:29ff:fe82:ac0f/64 scope link
+             valid_lft forever preferred_lft forever
+
+// 在 nginx02 上抓包观察 vrrp 协议数据包:
+[root@nginx02 ~]# tcpdump -i ens33 -nn -vv vrrp
+      tcpdump: listening on ens33, link-type EN10MB (Ethernet), capture size 262144 bytes
+      18:25:10.574579 IP (tos 0xc0, ttl 255, id 740, offset 0, flags [none], proto VRRP (112), length 40)
+          192.168.175.102 > 192.168.175.101: vrrp 192.168.175.102 > 192.168.175.101: VRRPv2, Advertisement, vrid 55, prio 80, authtype simple, intvl 1s, length 20, addrs: 192.168.175.100 auth "1234^@^@^@^@"
+      18:25:11.576181 IP (tos 0xc0, ttl 255, id 741, offset 0, flags [none], proto VRRP (112), length 40)
+          192.168.175.102 > 192.168.175.101: vrrp 192.168.175.102 > 192.168.175.101: VRRPv2, Advertisement, vrid 55, prio 80, authtype simple, intvl 1s, length 20, addrs: 192.168.175.100 auth "1234^@^@^@^@"
+
+
+--------------------------------------------------
+现在来观察一个异常现象 (nopreempt 无法获取 vip 的问题)
+
+// 停止 nginx02 上的 nginx 服务 (注: 此时 nginx01 上的 nginx 服务是正常可用的)
+[root@nginx02 ~]# systemctl stop nginx
+
+// 观察, 发现 VIP 没有发生飘移, 即 nginx01 设置为非抢占式(nopreempt)后,
+// 即使在 nginx02上的 nginx 不可用之后, 也不再获取 VIP, 算是彻底放弃了抢占权利.
+// 这时一个问题, 还有待解决.
+[root@nginx02 ~]# ip addr show ens33
+      2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+          link/ether 00:0c:29:82:ac:0f brd ff:ff:ff:ff:ff:ff
+          inet 192.168.175.102/24 brd 192.168.175.255 scope global ens33
+             valid_lft forever preferred_lft forever
+          inet 192.168.175.100/32 scope global ens33  <---- 观察(注: 这时一个不正常的现象, 有待解决)
+             valid_lft forever preferred_lft forever
+          inet6 fe80::20c:29ff:fe82:ac0f/64 scope link
+             valid_lft forever preferred_lft forever
+
+// 在 nginx02 抓包观察 vrrp 协议数据包
+[root@nginx02 ~]# tcpdump -i ens33 -nn -vv vrrp
+      tcpdump: listening on ens33, link-type EN10MB (Ethernet), capture size 262144 bytes
+      18:26:23.692956 IP (tos 0xc0, ttl 255, id 813, offset 0, flags [none], proto VRRP (112), length 40)
+          192.168.175.102 > 192.168.175.101: vrrp 192.168.175.102 > 192.168.175.101: VRRPv2, Advertisement, vrid 55, prio 80, authtype simple, intvl 1s, length 20, addrs: 192.168.175.100 auth "1234^@^@^@^@"
+      18:26:24.695004 IP (tos 0xc0, ttl 255, id 814, offset 0, flags [none], proto VRRP (112), length 40)
+          192.168.175.102 > 192.168.175.101: vrrp 192.168.175.102 > 192.168.175.101: VRRPv2, Advertisement, vrid 55, prio 80, authtype simple, intvl 1s, length 20, addrs: 192.168.175.100 auth "1234^@^@^@^@"
+
+
+--------------------------------------------------
+// 解决  nopreempt 无法获取 vip 的问题:
+
+// 关闭 nginx02 上的 nginx 服务, nginx01 上的 keepalived 接收不到心跳, 就会切换为 master 的角色
+// 所以, 最终的解决办法应该是 应该在 用于检测的 外部脚本中 stop 掉 keepalived 服务.
+[root@nginx02 ~]# systemctl stop keepalived
+
+
+// 观察 [root@nginx01 ~]# tail -f /var/log/messages 的输出:
+      Aug 31 18:34:59 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) Transition to MASTER STATE  <----观察
+      Aug 31 18:35:00 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) Entering MASTER STATE
+      Aug 31 18:35:00 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) setting protocol VIPs.
+      Aug 31 18:35:00 nginx01 Keepalived_vrrp[25515]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 18:35:00 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) Sending/queueing gratuitous ARPs on ens33 for 192.168.175.100
+      Aug 31 18:35:00 nginx01 Keepalived_vrrp[25515]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 18:35:00 nginx01 Keepalived_vrrp[25515]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 18:35:00 nginx01 Keepalived_vrrp[25515]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 18:35:00 nginx01 Keepalived_vrrp[25515]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 18:35:05 nginx01 Keepalived_vrrp[25515]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 18:35:05 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) Sending/queueing gratuitous ARPs on ens33 for 192.168.175.100
+      Aug 31 18:35:05 nginx01 Keepalived_vrrp[25515]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 18:35:05 nginx01 Keepalived_vrrp[25515]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 18:35:05 nginx01 Keepalived_vrrp[25515]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 18:35:05 nginx01 Keepalived_vrrp[25515]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 18:36:48 nginx01 kernel: device ens33 entered promiscuous mode
+      Aug 31 18:36:55 nginx01 kernel: device ens33 left promiscuous mode
+
+
+// 观察 nginx01 又重新获取了 VIP
+[root@nginx01 ~]# ip addr show ens33
+      2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+          link/ether 00:0c:29:f6:f0:83 brd ff:ff:ff:ff:ff:ff
+          inet 192.168.175.101/24 brd 192.168.175.255 scope global ens33
+             valid_lft forever preferred_lft forever
+          inet 192.168.175.100/32 scope global ens33  <---观察(nginx01 又重新获取了 VIP)
+             valid_lft forever preferred_lft forever
+          inet6 fe80::20c:29ff:fef6:f083/64 scope link
+             valid_lft forever preferred_lft forever
+
+
+// 在 nginx01 抓包观察 vrrp 协议数据包
+[root@nginx01 ~]# tcpdump -i ens33 -nn -vv vrrp
+      tcpdump: listening on ens33, link-type EN10MB (Ethernet), capture size 262144 bytes
+      18:36:49.009763 IP (tos 0xc0, ttl 255, id 230, offset 0, flags [none], proto VRRP (112), length 40)
+          192.168.175.101 > 192.168.175.102: vrrp 192.168.175.101 > 192.168.175.102: VRRPv2, Advertisement, vrid 55, prio 100, authtype simple, intvl 1s, length 20, addrs: 192.168.175.100 auth "1234^@^@^@^@"
+      18:36:50.010732 IP (tos 0xc0, ttl 255, id 231, offset 0, flags [none], proto VRRP (112), length 40)
+          192.168.175.101 > 192.168.175.102: vrrp 192.168.175.101 > 192.168.175.102: VRRPv2, Advertisement, vrid 55, prio 100, authtype simple, intvl 1s, length 20, addrs: 192.168.175.100 auth "1234^@^@^@^@"
 
 
 
