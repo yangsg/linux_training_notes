@@ -745,7 +745,7 @@ nginx 结合 keepalived 做高可用
 // 解决  nopreempt 无法获取 vip 的问题:
 
 // 关闭 nginx02 上的 nginx 服务, nginx01 上的 keepalived 接收不到心跳, 就会切换为 master 的角色
-// 所以, 最终的解决办法应该是 应该在 用于检测的 外部脚本中 stop 掉 keepalived 服务.
+// 所以, 最终的解决办法应该是在 用于检测的 外部脚本中 stop 掉 keepalived 服务.
 [root@nginx02 ~]# systemctl stop keepalived
 
 
@@ -788,6 +788,184 @@ nginx 结合 keepalived 做高可用
           192.168.175.101 > 192.168.175.102: vrrp 192.168.175.101 > 192.168.175.102: VRRPv2, Advertisement, vrid 55, prio 100, authtype simple, intvl 1s, length 20, addrs: 192.168.175.100 auth "1234^@^@^@^@"
       18:36:50.010732 IP (tos 0xc0, ttl 255, id 231, offset 0, flags [none], proto VRRP (112), length 40)
           192.168.175.101 > 192.168.175.102: vrrp 192.168.175.101 > 192.168.175.102: VRRPv2, Advertisement, vrid 55, prio 100, authtype simple, intvl 1s, length 20, addrs: 192.168.175.100 auth "1234^@^@^@^@"
+
+
+--------------------------------------------
+编写脚本来解决  nopreempt 无法获取 vip 的问题:
+
+[root@nginx01 ~]# yum -y install psmisc   # 安装 killall 所在的 package
+
+[root@nginx01 ~]# vim /etc/keepalived/keepalived.conf
+
+      vrrp_script check_nginx_service {
+          script "/etc/keepalived/check_nginx.sh"
+          interval 1
+      }
+
+          # 在 vrrp_instance 块中
+          track_script {
+              check_nginx_service
+          }
+
+
+[root@nginx01 ~]# vim /etc/keepalived/check_nginx.sh
+
+        #!/bin/bash
+
+        #参考: https://superuser.com/questions/272265/getting-curl-to-output-http-status-code
+        #注意:
+        #      通过 curl 这种方式会 增加 nginx 的 access.log 访问日志,
+        #      所以需要考虑是否要避免这种情况 或 采用其他检测方式 绕过该问题
+        #v_http_status_code=$(curl -o -I -L -s -w "%{http_code}" http://127.0.0.1)
+        #
+        #if [ "$v_http_status_code" != 200 ]; then
+        #  systemctl stop keepalived
+        #fi
+
+        # [root@nginx01 ~]# yum -y install psmisc   #安装killall 所属的包 psmisc, 确保存在 killall 命令
+        # [root@nginx02 ~]# yum -y install psmisc   #安装killall 所属的包 psmisc, 确保存在 killall 命令
+        #  参考: https://unix.stackexchange.com/questions/169898/what-does-kill-0-do
+        #  man 1 kill
+        #  man 2 kill
+
+        #脚本运行时可能会发生一些错误, 这些错误即有可能是编码引起的, 也有可能是运行环境不符合要求引起的.
+        #所以为了方便调试 发现 错误源, 定义了 v_log_file 来接受脚本的输出, 当 v_log_file 为 /dev/null 时,
+        #直接丢弃输出, 当 v_log_file 的 filepath 是, 则将 输出定向到 该 filepath 对应的 file
+        v_debug=false
+        v_log_file=/dev/null
+
+        if [ "$v_debug" = true ]; then
+          v_log_file=/tmp/keepalived.log
+        fi
+
+        if ! killall -0 nginx &> $v_log_file; then   #当 signal 为 0 时, 仅检测对应进程是否存在
+          systemctl stop keepalived
+          exit 1
+        fi
+
+        exit 0
+
+
+[root@nginx02 ~]# yum -y install psmisc   # 安装 killall 所在的 package
+
+[root@nginx02 ~]# vim /etc/keepalived/keepalived.conf
+
+      vrrp_script check_nginx_service {
+          script "/etc/keepalived/check_nginx.sh"
+          interval 1
+      }
+
+          # 在 vrrp_instance 块中
+          track_script {
+              check_nginx_service
+          }
+
+
+[root@nginx02 ~]# rsync -av root@192.168.175.101:/etc/keepalived/check_nginx.sh /etc/keepalived/check_nginx.sh
+
+[root@nginx01 ~]# systemctl start nginx
+[root@nginx01 ~]# systemctl start keepalived
+
+[root@nginx02 ~]# systemctl start nginx
+[root@nginx02 ~]# systemctl start keepalived
+
+[root@nginx01 ~]# ip addr show ens33
+
+    2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+        link/ether 00:0c:29:f6:f0:83 brd ff:ff:ff:ff:ff:ff
+        inet 192.168.175.101/24 brd 192.168.175.255 scope global ens33
+           valid_lft forever preferred_lft forever
+        inet 192.168.175.100/32 scope global ens33 <----观察
+           valid_lft forever preferred_lft forever
+        inet6 fe80::20c:29ff:fef6:f083/64 scope link
+           valid_lft forever preferred_lft forever
+
+[root@nginx02 ~]# ip addr show ens33
+    2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+        link/ether 00:0c:29:82:ac:0f brd ff:ff:ff:ff:ff:ff
+        inet 192.168.175.102/24 brd 192.168.175.255 scope global ens33
+           valid_lft forever preferred_lft forever
+        inet6 fe80::20c:29ff:fe82:ac0f/64 scope link
+           valid_lft forever preferred_lft forever
+
+
+[root@nginx01 ~]# tcpdump -i ens33 -nn -vv vrrp
+      tcpdump: listening on ens33, link-type EN10MB (Ethernet), capture size 262144 bytes
+      01:08:52.119676 IP (tos 0xc0, ttl 255, id 2519, offset 0, flags [none], proto VRRP (112), length 40)
+          192.168.175.101 > 192.168.175.102: vrrp 192.168.175.101 > 192.168.175.102: VRRPv2, Advertisement, vrid 55, prio 100, authtype simple, intvl 1s, length 20, addrs: 192.168.175.100 auth "1234^@^@^@^@"
+      01:08:53.121326 IP (tos 0xc0, ttl 255, id 2520, offset 0, flags [none], proto VRRP (112), length 40)
+          192.168.175.101 > 192.168.175.102: vrrp 192.168.175.101 > 192.168.175.102: VRRPv2, Advertisement, vrid 55, prio 100, authtype simple, intvl 1s, length 20, addrs: 192.168.175.100 auth "1234^@^@^@^@"
+
+
+
+[root@nginx01 ~]# systemctl stop nginx
+
+查看 nginx01 上的 /var/log/messages 日志
+    Sep  1 01:08:51 nginx01 kernel: device ens33 entered promiscuous mode
+    Sep  1 01:08:53 nginx01 kernel: device ens33 left promiscuous mode
+    Sep  1 01:09:20 nginx01 systemd: Stopping The nginx HTTP and reverse proxy server...
+    Sep  1 01:09:20 nginx01 systemd: Stopped The nginx HTTP and reverse proxy server.
+    Sep  1 01:09:21 nginx01 Keepalived[17731]: Stopping
+    Sep  1 01:09:21 nginx01 systemd: Stopping LVS and VRRP High Availability Monitor...
+    Sep  1 01:09:21 nginx01 Keepalived_vrrp[17733]: VRRP_Instance(web_server_group) sent 0 priority
+    Sep  1 01:09:21 nginx01 Keepalived_vrrp[17733]: VRRP_Instance(web_server_group) removing protocol VIPs.
+    Sep  1 01:09:21 nginx01 Keepalived_healthcheckers[17732]: Stopped
+    Sep  1 01:09:22 nginx01 Keepalived_vrrp[17733]: Stopped
+    Sep  1 01:09:22 nginx01 systemd: Stopped LVS and VRRP High Availability Monitor.
+    Sep  1 01:09:22 nginx01 Keepalived[17731]: Stopped Keepalived v1.3.5 (03/19,2017), git commit v1.3.5-6-g6fa32f2
+
+
+
+[root@nginx02 ~]# ip addr show ens33
+    2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+        link/ether 00:0c:29:82:ac:0f brd ff:ff:ff:ff:ff:ff
+        inet 192.168.175.102/24 brd 192.168.175.255 scope global ens33
+           valid_lft forever preferred_lft forever
+        inet 192.168.175.100/32 scope global ens33  <----观察
+           valid_lft forever preferred_lft forever
+        inet6 fe80::20c:29ff:fe82:ac0f/64 scope link
+           valid_lft forever preferred_lft forever
+
+[root@nginx01 ~]# systemctl start nginx
+[root@nginx01 ~]# systemctl start keepalived
+
+[root@nginx02 ~]# systemctl stop nginx
+
+[root@nginx02 ~]# ip addr show ens33
+    2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+        link/ether 00:0c:29:82:ac:0f brd ff:ff:ff:ff:ff:ff
+        inet 192.168.175.102/24 brd 192.168.175.255 scope global ens33
+           valid_lft forever preferred_lft forever
+        inet6 fe80::20c:29ff:fe82:ac0f/64 scope link
+           valid_lft forever preferred_lft forever
+
+[root@nginx01 ~]# ip addr show ens33
+    2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+        link/ether 00:0c:29:f6:f0:83 brd ff:ff:ff:ff:ff:ff
+        inet 192.168.175.101/24 brd 192.168.175.255 scope global ens33
+           valid_lft forever preferred_lft forever
+        inet 192.168.175.100/32 scope global ens33  <----观察
+           valid_lft forever preferred_lft forever
+        inet6 fe80::20c:29ff:fef6:f083/64 scope link
+           valid_lft forever preferred_lft forever
+
+[root@nginx01 ~]# tcpdump -i ens33 -nn -vv vrrp
+      tcpdump: listening on ens33, link-type EN10MB (Ethernet), capture size 262144 bytes
+      01:14:41.058445 IP (tos 0xc0, ttl 255, id 83, offset 0, flags [none], proto VRRP (112), length 40)
+          192.168.175.101 > 192.168.175.102: vrrp 192.168.175.101 > 192.168.175.102: VRRPv2, Advertisement, vrid 55, prio 100, authtype simple, intvl 1s, length 20, addrs: 192.168.175.100 auth "1234^@^@^@^@"
+      01:14:42.058951 IP (tos 0xc0, ttl 255, id 84, offset 0, flags [none], proto VRRP (112), length 40)
+          192.168.175.101 > 192.168.175.102: vrrp 192.168.175.101 > 192.168.175.102: VRRPv2, Advertisement, vrid 55, prio 100, authtype simple, intvl 1s, length 20, addrs: 192.168.175.100 auth "1234^@^@^@^@"
+
+
+
+
+
+
+
+
+
+
+
 
 
 
