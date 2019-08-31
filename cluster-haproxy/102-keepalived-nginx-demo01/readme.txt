@@ -364,6 +364,15 @@ nginx 结合 keepalived 做高可用
 ------------------
 方案 1:
 
+  修改的文件见:
+
+      https://github.com/yangsg/linux_training_notes/blob/master/cluster-haproxy/102-keepalived-nginx-demo01/100-check_nginx.sh-preempt-lower-priority-machine-when-higher-come-back/nginx01/etc/keepalived/keepalived.conf
+
+      https://github.com/yangsg/linux_training_notes/blob/master/cluster-haproxy/102-keepalived-nginx-demo01/100-check_nginx.sh-preempt-lower-priority-machine-when-higher-come-back/nginx02/etc/keepalived/keepalived.conf
+
+      https://github.com/yangsg/linux_training_notes/blob/master/cluster-haproxy/102-keepalived-nginx-demo01/100-check_nginx.sh-preempt-lower-priority-machine-when-higher-come-back/nginx02/etc/keepalived/check_nginx.sh
+
+
 
 [root@nginx01 ~]# vim /etc/keepalived/keepalived.conf
 
