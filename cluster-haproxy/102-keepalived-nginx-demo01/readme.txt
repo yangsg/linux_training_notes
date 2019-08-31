@@ -508,6 +508,10 @@ nginx 结合 keepalived 做高可用
 ---------------------------------------------------------------------------------------------------
 方案 2:  不使用外部脚本, 直接通过 killall发送0信号检测nginx服务的状态
 
+  修改的文件见:
+      https://github.com/yangsg/linux_training_notes/blob/master/cluster-haproxy/102-keepalived-nginx-demo01/101-killall-0-nginx/nginx01/etc/keepalived/keepalived.conf
+      https://github.com/yangsg/linux_training_notes/blob/master/cluster-haproxy/102-keepalived-nginx-demo01/101-killall-0-nginx/nginx02/etc/keepalived/keepalived.conf
+
 
 [root@nginx01 ~]# vim /etc/keepalived/keepalived.conf
 
