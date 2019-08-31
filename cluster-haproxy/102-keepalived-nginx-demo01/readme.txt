@@ -184,6 +184,11 @@ nginx 结合 keepalived 做高可用
 [root@nginx01 ~]# systemctl start keepalived
 [root@nginx02 ~]# systemctl start keepalived
 
+[root@nginx01 ~]# systemctl enable keepalived
+[root@nginx02 ~]# systemctl enable keepalived
+
+
+
 // 观察 nginx01 上实时日志的内容:
 
         即在 [root@nginx01 ~]# tail -f  /var/log/messages 后 被捕获的内容
@@ -252,11 +257,15 @@ nginx 结合 keepalived 做高可用
       Aug 31 10:34:05 localhost Keepalived_healthcheckers[1680]: Opening file '/etc/keepalived/keepalived.conf'.
 
 
+// 尝试抓包观察 vrrp 协议数据包
 [root@nginx01 ~]# yum -y install tcpdump
 [root@nginx02 ~]# yum -y install tcpdump
 
     tcpdump 使用笔记见:
         https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/01-full/150-tcpdump.txt
+    vrrp 协议见:
+        https://github.com/yangsg/linux_training_notes/tree/master/cluster-lvs
+
 
 // nginx01 上 抓包观察, master 周期性的 组播 心跳信息(组播ip: 224.0.0.18, vrid 55, 即00-00-5E-00-01-XX 中的 XX, proto VRRP (112) 即 ip protocol number: 112)
 [root@nginx01 ~]# tcpdump -i ens33 -nn -vvv vrrp
@@ -274,6 +283,59 @@ nginx 结合 keepalived 做高可用
           192.168.175.101 > 224.0.0.18: vrrp 192.168.175.101 > 224.0.0.18: VRRPv2, Advertisement, vrid 55, prio 100, authtype simple, intvl 1s, length 20, addrs: 192.168.175.100 auth "1234^@^@^@^@"
       10:53:22.269041 IP (tos 0xc0, ttl 255, id 1193, offset 0, flags [none], proto VRRP (112), length 40)
           192.168.175.101 > 224.0.0.18: vrrp 192.168.175.101 > 224.0.0.18: VRRPv2, Advertisement, vrid 55, prio 100, authtype simple, intvl 1s, length 20, addrs: 192.168.175.100 auth "1234^@^@^@^@"
+
+
+
+----------------------------------------------------------------------------------------------------
+让 keepalived 采用单播 unicast 发送心跳通知
+
+      因为某些云平台底层网络禁止 组播, 现采用 unicast 单播的方式 让 master 发送心跳信息
+
+[root@nginx01 ~]# vim /etc/keepalived/keepalived.conf
+
+        #因某些云平台底层网络禁止了组播, 所以这里改为 单播方式 通知心跳信息
+        #参考:
+        #  https://docs.nginx.com/nginx/admin-guide/high-availability/ha-keepalived-nodes/
+        unicast_src_ip    192.168.175.101
+
+        unicast_peer {
+            192.168.175.102
+        }
+
+[root@nginx02 ~]# vim /etc/keepalived/keepalived.conf
+
+    #因某些云平台底层网络禁止了组播, 所以这里改为 单播方式 通知心跳信息
+    #参考:
+    #  https://docs.nginx.com/nginx/admin-guide/high-availability/ha-keepalived-nodes/
+    unicast_src_ip    192.168.175.102
+
+    unicast_peer {
+        192.168.175.101
+    }
+
+
+
+[root@nginx01 ~]# systemctl restart keepalived
+[root@nginx02 ~]# systemctl restart keepalived
+
+
+// 在 nginx01 上 抓包 观察 改为单播方式后 心跳通知的 数据包
+[root@nginx01 ~]# tcpdump -i ens33 -nn -vvv vrrp
+      tcpdump: listening on ens33, link-type EN10MB (Ethernet), capture size 262144 bytes
+      11:22:15.339163 IP (tos 0xc0, ttl 255, id 195, offset 0, flags [none], proto VRRP (112), length 40)
+          192.168.175.101 > 192.168.175.102: vrrp 192.168.175.101 > 192.168.175.102: VRRPv2, Advertisement, vrid 55, prio 100, authtype simple, intvl 1s, length 20, addrs: 192.168.175.100 auth "1234^@^@^@^@"
+          11:22:16.340473 IP (tos 0xc0, ttl 255, id 196, offset 0, flags [none], proto VRRP (112), length 40)
+              192.168.175.101 > 192.168.175.102: vrrp 192.168.175.101 > 192.168.175.102: VRRPv2, Advertisement, vrid 55, prio 100, authtype simple, intvl 1s, length 20, addrs: 192.168.175.100 auth "1234^@^@^@^@"
+
+
+// 在 nginx02 上 抓包 观察 改为单播方式后 心跳通知的 数据包
+[root@nginx02 ~]# tcpdump -i ens33 -nn -vvv vrrp
+      tcpdump: listening on ens33, link-type EN10MB (Ethernet), capture size 262144 bytes
+      11:22:18.336459 IP (tos 0xc0, ttl 255, id 198, offset 0, flags [none], proto VRRP (112), length 40)
+          192.168.175.101 > 192.168.175.102: vrrp 192.168.175.101 > 192.168.175.102: VRRPv2, Advertisement, vrid 55, prio 100, authtype simple, intvl 1s, length 20, addrs: 192.168.175.100 auth "1234^@^@^@^@"
+      11:22:19.337662 IP (tos 0xc0, ttl 255, id 199, offset 0, flags [none], proto VRRP (112), length 40)
+          192.168.175.101 > 192.168.175.102: vrrp 192.168.175.101 > 192.168.175.102: VRRPv2, Advertisement, vrid 55, prio 100, authtype simple, intvl 1s, length 20, addrs: 192.168.175.100 auth "1234^@^@^@^@"
+
 
 
 
