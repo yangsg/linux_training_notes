@@ -12,6 +12,7 @@ haproxy官方文档:
 keepalived 官方文档:
     https://keepalived.org/doc/   <--- 文档应该参考这里
     https://www.keepalived.org/   <--- 官网, 不过 document 已经 被 deprecated 了
+    https://www.keepalived.org/manpage.html
 
 
   man keepalived.conf  <----较详细的配置解释

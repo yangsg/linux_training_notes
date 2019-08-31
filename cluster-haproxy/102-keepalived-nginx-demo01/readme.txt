@@ -344,6 +344,7 @@ nginx 结合 keepalived 做高可用
 
       https://docs.oracle.com/cd/E37670_01/E41138/html/section_hxz_zdw_pr.html
       https://www.cnblogs.com/arjenlee/p/9258188.html
+      https://www.keepalived.org/manpage.html
 
 
       /usr/share/doc/keepalived-1.3.5/keepalived.conf.SYNOPSIS
