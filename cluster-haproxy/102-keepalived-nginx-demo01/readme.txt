@@ -506,7 +506,127 @@ nginx 结合 keepalived 做高可用
            valid_lft forever preferred_lft forever
 
 ---------------------------------------------------------------------------------------------------
-方案 2:  不适用外部脚本, 直接通过 killall发送0信号检测nginx服务的状态
+方案 2:  不使用外部脚本, 直接通过 killall发送0信号检测nginx服务的状态
+
+
+[root@nginx01 ~]# vim /etc/keepalived/keepalived.conf
+
+      vrrp_script check_nginx_service {
+           script "killall -0 nginx"
+           interval 1
+           rise 2
+           fall 2
+           weight -40
+      }
+
+
+        # 在 vrrp_instance 块中
+        track_script {
+            check_nginx_service
+        }
+
+[root@nginx02 nginx02]# vim /etc/keepalived/keepalived.conf
+
+      vrrp_script check_nginx_service {
+           script "killall -0 nginx"
+           interval 1
+           rise 2
+           fall 2
+           weight -40
+      }
+
+
+        # 在 vrrp_instance 块中
+        track_script {
+            check_nginx_service
+        }
+
+
+[root@nginx01 ~]# systemctl reload keepalived
+[root@nginx02 ~]# systemctl reload keepalived
+
+// 实时观察 日志
+[root@nginx01 ~]# tail -f /var/log/messages
+[root@nginx02 ~]# tail -f /var/log/messages
+
+
+
+[root@nginx01 ~]# systemctl stop keepalived
+
+
+
+观察 [root@nginx01 ~]# tail -f /var/log/messages 的输出:
+
+      Aug 31 17:30:45 nginx01 systemd: Stopping The nginx HTTP and reverse proxy server...
+      Aug 31 17:30:45 nginx01 systemd: Stopped The nginx HTTP and reverse proxy server.
+      Aug 31 17:30:45 nginx01 Keepalived_vrrp[25515]: /usr/bin/killall -0 nginx exited with status 1
+      Aug 31 17:30:46 nginx01 Keepalived_vrrp[25515]: /usr/bin/killall -0 nginx exited with status 1
+      Aug 31 17:30:46 nginx01 Keepalived_vrrp[25515]: VRRP_Script(check_nginx_service) failed
+      Aug 31 17:30:46 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) Changing effective priority from 100 to 60 <-----观察(100-40=60)
+      Aug 31 17:30:47 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) Received advert with higher priority 80, ours 60
+      Aug 31 17:30:47 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) Entering BACKUP STATE
+      Aug 31 17:30:47 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) removing protocol VIPs.
+      Aug 31 17:30:47 nginx01 Keepalived_vrrp[25515]: /usr/bin/killall -0 nginx exited with status 1
+
+
+
+观察 [root@nginx02 ~]# tail -f /var/log/messages 的输出:
+
+      Aug 31 17:30:47 nginx02 Keepalived_vrrp[17383]: VRRP_Instance(web_server_group) forcing a new MASTER election <----观察(触发选举)
+      Aug 31 17:30:48 nginx02 Keepalived_vrrp[17383]: VRRP_Instance(web_server_group) Transition to MASTER STATE
+      Aug 31 17:30:49 nginx02 Keepalived_vrrp[17383]: VRRP_Instance(web_server_group) Entering MASTER STATE
+      Aug 31 17:30:49 nginx02 Keepalived_vrrp[17383]: VRRP_Instance(web_server_group) setting protocol VIPs.
+      Aug 31 17:30:49 nginx02 Keepalived_vrrp[17383]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 17:30:49 nginx02 Keepalived_vrrp[17383]: VRRP_Instance(web_server_group) Sending/queueing gratuitous ARPs on ens33 for 192.168.175.100
+      Aug 31 17:30:49 nginx02 Keepalived_vrrp[17383]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 17:30:49 nginx02 Keepalived_vrrp[17383]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 17:30:49 nginx02 Keepalived_vrrp[17383]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 17:30:49 nginx02 Keepalived_vrrp[17383]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 17:30:54 nginx02 Keepalived_vrrp[17383]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 17:30:54 nginx02 Keepalived_vrrp[17383]: VRRP_Instance(web_server_group) Sending/queueing gratuitous ARPs on ens33 for 192.168.175.100
+      Aug 31 17:30:54 nginx02 Keepalived_vrrp[17383]: Sending gratuitous ARP on ens33 for 192.168.175.100
+
+
+
+[root@nginx01 ~]# systemctl start nginx
+
+
+观察 [root@nginx01 ~]# tail -f /var/log/messages 的输出:
+
+      Aug 31 17:44:38 nginx01 Keepalived_vrrp[25515]: /usr/bin/killall -0 nginx exited with status 1
+      Aug 31 17:44:39 nginx01 Keepalived_vrrp[25515]: /usr/bin/killall -0 nginx exited with status 1
+      Aug 31 17:44:39 nginx01 systemd: Starting The nginx HTTP and reverse proxy server...
+      Aug 31 17:44:39 nginx01 nginx: nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+      Aug 31 17:44:39 nginx01 nginx: nginx: configuration file /etc/nginx/nginx.conf test is successful
+      Aug 31 17:44:39 nginx01 systemd: Failed to read PID from file /run/nginx.pid: Invalid argument
+      Aug 31 17:44:39 nginx01 systemd: Started The nginx HTTP and reverse proxy server.
+      Aug 31 17:44:41 nginx01 Keepalived_vrrp[25515]: VRRP_Script(check_nginx_service) succeeded
+      Aug 31 17:44:41 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) Changing effective priority from 60 to 100 <---观察(60+40=100)
+      Aug 31 17:44:41 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) forcing a new MASTER election <--- 观察(触发选举)
+      Aug 31 17:44:42 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) Transition to MASTER STATE
+      Aug 31 17:44:43 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) Entering MASTER STATE
+      Aug 31 17:44:43 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) setting protocol VIPs.
+      Aug 31 17:44:43 nginx01 Keepalived_vrrp[25515]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 17:44:43 nginx01 Keepalived_vrrp[25515]: VRRP_Instance(web_server_group) Sending/queueing gratuitous ARPs on ens33 for 192.168.175.100
+      Aug 31 17:44:43 nginx01 Keepalived_vrrp[25515]: Sending gratuitous ARP on ens33 for 192.168.175.100
+      Aug 31 17:44:43 nginx01 Keepalived_vrrp[25515]: Sending gratuitous ARP on ens33 for 192.168.175.100
+
+
+观察 [root@nginx02 ~]# tail -f /var/log/messages 的输出:
+
+      Aug 31 17:44:41 nginx02 Keepalived_vrrp[17383]: VRRP_Instance(web_server_group) Received advert with higher priority 100, ours 80 <--- 观察
+      Aug 31 17:44:41 nginx02 Keepalived_vrrp[17383]: VRRP_Instance(web_server_group) Entering BACKUP STATE
+      Aug 31 17:44:41 nginx02 Keepalived_vrrp[17383]: VRRP_Instance(web_server_group) removing protocol VIPs  <----- 观察, VIP被抢占了
+
+
+----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
 
 
 
