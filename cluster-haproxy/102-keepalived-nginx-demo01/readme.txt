@@ -340,12 +340,164 @@ nginx 结合 keepalived 做高可用
 
 
 ----------------------------------------------------------------------------------------------------
+使用 vrrp_script 真正的去 检测 nginx 服务(service)
+
+      https://docs.oracle.com/cd/E37670_01/E41138/html/section_hxz_zdw_pr.html
+      https://www.cnblogs.com/arjenlee/p/9258188.html
+
+
+      /usr/share/doc/keepalived-1.3.5/keepalived.conf.SYNOPSIS
+
+
+        vrrp_script <SCRIPT_NAME> {
+           script <STRING>|<QUOTED-STRING> # path of the script to execute
+           interval <INTEGER>  # seconds between script invocations, default 1 second
+           timeout <INTEGER>   # seconds after which script is considered to have failed
+           weight <INTEGER:-254..254>  # adjust priority by this weight, default 0
+           rise <INTEGER>              # required number of successes for OK transition
+           fall <INTEGER>              # required number of successes for KO transition
+           user USERNAME [GROUPNAME]   # user/group names to run script under
+                                       #   group default to group of user
+           init_fail                   # assume script initially is in failed state
+        }
+
+------------------
+方案 1:
+
+
+[root@nginx01 ~]# vim /etc/keepalived/keepalived.conf
+
+      vrrp_script check_nginx_service {
+           script "/etc/keepalived/check_nginx.sh"
+           interval 1
+      }
+
+        # 在 vrrp_instance 块中
+        track_script {
+            check_nginx_service
+        }
 
 
 
 
+[root@nginx01 ~]# vim /etc/keepalived/check_nginx.sh
+
+        #!/bin/bash
+
+        #参考: https://superuser.com/questions/272265/getting-curl-to-output-http-status-code
+        #注意:
+        #      通过 curl 这种方式会 增加 nginx 的 access.log 访问日志,
+        #      所以需要考虑是否要避免这种情况 或 采用其他检测方式 绕过该问题
+        v_http_status_code=$(curl -o -I -L -s -w "%{http_code}" http://127.0.0.1)
+
+        if [ "$v_http_status_code" != 200 ]; then
+          systemctl stop keepalived
+        fi
+
+        ## [root@nginx01 ~]# yum -y install psmisc   #安装killall 所属的包 psmisc, 确保存在 killall 命令
+        ## [root@nginx02 ~]# yum -y install psmisc   #安装killall 所属的包 psmisc, 确保存在 killall 命令
+        ##  参考: https://unix.stackexchange.com/questions/169898/what-does-kill-0-do
+        ##  man 1 kill
+        ##  man 2 kill
+        #if ! killall -0 nginx &> /dev/null; then   #当 signal 为 0 时, 仅检测对应进程是否存在
+        #  systemctl stop keepalived
+        #fi
+
+// 加上 可执行 权限
+[root@nginx01 ~]# chmod a+x /etc/keepalived/check_nginx.sh
 
 
+[root@nginx02 ~]# rsync -av root@192.168.175.101:/etc/keepalived/check_nginx.sh /etc/keepalived/check_nginx.sh
+[root@nginx02 ~]# ls -l /etc/keepalived/check_nginx.sh
+      -rwxr-xr-x 1 root root 251 Aug 31 15:03 /etc/keepalived/check_nginx.sh
+
+[root@nginx02 ~]# vim /etc/keepalived/keepalived.conf
+
+      vrrp_script check_nginx_service {
+           script "/etc/keepalived/check_nginx.sh"
+           interval 1
+      }
+
+        # 在 vrrp_instance 块中
+        track_script {
+            check_nginx_service
+        }
+
+
+[root@nginx01 ~]# tail -f /var/log/nginx/access.log
+      127.0.0.1 - - [31/Aug/2019:15:12:43 +0800] "GET / HTTP/1.1" 200 6 "-" "curl/7.29.0" "-"
+      127.0.0.1 - - [31/Aug/2019:15:12:44 +0800] "GET / HTTP/1.1" 200 6 "-" "curl/7.29.0" "-"
+      127.0.0.1 - - [31/Aug/2019:15:12:45 +0800] "GET / HTTP/1.1" 200 6 "-" "curl/7.29.0" "-"
+      127.0.0.1 - - [31/Aug/2019:15:12:46 +0800] "GET / HTTP/1.1" 200 6 "-" "curl/7.29.0" "-"
+      127.0.0.1 - - [31/Aug/2019:15:12:47 +0800] "GET / HTTP/1.1" 200 6 "-" "curl/7.29.0" "-"
+      127.0.0.1 - - [31/Aug/2019:15:12:48 +0800] "GET / HTTP/1.1" 200 6 "-" "curl/7.29.0" "-"
+      127.0.0.1 - - [31/Aug/2019:15:12:49 +0800] "GET / HTTP/1.1" 200 6 "-" "curl/7.29.0" "-"
+      127.0.0.1 - - [31/Aug/2019:15:12:50 +0800] "GET / HTTP/1.1" 200 6 "-" "curl/7.29.0" "-"
+      127.0.0.1 - - [31/Aug/2019:15:12:51 +0800] "GET / HTTP/1.1" 200 6 "-" "curl/7.29.0" "-"
+
+
+// 测试故障转移
+// 先执行 tail 命令实时观察日志
+[root@nginx01 ~]# tail -f /var/log/messages
+
+[root@nginx01 ~]# systemctl stop nginx
+
+// 如下是在 nginx01 上执行命令 `tail -f /var/log/messages` 的输出结果:
+
+          Aug 31 15:44:51 nginx01 systemd: Stopping The nginx HTTP and reverse proxy server...
+          Aug 31 15:44:51 nginx01 systemd: Stopped The nginx HTTP and reverse proxy server.
+          Aug 31 15:44:51 nginx01 Keepalived[17999]: Stopping
+          Aug 31 15:44:51 nginx01 systemd: Stopping LVS and VRRP High Availability Monitor...
+          Aug 31 15:44:51 nginx01 Keepalived_vrrp[18001]: VRRP_Instance(web_server_group) sent 0 priority
+          Aug 31 15:44:51 nginx01 Keepalived_vrrp[18001]: VRRP_Instance(web_server_group) removing protocol VIPs.
+          Aug 31 15:44:51 nginx01 Keepalived_healthcheckers[18000]: Stopped
+          Aug 31 15:44:52 nginx01 Keepalived_vrrp[18001]: Stopped
+          Aug 31 15:44:52 nginx01 systemd: Stopped LVS and VRRP High Availability Monitor.
+          Aug 31 15:44:52 nginx01 Keepalived[17999]: Stopped Keepalived v1.3.5 (03/19,2017), git commit v1.3.5-6-g6fa32f2
+
+// 观察 nginx01 上的 VIP 是否飘走了
+[root@nginx01 ~]# ip addr show ens33
+      2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+          link/ether 00:0c:29:f6:f0:83 brd ff:ff:ff:ff:ff:ff
+          inet 192.168.175.101/24 brd 192.168.175.255 scope global ens33
+             valid_lft forever preferred_lft forever
+          inet6 fe80::20c:29ff:fef6:f083/64 scope link
+             valid_lft forever preferred_lft forever
+
+// 观察 VIP 是否 飘到了 nginx02 上
+[root@nginx02 ~]# ip addr show ens33
+      2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+          link/ether 00:0c:29:82:ac:0f brd ff:ff:ff:ff:ff:ff
+          inet 192.168.175.102/24 brd 192.168.175.255 scope global ens33
+             valid_lft forever preferred_lft forever
+          inet 192.168.175.100/32 scope global ens33  <-----观察, VIP已经 飘移到了 nginx02 上
+             valid_lft forever preferred_lft forever
+          inet6 fe80::20c:29ff:fe82:ac0f/64 scope link
+             valid_lft forever preferred_lft forever
+
+[root@client ~]# for i in 1 2; do curl 192.168.175.100; done
+    web01
+    web02
+
+
+
+// 依次 重新启动 nginx01 上的 nginx 和 keepalived 服务
+// 注: 因为在 检测脚本中  根据 nginx 服务的状态 不可用时 会 stop keepalived 服务,
+// 所以 启动时 要先启动 nginx, 然后再启动 keepalived
+[root@nginx01 ~]# systemctl start nginx
+[root@nginx01 ~]# systemctl start keepalived
+[root@nginx01 ~]# ip addr show ens33
+    2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+        link/ether 00:0c:29:f6:f0:83 brd ff:ff:ff:ff:ff:ff
+        inet 192.168.175.101/24 brd 192.168.175.255 scope global ens33
+           valid_lft forever preferred_lft forever
+        inet 192.168.175.100/32 scope global ens33  <----- 观察, VIP 被 nginx 抢占了
+           valid_lft forever preferred_lft forever
+        inet6 fe80::20c:29ff:fef6:f083/64 scope link
+           valid_lft forever preferred_lft forever
+
+---------------------------------------------------------------------------------------------------
+方案 2:  不适用外部脚本, 直接通过 killall发送0信号检测nginx服务的状态
 
 
 
