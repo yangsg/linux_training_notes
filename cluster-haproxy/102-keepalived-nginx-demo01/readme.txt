@@ -793,6 +793,15 @@ nginx 结合 keepalived 做高可用
 --------------------------------------------
 编写脚本来解决  nopreempt 无法获取 vip 的问题:
 
+
+  修改的文件见:
+      https://github.com/yangsg/linux_training_notes/blob/master/cluster-haproxy/102-keepalived-nginx-demo01/102-nopreempt-vip-recovery/nginx01/etc/keepalived/keepalived.conf
+      https://github.com/yangsg/linux_training_notes/blob/master/cluster-haproxy/102-keepalived-nginx-demo01/102-nopreempt-vip-recovery/nginx02/etc/keepalived/keepalived.conf
+      https://github.com/yangsg/linux_training_notes/blob/master/cluster-haproxy/102-keepalived-nginx-demo01/102-nopreempt-vip-recovery/nginx01/etc/keepalived/check_nginx.sh
+
+
+
+
 [root@nginx01 ~]# yum -y install psmisc   # 安装 killall 所在的 package
 
 [root@nginx01 ~]# vim /etc/keepalived/keepalived.conf
