@@ -370,6 +370,10 @@ NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
             The iscsid service is the main service that accesses all configuration files involved.
             The iscsi service is the service that establishes the iSCSI connections.
 
+            (马哥笔记)
+              iscsi: 自动连入曾经已经连入过的 iscsi target
+              iscsid: 提供一个守护进程, 能够让我们的进程随时读写scsi设备
+
 
 // 配置 InitiatorName
 // 注: 修改了 文件 /etc/iscsi/iscsid.conf 或 /etc/iscsi/initiatorname.iscsi 后 一定要 restart iscsid 其修改的配置才会生效.
