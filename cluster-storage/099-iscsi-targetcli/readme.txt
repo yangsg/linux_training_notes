@@ -320,6 +320,21 @@ root@node01 ~]# ls /data/
 
 
 
+// 显示所有的 node (注: 这里的 术语 node 指定的 target 的 portal)
+[root@node01 ~]# iscsiadm -m node
+    192.168.175.130:3260,1 iqn.2019-09.com.linux:target01
+
+[root@node01 ~]# iscsiadm -m discovery
+    192.168.175.130:3260 via sendtargets
+
+// 显示 all active sessions  and  connections
+[root@node01 ~]# iscsiadm -m session
+    tcp: [1] 192.168.175.130:3260,1 iqn.2019-09.com.linux:target01 (non-flash)
+
+
+
+
+
 
 
 
@@ -327,6 +342,10 @@ root@node01 ~]# ls /data/
 网上资料:
 
       https://blog.csdn.net/cmzsteven/article/details/80417025
+
+    iscsiadm 命令使用示例:
+      http://fibrevillage.com/storage/205-iscsiadm-command-examples-on-linux
+      https://wiki.archlinux.org/index.php/Open-iSCSI
 
 
 
