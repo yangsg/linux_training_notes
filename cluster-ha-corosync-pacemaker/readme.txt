@@ -614,6 +614,305 @@ pacemaker
 ----------------------------------------------------------------------------------------------------
 创建web服务资源
 
+与创建的资源:
+          ip
+          httpd
+          fs
+          lvm
+
+
+// 列出查看所有可用的 RA
+[root@node01 ~]# pcs resource list | less
+
+      略 略 略 略 略 略 略 略 略
+      格式:[<standard>:[<provider>:]]<type>
+
+      lsb:netconsole - netconsole
+      lsb:network - Bring up/down networking
+      ocf:heartbeat:apache - Manages an Apache Web server instance
+      ocf:heartbeat:clvm - clvmd
+      ocf:heartbeat:dhcpd - Chrooted ISC DHCP server resource agent.
+      ocf:heartbeat:docker - Docker container resource agent.
+      ocf:heartbeat:IPaddr - Manages virtual IPv4 and IPv6 addresses (Linux specific
+                             version)
+      ocf:heartbeat:IPaddr2 - Manages virtual IPv4 and IPv6 addresses (Linux specific
+                              version)
+      ocf:heartbeat:SendArp - Broadcasts unsolicited ARP announcements
+      ocf:heartbeat:tomcat - Manages a Tomcat servlet environment instance
+                                 status to an HTML file
+      service:corosync - systemd unit file for corosync
+      service:corosync-notifyd - systemd unit file for corosync-notifyd
+      service:crm_mon - systemd unit file for crm_mon
+                                               org.freedesktop.hostname1
+      service:haproxy - systemd unit file for haproxy
+      service:httpd - systemd unit file for httpd
+      systemd:pacemaker - systemd unit file for pacemaker
+      systemd:pcsd - systemd unit file for pcsd
+
+      略 略 略 略 略 略 略 略 略
+
+
+// 查看指定 RA 的描述
+[root@client ~]# pcs resource describe ocf:heartbeat:IPaddr2
+
+
+// 创建 ip 资源(注:不论该ip资源创建于哪个节点, 创建出来的资源属于集群,不属于节点)
+[root@node01 ~]# pcs resource create web_vip ocf:heartbeat:IPaddr2 ip=192.168.175.100 cidr_netmask=24 --group webgroup
+
+// 显示 当前所有 配置的资源
+[root@node01 ~]# pcs resource show
+     Resource Group: webgroup
+         web_vip  (ocf::heartbeat:IPaddr2): Started node01 <----注: 资源创建出来以后,就直接分配给某个节点了
+
+// 查看一下 node01 上的 ip 信息
+[root@node01 ~]# ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+    link/ether 00:0c:29:d7:f9:47 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.175.101/24 brd 192.168.175.255 scope global ens33
+       valid_lft forever preferred_lft forever
+    inet 192.168.175.100/24 brd 192.168.175.255 scope global secondary ens33 <----- 观察(即 vip 已经被集群分配给 node01 了)
+       valid_lft forever preferred_lft forever
+    inet6 fe80::20c:29ff:fed7:f947/64 scope link
+       valid_lft forever preferred_lft forever
+
+
+// 查看一下 ocf:heartbeat:LVM 的描述
+[root@client ~]# pcs resource describe ocf:heartbeat:LVM
+
+// 创建lvm资源,指定为集群准备的卷组名
+[root@node01 ~]# pcs resource create web_lvm ocf:heartbeat:LVM volgrpname=vg01 exclusive=true --group webgroup
+
+
+// 显示 当前所有 配置的资源
+[root@node01 ~]#  pcs resource show
+     Resource Group: webgroup
+         web_vip  (ocf::heartbeat:IPaddr2): Started node01
+         web_lvm  (ocf::heartbeat:LVM): Started node01  <------观察
+
+
+[root@node01 ~]# lvscan
+  ACTIVE            '/dev/vg01/lv01' [<8.00 GiB] inherit  <-----观察(集群激活了逻辑卷资源)
+  ACTIVE            '/dev/centos/swap' [2.00 GiB] inherit
+  ACTIVE            '/dev/centos/root' [17.80 GiB] inherit
+
+
+[root@node02 ~]# lvscan
+    inactive          '/dev/vg01/lv01' [<8.00 GiB] inherit <-----观察
+    ACTIVE            '/dev/centos/swap' [2.00 GiB] inherit
+    ACTIVE            '/dev/centos/root' [17.80 GiB] inherit
+
+
+[root@node01 ~]# yum -y install httpd
+[root@node02 ~]# yum -y install httpd
+
+
+[root@node01 ~]# df -hT
+    Filesystem              Type      Size  Used Avail Use% Mounted on
+    /dev/mapper/centos-root xfs        18G  2.0G   16G  12% /
+    devtmpfs                devtmpfs  478M     0  478M   0% /dev
+    tmpfs                   tmpfs     489M   53M  436M  11% /dev/shm
+    tmpfs                   tmpfs     489M  6.8M  482M   2% /run
+    tmpfs                   tmpfs     489M     0  489M   0% /sys/fs/cgroup
+    /dev/sda1               xfs       197M  103M   95M  52% /boot
+    tmpfs                   tmpfs      98M     0   98M   0% /run/user/0
+
+
+// 创建文件系统资源,挂载逻辑卷
+[root@node01 ~]# pcs resource create web_fs ocf:heartbeat:Filesystem device=/dev/vg01/lv01 directory=/var/www/html fstype=ext4 --group webgroup
+
+[root@node01 ~]# pcs resource show
+     Resource Group: webgroup
+         web_vip  (ocf::heartbeat:IPaddr2): Started node01
+         web_lvm  (ocf::heartbeat:LVM): Started node01
+         web_fs (ocf::heartbeat:Filesystem):  Started node01 <----观察
+
+[root@node01 ~]# df -hT
+      Filesystem              Type      Size  Used Avail Use% Mounted on
+      /dev/mapper/centos-root xfs        18G  2.0G   16G  12% /
+      devtmpfs                devtmpfs  478M     0  478M   0% /dev
+      tmpfs                   tmpfs     489M   53M  436M  11% /dev/shm
+      tmpfs                   tmpfs     489M  6.8M  482M   2% /run
+      tmpfs                   tmpfs     489M     0  489M   0% /sys/fs/cgroup
+      /dev/sda1               xfs       197M  103M   95M  52% /boot
+      tmpfs                   tmpfs      98M     0   98M   0% /run/user/0
+      /dev/mapper/vg01-lv01   ext4      7.8G   36M  7.3G   1% /var/www/html <------观察
+
+
+[root@node01 ~]# echo 'pcs web test' > /var/www/html/index.html
+
+
+
+// 创建Apache资源
+[root@node01 ~]# pcs resource describe ocf:heartbeat:apache
+[root@node01 ~]# pcs resource create web_service ocf:heartbeat:apache configfile="/etc/httpd/conf/httpd.conf" --group webgroup
+[root@node01 ~]# pcs resource show
+   Resource Group: webgroup
+       web_vip  (ocf::heartbeat:IPaddr2): Started node01
+       web_lvm  (ocf::heartbeat:LVM): Started node01
+       web_fs (ocf::heartbeat:Filesystem):  Started node01
+       web_service  (ocf::heartbeat:apache):  Started node01  <-------观察
+
+// 注: 集群资源属于集群, 所以正常情况下 在集群中的 任意节点都应该能看到这些集群资源
+[root@node02 ~]# pcs resource show
+     Resource Group: webgroup
+         web_vip  (ocf::heartbeat:IPaddr2): Started node01
+         web_lvm  (ocf::heartbeat:LVM): Started node01
+         web_fs (ocf::heartbeat:Filesystem):  Started node01
+         web_service  (ocf::heartbeat:apache):  Started node01
+
+
+[root@node01 ~]# ps aux | grep httpd
+      root      10706  0.0  0.4 247928  4996 ?        Ss   13:04   0:00 /sbin/httpd -DSTATUS -f /etc/httpd/conf/httpd.conf -c PidFile /var/run/httpd.pid
+      apache    10707  0.0  0.4 247928  4368 ?        S    13:04   0:00 /sbin/httpd -DSTATUS -f /etc/httpd/conf/httpd.conf -c PidFile /var/run/httpd.pid
+      apache    10708  0.0  0.4 247928  4392 ?        S    13:04   0:00 /sbin/httpd -DSTATUS -f /etc/httpd/conf/httpd.conf -c PidFile /var/run/httpd.pid
+      apache    10709  0.0  0.4 247928  4368 ?        S    13:04   0:00 /sbin/httpd -DSTATUS -f /etc/httpd/conf/httpd.conf -c PidFile /var/run/httpd.pid
+      apache    10710  0.0  0.4 247928  4432 ?        S    13:04   0:00 /sbin/httpd -DSTATUS -f /etc/httpd/conf/httpd.conf -c PidFile /var/run/httpd.pid
+      apache    10711  0.0  0.4 247928  4392 ?        S    13:04   0:00 /sbin/httpd -DSTATUS -f /etc/httpd/conf/httpd.conf -c PidFile /var/run/httpd.pid
+
+[root@node01 ~]# netstat -anptu | grep httpd
+      tcp6       0      0 :::80                   :::*                    LISTEN      10706/httpd
+      tcp6       0      0 :::443                  :::*                    LISTEN      10706/httpd
+
+
+
+// 客户端访问测试
+[root@client ~]# curl 192.168.175.100
+    pcs web test
+
+[root@node01 ~]# yum -y install elinks
+[root@node01 ~]# elinks http://192.168.175.100   #使用 elinks 访问
+
+
+
+----------------------------------------------------------------------------------------------------
+测试资源转移:
+
+// 方式一: 停止运行资源的当前节点的集群服务
+[root@node01 ~]# pcs cluster stop node01
+      node01: Stopping Cluster (pacemaker)...
+      node01: Stopping Cluster (corosync)...
+
+// 观察资源转移结果
+[root@node01 ~]# ip a
+    1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+        link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+        inet 127.0.0.1/8 scope host lo
+           valid_lft forever preferred_lft forever
+        inet6 ::1/128 scope host
+           valid_lft forever preferred_lft forever
+    2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+        link/ether 00:0c:29:d7:f9:47 brd ff:ff:ff:ff:ff:ff
+        inet 192.168.175.101/24 brd 192.168.175.255 scope global ens33
+           valid_lft forever preferred_lft forever   (观察, vip 已经不在 node01 上了)
+        inet6 fe80::20c:29ff:fed7:f947/64 scope link
+           valid_lft forever preferred_lft forever
+
+[root@node02 ~]# pcs resource show
+     Resource Group: webgroup
+         web_vip  (ocf::heartbeat:IPaddr2): Started node02
+         web_lvm  (ocf::heartbeat:LVM): Started node02
+         web_fs (ocf::heartbeat:Filesystem):  Started node02
+         web_service  (ocf::heartbeat:apache):  Started node02
+
+[root@node02 ~]# ip a
+        1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+            link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+            inet 127.0.0.1/8 scope host lo
+               valid_lft forever preferred_lft forever
+            inet6 ::1/128 scope host
+               valid_lft forever preferred_lft forever
+        2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+            link/ether 00:0c:29:52:8e:39 brd ff:ff:ff:ff:ff:ff
+            inet 192.168.175.102/24 brd 192.168.175.255 scope global ens33
+               valid_lft forever preferred_lft forever
+            inet 192.168.175.100/24 brd 192.168.175.255 scope global secondary ens33  <----观察
+               valid_lft forever preferred_lft forever
+            inet6 fe80::20c:29ff:fe52:8e39/64 scope link
+               valid_lft forever preferred_lft forever
+
+[root@node02 ~]# lvscan
+      ACTIVE            '/dev/vg01/lv01' [<8.00 GiB] inherit  <-----观察
+      ACTIVE            '/dev/centos/swap' [2.00 GiB] inherit
+      ACTIVE            '/dev/centos/root' [17.80 GiB] inherit
+
+[root@node02 ~]# df -hT
+      Filesystem              Type      Size  Used Avail Use% Mounted on
+      /dev/mapper/centos-root xfs        18G  2.0G   16G  12% /
+      devtmpfs                devtmpfs  478M     0  478M   0% /dev
+      tmpfs                   tmpfs     489M   53M  436M  11% /dev/shm
+      tmpfs                   tmpfs     489M  6.8M  482M   2% /run
+      tmpfs                   tmpfs     489M     0  489M   0% /sys/fs/cgroup
+      /dev/sda1               xfs       197M  103M   95M  52% /boot
+      tmpfs                   tmpfs      98M     0   98M   0% /run/user/0
+      /dev/mapper/vg01-lv01   ext4      7.8G   36M  7.3G   1% /var/www/html  <-----观察
+
+
+[root@node02 ~]# netstat -antpu | grep httpd
+      tcp6       0      0 :::80                   :::*                    LISTEN      1804/httpd
+      tcp6       0      0 :::443                  :::*                    LISTEN      1804/httpd
+
+[root@client ~]# curl 192.168.175.100
+    pcs web test
+
+
+--------------------------------------------------
+// 方式二: 设置某个节点为从节点
+
+      [root@node01 ~]# pcs cluster start node01
+            node01: Starting Cluster (corosync)...
+            node01: Starting Cluster (pacemaker)...
+
+      [root@node01 ~]# pcs cluster status
+            Cluster Status:
+             Stack: corosync
+             Current DC: node02 (version 1.1.19-8.el7_6.4-c3c624ea3d) - partition with quorum
+             Last updated: Fri Sep  6 13:21:51 2019
+             Last change: Fri Sep  6 13:04:51 2019 by root via cibadmin on node01
+             2 nodes configured
+             4 resources configured
+
+            PCSD Status:
+              node01: Online
+              node02: Online
+
+
+      [root@node01 ~]# pcs resource show
+           Resource Group: webgroup
+               web_vip  (ocf::heartbeat:IPaddr2): Started node02
+               web_lvm  (ocf::heartbeat:LVM): Started node02
+               web_fs (ocf::heartbeat:Filesystem):  Started node02
+               web_service  (ocf::heartbeat:apache):  Started node02
+
+
+// 设置某个节点为从节点
+[root@node01 ~]# pcs node standby node02  #设置 node02 为从节点
+
+[root@node01 ~]# pcs resource show
+     Resource Group: webgroup
+         web_vip  (ocf::heartbeat:IPaddr2): Started node01
+         web_lvm  (ocf::heartbeat:LVM): Started node01
+         web_fs (ocf::heartbeat:Filesystem):  Started node01
+         web_service  (ocf::heartbeat:apache):  Started node01
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+
+
+
+
 
 
 
