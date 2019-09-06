@@ -208,6 +208,39 @@ pacemaker
         o- loopback ......................................................................................................... [Targets: 0]
 
 
+// 后续会在 iscsi target 上 创建 lvm, 添加 global_filter 可以避免因
+// 本地系统使用 该 lvm 而导致 target 服务在启动时 无法为该磁盘设备创建 StorageObject
+// 注: 是设置 global_filter 还是设置 filter 需要根据 lvmetad daemon 是否 running 来决定
+//     保险起见，也可以同时设置 global_filter 和 filter
+// 注意必要时 reboot 系统
+// 更多细节见   https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/logical_volume_manager_administration/lvm_filters
+[root@iscsi ~]# vim /etc/lvm/lvm.conf
+        global_filter = [ "r|/dev/sdb|" ]
+
+                  // 查看 lvmetad 相关信息
+                  [root@iscsi ~]# grep -in 'use_lvmetad =' /etc/lvm/lvm.conf
+                      940:  use_lvmetad = 1
+                  [root@iscsi ~]# ps -elf | grep lvmetad
+                      4 S root        509      1  0  80   0 - 48145 poll_s 17:04 ?        00:00:00 /usr/sbin/lvmetad -f
+
+
+
+              // 如下即为 在 未 设置  global_filter 时 且在 iscsi target 上创建 逻辑卷后 重启 iscsi 主机报的错误:
+              // [root@iscsi ~]# systemctl status target
+              ● target.service - Restore LIO kernel target configuration
+                 Loaded: loaded (/usr/lib/systemd/system/target.service; enabled; vendor preset: disabled)
+                 Active: active (exited) since Fri 2019-09-06 16:54:59 CST; 7min ago
+                Process: 909 ExecStart=/usr/bin/targetctl restore (code=exited, status=0/SUCCESS)
+               Main PID: 909 (code=exited, status=0/SUCCESS)
+                 CGroup: /system.slice/target.service
+
+              Sep 06 16:54:54 iscsi systemd[1]: Starting Restore LIO kernel target configuration...
+              Sep 06 16:54:59 iscsi target[909]: Could not create StorageObject disk01: Cannot configure StorageObject because device /dev/sdb is already in use, skipped
+              Sep 06 16:54:59 iscsi target[909]: Could not find matching StorageObject for LUN 0, skipped
+              Sep 06 16:54:59 iscsi target[909]: Could not find matching TPG LUN 0 for MappedLUN 0, skipped
+              Sep 06 16:54:59 iscsi systemd[1]: Started Restore LIO kernel target configuration.
+
+
 ----------------------------------------------------------------------------------------------------
 配置 node01
 
