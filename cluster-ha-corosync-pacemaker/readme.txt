@@ -974,7 +974,48 @@ pacemaker
           所以不用 添加 C 随着 A 走 的约束
 
 
+[root@node01 ~]# pcs constraint order web_vip then web_service
+      Adding web_vip web_service (kind: Mandatory) (Options: first-action=start then-action=start)
 
+
+// 创建顺序约束
+[root@node01 ~]# pcs constraint order web_vip then web_service
+      Adding web_vip web_service (kind: Mandatory) (Options: first-action=start then-action=start)
+
+[root@node01 ~]# pcs constraint show
+      Location Constraints:
+      Ordering Constraints:
+        start web_vip then start web_service (kind:Mandatory)
+        Colocation Constraints:
+          web_service with web_vip (score:INFINITY)
+          Ticket Constraints:
+
+
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+其他一些指令 或 资料:
+
+    重启集群
+        pcs cluster stop --all
+        pcs cluster start --all
+
+
+
+相关文件:
+/etc/corosync/corosync.conf
+/var/log/cluster/corosync.log
+
+    man corosync.conf
+    rpm -ql corosync
+    rpm -ql pacemaker
 
 
 
