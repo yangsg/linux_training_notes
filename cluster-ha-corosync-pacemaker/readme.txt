@@ -208,6 +208,11 @@ pacemaker
         o- loopback ......................................................................................................... [Targets: 0]
 
 
+
+
+
+
+
 // 后续会在 iscsi target 上 创建 lvm, 添加 global_filter 可以避免因
 // 本地系统使用 该 lvm 而导致 target 服务在启动时 无法为该磁盘设备创建 StorageObject
 // 注: 是设置 global_filter 还是设置 filter 需要根据 lvmetad daemon 是否 running 来决定
@@ -217,11 +222,14 @@ pacemaker
 [root@iscsi ~]# vim /etc/lvm/lvm.conf
         global_filter = [ "r|/dev/sdb|" ]
 
-                  // 查看 lvmetad 相关信息
-                  [root@iscsi ~]# grep -in 'use_lvmetad =' /etc/lvm/lvm.conf
-                      940:  use_lvmetad = 1
-                  [root@iscsi ~]# ps -elf | grep lvmetad
-                      4 S root        509      1  0  80   0 - 48145 poll_s 17:04 ?        00:00:00 /usr/sbin/lvmetad -f
+
+
+
+              // 查看 lvmetad 相关信息
+              [root@iscsi ~]# grep -in 'use_lvmetad =' /etc/lvm/lvm.conf
+                  940:  use_lvmetad = 1
+              [root@iscsi ~]# ps -elf | grep lvmetad
+                  4 S root        509      1  0  80   0 - 48145 poll_s 17:04 ?        00:00:00 /usr/sbin/lvmetad -f
 
 
 
@@ -239,6 +247,12 @@ pacemaker
               Sep 06 16:54:59 iscsi target[909]: Could not find matching StorageObject for LUN 0, skipped
               Sep 06 16:54:59 iscsi target[909]: Could not find matching TPG LUN 0 for MappedLUN 0, skipped
               Sep 06 16:54:59 iscsi systemd[1]: Started Restore LIO kernel target configuration.
+
+
+              // 设置 global_filter 后 并 reboot 后执行 pvs 的效果(正常情况是不会看到 /dev/sdb):
+              [root@iscsi ~]# pvs
+                    PV         VG     Fmt  Attr PSize  PFree
+                    /dev/sda2  centos lvm2 a--  19.80g    0
 
 
 ----------------------------------------------------------------------------------------------------
