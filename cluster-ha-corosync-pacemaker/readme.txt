@@ -909,8 +909,69 @@ pacemaker
 
 
 ----------------------------------------------------------------------------------------------------
+演示资源约束:
+
+          [root@node01 ~]# pcs cluster status
+                Cluster Status:
+                 Stack: corosync
+                 Current DC: node02 (version 1.1.19-8.el7_6.4-c3c624ea3d) - partition with quorum
+                 Last updated: Fri Sep  6 13:38:21 2019
+                 Last change: Fri Sep  6 13:23:01 2019 by root via cibadmin on node01
+                 2 nodes configured
+                 4 resources configured
+
+                PCSD Status:
+                  node01: Online
+                  node02: Online
 
 
+          [root@node01 ~]# pcs node attribute node02
+                Node Attributes:
+                 node02: standby=on
+
+          [root@node01 ~]# pcs resource show
+                 Resource Group: webgroup
+                     web_vip  (ocf::heartbeat:IPaddr2): Started node01
+                     web_lvm  (ocf::heartbeat:LVM): Started node01
+                     web_fs (ocf::heartbeat:Filesystem):  Started node01
+                     web_service  (ocf::heartbeat:apache):  Started node01
+
+            // 取消 node02 的 standby 模式
+            [root@node01 ~]# pcs node unstandby node02
+            // 删除 集群资源
+            [root@node01 ~]# pcs resource delete web_vip
+            [root@node01 ~]# pcs resource delete web_lvm
+            [root@node01 ~]# pcs resource delete web_fs
+            [root@node01 ~]# pcs resource delete web_service
+
+
+
+// 创建 ip 资源
+[root@node01 ~]# pcs resource create web_vip ocf:heartbeat:IPaddr2 \
+                    ip=192.168.175.100 \
+                    cidr_netmask=24
+
+[root@node01 ~]# pcs resource show
+   web_vip  (ocf::heartbeat:IPaddr2): Started node01
+
+// 创建 apache 资源
+[root@node01 ~]# pcs resource create web_service ocf:heartbeat:apache \
+                    configfile="/etc/httpd/conf/httpd.conf"
+
+[root@node01 ~]# pcs resource show
+       web_vip  (ocf::heartbeat:IPaddr2): Started node01
+       web_service  (ocf::heartbeat:apache):  Started node02 <-----观察(此时资源 web_service 和 web_vip 不在同一节点上)
+
+// 创建排列(colocation)约束,让 web_service 随 web_vip 同进同退
+[root@node01 ~]# pcs constraint colocation add web_service with web_vip INFINITY
+
+[root@node01 ~]# pcs resource show
+       web_vip  (ocf::heartbeat:IPaddr2): Started node01
+       web_service  (ocf::heartbeat:apache):  Started node01  <-----观察(web_service 跑到了 web_vip 的节点上)
+
+      注: 约束和约束之间是有传递性, 即如果 C 随着  B 走, B 随着 A 走, 则 C 自然也会跟着 A 走, 即:
+              A <----- B <-----C  =>  A <---- C
+          所以不用 添加 C 随着 A 走 的约束
 
 
 
