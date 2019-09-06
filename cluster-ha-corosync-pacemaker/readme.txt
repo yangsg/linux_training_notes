@@ -979,6 +979,7 @@ pacemaker
 
 
 // 创建顺序约束
+//   https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/high_availability_add-on_reference/s1-orderconstraints-haar
 [root@node01 ~]# pcs constraint order web_vip then web_service
       Adding web_vip web_service (kind: Mandatory) (Options: first-action=start then-action=start)
 
