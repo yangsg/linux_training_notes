@@ -813,6 +813,26 @@ gfs2: global file system 2
          Started: [ node01 node02 ]
 
 
+// 创建 GFS2 的约束(Set up GFS2 and clvmd dependency and startup order. GFS2 must start after clvmd and must run on the same node as clvmd.)
+[root@node01 ~]# pcs constraint order start clvmd-clone then clusterfs-clone
+      Adding clvmd-clone clusterfs-clone (kind: Mandatory) (Options: first-action=start then-action=start)
+
+[root@node01 ~]# pcs constraint colocation add clusterfs-clone with clvmd-clone
+
+
+// 查看创建的约束
+[root@node01 ~]# pcs constraint show
+    Location Constraints:
+    Ordering Constraints:
+      start dlm-clone then start clvmd-clone (kind:Mandatory)
+      start clvmd-clone then start clusterfs-clone (kind:Mandatory)  <-----观察
+    Colocation Constraints:
+      clvmd-clone with dlm-clone (score:INFINITY)
+      clusterfs-clone with clvmd-clone (score:INFINITY)  <-----观察
+    Ticket Constraints:
+
+
+
 
 [root@node01 ~]# df -hT
     Filesystem              Type      Size  Used Avail Use% Mounted on
@@ -824,5 +844,75 @@ gfs2: global file system 2
     /dev/sda1               xfs       197M  103M   95M  53% /boot
     tmpfs                   tmpfs      98M     0   98M   0% /run/user/0
     /dev/mapper/vg01-lv01   gfs2      8.0G   67M  8.0G   1% /mnt  <------------观察
+
+
+[root@node02 ~]# df -hT
+    Filesystem              Type      Size  Used Avail Use% Mounted on
+    /dev/mapper/centos-root xfs        18G  2.0G   16G  12% /
+    devtmpfs                devtmpfs  478M     0  478M   0% /dev
+    tmpfs                   tmpfs     489M   60M  429M  13% /dev/shm
+    tmpfs                   tmpfs     489M   13M  476M   3% /run
+    tmpfs                   tmpfs     489M     0  489M   0% /sys/fs/cgroup
+    /dev/sda1               xfs       197M  103M   95M  53% /boot
+    tmpfs                   tmpfs      98M     0   98M   0% /run/user/0
+    /dev/mapper/vg01-lv01   gfs2      8.0G   67M  8.0G   1% /mnt  <------------观察
+
+
+[root@node01 ~]# mount |grep lv01
+      /dev/mapper/vg01-lv01 on /mnt type gfs2 (rw,noatime,nodiratime)
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+测试:
+
+[root@node01 ~]# touch /mnt/node01.txt
+[root@node02 ~]# ls /mnt/
+    node01.txt
+
+[root@node02 ~]# touch /mnt/node02.txt
+[root@node01 ~]# ls /mnt/
+    node01.txt  node02.txt
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
