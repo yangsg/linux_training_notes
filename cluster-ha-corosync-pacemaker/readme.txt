@@ -521,6 +521,10 @@ pacemaker
     node02: Success
     node01: Success
 
+     // 注: 如上命令如果加上 --start --enable 选项, 则可以直接 在指定节点上 start 并 enable 该 cluster, 如:
+     //            `pcs cluster --start --enable setup --name mycluster node01 node02`
+
+
 
 [root@node01 ~]# pcs cluster start node01 node02
     node02: Starting Cluster (corosync)...
@@ -589,7 +593,7 @@ pacemaker
     注: 如果集群中有 fence 设备, 则应使用 如 pcs stonith create 这样的命令去创建
 
 
-// 因为集群中仅有两个节点(偶数), 所以这里讲 no-quorum-policy 设置为 ignore, 使其不满足法定票数时依然提供服务
+// 因为集群中仅有两个节点(偶数), 所以这里将 no-quorum-policy 设置为 ignore, 使其不满足法定票数时依然提供服务
 [root@node01 ~]# pcs property set no-quorum-policy=ignore
 [root@node01 ~]# crm_verify -L -V  #再次验证
 
