@@ -879,7 +879,44 @@ gfs2: global file system 2
     node01.txt  node02.txt
 
 
+至此结束
 
+
+----------------------------------------------------------------------------------------------------
+
+[root@node01 ~]# rpm -ql lvm2-cluster
+        /usr/sbin/clvmd
+        /usr/share/man/man8/clvmd.8.gz
+
+[root@node01 ~]# rpm -ql gfs2-utils
+        /usr/lib/udev/rules.d/82-gfs2-withdraw.rules
+        /usr/sbin/fsck.gfs2
+        /usr/sbin/gfs2_convert
+        /usr/sbin/gfs2_edit
+        /usr/sbin/gfs2_grow
+        /usr/sbin/gfs2_jadd
+        /usr/sbin/gfs2_withdraw_helper
+        /usr/sbin/glocktop
+        /usr/sbin/mkfs.gfs2
+        /usr/sbin/tunegfs2
+        /usr/share/doc/gfs2-utils-3.1.10
+        /usr/share/doc/gfs2-utils-3.1.10/COPYING.applications
+        /usr/share/doc/gfs2-utils-3.1.10/COPYING.libraries
+        /usr/share/doc/gfs2-utils-3.1.10/COPYRIGHT
+        /usr/share/doc/gfs2-utils-3.1.10/README.contributing
+        /usr/share/doc/gfs2-utils-3.1.10/README.licence
+        /usr/share/doc/gfs2-utils-3.1.10/README.tests
+        /usr/share/doc/gfs2-utils-3.1.10/gfs2.txt
+        /usr/share/doc/gfs2-utils-3.1.10/journaling.txt
+        /usr/share/man/man5/gfs2.5.gz
+        /usr/share/man/man8/fsck.gfs2.8.gz
+        /usr/share/man/man8/gfs2_convert.8.gz
+        /usr/share/man/man8/gfs2_edit.8.gz
+        /usr/share/man/man8/gfs2_grow.8.gz
+        /usr/share/man/man8/gfs2_jadd.8.gz
+        /usr/share/man/man8/glocktop.8.gz
+        /usr/share/man/man8/mkfs.gfs2.8.gz
+        /usr/share/man/man8/tunegfs2.8.gz
 
 
 
