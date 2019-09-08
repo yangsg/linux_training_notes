@@ -77,6 +77,8 @@ glusterfs的特性：
     client 192.168.175.200
 
 
+     注: 如上 每个 node 添加了额外的 5个 2G 大小的硬盘, 方便练习使用
+
 ----------------------------------------------------------------------------------------------------
 部署glusterfs集群
     1、项目环境准备
@@ -219,7 +221,6 @@ glusterfs的特性：
 
 // 查看观察一下 启动结果信息(详细) (注: 某些服务即使能够启动, 可能启动起来也可能包含错误信息, 所以这里小心起见, 再看一看详细信息)
 [root@node01 ~]# for i in 101 102 103 104 105;
-[root@node01 ~]# for i in 101 102 103 104 105;
 > do
 > ssh root@192.168.175.$i 'echo $(hostname) ------------------------'
 > ssh root@192.168.175.$i 'systemctl status glusterd'
@@ -348,6 +349,15 @@ Replicated Glusterfs Volume(复制卷)
 Striped Glusterfs Volume (条带卷/条纹卷)
 
 
+----------------------------------------------------------------------------------------------------
+分布式卷
+
+      以整个文件为单位，不同的文件分散存储在不同的brick上，适用于存储大量小文件
+      无brick数量的限制
+      默认类型
+      卷容量 === 所有brick容量之和
+      提升数据读写速度，无可靠性
+
 
 // 查看一下 gluster 的子命令 volume 的简要帮助
 [root@client ~]# gluster volume help  | less
@@ -383,8 +393,156 @@ Striped Glusterfs Volume (条带卷/条纹卷)
     volume top <VOLNAME> {open|read|write|opendir|readdir|clear} [nfs|brick <brick>] [list-cnt <value>] |
     volume top <VOLNAME> {read-perf|write-perf} [bs <size> count <count>] [brick <brick>] [list-cnt <value>] - volume top operations
 
+----------------------------------------------------------------------------------------------------
+分布式卷的示例演示:
+
+        +-----------------------+
+        |   node01(/dev/sdb)    |=====> gluster volume(data_volume01_distributed)
+        |   node02(/dev/sdb)    |
+        +-----------------------+
 
 
+
+
+
+[root@node01 ~]# lsblk -p
+      NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+      /dev/sda                      8:0    0   20G  0 disk
+      ├─/dev/sda1                   8:1    0  200M  0 part /boot
+      └─/dev/sda2                   8:2    0 19.8G  0 part
+        ├─/dev/mapper/centos-root 253:0    0 17.8G  0 lvm  /
+        └─/dev/mapper/centos-swap 253:1    0    2G  0 lvm  [SWAP]
+      /dev/sdb                      8:16   0    2G  0 disk  <---------
+      /dev/sdc                      8:32   0    2G  0 disk  <---------
+      /dev/sdd                      8:48   0    2G  0 disk  <---------
+      /dev/sde                      8:64   0    2G  0 disk  <---------
+      /dev/sdf                      8:80   0    2G  0 disk  <---------
+      /dev/sr0                     11:0    1 1024M  0 rom
+
+
+[root@node01 ~]# mkdir /data01_distributed
+[root@node01 ~]# mkfs.ext4 /dev/sdb
+[root@node01 ~]# vim /etc/fstab
+      /dev/sdb  /data01_distributed                   ext4    defaults        0 0
+
+[root@node01 ~]# mount -a
+[root@node01 ~]# df -hT | grep /dev/sdb
+    /dev/sdb                ext4      2.0G  6.0M  1.8G   1% /data01_distributed <-----观察(大小 2G)
+
+
+[root@node02 ~]# mkdir /data01_distributed
+[root@node02 ~]# mkfs.ext4 /dev/sdb
+[root@node01 ~]# vim /etc/fstab
+      /dev/sdb  /data01_distributed                   ext4    defaults        0 0
+
+[root@node02 ~]# mount -a
+[root@node02 ~]# df -hT | grep /dev/sdb
+      /dev/sdb                ext4      2.0G  6.0M  1.8G   1% /data01_distributed <-----观察(大小 2G)
+
+
+
+// 查看一下 创建 volume 的语法
+[root@node01 ~]# gluster volume help | grep create
+      volume create <NEW-VOLNAME> [stripe <COUNT>] [replica <COUNT> [arbiter <COUNT>]] [disperse [<COUNT>]] [disperse-data <COUNT>] [redundancy <COUNT>] [transport <tcp|rdma|tcp,rdma>] <NEW-BRICK>... [force] - create a new volume of specified type with mentioned bricks
+
+
+// 创建分布式卷
+// 注: 创建卷的操作可以在 集群中的任意 node 上执行, 创建出来的 volume 属于集群而不属于机器
+[root@node01 ~]# gluster volume create data_volume01_distributed \
+                      node01:/data01_distributed/br1 \
+                      node02:/data01_distributed/br1
+
+      volume create: data_volume01_distributed: success: please start the volume to access data
+
+
+// 启动卷
+[root@node01 ~]# gluster volume start data_volume01_distributed
+      volume start: data_volume01_distributed: success
+
+
+// 列出集群中的所有卷
+[root@node01 ~]# gluster volume list
+      data_volume01_distributed
+
+
+
+// 查看 卷 data_volume01_distributed 的信息
+[root@node01 ~]# gluster volume info data_volume01_distributed
+
+      Volume Name: data_volume01_distributed
+      Type: Distribute  <-----观察
+      Volume ID: f43bc40d-0e15-4f88-8e76-fe3ea4326137
+      Status: Started
+      Snapshot Count: 0
+      Number of Bricks: 2
+      Transport-type: tcp
+      Bricks:
+      Brick1: node01:/data01_distributed/br1
+      Brick2: node02:/data01_distributed/br1
+      Options Reconfigured:
+      transport.address-family: inet
+      nfs.disable: on
+
+
+// 客户端使用卷
+[root@client ~]# mkdir /testdir01_distributed
+
+// 挂载卷
+// 注: 因为 volume 属于集群而非属于机器, 所以可以通过任意一个 node 挂载
+[root@client ~]# mount -t glusterfs node01:/data_volume01_distributed  /testdir01_distributed
+[root@client ~]# df -hT
+      Filesystem                        Type            Size  Used Avail Use% Mounted on
+      /dev/mapper/centos-root           xfs              18G  1.9G   16G  11% /
+      devtmpfs                          devtmpfs        478M     0  478M   0% /dev
+      tmpfs                             tmpfs           489M     0  489M   0% /dev/shm
+      tmpfs                             tmpfs           489M  6.8M  482M   2% /run
+      tmpfs                             tmpfs           489M     0  489M   0% /sys/fs/cgroup
+      /dev/sda1                         xfs             197M  103M   95M  53% /boot
+      tmpfs                             tmpfs            98M     0   98M   0% /run/user/0
+      node01:/data_volume01_distributed fuse.glusterfs  3.9G   52M  3.6G   2% /testdir01_distributed  <------观察(大小3.9G ~ 2G + 2G)
+
+
+
+[root@client ~]# vim /etc/fstab
+      node01:/data_volume01_distributed  /testdir01_distributed  glusterfs   defaults,_netdev        0 0
+
+[root@client ~]# umount /testdir01_distributed/
+[root@client ~]# df -hT
+      Filesystem                        Type            Size  Used Avail Use% Mounted on
+      /dev/mapper/centos-root           xfs              18G  1.9G   16G  11% /
+      devtmpfs                          devtmpfs        478M     0  478M   0% /dev
+      tmpfs                             tmpfs           489M     0  489M   0% /dev/shm
+      tmpfs                             tmpfs           489M  6.8M  482M   2% /run
+      tmpfs                             tmpfs           489M     0  489M   0% /sys/fs/cgroup
+      /dev/sda1                         xfs             197M  103M   95M  53% /boot
+      tmpfs                             tmpfs            98M     0   98M   0% /run/user/0
+      node01:/data_volume01_distributed fuse.glusterfs  3.9G   52M  3.6G   2% /testdir01_distributed  <----观察
+
+
+
+// 创建文件查看分布式卷的 效果
+[root@client ~]# touch /testdir01_distributed/{1..10}.txt
+
+// 在 client 端查看
+[root@client ~]# ls /testdir01_distributed/
+        10.txt  1.txt  2.txt  3.txt  4.txt  5.txt  6.txt  7.txt  8.txt  9.txt <---观察(从client的角度看,所有文件存储在一个地方)
+
+// 在 node01 上查看
+[root@node01 ~]# ls /data01_distributed/br1/
+      4.txt  8.txt  9.txt  <--观察(从分布式卷实现的角度看, 多个文件时按文件为单位分散存储在不同的 bricks 中的)
+
+// 在 node02 上查看
+[root@node02 ~]# ls /data01_distributed/br1/
+      10.txt  1.txt  2.txt  3.txt  5.txt  6.txt  7.txt <-----观察
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
 
 
 
