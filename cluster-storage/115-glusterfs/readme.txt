@@ -397,7 +397,7 @@ Striped Glusterfs Volume (条带卷/条纹卷)
 分布式卷的示例演示:
 
         +-----------------------+
-        |   node01(/dev/sdb)    |=====> gluster volume(data_volume01_distributed)
+        |   node01(/dev/sdb)    |=====> gluster volume(data_volume01_distributed) <------ client(/testdir01_distributed)
         |   node02(/dev/sdb)    |
         +-----------------------+
 
@@ -543,8 +543,236 @@ Striped Glusterfs Volume (条带卷/条纹卷)
 
 
 ----------------------------------------------------------------------------------------------------
+复制卷
 
 
+      每个文件会被复制为brick数量份，分散存储
+      创建时需要使用参数replica指定文件被复制的份数，该数字要和brick数量一致
+      提供文件可靠性
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+复制卷的示例演示:
+
+        +-----------------------+
+        |   node01(/dev/sdc)    |=====> gluster volume(data_volume02_replicated) <------ client(/testdir02_replicated)
+        |   node02(/dev/sdc)    |
+        +-----------------------+
+
+        注: 本示例中包含了 某些错误的 案例
+
+
+[root@node01 ~]# lsblk -p
+      NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+      /dev/sda                      8:0    0   20G  0 disk
+      ├─/dev/sda1                   8:1    0  200M  0 part /boot
+      └─/dev/sda2                   8:2    0 19.8G  0 part
+        ├─/dev/mapper/centos-root 253:0    0 17.8G  0 lvm  /
+          └─/dev/mapper/centos-swap 253:1    0    2G  0 lvm  [SWAP]
+          /dev/sdb                      8:16   0    2G  0 disk /data01_distributed
+          /dev/sdc                      8:32   0    2G  0 disk
+          /dev/sdd                      8:48   0    2G  0 disk
+          /dev/sde                      8:64   0    2G  0 disk
+          /dev/sdf                      8:80   0    2G  0 disk
+          /dev/sr0                     11:0    1 1024M  0 rom
+
+
+[root@node01 ~]# mkdir /data02_replicated
+[root@node01 ~]# mkfs.ext4 /dev/sdc
+
+
+[root@node01 ~]# vim /etc/fstab
+    /dev/sdc  /data02_replicated                   ext4    defaults        0 0
+
+
+[root@node01 ~]# mount -a
+[root@node01 ~]# df -hT
+      Filesystem              Type      Size  Used Avail Use% Mounted on
+      /dev/sdc                ext4      2.0G  6.0M  1.8G   1% /data02_replicated  <----观察(大小为2G)
+
+
+[root@node02 ~]# mkdir /data02_replicated
+[root@node02 ~]# mkfs.ext4 /dev/sdc
+
+[root@node02 ~]# vim /etc/fstab
+    /dev/sdc  /data02_replicated                   ext4    defaults        0 0
+
+
+// 注: 这里为了演示一个 错误案例, 所以并没有执行  `mount -a` 命令执行挂载操作
+
+
+// 查看一下 创建 volume 的语法
+[root@node01 ~]# gluster volume help | grep create
+      volume create <NEW-VOLNAME> [stripe <COUNT>] [replica <COUNT> [arbiter <COUNT>]] [disperse [<COUNT>]] [disperse-data <COUNT>] [redundancy <COUNT>] [transport <tcp|rdma|tcp,rdma>] <NEW-BRICK>... [force] - create a new volume of specified type with mentioned bricks
+
+[root@node01 ~]# gluster volume create data_volume02_replicated  replica 2 \
+> node01:/data02_replicated/br1 \
+> node02:/data02_replicated/br1
+Replica 2 volumes are prone to split-brain. Use Arbiter or Replica 3 to avoid this. See: http://docs.gluster.org/en/latest/Administrator%20Guide/Split%20brain%20and%20ways%20to%20deal%20with%20it/.
+Do you still want to continue?
+ (y/n) y
+volume create: data_volume02_replicated: failed: Staging failed on node02. Error: The brick node02:/data02_replicated/br1 is being created in the root partition. It is recommended that you don't use the system's root partition for storage backend. Or use 'force' at the end of the command if you want to override this behavior. <----error 信息
+
+        注: 这里的错误提示 'The brick node02:/data02_replicated/br1 is being created in the root partition.' 是由
+            node02 中未将 /dev/sdc 挂载到目录 /data02_replicated 而引起的
+
+    注: 如上 脑裂的 信息见  https://docs.gluster.org/en/latest/Administrator%20Guide/Split%20brain%20and%20ways%20to%20deal%20with%20it/
+
+
+// 在 node02 上挂载 /dev/sdc 到目录 /data02_replicated
+[root@node02 ~]# mount -a
+[root@node02 ~]# df -hT
+      Filesystem              Type      Size  Used Avail Use% Mounted on
+      /dev/sdc                ext4      2.0G  6.0M  1.8G   1% /data02_replicated
+
+
+[root@node01 ~]# gluster volume create data_volume02_replicated  replica 2 \
+> node01:/data02_replicated/br1 \
+> node02:/data02_replicated/br1
+Replica 2 volumes are prone to split-brain. Use Arbiter or Replica 3 to avoid this. See: http://docs.gluster.org/en/latest/Administrator%20Guide/Split%20brain%20and%20ways%20to%20deal%20with%20it/.
+Do you still want to continue?
+ (y/n) y <====== 输入y
+volume create: data_volume02_replicated: failed: /data02_replicated/br1 is already part of a volume <----error 信息
+
+
+[root@node01 ~]# ls /data02_replicated/
+      br1  lost+found
+
+// 删除目录 /data02_replicated/ 下的 br1 目录
+[root@node01 ~]# rm -rf /data02_replicated/br1/
+
+
+// 创建 复制卷
+//  注: 创建复制卷时 复制的份数要与 bricks 的个数保持一致
+//  注: 创建卷的操作可以在 集群中的任意 node 上执行, 创建出来的 volume 属于集群而不属于机器
+[root@node01 ~]# gluster volume create data_volume02_replicated  replica 2 \
+                      node01:/data02_replicated/br1 \
+                      node02:/data02_replicated/br1
+
+Replica 2 volumes are prone to split-brain. Use Arbiter or Replica 3 to avoid this. See: http://docs.gluster.org/en/latest/Administrator%20Guide/Split%20brain%20and%20ways%20to%20deal%20with%20it/.
+Do you still want to continue?
+ (y/n) y <====== 输入y
+volume create: data_volume02_replicated: success: please start the volume to access data
+
+// 启动卷
+[root@node01 ~]# gluster volume start data_volume02_replicated
+      volume start: data_volume02_replicated: success
+
+
+// 列出集群中的卷
+[root@node01 ~]# gluster volume list
+      data_volume01_distributed
+      data_volume02_replicated
+
+
+[root@node01 ~]# gluster volume info data_volume02_replicated
+
+      Volume Name: data_volume02_replicated
+      Type: Replicate  <------------观察
+      Volume ID: f686095e-f0d8-4b0d-9172-5ee52898d880
+      Status: Started
+      Snapshot Count: 0
+      Number of Bricks: 1 x 2 = 2
+      Transport-type: tcp
+      Bricks:
+      Brick1: node01:/data02_replicated/br1
+      Brick2: node02:/data02_replicated/br1
+      Options Reconfigured:
+      transport.address-family: inet
+      nfs.disable: on
+      performance.client-io-threads: off
+
+
+
+
+// 客户端使用卷
+[root@client ~]# mkdir /testdir02_replicated
+
+// 挂载卷
+// 注: 因为 volume 属于集群而非属于机器, 所以可以通过任意一个 node 挂载
+[root@client ~]# vim /etc/fstab
+      node01:/data_volume02_replicated  /testdir02_replicated  glusterfs   defaults,_netdev        0 0
+
+[root@client ~]# mount -a
+[root@client ~]# df -hT
+      Filesystem                        Type            Size  Used Avail Use% Mounted on
+      /dev/mapper/centos-root           xfs              18G  1.9G   16G  11% /
+      devtmpfs                          devtmpfs        478M     0  478M   0% /dev
+      tmpfs                             tmpfs           489M     0  489M   0% /dev/shm
+      tmpfs                             tmpfs           489M  6.8M  482M   2% /run
+      tmpfs                             tmpfs           489M     0  489M   0% /sys/fs/cgroup
+      /dev/sda1                         xfs             197M  103M   95M  53% /boot
+      tmpfs                             tmpfs            98M     0   98M   0% /run/user/0
+      node01:/data_volume01_distributed fuse.glusterfs  3.9G   52M  3.6G   2% /testdir01_distributed
+      node01:/data_volume02_replicated  fuse.glusterfs  2.0G   26M  1.8G   2% /testdir02_replicated  <----观察(大小 2G=2G=2G)
+
+
+// 创建文件查看复制式卷的 效果
+[root@client ~]# for i in {1..5};
+> do
+>   head -c 1M < /dev/urandom > /testdir02_replicated/${i}.txt
+> done
+
+[root@client ~]# ls /testdir02_replicated
+      1.txt  2.txt  3.txt  4.txt  5.txt
+
+// 在 client 端查看
+[root@client ~]# for i in {1..5};
+> do
+>   md5sum /testdir02_replicated/${i}.txt
+> done
+        424625b1fc84745e0ea55192bcbca88d  /testdir02_replicated/1.txt
+        dadd6fe95c2568d7abc0a98a0ba71c09  /testdir02_replicated/2.txt
+        38adf5f8f7fd3e8da5932eaf50f975f7  /testdir02_replicated/3.txt
+        cc5d40637e9f74e6166d95ee9b16268d  /testdir02_replicated/4.txt
+        8cb172f940dd95e4d9f64fab9c563049  /testdir02_replicated/5.txt
+
+
+[root@node01 ~]# ls /data02_replicated/br1/
+        1.txt  2.txt  3.txt  4.txt  5.txt
+
+// 在 node01 上查看
+[root@node01 ~]# for i in {1..5};
+> do
+>   md5sum /data02_replicated/br1/${i}.txt
+> done
+        424625b1fc84745e0ea55192bcbca88d  /data02_replicated/br1/1.txt
+        dadd6fe95c2568d7abc0a98a0ba71c09  /data02_replicated/br1/2.txt
+        38adf5f8f7fd3e8da5932eaf50f975f7  /data02_replicated/br1/3.txt
+        cc5d40637e9f74e6166d95ee9b16268d  /data02_replicated/br1/4.txt
+        8cb172f940dd95e4d9f64fab9c563049  /data02_replicated/br1/5.txt
+
+
+[root@node02 ~]# ls /data02_replicated/br1/
+        1.txt  2.txt  3.txt  4.txt  5.txt
+
+[root@node02 ~]# for i in {1..5};
+> do
+>   md5sum /data02_replicated/br1/${i}.txt
+> done
+        424625b1fc84745e0ea55192bcbca88d  /data02_replicated/br1/1.txt
+        dadd6fe95c2568d7abc0a98a0ba71c09  /data02_replicated/br1/2.txt
+        38adf5f8f7fd3e8da5932eaf50f975f7  /data02_replicated/br1/3.txt
+        cc5d40637e9f74e6166d95ee9b16268d  /data02_replicated/br1/4.txt
+        8cb172f940dd95e4d9f64fab9c563049  /data02_replicated/br1/5.txt
+
+
+            可以看到, 观察的结果 不论是在  volume 中(通过client观察),
+            还是在 brick中(通过node01 和 node02 观察) 都是相同的,
+            这说明了 每个文件会被复制为brick数量份，分散存储
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
 
 
 
