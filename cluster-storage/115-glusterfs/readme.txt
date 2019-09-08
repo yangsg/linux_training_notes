@@ -40,6 +40,8 @@ GlusterFS 架构:
           https://staged-gluster-docs.readthedocs.io/en/release3.7.0beta1/Features/shard/
 
     关于DHT:
+          https://docs.gluster.org/en/latest/Quick-Start-Guide/Architecture/
+          https://docs.gluster.org/en/latest/Quick-Start-Guide/Architecture/#dhtdistributed-hash-table-translator
           https://staged-gluster-docs.readthedocs.io/en/release3.7.0beta1/Features/dht/
 
 
@@ -885,6 +887,77 @@ volume create: data_volume02_replicated: success: please start the volume to acc
 // 查看一下 创建 volume 的语法
 [root@node01 ~]# gluster volume help | grep create
       volume create <NEW-VOLNAME> [stripe <COUNT>] [replica <COUNT> [arbiter <COUNT>]] [disperse [<COUNT>]] [disperse-data <COUNT>] [redundancy <COUNT>] [transport <tcp|rdma|tcp,rdma>] <NEW-BRICK>... [force] - create a new volume of specified type with mentioned bricks
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+分布复制卷 Distributed Replicated Glusterfs Volume
+
+  存储大量的小文件，并提升文件的可靠性
+  brick数量是replica参数的复制数的整倍数
+
+      https://docs.gluster.org/en/latest/Quick-Start-Guide/Architecture/
+
+
+----------------------------------------------------------------------------------------------------
+分布复制卷示例:
+
+
+        +-----------------------+
+        |   node01(/dev/sde)    |=====> gluster volume(data_volume04_distributed_replicated) <------ client(/testdir04_distributed_replicated)
+        |   node02(/dev/sde)    |
+        |   node03(/dev/sde)    |
+        |   node04(/dev/sde)    |
+        +-----------------------+
+
+
+    注: 分布式复制卷中, 顺序也是很重要的, 因为 毗连(adjacent) 的 bricks 互为彼此的复制(replicas)
+            adjacent bricks become replicas of each other.
+
+
+
+[root@node01 ~]# lsblk -p
+        NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+        /dev/sda                      8:0    0   20G  0 disk
+        ├─/dev/sda1                   8:1    0  200M  0 part /boot
+        └─/dev/sda2                   8:2    0 19.8G  0 part
+          ├─/dev/mapper/centos-root 253:0    0 17.8G  0 lvm  /
+          └─/dev/mapper/centos-swap 253:1    0    2G  0 lvm  [SWAP]
+        /dev/sdb                      8:16   0    2G  0 disk /data01_distributed
+        /dev/sdc                      8:32   0    2G  0 disk /data02_replicated
+        /dev/sdd                      8:48   0    2G  0 disk /data03_striped
+        /dev/sde                      8:64   0    2G  0 disk
+        /dev/sdf                      8:80   0    2G  0 disk
+        /dev/sr0                     11:0    1 1024M  0 rom
+
+
+
+
+[root@node01 ~]# mkdir /data04_distributed_replicated
+[root@node01 ~]# mkfs.ext4 /dev/sde
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
