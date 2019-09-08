@@ -280,7 +280,7 @@ glusterfs的特性：
     peer probe: success.
 
 
-// 在 node01 上观察一下 peer 状态信息
+// 在 node01 上观察一下 peer 状态信息 (即 node01 的 peer 的信息)
 [root@node01 ~]# gluster peer status
             Number of Peers: 4
 
@@ -301,7 +301,7 @@ glusterfs的特性：
             State: Peer in Cluster (Connected)
 
 
-// 在 node03 上观察一下 peer 状态信息
+// 在 node03 上观察一下 peer 状态信息 (即 node03 的 peer 的信息)
 [root@node03 ~]# gluster peer status
             Number of Peers: 4
 
@@ -320,6 +320,76 @@ glusterfs的特性：
             Hostname: node05
             Uuid: 85f4567b-5016-492c-bdaa-b745653e80ac
             State: Peer in Cluster (Connected)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Types of Volumes (Glusterfs 卷的类型)
+
+      https://docs.gluster.org/en/latest/Quick-Start-Guide/Architecture/
+
+Distributed Glusterfs Volume(分布式卷)
+Replicated Glusterfs Volume(复制卷)
+Striped Glusterfs Volume (条带卷/条纹卷)
+
+
+
+// 查看一下 gluster 的子命令 volume 的简要帮助
+[root@client ~]# gluster volume help  | less
+
+    gluster volume commands
+    ========================
+
+    volume add-brick <VOLNAME> [<stripe|replica> <COUNT> [arbiter <COUNT>]] <NEW-BRICK> ... [force] - add brick to volume <VOLNAME>
+    volume barrier <VOLNAME> {enable|disable} - Barrier/unbarrier file operations on a volume
+    volume clear-locks <VOLNAME> <path> kind {blocked|granted|all}{inode [range]|entry [basename]|posix [range]} - Clear locks held on path
+    volume create <NEW-VOLNAME> [stripe <COUNT>] [replica <COUNT> [arbiter <COUNT>]] [disperse [<COUNT>]] [disperse-data <COUNT>] [redundancy <COUNT>] [transport <tcp|rdma|tcp,rdma>] <NEW-BRICK>... [force] - create a new volume of specified type with mentioned bricks
+    volume delete <VOLNAME> - delete volume specified by <VOLNAME>
+    volume get <VOLNAME|all> <key|all> - Get the value of the all options or given option for volume <VOLNAME> or all option. gluster volume get all all is to get all global options
+    volume heal <VOLNAME> [enable | disable | full |statistics [heal-count [replica <HOSTNAME:BRICKNAME>]] |info [summary | split-brain] |split-brain {bigger-file <FILE> | latest-mtime <FILE> |source-brick <HOSTNAME:BRICKNAME> [<FILE>]} |granular-entry-heal {enable | disable}] - self-heal commands on volume specified by <VOLNAME>
+    volume help - display help for volume commands
+    volume info [all|<VOLNAME>] - list information of all volumes
+    volume list - list all volumes in cluster
+    volume log <VOLNAME> rotate [BRICK] - rotate the log file for corresponding volume/brick
+    volume log rotate <VOLNAME> [BRICK] - rotate the log file for corresponding volume/brick NOTE: This is an old syntax, will be deprecated from next release.
+    volume profile <VOLNAME> {start|info [peek|incremental [peek]|cumulative|clear]|stop} [nfs] - volume profile operations
+    volume rebalance <VOLNAME> {{fix-layout start} | {start [force]|stop|status}} - rebalance operations
+    volume remove-brick <VOLNAME> [replica <COUNT>] <BRICK> ... <start|stop|status|commit|force> - remove brick from volume <VOLNAME>
+    volume replace-brick <VOLNAME> <SOURCE-BRICK> <NEW-BRICK> {commit force} - replace-brick operations
+    volume reset <VOLNAME> [option] [force] - reset all the reconfigured options
+    volume reset-brick <VOLNAME> <SOURCE-BRICK> {{start} | {<NEW-BRICK> commit}} - reset-brick operations
+    volume set <VOLNAME> <KEY> <VALUE> - set options for volume <VOLNAME>
+    volume set <VOLNAME> group  <GROUP> - This option can be used for setting multiple pre-defined volume optionswhere group_name is a file under /var/lib/glusterd/groups containing onekey, value pair per line
+    volume start <VOLNAME> [force] - start volume specified by <VOLNAME>
+    volume statedump <VOLNAME> [[nfs|quotad] [all|mem|iobuf|callpool|priv|fd|inode|history]... | [client <hostname:process-id>]] - perform statedump on bricks
+    volume status [all | <VOLNAME> [nfs|shd|<BRICK>|quotad|tierd]] [detail|clients|mem|inode|fd|callpool|tasks|client-list] - display status of all or specified volume(s)/brick
+    volume stop <VOLNAME> [force] - stop volume specified by <VOLNAME>
+    volume sync <HOSTNAME> [all|<VOLNAME>] - sync the volume information from a peer
+    volume top <VOLNAME> {open|read|write|opendir|readdir|clear} [nfs|brick <brick>] [list-cnt <value>] |
+    volume top <VOLNAME> {read-perf|write-perf} [bs <size> count <count>] [brick <brick>] [list-cnt <value>] - volume top operations
+
+
+
+
+
+
+
+
 
 
 
