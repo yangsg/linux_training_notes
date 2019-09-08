@@ -12,6 +12,45 @@ GlusterFS 架构:
     https://blog.51cto.com/11697257/2089478
 
 
+----------------------------------------------------------------------------------------------------
+一个重要的事件:
+    glusterfs-3.9 中条带卷(Striped volumes)已经被废弃了, 官方推荐使用 sharding 作为替代方案
+
+        https://lists.gluster.org/pipermail//gluster-devel/2016-August/050377.html
+        https://www.linuxtechi.com/setup-glusterfs-storage-on-centos-7-rhel-7/
+
+        原文:
+            As *we* all are aware, striped volumes should not be used anymore. The
+            replacement for this is sharding, available and stable since the latest
+            3.7 releases and 3.8. Unfortunately users still create striped volumes,
+            and some even write blog posts with examples.
+
+            We should actively recommend users not to use striping anymore. This is
+            a proposal to remove the striping xlator from the GlusterFS sources over
+            the next two releases:
+
+             - 3.9: prevent creation of new striped volumes, warn in the client logs
+                    when striping is used
+
+             - 3.10/4.0: remove the stripe xlator completely from the sources
+
+
+    sharding 的更多信息:
+          http://blog.gluster.org/introducing-shard-translator/
+          https://staged-gluster-docs.readthedocs.io/en/release3.7.0beta1/Features/shard/
+
+    关于DHT:
+          https://staged-gluster-docs.readthedocs.io/en/release3.7.0beta1/Features/dht/
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+
 
 
 
@@ -346,7 +385,7 @@ Types of Volumes (Glusterfs 卷的类型)
 
 Distributed Glusterfs Volume(分布式卷)
 Replicated Glusterfs Volume(复制卷)
-Striped Glusterfs Volume (条带卷/条纹卷)
+Striped Glusterfs Volume (条带卷/条纹卷)  (注: glusterfs 从 3.9 版本开始被废弃了)
 
 
 ----------------------------------------------------------------------------------------------------
@@ -772,7 +811,14 @@ volume create: data_volume02_replicated: success: please start the volume to acc
 
 
 
+
+
+
 ----------------------------------------------------------------------------------------------------
+条带卷
+
+    提升读写性能，适用于大文件的存储
+    创建时通过stripe的参数指定文件被条带的次数, 该数量要和brick数量一致
 
 
 
@@ -780,8 +826,65 @@ volume create: data_volume02_replicated: success: please start the volume to acc
 
 
 
+----------------------------------------------------------------------------------------------------
+条带卷的示例演示:
+
+      注: 因为该 glusterfs 版本不支持 条带卷 特性,
+          所以该示例无法成功完成, 所以应该直接忽略
 
 
+        +-----------------------+
+        |   node01(/dev/sdd)    |=====> gluster volume(data_volume03_striped) <------ client(/testdir03_striped)
+        |   node02(/dev/sdd)    |
+        +-----------------------+
+
+
+
+
+[root@node01 ~]# lsblk -p
+        NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+        /dev/sda                      8:0    0   20G  0 disk
+        ├─/dev/sda1                   8:1    0  200M  0 part /boot
+        └─/dev/sda2                   8:2    0 19.8G  0 part
+          ├─/dev/mapper/centos-root 253:0    0 17.8G  0 lvm  /
+          └─/dev/mapper/centos-swap 253:1    0    2G  0 lvm  [SWAP]
+        /dev/sdb                      8:16   0    2G  0 disk /data01_distributed
+        /dev/sdc                      8:32   0    2G  0 disk /data02_replicated
+        /dev/sdd                      8:48   0    2G  0 disk  <------------观察
+        /dev/sde                      8:64   0    2G  0 disk
+        /dev/sdf                      8:80   0    2G  0 disk
+        /dev/sr0                     11:0    1 1024M  0 rom
+
+
+
+
+[root@node01 ~]# mkdir /data03_striped
+[root@node01 ~]# mkfs.ext4 /dev/sdd
+
+[root@node01 ~]# vim /etc/fstab
+      /dev/sdd  /data03_striped                   ext4    defaults        0 0
+
+[root@node01 ~]# mount -a
+[root@node01 ~]# df -hT
+      Filesystem              Type      Size  Used Avail Use% Mounted on
+      /dev/sdd                ext4      2.0G  6.0M  1.8G   1% /data03_striped  <-----观察(大小2G)
+
+
+[root@node02 ~]# mkdir /data03_striped
+[root@node02 ~]# mkfs.ext4 /dev/sdd
+[root@node02 ~]# vim /etc/fstab
+      /dev/sdd  /data03_striped                   ext4    defaults        0 0
+
+
+[root@node02 ~]# mount -a
+[root@node02 ~]# df -hT
+      Filesystem              Type      Size  Used Avail Use% Mounted on
+      /dev/sdd                ext4      2.0G  6.0M  1.8G   1% /data03_striped  <-----观察(大小2G)
+
+
+// 查看一下 创建 volume 的语法
+[root@node01 ~]# gluster volume help | grep create
+      volume create <NEW-VOLNAME> [stripe <COUNT>] [replica <COUNT> [arbiter <COUNT>]] [disperse [<COUNT>]] [disperse-data <COUNT>] [redundancy <COUNT>] [transport <tcp|rdma|tcp,rdma>] <NEW-BRICK>... [force] - create a new volume of specified type with mentioned bricks
 
 
 
