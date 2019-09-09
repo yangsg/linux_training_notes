@@ -1364,9 +1364,13 @@ volume create: data_volume02_replicated: success: please start the volume to acc
       https://docs.gluster.org/en/latest/Administrator%20Guide/Managing%20Volumes/#shrinking-volumes
 
         (重要)注: 为了数据安全, 在做缩减之前, 最好先做数据备份, 可避免缩减操作中因各种原因导致的数据丢失.
+          最好同时参考官方文档, 了解更详细的注意事项
 
 本示例将 node03 中 /dev/sdb 从 卷 data_volume01_distributed 中的 bricks 中 踢出去
 
+        注:
+          Running remove-brick with the start option will automatically
+          trigger a rebalance operation to migrate data from the removed-bricks to the rest of the volume.
 
 
 // 观察缩减之前的 文件分布
@@ -1486,6 +1490,296 @@ volume create: data_volume02_replicated: success: please start the volume to acc
 
 
       再次强调: 在缩减卷之前一定要保证 做好 数据备份, 且 缩减过程中 确保 数据成功迁移.
+                最好同时参考官方文档, 了解更详细的注意事项
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+替换故障卷  Replace faulty brick
+
+        https://docs.gluster.org/en/latest/Administrator%20Guide/Managing%20Volumes/#replace-brick
+
+
+      To replace a brick on a distribute only volume, add the new brick and then
+      remove the brick you want to replace.
+      This will trigger a rebalance operation which will move data from the removed brick.
+
+
+      注: replace-brick 命令仅支持分布复制卷 或 纯复制卷
+      NOTE: Replacing a brick using the 'replace-brick' command in gluster is
+            supported only for distributed-replicate or pure replicate volumes.
+
+
+
+----------------------------------------------------------------------------------------------------
+替换故障卷 示例 一(常规的替换)
+          本示例使用 node05的 /dev/sdb 对应的 brick 替换掉 node02 的 /dev/sdb 对应的 brick
+
+
+[root@node05 ~]# lsblk -p
+        NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+        /dev/sda                      8:0    0   20G  0 disk
+        ├─/dev/sda1                   8:1    0  200M  0 part /boot
+        └─/dev/sda2                   8:2    0 19.8G  0 part
+          ├─/dev/mapper/centos-root 253:0    0 17.8G  0 lvm  /
+          └─/dev/mapper/centos-swap 253:1    0    2G  0 lvm  [SWAP]
+        /dev/sdb                      8:16   0    2G  0 disk
+        /dev/sdc                      8:32   0    2G  0 disk
+        /dev/sdd                      8:48   0    2G  0 disk
+        /dev/sde                      8:64   0    2G  0 disk
+        /dev/sdf                      8:80   0    2G  0 disk
+        /dev/sr0                     11:0    1 1024M  0 rom
+
+
+[root@node05 ~]# mkdir /data01_distributed
+[root@node05 ~]# mkfs.ext4 /dev/sdb
+
+[root@node05 ~]# vim /etc/fstab
+      /dev/sdb  /data01_distributed                   ext4    defaults        0 0
+
+[root@node05 ~]# mount -a
+[root@node05 ~]# df -hT
+        Filesystem              Type      Size  Used Avail Use% Mounted on
+        /dev/sdb                ext4      2.0G  6.0M  1.8G   1% /data01_distributed <----观察(成功挂载)
+
+
+// 观察一下 卷中的文件
+[root@client ~]# ls /testdir01_distributed/
+      10.mp3  10.txt  1.mp3  1.txt  2.mp3  2.txt  3.mp3  3.txt  4.mp3  4.txt  5.mp3  5.txt  6.mp3  6.txt  7.mp3  7.txt  8.mp3  8.txt  9.mp3  9.txt
+
+
+// 添加 node05 上的 brick 作为 新的 brick
+[root@node01 ~]# gluster volume add-brick data_volume01_distributed node05:/data01_distributed/br1
+      volume add-brick: success
+
+
+// 查看 卷 当前的 信息
+[root@node01 ~]# gluster volume info data_volume01_distributed
+
+      Volume Name: data_volume01_distributed
+      Type: Distribute
+      Volume ID: f43bc40d-0e15-4f88-8e76-fe3ea4326137
+      Status: Started
+      Snapshot Count: 0
+      Number of Bricks: 3
+      Transport-type: tcp
+      Bricks:
+      Brick1: node01:/data01_distributed/br1
+      Brick2: node02:/data01_distributed/br1
+      Brick3: node05:/data01_distributed/br1 <----观察(已将 node05 上的 brick 添加到了卷中 )
+      Options Reconfigured:
+      performance.client-io-threads: on
+      transport.address-family: inet
+      nfs.disable: on
+
+
+// 开始将 node02 的 brick 从 卷中删除
+[root@node01 ~]# gluster volume remove-brick data_volume01_distributed  node02:/data01_distributed/br1  start
+        Running remove-brick with cluster.force-migration enabled can result in data corruption. It is safer to disable this option so that files that receive writes during migration are not migrated.
+        Files that are not migrated can then be manually copied after the remove-brick commit operation.
+        Do you want to continue with your current cluster.force-migration settings? (y/n) y
+        volume remove-brick start: success
+        ID: 9c53acaa-9530-46ea-871a-212523e73780
+
+
+// 查看 删除 brick 的 状态信息 (注: 一定要 确保 status 为 'completed' 时 才继续后续的操作)
+[root@node01 ~]# gluster volume remove-brick data_volume01_distributed  node02:/data01_distributed/br1  status
+            Node Rebalanced-files          size       scanned      failures       skipped               status  run time in h:m:s
+       ---------      -----------   -----------   -----------   -----------   -----------         ------------     --------------
+          node02               11        0Bytes            11             0             0            completed        0:00:00
+
+// 查看卷 即 各个 brick 上的数据文件
+[root@client ~]# ls /testdir01_distributed/
+      10.mp3  10.txt  1.mp3  1.txt  2.mp3  2.txt  3.mp3  3.txt  4.mp3  4.txt  5.mp3  5.txt  6.mp3  6.txt  7.mp3  7.txt  8.mp3  8.txt  9.mp3  9.txt
+
+//  node02 上的 brick 已经没有了文件(即 已经被迁移走了)
+[root@node02 ~]# ls /data01_distributed/br1/
+
+// 查看 node05 上的 brick (可以发现, 某些文件 隐式的 rebalance 到了这里)
+[root@node05 ~]# ls /data01_distributed/br1/
+      3.mp3  7.mp3  9.txt
+
+[root@node01 ~]# ls /data01_distributed/br1/
+      10.mp3  10.txt  1.mp3  1.txt  2.mp3  2.txt  3.txt  4.mp3  4.txt  5.mp3  5.txt  6.mp3  6.txt  7.txt  8.mp3  8.txt  9.mp3
+
+
+// 查看当前卷的状态信息
+[root@node01 ~]# gluster volume info data_volume01_distributed
+
+        Volume Name: data_volume01_distributed
+        Type: Distribute
+        Volume ID: f43bc40d-0e15-4f88-8e76-fe3ea4326137
+        Status: Started
+        Snapshot Count: 0
+        Number of Bricks: 3
+        Transport-type: tcp
+        Bricks:
+        Brick1: node01:/data01_distributed/br1
+        Brick2: node02:/data01_distributed/br1
+        Brick3: node05:/data01_distributed/br1  <------观察
+        Options Reconfigured:
+        performance.client-io-threads: on
+        transport.address-family: inet
+        nfs.disable: on
+
+
+// 提交 删除 brick 的操作
+[root@node01 ~]# gluster volume remove-brick data_volume01_distributed  node02:/data01_distributed/br1  commit
+      volume remove-brick commit: success
+      Check the removed bricks to ensure all files are migrated.
+      If files with data are found on the brick path, copy them via a gluster mount point before re-purposing the removed brick.
+
+
+
+// 查看当前卷的状态信息
+[root@node01 ~]#  gluster volume info data_volume01_distributed
+
+    Volume Name: data_volume01_distributed
+    Type: Distribute
+    Volume ID: f43bc40d-0e15-4f88-8e76-fe3ea4326137
+    Status: Started
+    Snapshot Count: 0
+    Number of Bricks: 2
+    Transport-type: tcp
+    Bricks:
+    Brick1: node01:/data01_distributed/br1
+    Brick2: node05:/data01_distributed/br1  <----观察(可以发现, node05 的 brick 被添加了进来, 而 node02 的 brick 已经被删除了)
+    Options Reconfigured:
+    performance.client-io-threads: on
+    transport.address-family: inet
+    nfs.disable: on
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+替换故障卷 示例 二(使用 replace-brick 命令)
+
+      注意命令 replace-brick 对于卷类型的限制
+
+
+      注: replace-brick 命令仅支持分布复制卷 或 纯复制卷
+      NOTE: Replacing a brick using the 'replace-brick' command in gluster is
+            supported only for distributed-replicate or pure replicate volumes.
+
+
+
+本例把 node02 上的 /dev/sdc 对应的 brick 替换成 node05 的 /dev/sdc 对应的 brick
+
+    注: 该示例 省略了一下查看 验证步骤
+
+[root@node05 ~]# lsblk -p
+      NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+      /dev/sda                      8:0    0   20G  0 disk
+      ├─/dev/sda1                   8:1    0  200M  0 part /boot
+      └─/dev/sda2                   8:2    0 19.8G  0 part
+        ├─/dev/mapper/centos-root 253:0    0 17.8G  0 lvm  /
+        └─/dev/mapper/centos-swap 253:1    0    2G  0 lvm  [SWAP]
+      /dev/sdb                      8:16   0    2G  0 disk /data01_distributed
+      /dev/sdc                      8:32   0    2G  0 disk
+      /dev/sdd                      8:48   0    2G  0 disk
+      /dev/sde                      8:64   0    2G  0 disk
+      /dev/sdf                      8:80   0    2G  0 disk
+      /dev/sr0                     11:0    1 1024M  0 rom
+
+
+[root@node05 ~]# mkdir /data02_replicated
+[root@node05 ~]# mkfs.ext4 /dev/sdc
+
+[root@node05 ~]# vim /etc/fstab
+      /dev/sdc  /data02_replicated                   ext4    defaults        0 0
+
+[root@node05 ~]# mount -a
+[root@node05 ~]# df -hT
+      Filesystem              Type      Size  Used Avail Use% Mounted on
+      /dev/sdc                ext4      2.0G  6.0M  1.8G   1% /data02_replicated  <---观察(已经成功挂载)
+
+
+
+// 查看卷的 当前信息
+[root@node01 ~]# gluster volume info data_volume02_replicated
+
+      Volume Name: data_volume02_replicated
+      Type: Replicate
+      Volume ID: f686095e-f0d8-4b0d-9172-5ee52898d880
+      Status: Started
+      Snapshot Count: 0
+      Number of Bricks: 1 x 2 = 2
+      Transport-type: tcp
+      Bricks:
+      Brick1: node01:/data02_replicated/br1
+      Brick2: node02:/data02_replicated/br1 <-----
+      Options Reconfigured:
+      transport.address-family: inet
+      nfs.disable: on
+      performance.client-io-threads: off
+
+
+// 使用 replace-brick 执行 brick 的替换操作
+[root@node01 ~]# gluster volume replace-brick data_volume02_replicated  node02:/data02_replicated/br1 node05:/data02_replicated/br1 commit force
+        volume replace-brick: success: replace-brick commit force operation successful
+
+// 查看 卷 当前的信息
+[root@node01 ~]# gluster volume info data_volume02_replicated
+
+        Volume Name: data_volume02_replicated
+        Type: Replicate
+        Volume ID: f686095e-f0d8-4b0d-9172-5ee52898d880
+        Status: Started
+        Snapshot Count: 0
+        Number of Bricks: 1 x 2 = 2
+        Transport-type: tcp
+        Bricks:
+        Brick1: node01:/data02_replicated/br1
+        Brick2: node05:/data02_replicated/br1  <---观察(node05 的 brick 已经将 node02 的 brick 给替换掉了)
+        Options Reconfigured:
+        transport.address-family: inet
+        nfs.disable: on
+        performance.client-io-threads: off
+
+
+[root@node05 ~]# ls /data02_replicated/br1/
+    1.txt  2.txt  3.txt  4.txt  5.txt
+
+[root@node01 ~]# ls /data02_replicated/br1/
+    1.txt  2.txt  3.txt  4.txt  5.txt
+
+[root@node02 ~]# ls /data02_replicated/br1/
+    1.txt  2.txt  3.txt  4.txt  5.txt <---注意: 虽然 node02 的 brick  已经被 卷中的 node05 的 brick替换了, 但其文件依然存在
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
 
 
 
