@@ -1772,8 +1772,69 @@ volume create: data_volume02_replicated: success: please start the volume to acc
 
 
 
-----------------------------------------------------------------------------------------------------
 
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Tuning Volume Options  设置/查看卷参数
+
+      https://docs.gluster.org/en/latest/Administrator%20Guide/Managing%20Volumes/#tuning-options
+
+语法: gluster volume set <VOLNAME> <KEY> <VALUE> - set options for volume <VOLNAME>
+语法: gluster volume get <VOLNAME|all> <key|all> - Get the value of the all options or given option for volume <VOLNAME> or all option.
+                                                   gluster volume get all all is to get all global options
+
+
+
+// 查看 分布复制卷 data_volume04_distributed_replicated 的 所有参数
+[root@node01 ~]# gluster volume get data_volume04_distributed_replicated all | less
+
+
+
+--------------------------------------------------------------------------------
+
+关于 nfs 挂载的问题:
+    该版本中 Gluster NFS 已被废弃, 取而代之可以使用 NFS-Ganesha
+
+        见: https://gluster.readthedocs.io/en/latest/Administrator%20Guide/NFS-Ganesha%20GlusterFS%20Integration/
+
+
+--------------------------------------------------------------------------------
+  针对fuse的方式：
+    auth.allow
+    auth.reject
+
+
+
+其他属性说明:
+
+      1、nfs.addr-namelookup
+
+          关闭解析客户端主机名，默认值为On, On/Off
+
+      2、performance.cache-size
+
+          设置读缓存的大小，单位为MB
+
+      3、performance.cache-max-file-size
+
+           设置缓存的最大文件大小， 2^64 - 1 Bytes
+
+      4、performance.cache-min-file-size
+
+          设置缓存的最小文件大小    2^64 - 1 Bytes
+
+      5、performance.io-thread-count
+
+          设置io线程的数量，默认值为16，取值范围 0 --- 65
+
+      6、performance.write-behind-window-size
+
+          设置每个文件的buffer大小, 单位为MB
 
 
 
