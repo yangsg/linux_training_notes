@@ -400,7 +400,8 @@ Types of Volumes (Glusterfs 卷的类型)
 
 Distributed Glusterfs Volume(分布式卷)
 Replicated Glusterfs Volume(复制卷)
-Striped Glusterfs Volume (条带卷/条纹卷)  (注: glusterfs 从 3.9 版本开始被废弃了)
+Striped Glusterfs Volume (条带卷/条纹卷)  (注: glusterfs 从 3.9 版本开始被废弃了, 推荐的替代方案是 sharding)
+Distributed Replicated Glusterfs Volume (分布复制卷) <-----------较常用(在较新版本中可启用 sharding 特性)
 
 
 ----------------------------------------------------------------------------------------------------
