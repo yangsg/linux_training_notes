@@ -5,6 +5,8 @@ GlusterFS
 
 https://www.gluster.org/
 https://docs.gluster.org/en/latest/
+https://www.cnblogs.com/huangyanqi/p/8406534.html
+https://blog.csdn.net/liuaigui/article/details/17331557
 
 GlusterFS 架构:
     https://docs.gluster.org/en/latest/Quick-Start-Guide/Architecture/
@@ -38,6 +40,16 @@ GlusterFS 架构:
     sharding 的更多信息:
           http://blog.gluster.org/introducing-shard-translator/
           https://staged-gluster-docs.readthedocs.io/en/release3.7.0beta1/Features/shard/
+
+          https://blog.csdn.net/liuaigui/article/details/17314801
+            Stripe 2.0
+              GlusterFS处理超大文件的方法不够明智，一个文件大小可能增长超过一个brick容量。GlusterFS可以使用stripe进行条带化存储，
+              但不够灵活，不可能混合存储条带化的文件和非条带化的文件。在大数据或hadoop应用下，超大文件是正常现象，
+              这就限制了GlusterFS适用范围。4.0计划提出使用Shard xlator替换原先的条带，初始情况下所有文件都正常创建，
+              当文件增长每超过预先设置的阈值(如64MB)，则按照特定 规则生成一个新文件，比如依据GFID和块索引号命名。
+              这种模式下，所有数据块仍然按正常的Hash方式分布，扩展节点不需要按照之前的条带倍数进行，
+              大文件的自修复拆分成多个较小文件在多个节点之间并发进行，数据块文件名命名模式不受重命名和硬链接影响。
+
 
     关于DHT:
           https://docs.gluster.org/en/latest/Quick-Start-Guide/Architecture/
