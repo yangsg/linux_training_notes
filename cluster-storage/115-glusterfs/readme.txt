@@ -7,6 +7,7 @@ https://www.gluster.org/
 https://docs.gluster.org/en/latest/
 https://www.cnblogs.com/huangyanqi/p/8406534.html
 https://blog.csdn.net/liuaigui/article/details/17331557
+https://edu.51cto.com/lecturer/8205800.html
 
 GlusterFS 架构:
     https://docs.gluster.org/en/latest/Quick-Start-Guide/Architecture/
