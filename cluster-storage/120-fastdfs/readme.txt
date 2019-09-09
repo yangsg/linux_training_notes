@@ -14,6 +14,7 @@ http://bbs.chinaunix.net/thread-1920470-1-1.html
 
 
 ----------------------------------------------------------------------------------------------------
+注: 如下文本内容来自老师笔记
 
 FastDFS分布式文件系统
     FastDFS是一个开源的轻量级分布式文件系统，由
@@ -21,6 +22,8 @@ FastDFS分布式文件系统
     存储服务器(Storage Server)和客户端(Client)组成，
     主要 解决了海量数据存储问题， 特别适合以中小文件(4KB---500MB)的在线服务, 应用于web网站服务存储图片
 
+
+FastDFS体系结构:
 
 
       +-----------client------------------+                +-----------tracker群-----+
@@ -52,6 +55,8 @@ FastDFS分布式文件系统
       |                                                                                     |
       |                                                                                     |
       +-------------------------------------------------------------------------------------+
+
+
 
 
 FastDFS 存储文件的流程:
@@ -99,6 +104,14 @@ FastDFS 存储文件的流程:
 
 
 
+          file id文件id格式
+
+              组名/存储目录映射名称/一级目录名称/二级目录名称/随机数
+
+              group01/M00/00/11/XXXXXXXXXXXXXXXX
+
+
+
 
 FastDFS 读取文件的流程:
 
@@ -134,6 +147,52 @@ FastDFS 读取文件的流程:
       |                                                 |                                    |
 
 
+Tracker server 跟踪服务器
+
+      Tracker是FastDFS的协调者，类似于调度，起负载均衡作用。负责管理所有的storage server和group，
+      每个storage server在启动后会连接Tracker，告知自己所属的group等信息，并保持周期性的心跳，
+      tracker根据storage的心跳信息，建立group==>[storage server list]的映射表。
+
+
+Storage server   存储服务器
+
+      Storage server以组（卷，group或volume）为单位组织，一个group内包含多台storage机器，数据互为备份，
+      存储空间以group内容量最小的storage为准，所以建议group内的多个storage尽量配置相同，以免造成存储空间的浪费。
+
+      以group为单位组织存储能方便的进行应用隔离、负载均衡、副本数定制（group内storage server数量即为该group的副本数）
+
+      group内每个storage的存储依赖于本地文件系统，storage可配置多个数据存储目录，
+      比如有10块磁盘，分别挂载在/data/disk1-/data/disk10，则可将这10个目录都配置为storage的数据存储目录。
+
+      storage接受到写文件请求时，会根据配置好的规则，选择其中一个存储目录来存储文件。
+      为了避免单个目录下的文件数太多，在storage第一次启动时，会在每个数据存储目录里创建2级子目录，
+      每级256个，总共65536个子目录，新写的文件会以hash的方式被路由到其中某个子目录下，
+      然后将文件数据直接作为一个本地文件存储到该目录中。
+
+
+
+FastDFS的选举规则
+
+    1、后端多个组的选举规则
+          当tracker接收到upload的请求时，会为该文件分配一个可以存储该文件的group；选择group的规则
+
+            a、round robin
+            b、指定某一个具体的组
+            c、选择剩余存储空间多的group优先
+
+
+    2、选举同一个组中的某台storage server
+          当选定group后，tracker会在group内选择一个storage server给客户端；选择storage server的规则如下
+
+            a、round robin
+            b、按ip地址排序，小的优先
+            c、按优先级排序
+
+    3、选举某台storage server的存储目录
+          当选择好storage server后，客户端向storage发送写请求，storage将会为文件分配一个数据存储目录；选择存储目录的规则如下：
+
+            a、round robin
+            b、剩余存储空间最多的优先
 
 
 
@@ -144,6 +203,8 @@ FastDFS 读取文件的流程:
 
 
 
-----------------------------------------------------------------------------------------------------
+
+
+
 
 
