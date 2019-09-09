@@ -1173,11 +1173,319 @@ volume create: data_volume02_replicated: success: please start the volume to acc
 
 
 
+----------------------------------------------------------------------------------------------------
+卷管理
+      https://docs.gluster.org/en/latest/Administrator%20Guide/Managing%20Volumes/
+
+
+
+
+----------------------------------------------------------------------------------------------------
+示例01：扩展分布式卷  Expanding Volumes
+
+    https://docs.gluster.org/en/latest/Administrator%20Guide/Managing%20Volumes/#expanding-volumes
+
+      本例准备将 node03 的 /dev/sdb 作为 新的 brick 添加到卷 data_volume01_distributed 中
+
+          注: rebalance 非常耗时间, 所以如果要做 rebalance 操作, 应在前段业务空闲的时候去做
+
+
+// 查看 分布式卷 data_volume01_distributed 的信息
+[root@node01 ~]# gluster volume info  data_volume01_distributed
+
+        Volume Name: data_volume01_distributed
+        Type: Distribute  <-------
+        Volume ID: f43bc40d-0e15-4f88-8e76-fe3ea4326137
+        Status: Started
+        Snapshot Count: 0
+        Number of Bricks: 2
+        Transport-type: tcp
+        Bricks:
+        Brick1: node01:/data01_distributed/br1
+        Brick2: node02:/data01_distributed/br1
+        Options Reconfigured:
+        transport.address-family: inet
+        nfs.disable: on
+
+
+// 在 client 端 查看一下分布式卷中的 文件
+[root@client ~]# ls /testdir01_distributed/
+      10.txt  1.txt  2.txt  3.txt  4.txt  5.txt  6.txt  7.txt  8.txt  9.txt
+
+[root@node01 ~]# ls /data01_distributed/br1
+      4.txt  8.txt  9.txt
+
+[root@node02 ~]# ls /data01_distributed/br1
+      10.txt  1.txt  2.txt  3.txt  5.txt  6.txt  7.txt
+
+
+
+[root@node03 ~]# lsblk -p
+      NAME                        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+      /dev/sda                      8:0    0   20G  0 disk
+      ├─/dev/sda1                   8:1    0  200M  0 part /boot
+      └─/dev/sda2                   8:2    0 19.8G  0 part
+        ├─/dev/mapper/centos-root 253:0    0 17.8G  0 lvm  /
+        └─/dev/mapper/centos-swap 253:1    0    2G  0 lvm  [SWAP]
+      /dev/sdb                      8:16   0    2G  0 disk  <-------观察
+      /dev/sdc                      8:32   0    2G  0 disk
+      /dev/sdd                      8:48   0    2G  0 disk
+      /dev/sde                      8:64   0    2G  0 disk /data04_distributed_replicated
+      /dev/sdf                      8:80   0    2G  0 disk
+      /dev/sr0                     11:0    1 1024M  0 rom
+
+[root@node03 ~]# mkdir /data01_distributed
+[root@node03 ~]# mkfs.ext4 /dev/sdb
+
+[root@node03 ~]# vim /etc/fstab
+      /dev/sdb  /data01_distributed                   ext4    defaults        0 0
+
+[root@node03 ~]# mount -a
+[root@node03 ~]# df -hT
+        Filesystem              Type      Size  Used Avail Use% Mounted on
+        /dev/sdb                ext4      2.0G  6.0M  1.8G   1% /data01_distributed  <----观察(大小2G)
+
+
+
+[root@node01 ~]# gluster peer status
+      Number of Peers: 4
+
+      Hostname: node02
+      Uuid: 0250693e-87d3-4ddc-98ba-dd50bd15d7c1
+      State: Peer in Cluster (Connected)
+
+      Hostname: node03  <---------------------确保 node03 在 集群中, 如不在集群中,使用命令`gluster peer probe node03` 来添加
+      Uuid: a20baac0-f9fa-4a6a-9dbe-0d0c6e0f492b
+      State: Peer in Cluster (Connected)
+
+      Hostname: node04
+      Uuid: fdadbcf9-0220-474e-ae96-531042e521fa
+      State: Peer in Cluster (Connected)
+
+      Hostname: node05
+      Uuid: 85f4567b-5016-492c-bdaa-b745653e80ac
+      State: Peer in Cluster (Connected)
+
+
+// 查看 add-brick 的 简要语法
+[root@node01 ~]# gluster volume help | grep add-brick
+      volume add-brick <VOLNAME> [<stripe|replica> <COUNT> [arbiter <COUNT>]] <NEW-BRICK> ... [force] - add brick to volume <VOLNAME>
+
+
+// 向 分布式卷 data_volume01_distributed 中 添加 node03 中的 brick
+[root@node01 ~]# gluster volume add-brick data_volume01_distributed node03:/data01_distributed/br1
+      volume add-brick: success
+
+
+// 查看卷 data_volume01_distributed 信息
+[root@node01 ~]# gluster volume info data_volume01_distributed
+
+        Volume Name: data_volume01_distributed
+        Type: Distribute
+        Volume ID: f43bc40d-0e15-4f88-8e76-fe3ea4326137
+        Status: Started
+        Snapshot Count: 0
+        Number of Bricks: 3
+        Transport-type: tcp
+        Bricks:
+        Brick1: node01:/data01_distributed/br1
+        Brick2: node02:/data01_distributed/br1
+        Brick3: node03:/data01_distributed/br1  <-----观察(node03的 brick 已经添加了进来)
+        Options Reconfigured:
+        transport.address-family: inet
+        nfs.disable: on
+
+// 在 client 端观察卷的大小
+[root@client ~]# df -hT
+    Filesystem                                   Type            Size  Used Avail Use% Mounted on
+    node01:/data_volume01_distributed            fuse.glusterfs  5.8G   77M  5.4G   2% /testdir01_distributed<---(观察, 大小多了2G)
+
+// 查看现有  卷中的文件
+[root@client ~]# ls /testdir01_distributed
+      10.txt  1.txt  2.txt  3.txt  4.txt  5.txt  6.txt  7.txt  8.txt  9.txt
+
+// 在卷中 新建 10 个 后缀为 mp3 的文件
+[root@client ~]# touch /testdir01_distributed/{1..10}.mp3
+[root@client ~]# ls /testdir01_distributed
+    10.mp3  10.txt  1.mp3  1.txt  2.mp3  2.txt  3.mp3  3.txt  4.mp3  4.txt  5.mp3  5.txt  6.mp3  6.txt  7.mp3  7.txt  8.mp3  8.txt  9.mp3  9.txt
+
+
+// 查看 node03 中 brick 的内容 (发现没有文件, 即新建的文件并没有分布到 新添加的 brick 中)
+[root@node03 ~]# ls /data01_distributed/br1/
+
+[root@node01 ~]# ls /data01_distributed/br1/
+      1.mp3  2.mp3  3.mp3  4.txt  7.mp3  8.mp3  8.txt  9.txt
+
+[root@node02 ~]# ls /data01_distributed/br1
+      10.mp3  10.txt  1.txt  2.txt  3.txt  4.mp3  5.mp3  5.txt  6.mp3  6.txt  7.txt  9.mp3
+
+
+// 查看 rebalance 卷的语法
+[root@node01 ~]# gluster volume help | grep rebalance
+      volume rebalance <VOLNAME> {{fix-layout start} | {start [force]|stop|status}} - rebalance operations
+
+// 重分布卷，保证新的文件能分布到的新的brick上【业务空闲时】
+// 注: rebalance 非常耗时间, 所以如果要做 rebalance 操作, 应在前段业务空闲的时候去做
+[root@node01 ~]# gluster volume rebalance data_volume01_distributed start
+        volume rebalance: data_volume01_distributed: success: Rebalance on data_volume01_distributed has been started successfully. Use rebalance status command to check status of the rebalance process.
+        ID: 4c770450-8335-4762-b973-e04b416ceb50
+
+
+// 查看重分布的 状态
+[root@node01 ~]# gluster volume rebalance data_volume01_distributed status
+
+                    Node Rebalanced-files          size       scanned      failures       skipped               status  run time in h:m:s
+               ---------      -----------   -----------   -----------   -----------   -----------         ------------     --------------
+                  node02                4        0Bytes            12             0             0            completed<-(观察)0:00:01
+                  node03                0        0Bytes             1             0             0            completed<-(观察)0:00:00
+               localhost                3        0Bytes             8             0             0            completed<-(观察)0:00:01
+      volume rebalance: data_volume01_distributed: success
+
+
+// 可以发现, 所有的文件都被重分布了
+[root@node01 ~]# ls /data01_distributed/br1/
+      1.mp3  2.mp3  4.txt  8.mp3  8.txt
+
+[root@node02 ~]# ls /data01_distributed/br1/
+      10.mp3  10.txt  1.txt  2.txt  3.txt  4.mp3  6.txt  9.mp3
+
+[root@node03 ~]# ls /data01_distributed/br1/
+      3.mp3  5.mp3  5.txt  6.mp3  7.mp3  7.txt  9.txt
 
 
 
 
 
+
+
+----------------------------------------------------------------------------------------------------
+缩减卷  Stopping Volumes
+
+      https://docs.gluster.org/en/latest/Administrator%20Guide/Managing%20Volumes/#shrinking-volumes
+
+        (重要)注: 为了数据安全, 在做缩减之前, 最好先做数据备份, 可避免缩减操作中因各种原因导致的数据丢失.
+
+本示例将 node03 中 /dev/sdb 从 卷 data_volume01_distributed 中的 bricks 中 踢出去
+
+
+
+// 观察缩减之前的 文件分布
+[root@node03 ~]# ls /data01_distributed/br1/
+      3.mp3  5.mp3  5.txt  6.mp3  7.mp3  7.txt  9.txt
+
+[root@node01 ~]# ls /data01_distributed/br1/
+      1.mp3  2.mp3  4.txt  8.mp3  8.txt
+
+[root@node02 ~]# ls /data01_distributed/br1/
+      10.mp3  10.txt  1.txt  2.txt  3.txt  4.mp3  6.txt  9.mp3
+
+
+// 查看卷 data_volume01_distributed 的信息
+[root@node01 ~]# gluster volume info data_volume01_distributed
+
+      Volume Name: data_volume01_distributed
+      Type: Distribute
+      Volume ID: f43bc40d-0e15-4f88-8e76-fe3ea4326137
+      Status: Started
+      Snapshot Count: 0
+      Number of Bricks: 3
+      Transport-type: tcp
+      Bricks:
+      Brick1: node01:/data01_distributed/br1
+      Brick2: node02:/data01_distributed/br1
+      Brick3: node03:/data01_distributed/br1  <----
+      Options Reconfigured:
+      transport.address-family: inet
+      nfs.disable: on
+
+
+// 查看一下 缩减卷的 语法
+[root@node01 ~]# gluster volume help | grep remove-brick
+      volume remove-brick <VOLNAME> [replica <COUNT>] <BRICK> ... <start|stop|status|commit|force> - remove brick from volume <VOLNAME>
+
+// 执行缩减操作
+// (重要)注: 为了数据安全, 在做缩减之前, 最好先做数据备份, 可避免缩减操作中因各种原因导致的数据丢失.
+//  注: 此处的 start 行为 实际是在 迁移 node03 中 brick 中的数据
+[root@node01 ~]# gluster volume remove-brick data_volume01_distributed  node03:/data01_distributed/br1  start
+        Running remove-brick with cluster.force-migration enabled can result in data corruption. It is safer to disable this option so that files that receive writes during migration are not migrated.
+        Files that are not migrated can then be manually copied after the remove-brick commit operation.
+        Do you want to continue with your current cluster.force-migration settings? (y/n) y  <====输入y
+        volume remove-brick start: success
+        ID: e8a07ba6-4d9d-4b31-8bbb-8c3db82419fc
+
+
+// 查看 缩减卷 操作的状态信息(注: 一定要保证 status 为 'completed' 时再做后续操作,
+// 如果 status 为 'in progress' 时请耐心等待)
+[root@node01 ~]# gluster volume remove-brick data_volume01_distributed  node03:/data01_distributed/br1  status
+
+              Node Rebalanced-files          size       scanned      failures       skipped               status  run time in h:m:s
+         ---------      -----------   -----------   -----------   -----------   -----------         ------------     --------------
+            node03                7        0Bytes             7             0             0            completed        0:00:01
+
+
+// 观察各 brick 中的文件数据 (可发现 node03 中的文件没有,即被迁移到 改卷的其他bricks中了)
+[root@node03 ~]# ls /data01_distributed/br1/
+
+[root@node01 ~]# ls /data01_distributed/br1
+        1.mp3  2.mp3  4.txt  5.mp3  5.txt  6.mp3  7.txt  8.mp3  8.txt
+
+[root@node02 ~]# ls /data01_distributed/br1
+        10.mp3  10.txt  1.txt  2.txt  3.mp3  3.txt  4.mp3  6.txt  7.mp3  9.mp3  9.txt
+
+[root@node02 ~]# ls /data01_distributed/br1
+        10.mp3  10.txt  1.txt  2.txt  3.mp3  3.txt  4.mp3  6.txt  7.mp3  9.mp3  9.txt
+
+
+// 查看卷 当前的信息
+[root@node01 ~]# gluster volume info data_volume01_distributed
+
+        Volume Name: data_volume01_distributed
+        Type: Distribute
+        Volume ID: f43bc40d-0e15-4f88-8e76-fe3ea4326137
+        Status: Started
+        Snapshot Count: 0
+        Number of Bricks: 3
+        Transport-type: tcp
+        Bricks:
+        Brick1: node01:/data01_distributed/br1
+        Brick2: node02:/data01_distributed/br1
+        Brick3: node03:/data01_distributed/br1 <----观察(node03的 brick 还在卷中,即在 commit之间还未删除该 brick)
+        Options Reconfigured:
+        performance.client-io-threads: on
+        transport.address-family: inet
+        nfs.disable: on
+
+
+// 提交 缩减卷的 操作
+//  注: 执行 commit 前 一定要确保  被删除的卷 的 brick 中的数据被成功迁移,
+//      且 status 命令中 的 'status' 列的值为 'completed'
+[root@node01 ~]# gluster volume remove-brick data_volume01_distributed  node03:/data01_distributed/br1  commit
+        volume remove-brick commit: success
+        Check the removed bricks to ensure all files are migrated.
+        If files with data are found on the brick path, copy them via a gluster mount point before re-purposing the removed brick.
+
+
+// 观察 卷 的当前信息
+[root@node01 ~]# gluster volume info data_volume01_distributed
+
+        Volume Name: data_volume01_distributed
+        Type: Distribute
+        Volume ID: f43bc40d-0e15-4f88-8e76-fe3ea4326137
+        Status: Started
+        Snapshot Count: 0
+        Number of Bricks: 2
+        Transport-type: tcp
+        Bricks:
+        Brick1: node01:/data01_distributed/br1
+        Brick2: node02:/data01_distributed/br1 <---观察(已经没有node03 的 'Brick3: node03:/data01_distributed/br1' 信息了)
+        Options Reconfigured:
+        performance.client-io-threads: on
+        transport.address-family: inet
+        nfs.disable: on
+
+
+
+      再次强调: 在缩减卷之前一定要保证 做好 数据备份, 且 缩减过程中 确保 数据成功迁移.
 
 
 
