@@ -4,13 +4,18 @@ fastdfs 项目 github 地址:
     https://github.com/happyfish100/fastdfs
 
 
+网上资料:
+    https://blog.csdn.net/kamroselee/article/details/80334621
+    https://www.imooc.com/article/details/id/66990
+    https://blog.csdn.net/fd315063004/article/details/7728863
+    http://bbs.chinaunix.net/forum-240-1.html
+    http://bbs.chinaunix.net/thread-1941456-1-1.html
+    http://bbs.chinaunix.net/thread-1920470-1-1.html
 
-https://blog.csdn.net/kamroselee/article/details/80334621
-https://www.imooc.com/article/details/id/66990
-https://blog.csdn.net/fd315063004/article/details/7728863
-http://bbs.chinaunix.net/forum-240-1.html
-http://bbs.chinaunix.net/thread-1941456-1-1.html
-http://bbs.chinaunix.net/thread-1920470-1-1.html
+    fastdfs 的安装部署:
+        https://www.cnblogs.com/Yin-BloodMage/p/5480608.html
+        https://www.jianshu.com/p/1de9b0383bb9
+        https://www.iteye.com/blog/liuyieyer-2065562
 
 
 ----------------------------------------------------------------------------------------------------
