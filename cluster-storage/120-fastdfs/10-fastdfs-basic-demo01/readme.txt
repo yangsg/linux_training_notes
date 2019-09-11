@@ -856,6 +856,7 @@ FastDFS+Nginx实现文件服务器
       tcp        0      0 0.0.0.0:8000            0.0.0.0:*               LISTEN      4474/nginx: master
 
 
+// 测试通过tracker访问文件内容
 [root@client ~]# curl http://192.168.175.101:8000/group01/M00/00/00/wKivb114XC2ARIVaAAAAC_u0Yds557.txt
       hello fdfs
 
