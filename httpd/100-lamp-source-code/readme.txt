@@ -30,7 +30,7 @@
 
 
 // 构建基础编译环境
-[root@lamp_server ~]# yum -y install gcc gcc-c++ autoconf automak
+[root@lamp_server ~]# yum -y install gcc gcc-c++ autoconf automake
 
 
 // 新建独立的程序安装目录
