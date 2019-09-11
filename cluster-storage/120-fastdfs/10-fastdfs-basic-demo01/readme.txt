@@ -536,11 +536,148 @@ client  192.168.175.80  <------作为测试用的客户端
 
 
 作为测试用的 client, 同样需要安装 fastdfs 软件
-
+--------------------------------------------------
+// 构建基础编译环境
 [root@client ~]# yum -y install gcc gcc-c++ autoconf automake
 
+[root@client ~]# mkdir download
+[root@client ~]# cd download/
+
+// 安装 fastdfs 依赖库 libfastcommon
+[root@tracker_server01 download]# git clone https://github.com/happyfish100/libfastcommon.git
+[root@tracker_server01 download]# ls
+      libfastcommon
+
+[root@tracker_server01 download]# cd libfastcommon/
+[root@tracker_server01 libfastcommon]# ls
+      doc  HISTORY  INSTALL  libfastcommon.spec  make.sh  php-fastcommon  README  src
+
+[root@tracker_server01 libfastcommon]# ./make.sh
+[root@tracker_server01 libfastcommon]# ./make.sh install
 
 
+// 安装 fastdfs
+[root@tracker_server01 libfastcommon]# cd ~/download/
+[root@tracker_server01 download]# git clone https://github.com/happyfish100/fastdfs.git
+[root@tracker_server01 download]# ls
+      fastdfs  libfastcommon
+
+[root@tracker_server01 download]# cd fastdfs/
+[root@tracker_server01 fastdfs]# ls
+      client  common  conf  COPYING-3_0.txt  docker  fastdfs.spec  HISTORY  init.d  INSTALL  make.sh  php_client  README.md  restart.sh  stop.sh  storage  test  tracker
+
+[root@tracker_server01 fastdfs]# ./make.sh
+[root@tracker_server01 fastdfs]# ./make.sh install
+
+
+--------------------------------------------------
+配置客户端测试数据读写
+
+
+[root@client ~]# cp /etc/fdfs/client.conf.sample  /etc/fdfs/client.conf
+[root@client ~]# vim /etc/fdfs/client.conf
+
+      base_path=/data/fastdfs/client
+      tracker_server=192.168.175.101:22122
+      tracker_server=192.168.175.102:22122
+
+
+[root@client ~]# mkdir -pv /data/fastdfs/client
+    mkdir: created directory ‘/data’
+    mkdir: created directory ‘/data/fastdfs’
+    mkdir: created directory ‘/data/fastdfs/client’
+
+
+[root@client ~]# echo 'hello fdfs' > /tmp/1.txt
+
+// 查看一下 相关命令
+[root@client ~]# ls -1 /usr/bin/fdfs_*
+
+      /usr/bin/fdfs_appender_test
+      /usr/bin/fdfs_appender_test1
+      /usr/bin/fdfs_append_file
+      /usr/bin/fdfs_crc32
+      /usr/bin/fdfs_delete_file
+      /usr/bin/fdfs_download_file
+      /usr/bin/fdfs_file_info
+      /usr/bin/fdfs_monitor
+      /usr/bin/fdfs_storaged
+      /usr/bin/fdfs_test
+      /usr/bin/fdfs_test1
+      /usr/bin/fdfs_trackerd
+      /usr/bin/fdfs_upload_appender
+      /usr/bin/fdfs_upload_file
+
+// 查看一下命令 fdfs_upload_file 的 usage
+[root@client ~]# fdfs_upload_file -h
+      Usage: fdfs_upload_file <config_file> <local_filename> [storage_ip:port] [store_path_index]
+
+[root@client ~]# fdfs_upload_file /etc/fdfs/client.conf /tmp/1.txt
+    group01/M00/00/00/wKivb114XC2ARIVaAAAAC_u0Yds557.txt   <---------记住该 file_id
+
+
+
+// 查看一下命令 fdfs_file_info 的 usage
+[root@client ~]# fdfs_file_info -h
+      Usage: fdfs_file_info <config_file> <file_id>
+
+// 查看 指定  file_id 对应的 存储信息
+[root@client ~]# fdfs_file_info /etc/fdfs/client.conf  group01/M00/00/00/wKivb114XC2ARIVaAAAAC_u0Yds557.txt
+      source storage id: 0
+      source ip address: 192.168.175.111
+      file create timestamp: 2019-09-11 10:30:05
+      file size: 11
+      file crc32: 4222902747 (0xFBB461DB)
+
+
+// 在 storage_server01 上查看文件
+[root@storage_server01 ~]# ls /data/fastdfs/data/data/00/00/
+      wKivb114XC2ARIVaAAAAC_u0Yds557.txt
+
+// 在 storage_server02 上查看文件 (两个 storage_server 上都存在该文件, 则证明已经同步该文件)
+[root@storage_server02 ~]# ls /data/fastdfs/data/data/00/00/
+      wKivb114XC2ARIVaAAAAC_u0Yds557.txt
+
+
+[root@storage_server02 ~]# fdfs_download_file -h
+      Usage: fdfs_download_file <config_file> <file_id> [local_filename] [<download_offset> <download_bytes>]
+
+[root@client ~]# fdfs_download_file /etc/fdfs/client.conf group01/M00/00/00/wKivb114XC2ARIVaAAAAC_u0Yds557.txt
+
+[root@client ~]# cat wKivb114XC2ARIVaAAAAC_u0Yds557.txt
+      hello fdfs
+
+
+// 使用 fdfs_monitor 显示 观察信息
+[root@client ~]# fdfs_monitor /etc/fdfs/client.conf | less
+
+            server_count=2, server_index=1
+
+            tracker server is 192.168.175.102:22122
+
+            group count: 1
+
+            Group 1:
+            group name = group01
+            disk total space = 18218 MB
+            disk free space = 16157 MB
+            trunk free space = 0 MB
+            storage server count = 2
+            active server count = 2
+            storage server port = 23000
+            storage HTTP port = 8888
+            store path count = 1
+            subdir count per path = 256
+            current write server index = 0
+            current trunk file id = 0
+
+                    Storage 1:
+                            id = 192.168.175.111
+                            ip_addr = 192.168.175.111  ACTIVE
+                            http domain =
+                            version = 5.12
+                            join time = 2019-09-10 22:09:03
+            略 略 略 略 略 略
 
 
 
