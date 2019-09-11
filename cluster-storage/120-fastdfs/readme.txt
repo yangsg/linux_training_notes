@@ -16,6 +16,7 @@ fastdfs 项目 github 地址:
         https://www.cnblogs.com/Yin-BloodMage/p/5480608.html
         https://www.jianshu.com/p/1de9b0383bb9
         https://www.iteye.com/blog/liuyieyer-2065562
+        https://blog.csdn.net/qq_34301871/article/details/80060235
 
 
 ----------------------------------------------------------------------------------------------------

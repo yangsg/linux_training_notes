@@ -5,6 +5,7 @@
         https://www.cnblogs.com/Yin-BloodMage/p/5480608.html
         https://www.jianshu.com/p/1de9b0383bb9
         https://www.iteye.com/blog/liuyieyer-2065562
+        https://blog.csdn.net/qq_34301871/article/details/80060235
 
 
 
@@ -73,6 +74,20 @@ client  192.168.175.80  <------作为测试用的客户端
 [root@tracker_server01 download]# cd libfastcommon/
 [root@tracker_server01 libfastcommon]# ls
       doc  HISTORY  INSTALL  libfastcommon.spec  make.sh  php-fastcommon  README  src
+
+// 查看一下 所有的 tags
+[root@tracker_server01 fastdfs]# git tag
+      V5.04
+      V5.05
+      V5.08
+      V5.09
+      V5.10
+      V5.11
+
+// 查看 当前所在的 tag
+[root@tracker_server01 fastdfs]# git describe --tags
+  V5.11-25-g102c444
+
 
 [root@tracker_server01 libfastcommon]# ./make.sh
 [root@tracker_server01 libfastcommon]# ./make.sh install
@@ -690,6 +705,103 @@ client  192.168.175.80  <------作为测试用的客户端
 
 
 
+----------------------------------------------------------------------------------------------------
+FastDFS+Nginx实现文件服务器
+
+版本对应关系: 来自
+    https://blog.csdn.net/qq_34301871/article/details/80060235
+
+      fastdfs 5.11版本对照：Version 5.11对应的fastdfs-nginx-module的Version 1.20
+      fastdfs  5.10版本对照：Version 5.10对应的fastdfs-nginx-module的Version 1.19
+
+
+在所有storage节点上安装nginx及fastdfs-nginx-module模块
+
+如下以 storage_server01 上的 安装为例:
+
+
+[root@storage_server01 download]# git clone https://github.com/happyfish100/fastdfs-nginx-module.git
+[root@storage_server01 download]# cd fastdfs-nginx-module/
+
+// 查看一下 所有版本
+[root@storage_server01 fastdfs-nginx-module]# git tag
+      V1.20
+
+// 查看 当前 所在版本
+[root@storage_server01 fastdfs-nginx-module]# git describe --tags
+    V1.20-2-g8796a7d
+
+
+// 安装 nginx 相关相关依赖
+[root@storage_server01 ~]# yum install -y pcre-devel zlib-devel openssl-devel
+
+[root@storage_server01 ~]# cd download/
+[root@storage_server01 download]# wget http://nginx.org/download/nginx-1.14.2.tar.gz
+
+[root@storage_server01 download]# tar -xvf nginx-1.14.2.tar.gz
+[root@storage_server01 download]# ls
+      fastdfs  fastdfs-nginx-module  libfastcommon  nginx-1.14.2  nginx-1.14.2.tar.gz
+
+[root@storage_server01 download]# cd nginx-1.14.2/
+[root@storage_server01 nginx-1.14.2]# ./configure --prefix=/app/nginx --add-module=/root/download/fastdfs-nginx-module/src
+
+[root@storage_server01 nginx-1.14.2]# make
+[root@storage_server01 nginx-1.14.2]# make install
+
+
+// 复制fastdfs-nginx-module中的配置文件到/etc/fdfs目录
+[root@storage_server01 nginx-1.14.2]# cd
+[root@storage_server01 ~]# cp ~/download/fastdfs-nginx-module/src/mod_fastdfs.conf /etc/fdfs/
+
+[root@storage_server01 ~]# vim /etc/fdfs/mod_fastdfs.conf
+
+        tracker_server=192.168.175.101:22122
+        tracker_server=192.168.175.102:22122
+
+        group_name=group01
+        url_have_group_name = true
+
+        store_path_count=1
+        store_path0=/data/fastdfs/data
+
+        [group1]
+        group_name=group01
+        storage_server_port=23000
+        store_path_count=1
+        store_path0=/data/fastdfs/data
+
+
+// 复制fdfs源码目录中的关于http的配置文件
+[root@storage_server01 ~]# cp ~/download/fastdfs/conf/mime.types /etc/fdfs/
+[root@storage_server01 ~]# cp ~/download/fastdfs/conf/http.conf /etc/fdfs/
+
+// 创建数据存放目录的软链接
+[root@storage_server01 ~]# ln -s /data/fastdfs/data/data  /data/fastdfs/data/M00
+[root@storage_server01 ~]# ls -l /data/fastdfs/data/
+      total 12
+      drwxr-xr-x 258 root root 8192 Sep 10 22:09 data
+      lrwxrwxrwx   1 root root   23 Sep 11 14:19 M00 -> /data/fastdfs/data/data
+
+
+// 编辑nginx配置文件, 并启动
+[root@storage_server01 ~]# vim /app/nginx/conf/nginx.conf
+
+    server {
+        listen       8888;
+        server_name  localhost;
+
+        location ~ /group[0-9][0-9]/M00 {
+            ngx_fastdfs_module;
+        }
+
+    }
+
+[root@storage_server01 ~]# /app/nginx/sbin/nginx
+    ngx_http_fastdfs_set pid=4708
+
+
+[root@client ~]# curl http://192.168.175.111:8888/group01/M00/00/00/wKivb114XC2ARIVaAAAAC_u0Yds557.txt
+      hello fdfs
 
 
 
