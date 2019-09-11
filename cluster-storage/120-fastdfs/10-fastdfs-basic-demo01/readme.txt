@@ -60,7 +60,7 @@ client  192.168.175.80  <------作为测试用的客户端
 
 // 此处以 tracker_server01 上安装 fastdfs 为例
 // 构建基础编译环境
-[root@tracker_server01 ~]# yum -y install gcc gcc-c++ autoconf automak
+[root@tracker_server01 ~]# yum -y install gcc gcc-c++ autoconf automake
 
 [root@tracker_server01 ~]# mkdir download
 [root@tracker_server01 ~]# cd download/
@@ -533,6 +533,11 @@ client  192.168.175.80  <------作为测试用的客户端
 
 ----------------------------------------------------------------------------------------------------
 准备 测试用的 client
+
+
+作为测试用的 client, 同样需要安装 fastdfs 软件
+
+[root@client ~]# yum -y install gcc gcc-c++ autoconf automake
 
 
 
