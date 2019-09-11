@@ -10,11 +10,11 @@ nginx官网资料
 
 
 // 操作系统环境
-[root@nginx7server ~]# cat /etc/redhat-release 
-    CentOS Linux release 7.4.1708 (Core) 
+[root@nginx7server ~]# cat /etc/redhat-release
+    CentOS Linux release 7.4.1708 (Core)
 [root@nginx7server ~]# uname -r
     3.10.0-693.el7.x86_64
-ip地址：192.168.175.10/24 
+ip地址：192.168.175.10/24
 
 
 
@@ -22,7 +22,7 @@ ip地址：192.168.175.10/24
 [root@nginx7server ~]# yum -y install gcc gcc-c++ autoconf automake
 
 // 安装相关依赖
-[root@nginx7server ~]# yum install -y pcre-devel openssl-devel
+[root@nginx7server ~]# yum install -y pcre-devel zlib-devel openssl-devel
 
 // 创建独立的安装目录
 [root@nginx7server ~]# mkdir /app
@@ -121,7 +121,7 @@ ip地址：192.168.175.10/24
 
 
 [root@nginx7server ~]# netstat -anptu | grep nginx
-tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      20180/nginx: master 
+tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      20180/nginx: master
 
 [root@nginx7server ~]# ps -elf | grep nginx
 1 S root      20180      1  0  80   0 - 11491 sigsus 19:28 ?        00:00:00 nginx: master process /app/nginx/sbin/nginx
