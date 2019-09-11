@@ -787,6 +787,7 @@ FastDFS+Nginx实现文件服务器
 [root@storage_server01 ~]# vim /app/nginx/conf/nginx.conf
 
     server {
+        # 注: 此处的端口号应该与文件 /etc/fdfs/storage.conf 中的 设置 'http.server_port=8888' 保持一致
         listen       8888;
         server_name  localhost;
 
@@ -802,6 +803,86 @@ FastDFS+Nginx实现文件服务器
 
 [root@client ~]# curl http://192.168.175.111:8888/group01/M00/00/00/wKivb114XC2ARIVaAAAAC_u0Yds557.txt
       hello fdfs
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+在Tracker节点上安装nginx
+
+      主要为了提供 http 访问的反向代理、负载均衡以及缓存服务。
+
+
+// 安装nginx
+[root@tracker_server01 ~]# yum install -y pcre-devel zlib-devel openssl-devel
+[root@tracker_server01 ~]# cd download/
+[root@tracker_server01 download]# wget http://nginx.org/download/nginx-1.14.2.tar.gz
+[root@tracker_server01 download]# tar -xvf nginx-1.14.2.tar.gz
+[root@tracker_server01 download]# ls
+      fastdfs  libfastcommon  nginx-1.14.2  nginx-1.14.2.tar.gz
+
+[root@tracker_server01 download]# cd nginx-1.14.2/
+[root@tracker_server01 nginx-1.14.2]# ./configure --prefix=/app/nginx
+[root@tracker_server01 nginx-1.14.2]# make
+[root@tracker_server01 nginx-1.14.2]# make install
+
+
+// 编辑nginx配置文件实现负载均衡
+[root@tracker_server01 nginx-1.14.2]# vim /app/nginx/conf/nginx.conf
+
+          upstream fdfs_group01 {
+              server 192.168.175.111:8888 weight=1 max_fails=2 fail_timeout=2;
+              server 192.168.175.112:8888 weight=1 max_fails=2 fail_timeout=2;
+          }
+
+          server {
+              listen       8000;
+              server_name  localhost;
+
+
+              location /group01/M00 {
+                  proxy_pass http://fdfs_group01;
+              }
+          }
+
+
+[root@tracker_server01 nginx-1.14.2]# /app/nginx/sbin/nginx
+[root@tracker_server01 nginx-1.14.2]# netstat -anptu | grep nginx
+      tcp        0      0 0.0.0.0:8000            0.0.0.0:*               LISTEN      4474/nginx: master
+
+
+[root@client ~]# curl http://192.168.175.101:8000/group01/M00/00/00/wKivb114XC2ARIVaAAAAC_u0Yds557.txt
+      hello fdfs
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
