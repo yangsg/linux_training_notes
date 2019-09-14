@@ -8,10 +8,27 @@ https://en.wikipedia.org/wiki/NoSQL
 
 https://redis.io/
 https://redis.io/topics/introduction
+https://github.com/antirez/redis-doc
+
+
+https://github.com/ran-jit/tomcat-cluster-redis-session-manager
+https://blog.51cto.com/13447608/2295799
+
+
+一些 redis 的中文网:
+      https://www.runoob.com/redis/redis-tutorial.html
+      http://doc.redisfans.com/
+      http://redisdoc.com/index.html
+      http://www.redis.cn/
+
+
+
 
 
 ----------------------------------------------------------------------------------------------------
 Redis数据库
+
+    redis: REmote DIctionary Server
 
   数据库类型：
 
@@ -154,6 +171,33 @@ redis 的 安装 及 启动
 
 
 ----------------------------------------------------------------------------------------------------
+
+Redis安全设置:
+
+1) 设置密码
+[root@redis_server ~]# vim /app/redis/conf/redis.conf
+      requirepass redhat
+
+// 重新启动 redis
+[root@redis_server ~]# redis-cli shutdown
+[root@redis_server ~]# redis-server /app/redis/conf/redis.conf &
+
+[root@redis_server ~]# redis-cli
+
+    127.0.0.1:6379> auth redhat   <====验证密码 password
+    OK
+    127.0.0.1:6379> set name tom
+    OK
+    127.0.0.1:6379> get name
+    "tom"
+    127.0.0.1:6379> exit
+
+
+
+
+
+
+
 
 
 
