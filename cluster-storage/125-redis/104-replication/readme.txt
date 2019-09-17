@@ -79,7 +79,7 @@ The following are some very important facts about Redis replication:
       then connect a slave configured to save from time to time, or with AOF enabled.
       However this setup must be handled with care, since a restarting master will start
       with an empty dataset: if the slave tries to synchronized with it, the slave will be emptied as well.
-      // 最好开启 master 上的 持久化 功能(因为如果没有开启持久化功能, 则 重启 master 时 会以 an empty dataset 来启动,
+      // 最好开启 master 和 slaves 上的 持久化 功能(因为如果没有开启持久化功能, 则 重启 master 时 会以 an empty dataset 来启动,
       // 如果此时 the slave 尝试同步操作， 则 the slave 也会被 清空)
 
 

@@ -87,6 +87,7 @@ Available and enabled entropy sources:
 ---------------------------------------------------------------------------------------------------
 网上资料:
 
+      https://developers.redhat.com/blog/2017/10/05/entropy-rhel-based-cloud-instances/
       https://www.certdepot.net/rhel7-get-started-random-number-generator/
       https://unix.stackexchange.com/questions/346040/gpg-key-generator-does-not-use-entropy
       https://www.digitalocean.com/community/tutorials/how-to-setup-additional-entropy-for-cloud-servers-using-haveged
