@@ -587,7 +587,7 @@ Performing an LRU simulation
     if there is no cap to the maximum memory usage, the hit will eventually be 100% since
     all the keys can be stored in memory. Or if you specify too many keys and no maximum memory,
     eventually all the computer RAM will be used. It is also needed to configure
-    an appropriate maxmemory policy, most of the times what you want is allkeys-lru.
+    an appropriate maxmemory policy, most of the times what you want is allkeys-lru. <-----
 
     WARNING: the test uses pipelining and will stress the server, don't use it with production instances.
 
