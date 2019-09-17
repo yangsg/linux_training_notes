@@ -1,5 +1,6 @@
 
 https://redis.io/topics/rediscli
+https://redis.io/topics/rediscli#showing-help-about-redis-commands
 
 
 redis-cli 执行模式:
@@ -481,7 +482,89 @@ Monitoring the latency of Redis instances  监视延迟
     min: 0, max: 1, avg: 0.18 (34 samples)^C
 
 
+// 通过 光谱的 形式 显示延迟
+[root@redis_server ~]# redis-cli --latency-dist
 
+[root@redis_server ~]# redis-cli --latency-dist > latency-dist.txt
+[root@redis_server ~]# less -R latency-dist.txt
+
+
+
+
+// 查看 intrinsic latency (非 Redis instance 的延迟, 而是内部内核调度的延迟)
+// The latency that's intrinsic to the kernel scheduler, the hypervisor in case of virtualized instances, and so forth.
+// 该命令仅能在 运行 Redis servers 的 system 上本地执行.
+[root@redis_server ~]# redis-cli --intrinsic-latency 5  # 本例中 test-time 为 5 seconds #注:该命令仅能在 运行 Redis servers 的 system 上本地执行
+      Max latency so far: 1 microseconds.
+      Max latency so far: 47 microseconds.
+      Max latency so far: 232 microseconds.
+      Max latency so far: 400 microseconds.
+      Max latency so far: 804 microseconds.
+      Max latency so far: 1190 microseconds.
+
+      85792614 total runs (avg latency: 0.0583 microseconds / 58.28 nanoseconds per run).
+      Worst run took 20419x longer than the average latency.
+
+
+----------------------------------------------------------------------------------------------------
+Remote backups of RDB files     RDB 文件的远程备份
+
+    During Redis replication's first synchronization, the master and the slave exchange the whole data set in form of an RDB file.
+    This feature is exploited by redis-cli in order to provide a remote backup facility,
+    that allows to transfer an RDB file from any Redis instance to the local computer running redis-cli.
+
+
+[root@redis_server ~]# redis-cli --rdb /tmp/dump.rdb
+      1381:M 17 Sep 2019 15:35:14.810 * Replica 127.0.0.1:<unknown-replica-port> asks for synchronization
+      1381:M 17 Sep 2019 15:35:14.810 * Starting BGSAVE for SYNC with target: disk
+      1381:M 17 Sep 2019 15:35:14.810 * Background saving started by pid 1557
+      1557:C 17 Sep 2019 15:35:14.815 * DB saved on disk
+      1557:C 17 Sep 2019 15:35:14.816 * RDB: 0 MB of memory used by copy-on-write
+      1381:M 17 Sep 2019 15:35:14.851 * Background saving terminated with success
+      1381:M 17 Sep 2019 15:35:14.852 * Synchronization with replica 127.0.0.1:<unknown-replica-port> succeeded
+      SYNC sent to master, writing 205489 bytes to '/tmp/dump.rdb'
+      1381:M 17 Sep 2019 15:35:14.853 # Connection with replica 127.0.0.1:<unknown-replica-port> lost.
+      Transfer finished with success.
+
+
+注意:
+    This is a simple but effective way to make sure you have disaster recovery
+    RDB backups of your Redis instance. However when using this options in scripts
+    or cron jobs, make sure to check the return value of the command.
+    If it is non zero, an error occurred like in the following example:
+
+        ------------------------------------------------------------
+        $ redis-cli --rdb /tmp/dump.rdb
+        SYNC with master failed: -ERR Can't SYNC while not connected with my master
+        $ echo $?
+        1
+        ------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+Slave mode
+
+    The slave mode of the CLI is an advanced feature useful for Redis developers and
+    for debugging operations. It allows to inspect what a master sends to its slaves
+    in the replication stream in order to propagate the writes to its replicas.
+
+
+[root@redis_server ~]# redis-cli --slave
+      1381:M 17 Sep 2019 15:47:19.690 * Replica 127.0.0.1:<unknown-replica-port> asks for synchronization
+      1381:M 17 Sep 2019 15:47:19.690 * Starting BGSAVE for SYNC with target: disk
+      1381:M 17 Sep 2019 15:47:19.690 * Background saving started by pid 1564
+      1564:C 17 Sep 2019 15:47:19.698 * DB saved on disk
+      1564:C 17 Sep 2019 15:47:19.699 * RDB: 0 MB of memory used by copy-on-write
+      1381:M 17 Sep 2019 15:47:19.716 * Background saving terminated with success
+      1381:M 17 Sep 2019 15:47:19.716 * Synchronization with replica 127.0.0.1:<unknown-replica-port> succeeded
+      SYNC with master, discarding 205489 bytes of bulk transfer...
+      SYNC done. Logging commands from master.
+      "PING"
+      "PING"
+
+
+      The command begins by discarding the RDB file of the first synchronization and then logs each command received as in CSV format.
 
 
 
@@ -490,6 +573,33 @@ Monitoring the latency of Redis instances  监视延迟
 
 
 ----------------------------------------------------------------------------------------------------
+Performing an LRU simulation
+
+
+    https://redis.io/topics/rediscli
+    https://redis.io/topics/rediscli#showing-help-about-redis-commands
+
+
+    In order to use this mode, you need to specify the amount of keys in the test.
+    You also need to configure a maxmemory setting that makes sense as a first try.
+
+    IMPORTANT NOTE: Configuring the maxmemory setting in the Redis configuration is crucial:
+    if there is no cap to the maximum memory usage, the hit will eventually be 100% since
+    all the keys can be stored in memory. Or if you specify too many keys and no maximum memory,
+    eventually all the computer RAM will be used. It is also needed to configure
+    an appropriate maxmemory policy, most of the times what you want is allkeys-lru.
+
+    WARNING: the test uses pipelining and will stress the server, don't use it with production instances.
+
+// 测试观察命中率和丢失率, 如 Misses 较高(即Hits较低),则需要找出原因并解决
+[root@redis_server ~]# redis-cli --lru-test 10000000   #测试观察命中率和丢失率(注: 不要在生产环境中执行此操作,因为该测试使用 pipelining 且会给 server 造成压力)
+      151500 Gets/sec | Hits: 144837 (95.60%) | Misses: 6663 (4.40%)
+      170500 Gets/sec | Hits: 162987 (95.59%) | Misses: 7513 (4.41%)
+      168500 Gets/sec | Hits: 161086 (95.60%) | Misses: 7414 (4.40%)
+      168000 Gets/sec | Hits: 160906 (95.78%) | Misses: 7094 (4.22%)
+      160000 Gets/sec | Hits: 153153 (95.72%) | Misses: 6847 (4.28%)
+      142500 Gets/sec | Hits: 136420 (95.73%) | Misses: 6080 (4.27%)
+      145500 Gets/sec | Hits: 139291 (95.73%) | Misses: 6209 (4.27%)
 
 
 
