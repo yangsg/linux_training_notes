@@ -3,7 +3,10 @@
 https://redis.io/topics/replication
 
 
+注: 强烈建议开启 master 和 slaves 上的 持久化功能(同时包括 rdb 和 aof)
+
 此处仅涉及基本的 master-slave replication, 不包括 Sentinel or Redis Cluster
+
 
 
 
@@ -79,21 +82,96 @@ The following are some very important facts about Redis replication:
       then connect a slave configured to save from time to time, or with AOF enabled.
       However this setup must be handled with care, since a restarting master will start
       with an empty dataset: if the slave tries to synchronized with it, the slave will be emptied as well.
-      // 最好开启 master 和 slaves 上的 持久化 功能(因为如果没有开启持久化功能, 则 重启 master 时 会以 an empty dataset 来启动,
+      // 最好(强烈建议)开启 master 和 slaves 上的 持久化 功能(因为如果没有开启持久化功能, 则 重启 master 时 会以 an empty dataset 来启动,
       // 如果此时 the slave 尝试同步操作， 则 the slave 也会被 清空)
 
 
 
+
+
+
+
+
 ----------------------------------------------------------------------------------------------------
+How Redis replication works
+
+    Every Redis master has a replication ID: it is a large pseudo random string
+    that marks a given story of the dataset. Each master also takes an offset
+    that increments for every byte of replication stream that it is produced
+    to be sent to slaves, in order to update the state of the slaves with
+    the new changes modifying the dataset. The replication offset is
+    incremented even if no slave is actually connected, so basically every given pair of:
+
+
+        Replication ID, offset  注:  Replication ID 和 offset 共同标志了 master 上 dataset 的确切版本
+
+      +--------+                                                                           +-------+
+      | master |                                                                           | slave |
+      +--------+                                                                           +-------+
+          |                                                                                    |
+          |----+                                                                               |
+          |    |take replication ID and update offset                                          |
+          |    |                                                                               |
+          |<---+                                                                               |
+          |                                                                                    |
+          |                                                                                    |
+          | send(by psync) old master replication ID and offset that slave processed so far    |
+          |<-----------------------------------------------------------------------------------|
+          |                                                                                    |
+          |----+                                                                               |
+          |    |compare with old replication ID and offset                                     |
+          |    |                                                                               |
+          |<---+                                                                               |
+          |                                                                                    |
+          |                                                                                    |
+          |   if possible, perform a partial sync, else perform a full sync                    |
+          |----------------------------------------------------------------------------------->|
+          |                                                                                    |
+          |                                                                                    |
+          |                                                                                    |
+          |                                                                                    |
+
+
+    Identifies an exact version of the dataset of a master.
+
+    When slaves connects to masters, they use the PSYNC command in order to
+    send their old master replication ID and the offsets they processed so far.
+    This way the master can send just the incremental part needed. However if
+    there is not enough backlog in the master buffers, or if the slave is
+    referring to an history (replication ID) which is no longer known,
+    than a full resynchronization happens: in this case the slave will get a full copy of the dataset, from scratch.
+
+This is how a full synchronization works in more details:
+
+    The master starts a background saving process in order to produce an RDB file.
+    At the same time it starts to buffer all new write commands received from the clients.
+    When the background saving is complete, the master transfers the database file to the slave,
+    which saves it on disk, and then loads it into memory. The master will then send all
+    buffered commands to the slave. This is done as a stream of commands
+    and is in the same format of the Redis protocol itself.
+
+    // The master 启动一个 后台 saving process 来生成 an RDB file.
+    // 与此同时, 它 还会开始缓存(buffer) 所有从 clients 接受到的 new write commands.
+    // 当 the background saving 完成(complete), the master transfers the database file to the slave,
+    // which saves it on disk, and then loads it into memory. The master 然后将 所有缓存的commands
+    // 发送到 the slave. 这是以 命令流(a stream of commands) 的方式完成的 且 格式与 Redis protocol 本身
+    // 的格式相同.
+
+    You can try it yourself via telnet. Connect to the Redis port while the server
+    is doing some work and issue the SYNC command. You'll see a bulk transfer
+    and then every command received by the master will be re-issued in the telnet session.
+    Actually SYNC is an old protocol no longer used by newer Redis instances,
+    but is still there for backward compatibility:
+    it does not allow partial resynchronizations, so now PSYNC is used instead.
+
+    As already said, slaves are able to automatically reconnect when the master-slave
+    link goes down for some reason. If the master receives multiple concurrent
+    slave synchronization requests, it performs a single background save in order to serve all of them.
 
 
 
 
-
-
-
-
-
+----------------------------------------------------------------------------------------------------
 
 
 
