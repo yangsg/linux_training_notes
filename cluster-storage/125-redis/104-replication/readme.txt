@@ -3,7 +3,7 @@
 https://redis.io/topics/replication
 
 
-注: 强烈建议开启 master 和 slaves 上的 持久化功能(同时包括 rdb 和 aof)
+注: 强烈建议开启 master 和 slaves 上的 持久化功能(同时包括 rdb 和 aof 文件)
 
 此处仅涉及基本的 master-slave replication, 不包括 Sentinel or Redis Cluster
 
@@ -172,6 +172,44 @@ This is how a full synchronization works in more details:
 
 
 ----------------------------------------------------------------------------------------------------
+Replication ID explained
+
+    In the previous section we said that if two instances have the same replication ID and replication offset,
+    they have exactly the same data. However it is useful to understand what exctly is the replication ID,
+    and why instances have actually two replication IDs the main ID and the secondary ID.
+
+    // 每次 redis 实例 作为 a master 从无到有, 从头开始(from scratch) 重新启动 或 a slave 被提升为 master 时,
+    // 都会为该实例生成一个 新的 复制 ID(a new replication ID)
+    A replication ID basically marks a given history of the data set. Every time an instance
+    restarts from scratch as a master, or a slave is promoted to master, a new replication ID
+    is generated for this instance. The slaves connected to a master will inherit its
+    replication ID after the handshake. So two instances with the same ID are related
+    by the fact that they hold the same data, but potentially at a different time.
+    It is the offset that works as a logical time to understand,
+    for a given history (replication ID) who holds the most updated data set.
+
+    For instance if two instances A and B have the same replication ID, but one with offset 1000
+    and one with offset 1023, it means that the first lacks certain commands applied to the data set.
+    It also means that A, by applying just a few commands, may reach exactly the same state of B.
+
+    The reason why Redis instances have two replication IDs is because of slaves that
+    are promoted to masters. After a failover, the promoted slave requires to still
+    remember what was its past replication ID, because such replication ID was
+    the one of the former master. In this way, when other slaves will synchronize
+    with the new master, they will try to perform a partial resynchronization
+    using the old master replication ID. This will work as expected, because
+    when the slave is promoted to master it sets its secondary ID to its main ID,
+    remembering what was the offset when this ID switch happend. Later it will
+    select a new random replication ID, because a new history begins. When handling
+    the new slaves connecting, the master will match their IDs and offsets
+    both with the current ID and the secondary ID (up to a given offset, for safety).
+    In short this means that after a failover, slaves connecting to
+    the new promoted master don't have to perform a full sync.
+
+    In case you wonder why a slave promoted to master needs to change its replication ID after a failover:
+    it is possible that the old master is still working as a master because of some network partition:
+    retaining the same replication ID would violate the fact that the
+    same ID and same offset of any two random instances mean they have the same data set.
 
 
 
@@ -181,6 +219,122 @@ This is how a full synchronization works in more details:
 
 
 
+----------------------------------------------------------------------------------------------------
+Configuration
+
+在 slave 的配置文件中配置, 如:
+
+    slaveof 192.168.1.1 6379
+
+当然, 也可以使用 SLAVEOF 命令来配置
+
+
+与 replication 相关的其他参数(parameters)或选项:
+    repl-backlog-size
+
+    repl-diskless-sync
+    repl-diskless-sync-delay
+
+
+
+----------------------------------------------------------------------------------------------------
+Read-only slave
+
+      Since Redis 2.6, slaves support a read-only mode that is enabled by default.
+
+
+    slave-read-only
+
+
+DEBUG or CONFIG
+rename-command
+
+    Redis 4.0 RC3 and greater versions totally solve this problem and now writable slaves
+    are able to evict keys with TTL as masters do, with the exceptions of keys
+    written in DB numbers greater than 63 (but by default Redis instances only have 16 databases).
+
+
+Also note that since Redis 4.0 slave writes are only local, and are not propagated
+to sub-slaves attached to the instance. Sub slaves instead will always receive
+the replication stream identical to the one sent by the top-level master
+to the intermediate slaves. So for example in the following setup:
+
+      A ---> B ---> C  即如果 slave B 可写,其也仅是 local 的.其写入的修改无法传播给
+                       作为 sub-slaves 的 C. C 仅能看到 作为 top-level master 的 A 的 dataset.
+
+Even if B is writable, C will not see B writes and will
+instead have identical dataset as the master instance A.
+
+
+
+----------------------------------------------------------------------------------------------------
+Setting a slave to authenticate to a master
+
+
+如果 master 通过 requirepass 设置了 password, 则 slave 需要使用 此 password 来执行所有的 同步操作.
+
+
+临时设置:
+    config set masterauth <password>
+
+在 config file 中 永久(持久化)设置:
+    masterauth <password>
+
+
+----------------------------------------------------------------------------------------------------
+Allow writes only with N attached replicas
+
+    min-slaves-to-write <number of slaves>
+    min-slaves-max-lag <number of seconds>
+
+
+----------------------------------------------------------------------------------------------------
+How Redis replication deals with expires on keys
+
+
+----------------------------------------------------------------------------------------------------
+Configuring replication in Docker and NAT
+
+    slave-announce-ip 5.5.5.5
+    slave-announce-port 1234
+
+redis 5.0.5 版本中使用:
+    replica-announce-ip 5.5.5.5
+    replica-announce-port 1234
+
+
+相关命令: info 和 role
+
+
+----------------------------------------------------------------------------------------------------
+The INFO and ROLE command
+
+INFO replication
+
+
+----------------------------------------------------------------------------------------------------
+Partial resynchronizations after restarts and failovers
+
+
+    Since Redis 4.0, when an instance is promoted to master after a failover,
+    it will be still able to perform a partial resynchronization with the slaves of the old master.
+    To do so, the slave remembers the old replication ID and offset of its former master,
+    so can provide part of the backlog to the connecting slaves even if they ask for the old replication ID.
+
+    However the new replication ID of the promoted slave will be different,
+    since it constitutes a different history of the data set. For example,
+    the master can return available and can continue accepting writes for some time,
+    so using the same replication ID in the promoted slave would violate
+    the rule that a of replication ID and offset pair identifies only a single data set.
+
+    Moreover slaves when powered off gently and restarted, are able to store
+    in the RDB file the information needed in order to resynchronize with their master.
+    This is useful in case of upgrades. When this is needed,
+    it is better to use the SHUTDOWN command in order to perform a save & quit operation on the slave.
+
+    It is not possilbe to partially resynchronize a slave that restarted via the AOF file.
+    However the instance may be turned to RDB persistence before shutting down it,
+    than can be restarted, and finally AOF can be enabled again.
 
 
 
