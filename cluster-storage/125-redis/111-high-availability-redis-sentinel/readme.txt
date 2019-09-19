@@ -91,7 +91,7 @@ Running Sentinel  运行 Sentinel
   or if the configuration file path is not writable.
 
     注:  必须指定文件 /path/to/sentinel.conf,  且其 必须可写(writable),
-         因为该文件会被用来 save 给系统当前状态信息.  在 restarts 时 这些 状态信息会被 reloaded.
+         因为该文件会被用来 save 系统当前状态信息.  在 restarts 时 这些 状态信息会被 reloaded.
 
 
   Sentinels by default run listening for connections to TCP port 26379,
@@ -125,7 +125,7 @@ Fundamental things to know about Sentinel before deploying
        are retained during failures, since Redis uses asynchronous replication.
        However there are ways to deploy Sentinel that make the window to
        lose writes limited to certain moments, while there are other less secure ways to deploy it.
-       // Sentinel + Redis distributed system 不保证 在故障期间 以确认的写入(acknowledged writes)被保留(retained)
+       // Sentinel + Redis distributed system 不保证 在故障期间 已确认的写入(acknowledged writes)被保留(retained)
 
 
     4) You need Sentinel support in your clients. Popular client libraries have Sentinel support, but not all.
@@ -260,7 +260,225 @@ Other Sentinel options
 
 
 
+
+    Additional options are described in the rest of this document and documented
+    in the example sentinel.conf file shipped with the Redis distribution.
+
+    All the configuration parameters can be modified at runtime using the SENTINEL SET command.
+    See the Reconfiguring Sentinel at runtime section for more information.
+
+
     所有这些选项 都 可以在运行时 使用命令 SENTINEL SET 来配置.
+
+
+----------------------------------------------------------------------------------------------------
+Example Sentinel deployments
+
+
+  We use ASCII art in order to show you configuration examples in a graphical format, this is what the different symbols means:
+
+  本文档中 约定 的 一些 图示 或 符号 的 意义:
+
+  We write inside the boxes what they are running:
+
+        +-------------------+
+        | Redis master M1   |
+        | Redis Sentinel S1 |
+        +-------------------+
+
+  Different boxes are connected by lines, to show that they are able to talk:
+
+        用 lines 连接的 不同的 boxes 表示 它们能够 通话
+
+      +-------------+               +-------------+
+      | Sentinel S1 |---------------| Sentinel S2 |
+      +-------------+               +-------------+
+
+
+  Network partitions are shown as interrupted lines using slashes:
+
+      +-------------+                +-------------+
+      | Sentinel S1 |------ // ------| Sentinel S2 |
+      +-------------+                +-------------+
+
+
+
+
+
+  Also note that:
+    - Masters are called M1, M2, M3, ..., Mn.
+    - Slaves are called R1, R2, R3, ..., Rn (R stands for replica).
+    - Sentinels are called S1, S2, S3, ..., Sn.
+    - Clients are called C1, C2, C3, ..., Cn.
+    - When an instance changes role because of Sentinel actions, we put it inside square brackets,
+      so [M1] means an instance that is now a master because of Sentinel intervention.
+
+  Note that we will never show setups where just two Sentinels are used,
+  since Sentinels always need to talk with the majority in order to start a failover.
+
+
+
+--------------------------------------------------
+Example 1(反例): just two Sentinels, DON'T DO THIS
+
+      |------------------------------------|
+      |    +----+         +----+           |
+      |    | M1 |---------| R1 |           |
+      |    | S1 |         | S2 |           | <----无效(not available)
+      |    +----+         +----+           |
+      |                                    |
+      |    Configuration: quorum = 1       |
+      |                                    |
+      |                                    |
+      |------------------------------------|
+
+    - In this setup, if the master M1 fails, R1 will be promoted since the
+      two Sentinels can reach agreement about the failure (obviously with quorum set to 1)
+      and can also authorize a failover because the majority is two. So apparently
+      it could superficially work, however check the next points to see why this setup is broken.
+
+    - If the box where M1 is running stops working, also S1 stops working.
+      The Sentinel running in the other box S2 will not be able to
+      authorize a failover, so the system will become not available.
+
+    Note that a majority is needed in order to order different failovers,
+    and later propagate the latest configuration to all the Sentinels. Also note
+    that the ability to failover in a single side of the above setup, without any agreement, would be very dangerous:
+
+        |-----------------------------------|
+        |    +----+           +------+      |
+        |    | M1 |----//-----| [M1] |      |
+        |    | S1 |           | S2   |      |
+        |    +----+           +------+      |
+        |                                   |
+        |-----------------------------------|
+
+
+  In the above configuration we created two masters (assuming S2 could failover without authorization)
+  in a perfectly symmetrical way. Clients may write indefinitely to both sides, and there is no way
+  to understand when the partition heals what configuration is the right one,
+  in order to prevent a permanent split brain condition.
+  So please deploy at least three Sentinels in three different boxes always.
+
+        请总是在 3 个 不同的 boxes 中 部署 3 个 Sentinels(至少).
+
+
+
+--------------------------------------------------
+Example 2(反例): basic setup with three boxes
+
+
+This is a very simple setup, that has the advantage to be simple to tune for additional safety.
+It is based on three boxes, each box running both a Redis process and a Sentinel process.
+
+        |-----------------------------|
+        |         +----+              |
+        |         | M1 |              |
+        |         | S1 |              |
+        |         +----+              |
+        |            |                |
+        |  +----+    |    +----+      |
+        |  | R2 |----+----| R3 |      |
+        |  | S2 |         | S3 |      |
+        |  +----+         +----+      |
+        |                             |
+        | Configuration: quorum = 2   |
+        |-----------------------------|
+
+  If the master M1 fails, S2 and S3 will agree about the failure and will
+  be able to authorize a failover, making clients able to continue.
+
+  In every Sentinel setup, being Redis asynchronously replicated, there is always
+  the risk of losing some write because a given acknowledged write may not be able to
+  reach the slave which is promoted to master. However in the above setup
+  there is an higher risk due to clients partitioned away with an old master, like in the following picture:
+
+
+        |-----------------------------------------------------|
+        |             +----+                                  |
+        |             | M1 |                                  |
+        |             | S1 | <- C1 (writes will be lost)      |
+        |             +----+                                  |
+        |                |                                    |
+        |                /                                    |
+        |                /                                    |
+        |    +------+    |    +----+                          |
+        |    | [M2] |----+----| R3 |                          |
+        |    | S2   |         | S3 |                          |
+        |    +------+         +----+                          |
+        |                                                     |
+        |-----------------------------------------------------|
+
+  In this case a network partition isolated the old master M1, so the slave R2 is promoted to master.
+  However clients, like C1, that are in the same partition as the old master,
+  may continue to write data to the old master. This data will be lost forever
+  since when the partition will heal, the master will be reconfigured
+  as a slave of the new master, discarding its data set.
+
+
+  This problem can be mitigated using the following Redis replication feature,
+  that allows to stop accepting writes if a master detects that
+  is no longer able to transfer its writes to the specified number of slaves.
+  // 使用如下的 Redis replication 特性 能 缓解 如上的 problem,
+  // 此设置 允许 当 master 检测到  不再能够 向 指定数量的 slaves 传递(transfer) 其 writes 时 停止接受 writes.
+
+
+      min-slaves-to-write 1   <---最少能够向 多少个 slaves 传递写入(transfer writes)
+      min-slaves-max-lag 10   <---在超过 max-lag 秒 后 slave 都没有 send 异步响应
+                                  (注: 无法 transfer writes 的原因: disconnected 或 slave 在 max-lag 后都没有发送异步响应)
+
+
+  With the above configuration (please see the self-commented redis.conf example
+  in the Redis distribution for more information) a Redis instance,
+  when acting as a master, will stop accepting writes if it can't write
+  to at least 1 slave. Since replication is asynchronous not being able to write
+  actually means that the slave is either disconnected, or is not sending
+  us asynchronous acknowledges for more than the specified max-lag number of seconds.
+
+
+  Using this configuration the old Redis master M1 in the above example,
+  will become unavailable after 10 seconds. When the partition heals, the Sentinel
+  configuration will converge to the new one, the client C1 will
+  be able to fetch a valid configuration and will continue with the new master.
+
+
+  However there is no free lunch. With this refinement, if the two slaves are down,
+  the master will stop accepting writes. It's a trade off.
+  // 但是 没有免费的午餐, 使用这种改进, 如果 如果两个 slaves 都 down 掉了,
+  // 则 the master 将 停止 accepting writes. 这是 一个 折衷.
+
+
+
+----------------------------------------------------------------------------------------------------
+Example 3: Sentinel in the client boxes
+
+  Sometimes we have only two Redis boxes available, one for the master and one for the slave.
+  The configuration in the example 2 is not viable in that case,
+  so we can resort to the following, where Sentinels are placed where clients are:
+
+
+        |-----------------------------------------------|
+        |            +----+         +----+              |
+        |            | M1 |----+----| R1 |              |
+        |            |    |    |    |    |              |
+        |            +----+    |    +----+              |
+        |                      |                        |
+        |         +------------+------------+           |
+        |         |            |            |           |
+        |         |            |            |           |
+        |      +----+        +----+      +----+         |
+        |      | C1 |        | C2 |      | C3 |         |
+        |      | S1 |        | S2 |      | S3 |         |
+        |      +----+        +----+      +----+         |
+        |                                               |
+        |      Configuration: quorum = 2                |
+        |                                               |
+        |                                               |
+        |-----------------------------------------------|
+
+
+
+
 
 
 ----------------------------------------------------------------------------------------------------
