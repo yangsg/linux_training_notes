@@ -107,6 +107,9 @@ Output buffers limits
   默认情况下, redis 为不同类型的 clients 设置了不同的 output buffer size 的限制,
   当达到该限制时, client 的 connection 会被 closed 掉 且该 event 会被记录到 redis 的 log file中.
 
+  这些限制即可以通过 命令 CONFIG SET 临时修改, 也可以 通过修改配置文件 redis.conf 来 持久配置
+
+
       Redis needs to handle a variable-length output buffer for every client, since
       a command can produce a big amount of data that needs to be transferred to the client.
 
@@ -147,17 +150,132 @@ Output buffers limits
     - Slaves have a default hard limit of 256 megabytes and a soft limit of 64 megabyte per 60 second.
       // Slaves 存在 默认的 256 megabytes 的 hard limit 和 64 megabyte per 60 second 的 soft limit
 
+It is possible to change the limit at runtime using the CONFIG SET command
+or in a permanent way using the Redis configuration file redis.conf.
+See the example redis.conf in the Redis distribution for more information about how to set the limit.
+
+
+
+
+
 
 
 ----------------------------------------------------------------------------------------------------
+Query buffer hard limit
+
+    query buffer limit 为 1G, 不可配置
+
+      Every client is also subject to a query buffer limit. This is a non-configurable
+      hard limit that will close the connection when the client query buffer
+      (that is the buffer we use to accumulate commands from the client) reaches 1 GB,
+      and is actually only an extreme limit to avoid a server crash in case of client or server software bugs.
+
+
+
+----------------------------------------------------------------------------------------------------
+Client timeouts
+
+  如果 你愿意，你可以 为配置 normal clients 配置 timeout 时间,
+  当 client 的 connection 空闲(idle) 超过指定的 seconds 之后, 该 connection 被 closed 掉.
+  默认行为是 the connection will remain open forever.
+
+  可以通过配置文件 redis.conf 或 命令 CONFIG SET timeout <value> 来配置
+
+
+    By default recent versions of Redis don't close the connection with
+    the client if the client is idle for many seconds: the connection will remain open forever.
+
+    However if you don't like this behavior, you can configure a timeout,
+    so that if the client is idle for more than the specified number of seconds,
+    the client connection will be closed.
+
+    You can configure this limit via redis.conf or simply using CONFIG SET timeout <value>.
+
+    Note that the timeout only applies to normal clients and it does not apply to Pub/Sub clients,
+    since a Pub/Sub connection is a push style connection so a client that is idle is the norm.
+    // the timeout 仅会 应用于 normal clients 而 不会 应用于 Pub/Sub clients
+
+    Even if by default connections are not subject to timeout, there are two conditions when it makes sense to set a timeout:
+
+        - Mission critical applications where a bug in the client software may saturate
+          the Redis server with idle connections, causing service disruption.
+
+        - As a debugging mechanism in order to be able to connect with the server if a
+          bug in the client software saturates the server with idle connections,
+          making it impossible to interact with the server.
+
+    // 注: Timeouts 并不一定很 精确(precise)
+    Timeouts are not to be considered very precise: Redis avoids to set timer events
+    or to run O(N) algorithms in order to check idle clients, so the check is performed
+    incrementally from time to time. This means that it is possible that while the
+    timeout is set to 10 seconds, the client connection will be closed,
+    for instance, after 12 seconds if many clients are connected at the same time.
+
+
+
+
+----------------------------------------------------------------------------------------------------
+CLIENT command
+
+    The Redis client command allows to inspect the state of every connected client,
+    to kill a specific client, to set names to connections.
+    It is a very powerful debugging tool if you use Redis at scale.
+
+    CLIENT LIST is used in order to obtain a list of connected clients and their state:
+
+
+        redis 127.0.0.1:6379> client list
+        addr=127.0.0.1:52555 fd=5 name= age=855 idle=0 flags=N db=0 sub=0 psub=0 multi=-1 qbuf=0 qbuf-free=32768 obl=0 oll=0 omem=0 events=r cmd=client
+        addr=127.0.0.1:52787 fd=6 name= age=6 idle=5 flags=N db=0 sub=0 psub=0 multi=-1 qbuf=0 qbuf-free=0 obl=0 oll=0 omem=0 events=r cmd=ping
+
+
+
+  In the above example session two clients are connected to the Redis server. The meaning of a few of the most interesting fields is the following:
+
+      - addr: The client address, that is, the client IP and the remote port number it used to connect with the Redis server.
+      - fd: The client socket file descriptor number.
+      - name: The client name as set by CLIENT SETNAME. (client name 由命令 CLIENT SETNAME 设置)
+                      https://redis.io/commands/client-setname
+
+      - age: The number of seconds the connection existed for.
+      - idle: The number of seconds the connection is idle.
+      - flags: The kind of client (N means normal client, check the full list of flags).
+                  https://redis.io/commands/client-list
+
+      - omem: The amount of memory used by the client for the output buffer.
+      - cmd: The last executed command.
+
+
+  See the CLIENT LIST documentation for the full list of fields and their meaning.
+
+  Once you have the list of clients, you can easily close the
+  connection with a client using the CLIENT KILL command specifying the client address as argument.
+          https://redis.io/commands/client-kill
+
+  The commands CLIENT SETNAME and CLIENT GETNAME can be used to set and get the connection name.
+  Starting with Redis 4.0, the client name is shown in the SLOWLOG output,
+  so that it gets simpler to identify clients that are creating latency issues.
+          https://redis.io/commands/client-setname
+          https://redis.io/commands/client-getname
+          https://redis.io/commands/slowlog
 
 
 
 
 
+----------------------------------------------------------------------------------------------------
+TCP keepalive
+
+    Recent versions of Redis (3.2 or greater) have TCP keepalive (SO_KEEPALIVE socket option)
+    enabled by default and set to about 300 seconds. This option is useful
+    in order to detect dead peers (clients that cannot be reached even if they look connected).
+    Moreover, if there is network equipment between clients and servers that need to
+    see some traffic in order to take the connection open, the option
+    will prevent unexpected connection closed events.
 
 
 
+----------------------------------------------------------------------------------------------------
 
 
 
