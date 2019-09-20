@@ -745,11 +745,163 @@ Adding or removing Sentinels   (添加 或 删除 Sentinels)
 ----------------------------------------------------------------------------------------------------
 Removing the old master or unreachable slaves
 
+    Sentinels never forget about slaves of a given master, even when they are unreachable
+    for a long time. This is useful, because Sentinels should be able to correctly
+    reconfigure a returning slave after a network partition or a failure event.
+
+    Moreover, after a failover, the failed over master is virtually added
+    as a slave of the new master, this way it will be reconfigured
+    to replicate with the new master as soon as it will be available again.
+
+    However sometimes you want to remove a slave (that may be the
+    old master) forever from the list of slaves monitored by Sentinels.
+
+    In order to do this, you need to send a SENTINEL RESET mastername command
+    to all the Sentinels: they'll refresh the list of slaves within the next 10 seconds,
+    only adding the ones listed as correctly replicating from the current master INFO output.
+    // 向 所有的 Sentinels 发送命令 `SENTINEL RESET mastername`, 这这些 Sentinels 会在 接下来的 10 seconds
+    // 之内 刷新(refresh) slaves 的 列表(list), 仅 添加 从当前 master 的 INFO 输出 中作为 correctly replicating
+    // 列出的 slaves.
 
 
 
 
 
+
+
+----------------------------------------------------------------------------------------------------
+Pub/Sub Messages
+
+  注意: client 可以 将 a Sentinel 当做 Redis 兼容的 Pub/Sub server 使用(但是 你不能使用 publish)
+        来 SUBSCRIBE or PSUBSCRIBE to channels  并 获取 指定 events 的 通知.
+
+  A client can use a Sentinel as it was a Redis compatible Pub/Sub server (but you can't use PUBLISH)
+  in order to SUBSCRIBE or PSUBSCRIBE to channels and get notified about specific events.
+
+  The channel name is the same as the name of the event. For instance
+  the channel named +sdown will receive all the notifications related to
+  instances entering an SDOWN (SDOWN means the instance is no longer reachable
+  from the point of view of the Sentinel you are querying) condition.
+
+  To get all the messages simply subscribe using PSUBSCRIBE *.
+
+  The following is a list of channels and message formats you can receive using this API.
+  The first word is the channel/event name, the rest is the format of the data.
+
+  Note: where instance details is specified it means that the following arguments
+        are provided to identify the target instance:
+
+
+            <instance-type> <name> <ip> <port> @ <master-name> <master-ip> <master-port>
+
+The part identifying the master (from the @ argument to the end) is optional
+and is only specified if the instance is not a master itself.
+
+      -   +reset-master <instance details> -- The master was reset.
+      -   +slave <instance details> -- A new slave was detected and attached.
+      -   +failover-state-reconf-slaves <instance details> -- Failover state changed to reconf-slaves state.
+      -   +failover-detected <instance details> -- A failover started by another Sentinel or any other external entity was detected (An attached slave turned into a master).
+      -   +slave-reconf-sent <instance details> -- The leader sentinel sent the SLAVEOF command to this instance in order to reconfigure it for the new slave.
+      -   +slave-reconf-inprog <instance details> -- The slave being reconfigured showed to be a slave of the new master ip:port pair, but the synchronization process is not yet complete.
+      -   +slave-reconf-done <instance details> -- The slave is now synchronized with the new master.
+      -   -dup-sentinel <instance details> -- One or more sentinels for the specified master were removed as duplicated (this happens for instance when a Sentinel instance is restarted).
+      -   +sentinel <instance details> -- A new sentinel for this master was detected and attached.
+      -   +sdown <instance details> -- The specified instance is now in Subjectively Down state.
+      -   -sdown <instance details> -- The specified instance is no longer in Subjectively Down state.
+      -   +odown <instance details> -- The specified instance is now in Objectively Down state.
+      -   -odown <instance details> -- The specified instance is no longer in Objectively Down state.
+      -   +new-epoch <instance details> -- The current epoch was updated.
+      -   +try-failover <instance details> -- New failover in progress, waiting to be elected by the majority.
+      -   +elected-leader <instance details> -- Won the election for the specified epoch, can do the failover.
+      -   +failover-state-select-slave <instance details> -- New failover state is select-slave: we are trying to find a suitable slave for promotion.
+      -   no-good-slave <instance details> -- There is no good slave to promote. Currently we'll try after some time, but probably this will change and the state machine will abort the failover at all in this case.
+      -   selected-slave <instance details> -- We found the specified good slave to promote.
+      -   failover-state-send-slaveof-noone <instance details> -- We are trying to reconfigure the promoted slave as master, waiting for it to switch.
+      -   failover-end-for-timeout <instance details> -- The failover terminated for timeout, slaves will eventually be configured to replicate with the new master anyway.
+      -   failover-end <instance details> -- The failover terminated with success. All the slaves appears to be reconfigured to replicate with the new master.
+      -   switch-master <master name> <oldip> <oldport> <newip> <newport> -- The master new IP and address is the specified one after a configuration change. This is the message most external users are interested in.
+      -   +tilt -- Tilt mode entered.
+      -   -tilt -- Tilt mode exited.
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Handling of -BUSY state
+
+    The -BUSY error is returned by a Redis instance when a Lua script is running
+    for more time than the configured Lua script time limit. When this happens
+    before triggering a fail over Redis Sentinel will try to send a
+    SCRIPT KILL command, that will only succeed if the script was read-only.
+
+  If the instance will still be in an error condition after this try, it will eventually be failed over.
+
+
+----------------------------------------------------------------------------------------------------
+Slaves priority    (Slaves 优先级)
+
+      参数 slave-priority
+
+    其可以在 Redis slave instances 执行 INFO 命令来查看, 如:
+
+            127.0.0.1:6379> info Replication
+            # Replication
+            role:slave
+            master_host:192.168.175.111
+            master_port:6379
+            master_link_status:up
+            master_last_io_seconds_ago:0
+            master_sync_in_progress:0
+            slave_repl_offset:4866297
+            slave_priority:100   <----------观察
+            slave_read_only:1
+            connected_slaves:0
+            master_replid:3fed308fcee0cbdd60a97679e777435e9f32e165
+            master_replid2:0000000000000000000000000000000000000000
+            master_repl_offset:4866297
+            second_repl_offset:-1
+            repl_backlog_active:1
+            repl_backlog_size:1048576
+            repl_backlog_first_byte_offset:3817722
+            repl_backlog_histlen:1048576
+
+
+
+  Redis instances have a configuration parameter called slave-priority.
+  This information is exposed by Redis slave instances in their INFO output,
+  and Sentinel uses it in order to pick a slave among the ones that can be used in order to failover a master:
+  // Sentinel 使用它来挑选(pick)可用于故障转移主服务器(failover a master)的 slave
+
+      1) If the slave priority is set to 0, the slave is never promoted to master.
+        // 如果 slave priority 被设置为 0, 则该 slave 永远不会被 提升为 master.
+
+      2) Slaves with a lower priority number are preferred by Sentinel.
+        // 具有更小 priority number 的 Slaves 是 Sentinel 的首选.
+
+
+    For example if there is a slave S1 in the same data center of the current master,
+    and another slave S2 in another data center, it is possible to set S1 with a priority
+    of 10 and S2 with a priority of 100, so that if the master fails and both S1 and S2 are available, S1 will be preferred.
+
+        //如果 S1(slave priority 为 10) 和 S2(slave priority 为 100) 都可用于 master 的故障转移, 则 S1 将被选中
+
+
+    For more information about the way slaves are selected,
+    please check the slave selection and priority section of this documentation.
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Sentinel and Redis authentication  (Sentinel 和 Redis 的认证)
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
 
 
 
