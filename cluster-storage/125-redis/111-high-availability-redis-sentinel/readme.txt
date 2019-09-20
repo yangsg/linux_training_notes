@@ -1007,12 +1007,12 @@ More advanced concepts   (更多高级概念)
 ----------------------------------------------------------------------------------------------------
 SDOWN and ODOWN failure state
 
-Redis Sentinel has two different concepts of being down, one is called
-a Subjectively Down condition (SDOWN) and is a down condition that is
-local to a given Sentinel instance. Another is called Objectively Down condition (ODOWN)
-and is reached when enough Sentinels (at least the number configured
-as the quorum parameter of the monitored master) have an SDOWN condition,
-and get feedback from other Sentinels using the SENTINEL is-master-down-by-addr command.
+  Redis Sentinel has two different concepts of being down, one is called
+  a Subjectively Down condition (SDOWN) and is a down condition that is
+  local to a given Sentinel instance. Another is called Objectively Down condition (ODOWN)
+  and is reached when enough Sentinels (at least the number configured
+  as the quorum parameter of the monitored master) have an SDOWN condition,
+  and get feedback from other Sentinels using the SENTINEL is-master-down-by-addr command.
 
   相关命令: SENTINEL is-master-down-by-addr
 
@@ -1021,9 +1021,9 @@ and get feedback from other Sentinels using the SENTINEL is-master-down-by-addr 
 
       注: ODOWN condition 仅 应用在 masters 上
 
-From the point of view of a Sentinel an SDOWN condition is reached when it
-does not receive a valid reply to PING requests for the number of seconds
-specified in the configuration as is-master-down-after-milliseconds parameter.
+  From the point of view of a Sentinel an SDOWN condition is reached when it
+  does not receive a valid reply to PING requests for the number of seconds
+  specified in the configuration as is-master-down-after-milliseconds parameter.
 
   相关参数: is-master-down-after-milliseconds
 
@@ -1064,13 +1064,58 @@ specified in the configuration as is-master-down-after-milliseconds parameter.
 
 
 
+
+
+
 ----------------------------------------------------------------------------------------------------
+Sentinels and Slaves auto discovery
+
+  Sentinels stay connected with other Sentinels in order to reciprocally check the availability
+  of each other, and to exchange messages. However you don't need to configure a list
+  of other Sentinel addresses in every Sentinel instance you run, as Sentinel uses
+  the Redis instances Pub/Sub capabilities in order to discover the
+  other Sentinels that are monitoring the same masters and slaves.
+
+  // Sentinels 会保持 与 其他 Sentinels 的 连接 以 相互检查(check) 彼此之间的 可用性(availability).
+  // 但是, 你无需在 你运行的 每个 Sentinel instance 中 配置 other Sentinel 的 列表(list),
+  // 因为 Sentinel 是 使用 Redis instances 的 Pub/Sub 功能 来 发现(discover) 监视(monitoring)
+  // 相同 masters 和 slaves 的 其他 Sentinels 的
+
+
+  This feature is implemented by sending hello messages into the channel named __sentinel__:hello.
+  // 该特性是 通过 向 name 为 __sentinel__:hello 的信道 发送 hello 消息(messages) 来实现的
+
+
+  Similarly you don't need to configure what is the list of the slaves attached
+  to a master, as Sentinel will auto discover this list querying Redis.
+  // 类似的, 你无需 配置 附加到 a master 的 the slaves 列表(list),
+  // 因为 Sentinel 将自动通过查询 Redis 来 discover 该列表(list)
+
+      // 工作细节如下:
+
+      - Every Sentinel publishes a message to every monitored master and slave Pub/Sub channel __sentinel__:hello,
+        every two seconds, announcing its presence with ip, port, runid.
+
+      - Every Sentinel is subscribed to the Pub/Sub channel __sentinel__:hello of every master and slave,
+        looking for unknown sentinels. When new sentinels are detected, they are added as sentinels of this master.
+
+      - Hello messages also include the full current configuration of the master.
+        If the receiving Sentinel has a configuration for a given master which
+        is older than the one received, it updates to the new configuration immediately.
+
+      - Before adding a new sentinel to a master a Sentinel always checks if there
+        is already a sentinel with the same runid or the same address (ip and port pair).
+        In that case all the matching sentinels are removed, and the new added.
 
 
 
 
 
 
+
+
+----------------------------------------------------------------------------------------------------
+Sentinel reconfiguration of instances outside the failover procedure
 
 
 
