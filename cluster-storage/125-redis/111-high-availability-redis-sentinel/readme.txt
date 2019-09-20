@@ -477,15 +477,87 @@ Example 3: Sentinel in the client boxes
         |-----------------------------------------------|
 
 
+  In this setup, the point of view Sentinels is the same as the clients: if a master
+  is reachable by the majority of the clients, it is fine. C1, C2, C3 here are generic clients,
+  it does not mean that C1 identifies a single client connected to Redis.
+  It is more likely something like an application server, a Rails app, or something like that.
+
+  If the box where M1 and S1 are running fails, the failover will happen without issues,
+  however it is easy to see that different network partitions will result in different behaviors.
+  For example Sentinel will not be able to setup if the network between the clients
+  and the Redis servers will get disconnected, since the Redis master and slave will be both not available.
+
+  Note that if C3 gets partitioned with M1 (hardly possible with the network described above,
+  but more likely possible with different layouts, or because of failures at the software layer),
+  we have a similar issue as described in Example 2, with the difference that here we
+  have no way to break the symmetry, since there is just a slave and master, so the master
+  can't stop accepting queries when it is disconnected from its slave,
+  otherwise the master would never be available during slave failures.
+
+  So this is a valid setup but the setup in the Example 2 has advantages such
+  as the HA system of Redis running in the same boxes as Redis itself which
+  may be simpler to manage, and the ability to put a bound on the amount
+  of time a master into the minority partition can receive writes.
+
+
+
+----------------------------------------------------------------------------------------------------
+Example 4: Sentinel client side with less than three clients
 
 
 
 
 ----------------------------------------------------------------------------------------------------
+Sentinel, Docker, NAT, and possible issues
+
+    Docker uses a technique called port mapping: programs running inside Docker containers
+    may be exposed with a different port compared to the one the program believes to be using.
+    This is useful in order to run multiple containers using the same ports,
+    at the same time, in the same server.
+
+    Docker is not the only software system where this happens, there are other
+    Network Address Translation setups where ports may be remapped,
+    and sometimes not ports but also IP addresses.
+
+    // 重映射 ports 和 addresses 结合 Sentinel 带来问题的两种方式:
+    Remapping ports and addresses creates issues with Sentinel in two ways:
+
+        1) Sentinel auto-discovery of other Sentinels no longer works, since it is based on
+           hello messages where each Sentinel announce at which port and IP address
+           they are listening for connection. However Sentinels have no way to understand
+           that an address or port is remapped, so it is announcing an information
+           that is not correct for other Sentinels to connect.
+
+
+        2) Slaves are listed in the INFO output of a Redis master in a similar way: the address is
+           detected by the master checking the remote peer of the TCP connection, while the
+           port is advertised by the slave itself during the handshake,
+           however the port may be wrong for the same reason as exposed in point 1.
+
+
+  Since Sentinels auto detect slaves using masters INFO output information,
+  the detected slaves will not be reachable, and Sentinel will never
+  be able to failover the master, since there are no good slaves from
+  the point of view of the system, so there is currently no way
+  to monitor with Sentinel a set of master and slave instances
+  deployed with Docker, unless you instruct Docker to map the port 1:1.
+  // Sentinels 是使用 masters 的 INFO 输出信息来自动探测 slaves的
+
+  For the first problem, in case you want to run a set of Sentinel instances using Docker
+  with forwarded ports (or any other NAT setup where ports are remapped),
+  you can use the following two Sentinel configuration directives
+  in order to force Sentinel to announce a specific set of IP and port:
+
+        sentinel announce-ip <ip>
+        sentinel announce-port <port>
+
+
+  Note that Docker has the ability to run in host networking mode (check the --net=host
+  option for more information). This should create no issues since ports are not remapped in this setup.
 
 
 
-
+----------------------------------------------------------------------------------------------------
 
 
 
