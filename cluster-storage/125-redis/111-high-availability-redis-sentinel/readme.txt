@@ -897,11 +897,53 @@ Slaves priority    (Slaves 优先级)
 ----------------------------------------------------------------------------------------------------
 Sentinel and Redis authentication  (Sentinel 和 Redis 的认证)
 
+  When the master is configured to require a password from clients, as a security measure,
+  slaves need to also be aware of this password in order to authenticate with the master
+  and create the master-slave connection used for the asynchronous replication protocol.
+
+  This is achieved using the following configuration directives:
+
+    - requirepass in the master, in order to set the authentication password,
+      and to make sure the instance will not process requests for non authenticated clients.
+      // 在 master 端 使用 requirepass 设置 认证 password, 其实不会处理 未经认证的 clients 的 请求
+
+    - masterauth in the slaves in order for the slaves to authenticate
+      with the master in order to correctly replicate data from it.
+      // 在 slaves 端 使用 masterauth 提供 认证 password, 使 slaves 通过 master 的认证 而 能从 master 哪里正确复制数据
+
+
+  When Sentinel is used, there is not a single master, since after a failover slaves may play
+  the role of masters, and old masters can be reconfigured in order to act as slaves,
+  so what you want to do is to set the above directives in all your instances, both masters and slaves.
+  // 当使用 Sentinel 时, 没有固定唯一的 master, 因为 master 和 slaves 之间的角色 是随着 故障转移 可以转换的,
+  // 因此 你要 做的 就是 同时在 master 和 slaves 端 上 设置 如上的 directives(即 requirepass 和 masterauth 指令)
+
+  This is also usually a sane setup since you don't want to protect
+  data only in the master, having the same data accessible in the slaves.
+
+  However, in the uncommon case where you need a slave that is accessible without authentication,
+  you can still do it by setting up a slave priority of zero, to prevent this slave
+  from being promoted to master, and configuring in this slave only the masterauth directive,
+  without using the requirepass directive, so that data will be readable by unauthenticated clients.
+  // 但是， 在某些 你 需要 无需认证也能访问 a slave  的 情况下, 你 仍让可以通过 将 a slave priority
+  // 设置为 0 以 阻止 该 slave 被 提升为 master, 并 仅使用  masterauth 指令 来配置该 slave 而
+  // 无需使用 requirepass 指令来实现. 因此 其上的 data 经 可以通过 未经认证 的 clients 来读取.
+
+  In order for sentinels to connect to Redis server instances when they are
+  configured with requirepass, the Sentinel configuration must
+  include the sentinel auth-pass directive, in the format:
+  // 可以在 Sentinel 的配置中包含 sentinel auth-pass  指令 来使 该 Sentinel
+  // 能够 连接到 使用 指令 requirepass 设置了 password 的 Redis server instances,
+  // 格式如下:
+
+      sentinel auth-pass <master-group-name> <pass>
+
 
 
 
 
 ----------------------------------------------------------------------------------------------------
+Configuring Sentinel instances with authentication
 
 
 
