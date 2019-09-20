@@ -945,6 +945,129 @@ Sentinel and Redis authentication  (Sentinel 和 Redis 的认证)
 ----------------------------------------------------------------------------------------------------
 Configuring Sentinel instances with authentication
 
+  You can also configure the Sentinel instance itself in order to require client
+  authentication via the AUTH command, however this feature is
+  only available starting with Redis 5.0.1.
+  // 你也可以 为 Sentinel instance 本身 配置 认证 password 使 client 要求 通过 AUTH 来认证.
+  // 但是 该特性 从 Redis 5.0.1 版本开始才有效.
+
+
+  In order to do so, just add the following configuration directive to all your Sentinel instances:
+  // 要实现此目的, 仅 将 如下的 requirepass 配置指令 加到 所有的 Sentinel instances 即可:
+
+          requirepass "your_password_here"
+
+
+  When configured this way, Sentinels will do two things:
+
+    1) A password will be required from clients in order to send commands to Sentinels.
+       This is obvious since this is how such configuration directive works in Redis in general.
+       // 认证 clients
+
+    2) Moreover the same password configured to access the local Sentinel, will be used by this
+       Sentinel instance in order to authenticate to all the other Sentinel instances it connects to.
+      // 此外, Sentinel instance 还会 使用该密码 来认证 前来 连接的 所有其他 的 Sentinel instances.
+
+
+  This means that you will have to configure the same requirepass password in all the Sentinel instances.
+  This way every Sentinel can talk with every other Sentinel without any need to configure
+  for each Sentinel the password to access all the other Sentinels, that would be very impractical.
+  // 这意味着 你 必须 在所有的 Sentinel instances 中 包含 相同的  requirepass password 配置.
+
+
+  Before using this configuration make sure your client library is able to send the AUTH command to Sentinel instances.
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Sentinel clients implementation
+
+  // Sentinel 需要 明确的 client 支持
+
+  Sentinel requires explicit client support, unless the system is configured to
+  execute a script that performs a transparent redirection of all the requests
+  to the new master instance (virtual IP or other similar systems).
+  The topic of client libraries implementation is covered in the document Sentinel clients guidelines.
+
+                                                https://redis.io/topics/sentinel-clients
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+More advanced concepts   (更多高级概念)
+
+    In the following sections we'll cover a few details about how Sentinel work,
+    without to resorting to implementation details and algorithms
+    that will be covered in the final part of this document.
+
+
+----------------------------------------------------------------------------------------------------
+SDOWN and ODOWN failure state
+
+Redis Sentinel has two different concepts of being down, one is called
+a Subjectively Down condition (SDOWN) and is a down condition that is
+local to a given Sentinel instance. Another is called Objectively Down condition (ODOWN)
+and is reached when enough Sentinels (at least the number configured
+as the quorum parameter of the monitored master) have an SDOWN condition,
+and get feedback from other Sentinels using the SENTINEL is-master-down-by-addr command.
+
+  相关命令: SENTINEL is-master-down-by-addr
+
+    SDOWN: Subjectively Down  主观 down
+    ODOWN: Objectively Down   客观 down, 会触发 故障转移
+
+      注: ODOWN condition 仅 应用在 masters 上
+
+From the point of view of a Sentinel an SDOWN condition is reached when it
+does not receive a valid reply to PING requests for the number of seconds
+specified in the configuration as is-master-down-after-milliseconds parameter.
+
+  相关参数: is-master-down-after-milliseconds
+
+
+  An acceptable reply to PING is one of the following:
+
+        - PING replied with +PONG.
+        - PING replied with -LOADING error.
+        - PING replied with -MASTERDOWN error.
+
+  Any other reply (or no reply at all) is considered non valid. However note that a
+  logical master that advertises itself as a slave in the INFO output is considered to be down.
+
+  Note that SDOWN requires that no acceptable reply is received for the whole interval configured,
+  so for instance if the interval is 30000 milliseconds (30 seconds) and
+  we receive an acceptable ping reply every 29 seconds, the instance is considered to be working.
+
+  SDOWN is not enough to trigger a failover: it only means a single Sentinel
+  believes a Redis instance is not available. To trigger a failover, the ODOWN state must be reached.
+
+
+  To switch from SDOWN to ODOWN no strong consensus algorithm is used, but just a form of gossip:
+  if a given Sentinel gets reports that a master is not working from enough Sentinels
+  in a given time range, the SDOWN is promoted to ODOWN.
+  If this acknowledge is later missing, the flag is cleared.
+
+  A more strict authorization that uses an actual majority is required in order to
+  really start the failover, but no failover can be triggered without reaching the ODOWN state
+
+  // ODOWN condition 仅 应用在 masters 上
+  The ODOWN condition only applies to masters. For other kind of instances Sentinel doesn't
+  require to act, so the ODOWN state is never reached for slaves and other sentinels, but only SDOWN is.
+
+  However SDOWN has also semantic implications. For example a slave
+  in SDOWN state is not selected to be promoted by a Sentinel performing a failover.
+  // 但是, SDOWN 也具有 语义含义, 例如 处于 SDOWN state 的 a slave 不会被 a Sentinel 选择并提升(为 master)
+  // 来执行故障转移.
+
+
+
+----------------------------------------------------------------------------------------------------
+
+
+
 
 
 
