@@ -558,6 +558,209 @@ Sentinel, Docker, NAT, and possible issues
 
 
 ----------------------------------------------------------------------------------------------------
+quick start
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Sentinel API
+
+    Sentinel provides an API in order to inspect its state, check the health of monitored masters and slaves,
+    subscribe in order to receive specific notifications, and change the Sentinel configuration at run time.
+
+    By default Sentinel runs using TCP port 26379 (note that 6379 is the normal Redis port).
+    Sentinels accept commands using the Redis protocol, so you can use redis-cli
+    or any other unmodified Redis client in order to talk with Sentinel.
+
+    It is possible to directly query a Sentinel to check what is the state of the
+    monitored Redis instances from its point of view, to see what other Sentinels it knows,
+    and so forth. Alternatively, using Pub/Sub, it is possible to receive push style
+    notifications from Sentinels, every time some event happens, like a failover,
+    or an instance entering an error condition, and so forth.
+
+
+----------------------------------------------------------------------------------------------------
+Sentinel commands
+
+
+The following is a list of accepted commands, not covering commands
+used in order to modify the Sentinel configuration, which are covered later.
+
+部分 Sentinel 相关的命令:
+
+  - PING  说明: This command simply returns PONG.
+  - SENTINEL masters   说明: Show a list of monitored masters and their state.
+  - SENTINEL master <master name> 说明: Show the state and info of the specified master.
+  - SENTINEL slaves <master name> 说明: Show a list of slaves for this master, and their state.
+  - SENTINEL sentinels <master name> 说明: Show a list of sentinel instances for this master, and their state.
+  - SENTINEL get-master-addr-by-name <master name> 说明:Return the ip and port number of the master with that name.
+                                                        If a failover is in progress or terminated successfully for this
+                                                        master it returns the address and port of the promoted slave.
+
+- SENTINEL reset <pattern> 说明:This command will reset all the masters with matching name.
+                                The pattern argument is a glob-style pattern.
+                                The reset process clears any previous state in a master (including a failover in progress),
+                                and removes every slave and sentinel already discovered and associated with the master.
+
+- SENTINEL failover <master name> 说明:Force a failover as if the master was not reachable, and without asking
+                                       for agreement to other Sentinels (however a new version of the configuration will
+                                       be published so that the other Sentinels will update their configurations).
+                                       // 强制故障转移, 而无需征求其他 Sentinels 的同意.(但 新版本的 configuration
+                                       // 依然会发布给其他的 Sentinels 并使其 更新 其 configurations)
+
+
+- SENTINEL ckquorum <master name> 说明:Check if the current Sentinel configuration is able
+                                       to reach the quorum needed to failover a master, and the majority needed to authorize
+                                       the failover. This command should be used in monitoring systems to check if a Sentinel deployment is ok.
+                                       // 检查当前 Sentinel configuration 是否能够 达到 故障转移 a master
+                                       // 所需的 quorum, 以及 达到 故障转移所需的 the majority.
+                                       // 该命令应该被用于  监视 systems 来 检查 a Sentinel deployment 是否 ok
+
+- SENTINEL flushconfig  说明:Force Sentinel to rewrite its configuration on disk, including the current Sentinel state.
+                             Normally Sentinel rewrites the configuration every time something changes in its state
+                             (in the context of the subset of the state which is persisted on disk across restart).
+                             However sometimes it is possible that the configuration file is lost because of operation
+                             errors, disk failures, package upgrade scripts or configuration managers.
+                             In those cases a way to to force Sentinel to rewrite the configuration file is handy.
+                             This command works even if the previous configuration file is completely missing.
+                             // 比如 配置文件被 无意 删除, 此时 可以使用该命令 rewrite 配置文件
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Reconfiguring Sentinel at Runtime
+
+
+  Starting with Redis version 2.8.4, Sentinel provides an API in order to add, remove, or change
+  the configuration of a given master. Note that if you have multiple sentinels you should apply
+  the changes to all to your instances for Redis Sentinel to work properly. This means that
+  changing the configuration of a single Sentinel does not automatically propagates
+  the changes to the other Sentinels in the network.
+  // 从 Redis version 2.8.4 开始, Sentinel 提供了 用于 add, remove, 或 change 指定 master 的 the configuration
+  // 的 API, 要特别注意的是, 如果 有多个 sentinels, 为了让 Redis Sentinel 正常工作, you should apply
+  // the changes to all to your instances. 这意味着 单个 Sentinel 的 the configuration 的修改 不会 自动
+  // 传播(propagates) 给 网络中的其他 Sentinels.
+     (意思就是说 如果要 修改 Sentinel 的配置, 则需要手动在 所有的 Sentinel 实例上都做修改)
+
+
+The following is a list of SENTINEL sub commands used in order to update the configuration of a Sentinel instance.
+
+  - SENTINEL MONITOR <name> <ip> <port> <quorum> 说明:This command tells the Sentinel to start monitoring a new master
+                                                    with the specified name, ip, port, and quorum. It is identical to
+                                                    the sentinel monitor configuration directive in sentinel.conf
+                                                    configuration file, with the difference that you can't use
+                                                    an hostname in as ip, but you need to provide an IPv4 or IPv6 address.
+
+
+  - SENTINEL REMOVE <name> 说明:is used in order to remove the specified master: the master will
+                              no longer be monitored, and will totally be removed from the internal
+                              state of the Sentinel, so it will no longer listed by SENTINEL masters and so forth.
+
+  - SENTINEL SET <name> <option> <value> 说明:The SET command is very similar to the CONFIG SET command of Redis,
+                                            and is used in order to change configuration parameters of a specific master.
+                                            Multiple option / value pairs can be specified (or none at all).
+                                            All the configuration parameters that can be configured
+                                            via sentinel.conf are also configurable using the SET command.
+
+
+
+如下是一些示例:
+  The following is an example of SENTINEL SET command in order to modify
+  the down-after-milliseconds configuration of a master called objects-cache:
+
+            SENTINEL SET objects-cache-master down-after-milliseconds 1000
+
+
+      As already stated, SENTINEL SET can be used to set all the configuration parameters that
+      are settable in the startup configuration file. Moreover it is possible to change just
+      the master quorum configuration without removing and re-adding the master
+      with SENTINEL REMOVE followed by SENTINEL MONITOR, but simply using:
+
+
+            SENTINEL SET objects-cache-master quorum 5
+
+  Note that there is no equivalent GET command since SENTINEL MASTER provides
+  all the configuration parameters in a simple to parse format (as a field/value pairs array).
+
+
+----------------------------------------------------------------------------------------------------
+Adding or removing Sentinels   (添加 或 删除 Sentinels)
+
+    // 添加一个新的 Sentinel
+    Adding a new Sentinel to your deployment is a simple process because of the
+    auto-discover mechanism implemented by Sentinel. All you need to do is to start
+    the new Sentinel configured to monitor the currently active master.
+    Within 10 seconds the Sentinel will acquire the list of
+    other Sentinels and the set of slaves attached to the master.
+    // 因为 Sentinel 实现了 auto-discover mechanism, 所以 可以简单的 add 一个 新的 Sentinel 到你的部署中.
+    // 你仅需要 启动 该 被 配置为 to monitor the currently active master 的 the new Sentinel 即可.
+    // 在 10 seconds 之内, 该 Sentinel 将获得 其他的 Sentinels 的 列表(list) 以及 附加(attached)到 该
+    // master 的 slaves 的集合.
+
+    If you need to add multiple Sentinels at once, it is suggested to add it one after the other,
+    waiting for all the other Sentinels to already know about the first one before adding the next.
+    This is useful in order to still guarantee that majority can be achieved only
+    in one side of a partition, in the chance failures should happen in the process of adding new Sentinels.
+
+    This can be easily achieved by adding every new Sentinel with a 30 seconds delay, and during absence of network partitions.
+
+    At the end of the process it is possible to use the command SENTINEL MASTER mastername
+    in order to check if all the Sentinels agree about the total number of Sentinels monitoring the master.
+
+        最后 最好使用命令 SENTINEL MASTER mastername 确认一下
+
+
+    // 移除 一个 Sentinel
+    Removing a Sentinel is a bit more complex: Sentinels never forget already seen Sentinels,
+    even if they are not reachable for a long time, since we don't want to dynamically
+    change the majority needed to authorize a failover and the creation of a new configuration number.
+    So in order to remove a Sentinel the following steps should be performed in absence of network partitions:
+    // 删除一个 Sentinel 要 稍微复杂一点,
+    // 为了删除一个 Sentinel 应该在没有 network partitions 的情况下 按照 如下的步骤操作:
+
+        1) Stop the Sentinel process of the Sentinel you want to remove.
+           // 停止 你想要 移除的 Sentinel 的 Sentinel process.
+
+        2) Send a SENTINEL RESET * command to all the other Sentinel instances
+          (instead of * you can use the exact master name if you want to reset just a single master).
+          One after the other, waiting at least 30 seconds between instances.
+          // 发送 命令  `SENTINEL RESET *` 到 所有其他的 Sentinel instances
+          //(如果你想仅 reset 单个的 master 则 你可以将 '*' 替换为 精确的 master name)
+          // 一个接一个地, 在设置下一个 instance 之前等待 至少 30 seconds
+
+        3) Check that all the Sentinels agree about the number of Sentinels currently active,
+           by inspecting the output of SENTINEL MASTER mastername of every Sentinel.
+          // 通过观察每个 Sentinel 的 执行命令 `SENTINEL MASTER mastername` 的输出,
+          // 检查所有 Sentinels 是否同意当前活动的Sentinels数量
+
+
+
+----------------------------------------------------------------------------------------------------
+Removing the old master or unreachable slaves
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
