@@ -24,6 +24,14 @@ https://blog.51cto.com/13447608/2295799
 
 
 
+对于将 redis (master, slave 和 sentinel) 部署到 容器或使用的 ip 或 port remapping技术的环境中,
+需要额外注意一些问题, 详细见
+
+      Sentinel, Docker, NAT, and possible issues
+          https://redis.io/topics/sentinel
+
+
+
 
 ----------------------------------------------------------------------------------------------------
 Redis数据库
