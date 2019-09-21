@@ -1222,9 +1222,82 @@ The slave selection process evaluates the following information about slaves:
 ----------------------------------------------------------------------------------------------------
 Algorithms and internals
 
+  In the following sections we will explore the details of Sentinel behavior.
+  It is not strictly needed for users to be aware of all the details,
+  but a deep understanding of Sentinel may help to deploy and operate Sentinel in a more effective way.
+
+
+----------------------------------------------------------------------------------------------------
+Quorum
+
+  注: 故障转移的 实际执行不仅需要满足 quorum 条件(quorum条件仅触发 trigger 故障转移), 还要满足
+      at least a majority of Sentinels must authorize the Sentinel to failover(即故障转移
+      需要得到至少 大多数/过半的 Sentinels 成员的 授权authorize 才可实际执行).
+
+    The previous sections showed that every master monitored by Sentinel is
+    associated to a configured quorum. It specifies the number of Sentinel processes
+    that need to agree about the unreachability or error condition of the master in order to trigger a failover.
+
+    However, after the failover is triggered, in order for the failover to actually be performed,
+    at least a majority of Sentinels must authorize the Sentinel to failover.
+    Sentinel never performs a failover in the partition where a minority of Sentinels exist.
+
+
+  Let's try to make things a bit more clear:
+
+  Quorum: the number of Sentinel processes that need to detect an error
+  condition in order for a master to be flagged as ODOWN.
+
+        - Quorum: the number of Sentinel processes that need to detect an error condition in order for a master to be flagged as ODOWN.
+        - The failover is triggered by the ODOWN state.
+        - Once the failover is triggered, the Sentinel trying to failover is required to ask for authorization
+          to a majority of Sentinels (or more than the majority if the quorum
+          is set to a number greater than the majority).
+
+
+  The difference may seem subtle but is actually quite simple to understand and use. For example if
+  you have 5 Sentinel instances, and the quorum is set to 2, a failover will be triggered as soon as 2
+  Sentinels believe that the master is not reachable, however one of the two Sentinels
+  will be able to failover only if it gets authorization at least from 3 Sentinels.
+
+  If instead the quorum is configured to 5, all the Sentinels must agree
+  about the master error condition, and the authorization from all Sentinels is required in order to failover.
+
+  This means that the quorum can be used to tune Sentinel in two ways:
+
+      1) If a the quorum is set to a value smaller than the majority of Sentinels we deploy,
+         we are basically making Sentinel more sensible to master failures,
+         triggering a failover as soon as even just a minority of
+         Sentinels is no longer able to talk with the master.
+
+      2) If a quorum is set to a value greater than the majority of Sentinels,
+         we are making Sentinel able to failover only when there are a very
+         large number (larger than majority) of well connected Sentinels which agree about the master being down.
 
 
 
+
+----------------------------------------------------------------------------------------------------
+Configuration epochs
+
+
+----------------------------------------------------------------------------------------------------
+Configuration propagation
+
+
+----------------------------------------------------------------------------------------------------
+Consistency under partitions
+
+
+----------------------------------------------------------------------------------------------------
+Sentinel persistent state
+
+
+----------------------------------------------------------------------------------------------------
+TILT mode
+
+
+----------------------------------------------------------------------------------------------------
 
 
 
