@@ -561,6 +561,7 @@ Sentinel, Docker, NAT, and possible issues
 quick start
 
 
+    https://github.com/yangsg/linux_training_notes/blob/master/cluster-storage/125-redis/111-high-availability-redis-sentinel/100-redis-sentinel-demo01.draft.txt
 
 
 
