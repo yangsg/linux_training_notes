@@ -1,0 +1,772 @@
+
+
+https://redis.io/topics/sentinel
+----------------------------------------------------------------------------------------------------
+
+
+
+
+Here we assume that the instances are executed at port 5000, 5001, 5002. We also assume that you have a running Redis master at port 6379 with a slave running at port 6380.
+
+
+redis_sentinel01: 192.168.175.100:5000
+redis_sentinel02: 192.168.175.101:5001
+redis_sentinel03: 192.168.175.102:5002
+
+redis_server01: 192.168.175.110:6379  (master)
+redis_server02: 192.168.175.111:6380  (slave)
+
+
+----------------------------------------------------------------------------------------------------
+// 构建基本的编译环境
+[root@redis_sentinel01 ~]# yum -y install gcc gcc-c++ autoconf automake
+
+[root@redis_sentinel01 ~]# mkdir /app
+
+[root@redis_sentinel01 ~]# mkdir download
+[root@redis_sentinel01 ~]# cd download/
+[root@redis_sentinel01 download]# wget http://download.redis.io/releases/redis-5.0.5.tar.gz
+
+[root@redis_sentinel01 download]# ls
+      redis-5.0.5.tar.gz
+
+[root@redis_sentinel01 download]# tar -xvf redis-5.0.5.tar.gz
+[root@redis_sentinel01 download]# cd redis-5.0.5/
+[root@redis_sentinel01 redis-5.0.5]# ls   #发现已经存在 Makefile 文件, 所有无需执行 configure 命令了
+            00-RELEASENOTES  CONTRIBUTING  deps     Makefile   README.md   runtest          runtest-moduleapi  sentinel.conf  tests
+            BUGS             COPYING       INSTALL  MANIFESTO  redis.conf  runtest-cluster  runtest-sentinel   src            utils
+
+[root@redis_sentinel01 redis-5.0.5]# make
+[root@redis_sentinel01 redis-5.0.5]# make PREFIX=/app/redis install
+
+[root@redis_sentinel01 ~]# vim /etc/profile
+      export PATH=$PATH:/app/redis/bin
+
+[root@redis_sentinel01 ~]# source /etc/profile
+
+
+
+
+----------------------------------------------------------------------------------------------------
+
+
+[root@redis_sentinel01 ~]# tree /app/redis/
+            /app/redis/
+            └── bin
+                ├── redis-benchmark
+                ├── redis-check-aof
+                ├── redis-check-rdb
+                ├── redis-cli
+                ├── redis-sentinel -> redis-server
+                └── redis-server
+
+
+[root@redis_sentinel01 ~]# mkdir /app/redis/conf
+[root@redis_sentinel01 ~]# cp ~/download/redis-5.0.5/sentinel.conf /app/redis/conf/
+        #port 26379
+        port 5000
+        sentinel monitor mymaster 192.168.175.110 6379 2
+        sentinel down-after-milliseconds mymaster 5000
+        sentinel failover-timeout mymaster 60000
+        sentinel parallel-syncs mymaster 1
+
+
+          ------------------------------
+          A few things to note about the above configuration:
+          参数设置说明:
+
+          - The master set is called mymaster. It identifies the master and its slaves.
+            Since each master set has a different name, Sentinel can monitor
+            different sets of masters and slaves at the same time.
+
+          - The quorum was set to the value of 2 (last argument of sentinel monitor configuration directive).
+          - The down-after-milliseconds value is 5000 milliseconds, that is 5 seconds,
+            so masters will be detected as failing as soon as we don't
+            receive any reply from our pings within this amount of time.
+          ------------------------------
+
+
+[root@redis_sentinel01 ~]# ls -l /app/redis/conf/sentinel.conf
+    -rw-r--r-- 1 root root 9710 Sep 20 11:55 /app/redis/conf/sentinel.conf
+
+
+[root@redis_sentinel01 ~]# rsync -av /app/redis/conf/sentinel.conf root@192.168.175.101:/app/redis/conf/sentinel.conf
+[root@redis_sentinel01 ~]# rsync -av /app/redis/conf/sentinel.conf root@192.168.175.102:/app/redis/conf/sentinel.conf
+
+// The other two configuration files will be identical but using 5001 and 5002 as port numbers
+[root@redis_sentinel02 ~]# vim /app/redis/conf/sentinel.conf
+        port 5001
+        sentinel monitor mymaster 192.168.175.110 6379 2
+        sentinel down-after-milliseconds mymaster 5000
+        sentinel failover-timeout mymaster 60000
+        sentinel parallel-syncs mymaster 1
+
+[root@redis_sentinel03 ~]# vim /app/redis/conf/sentinel.conf
+        port 5002
+        sentinel monitor mymaster 192.168.175.110 6379 2
+        sentinel down-after-milliseconds mymaster 5000
+        sentinel failover-timeout mymaster 60000
+        sentinel parallel-syncs mymaster 1
+
+
+----------------------------------------------------------------------------------------------------
+
+
+[root@redis_server01 ~]# vim /etc/sysctl.conf
+
+      net.core.somaxconn = 1024
+      vm.overcommit_memory = 1
+
+[root@redis_server01 ~]# sysctl -p
+      net.core.somaxconn = 1024
+      vm.overcommit_memory = 1
+
+[root@redis_server01 ~]# echo never > /sys/kernel/mm/transparent_hugepage/enabled
+[root@redis_server01 ~]# vim /etc/rc.d/rc.local
+
+[root@redis_server01 ~]# chmod +x /etc/rc.d/rc.local
+
+// 查看验证
+[root@redis_server01 ~]# cat /proc/sys/net/core/somaxconn
+1024
+[root@redis_server01 ~]# cat /proc/sys/vm/overcommit_memory
+1
+[root@redis_server01 ~]# cat /sys/kernel/mm/transparent_hugepage/enabled
+always madvise [never]
+
+
+
+[root@redis_server01 ~]# cp ~/download/redis-5.0.5/redis.conf /app/redis/conf/
+
+
+// 重启 redis 服务
+[root@redis_server01 ~]# vim /etc/profile
+
+          export PATH=$PATH:/app/redis/bin
+
+[root@redis_server01 ~]# source /etc/profile
+
+[root@redis_server01 ~]# redis-server /app/redis/conf/redis.conf &
+
+
+[root@redis_server01 ~]# vim /app/redis/conf/redis.conf
+
+    bind 192.168.175.110 127.0.0.1
+
+
+// 设置 redis 开机自启
+[root@redis_server01 ~]# vim /etc/rc.d/rc.local
+
+        echo never > /sys/kernel/mm/transparent_hugepage/enabled
+        #注: redis 服务的启动一定要放在 transparent_hugepage 被禁用之后
+        /app/redis/bin/redis-server  /app/redis/conf/redis.conf &
+
+
+
+
+----------------------------------------------------------------------------------------------------
+
+[root@redis_server02 ~]# vim /etc/sysctl.conf
+
+      net.core.somaxconn = 1024
+      vm.overcommit_memory = 1
+
+[root@redis_server02 ~]# sysctl -p
+      net.core.somaxconn = 1024
+      vm.overcommit_memory = 1
+
+[root@redis_server02 ~]# echo never > /sys/kernel/mm/transparent_hugepage/enabled
+[root@redis_server02 ~]# vim /etc/rc.d/rc.local
+
+      echo never > /sys/kernel/mm/transparent_hugepage/enabled
+
+[root@redis_server02 ~]# chmod +x /etc/rc.d/rc.local
+
+// 查看验证
+[root@redis_server02 ~]# cat /proc/sys/net/core/somaxconn
+1024
+[root@redis_server02 ~]# cat /proc/sys/vm/overcommit_memory
+1
+[root@redis_server02 ~]# cat /sys/kernel/mm/transparent_hugepage/enabled
+always madvise [never]
+
+
+
+[root@redis_server02 ~]# cp ~/download/redis-5.0.5/redis.conf /app/redis/conf/
+
+[root@redis_server02 ~]# vim /app/redis/conf/redis.conf
+
+    bind 192.168.175.111 127.0.0.1
+
+    replicaof 192.168.175.110 6379
+
+
+// 注: 查看 slaveof 的帮助可以发现, slaveof 从 redis 5开始已被废弃(Deprecated), 取而代之应该使用 REPLICAOF
+  127.0.0.1:6379> help slaveof
+
+    SLAVEOF host port
+    summary: Make the server a replica of another instance, or promote it as master. Deprecated starting with Redis 5. Use REPLICAOF instead.
+    since: 1.0.0
+    group: server
+
+
+
+// 重启 redis 服务
+[root@redis_server02 ~]# vim /etc/profile
+
+          export PATH=$PATH:/app/redis/bin
+
+[root@redis_server02 ~]# source /etc/profile
+
+
+[root@redis_server02 ~]# redis-server /app/redis/conf/redis.conf &
+
+      21343:S 20 Sep 2019 12:54:03.498 # Server initialized
+      21343:S 20 Sep 2019 12:54:03.498 * DB loaded from disk: 0.000 seconds
+      21343:S 20 Sep 2019 12:54:03.498 * Ready to accept connections
+      21343:S 20 Sep 2019 12:54:03.498 * Connecting to MASTER 192.168.175.110:6379
+      21343:S 20 Sep 2019 12:54:03.499 * MASTER <-> REPLICA sync started
+      21343:S 20 Sep 2019 12:54:03.501 * Non blocking connect for SYNC fired the event.
+      21343:S 20 Sep 2019 12:54:03.502 * Master replied to PING, replication can continue...
+      21343:S 20 Sep 2019 12:54:03.503 * Partial resynchronization not possible (no cached master)
+      21343:S 20 Sep 2019 12:54:03.504 * Full resync from master: 412e92cb646a2415d802e30a0817332144678fbc:0
+      21343:S 20 Sep 2019 12:54:03.583 * MASTER <-> REPLICA sync: receiving 175 bytes from master
+      21343:S 20 Sep 2019 12:54:03.583 * MASTER <-> REPLICA sync: Flushing old data
+      21343:S 20 Sep 2019 12:54:03.583 * MASTER <-> REPLICA sync: Loading DB in memory
+      21343:S 20 Sep 2019 12:54:03.584 * MASTER <-> REPLICA sync: Finished with success
+
+
+
+
+// 设置 redis 开机自启
+[root@redis_server02 ~]# vim /etc/rc.d/rc.local
+
+        echo never > /sys/kernel/mm/transparent_hugepage/enabled
+        #注: redis 服务的启动一定要放在 transparent_hugepage 被禁用之后
+        /app/redis/bin/redis-server  /app/redis/conf/redis.conf &
+
+----------------------------------------------------------------------------------------------------
+[root@redis_sentinel01 ~]# redis-sentinel /app/redis/conf/sentinel.conf
+21786:X 20 Sep 2019 13:01:06.548 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+21786:X 20 Sep 2019 13:01:06.548 # Redis version=5.0.5, bits=64, commit=00000000, modified=0, pid=21786, just started
+21786:X 20 Sep 2019 13:01:06.548 # Configuration loaded
+21786:X 20 Sep 2019 13:01:06.548 * Increased maximum number of open files to 10032 (it was originally set to 1024).
+                _._
+           _.-``__ ''-._
+      _.-``    `.  `_.  ''-._           Redis 5.0.5 (00000000/0) 64 bit
+  .-`` .-```.  ```\/    _.,_ ''-._
+ (    '      ,       .-`  | `,    )     Running in sentinel mode
+ |`-._`-...-` __...-.``-._|'` _.-'|     Port: 5000
+ |    `-._   `._    /     _.-'    |     PID: 21786
+  `-._    `-._  `-./  _.-'    _.-'
+ |`-._`-._    `-.__.-'    _.-'_.-'|
+ |    `-._`-._        _.-'_.-'    |           http://redis.io
+  `-._    `-._`-.__.-'_.-'    _.-'
+ |`-._`-._    `-.__.-'    _.-'_.-'|
+ |    `-._`-._        _.-'_.-'    |
+  `-._    `-._`-.__.-'_.-'    _.-'
+      `-._    `-.__.-'    _.-'
+          `-._        _.-'
+              `-.__.-'
+
+21786:X 20 Sep 2019 13:01:06.563 # WARNING: The TCP backlog setting of 511 cannot be enforced because /proc/sys/net/core/somaxconn is set to the lower value of 128.
+21786:X 20 Sep 2019 13:01:06.564 # Sentinel ID is c29e23e82bc34aca39ee8648a5947e399c85417b
+21786:X 20 Sep 2019 13:01:06.564 # +monitor master mymaster 192.168.175.110 6379 quorum 2
+21786:X 20 Sep 2019 13:01:06.589 * +slave slave 192.168.175.111:6379 192.168.175.111 6379 @ mymaster 192.168.175.110 6379
+
+
+
+[root@redis_sentinel02 ~]# redis-sentinel /app/redis/conf/sentinel.conf
+
+21233:X 20 Sep 2019 13:04:05.202 # WARNING: The TCP backlog setting of 511 cannot be enforced because /proc/sys/net/core/somaxconn is set to the lower value of 128.
+21233:X 20 Sep 2019 13:04:05.204 # Sentinel ID is 8f89c72bf2a244ba4c00304cdbce4c2c6d9cebeb
+21233:X 20 Sep 2019 13:04:05.204 # +monitor master mymaster 192.168.175.110 6379 quorum 2
+21233:X 20 Sep 2019 13:04:05.227 * +slave slave 192.168.175.111:6379 192.168.175.111 6379 @ mymaster 192.168.175.110 6379
+21233:X 20 Sep 2019 13:04:05.665 * +sentinel sentinel c29e23e82bc34aca39ee8648a5947e399c85417b 192.168.175.100 5000 @ mymaster 192.168.175.110 6379
+21233:X 20 Sep 2019 13:04:26.802 * +sentinel sentinel 7caafeb4921ae37ce3f05b7193cab0b238ff0c96 192.168.175.102 5002 @ mymaster 192.168.175.110 6379
+
+
+
+[root@redis_sentinel03 ~]# redis-sentinel /app/redis/conf/sentinel.conf
+
+21235:X 20 Sep 2019 13:04:24.882 # WARNING: The TCP backlog setting of 511 cannot be enforced because /proc/sys/net/core/somaxconn is set to the lower value of 128.
+21235:X 20 Sep 2019 13:04:24.887 # Sentinel ID is 7caafeb4921ae37ce3f05b7193cab0b238ff0c96
+21235:X 20 Sep 2019 13:04:24.887 # +monitor master mymaster 192.168.175.110 6379 quorum 2
+21235:X 20 Sep 2019 13:04:24.903 * +slave slave 192.168.175.111:6379 192.168.175.111 6379 @ mymaster 192.168.175.110 6379
+21235:X 20 Sep 2019 13:04:25.613 * +sentinel sentinel 8f89c72bf2a244ba4c00304cdbce4c2c6d9cebeb 192.168.175.101 5001 @ mymaster 192.168.175.110 6379
+21235:X 20 Sep 2019 13:04:26.167 * +sentinel sentinel c29e23e82bc34aca39ee8648a5947e399c85417b 192.168.175.100 5000 @ mymaster 192.168.175.110 6379
+
+
+
+
+----------------------------------------------------------------------------------------------------
+[root@redis_sentinel01 ~]# redis-cli -p 5000
+127.0.0.1:5000> sentinel master mymaster    <=====执行命令, Asking Sentinel about the state of a master
+ 1) "name"
+ 2) "mymaster"
+ 3) "ip"
+ 4) "192.168.175.110"
+ 5) "port"
+ 6) "6379"
+ 7) "runid"
+ 8) "6b0762b27dfc5a6a08d25928fa9aa5a263142401"
+ 9) "flags" <---------------------------观察
+10) "master"
+11) "link-pending-commands"
+12) "0"
+13) "link-refcount"
+14) "1"
+15) "last-ping-sent"
+16) "0"
+17) "last-ok-ping-reply"
+18) "978"
+19) "last-ping-reply"
+20) "978"
+21) "down-after-milliseconds"
+22) "5000"
+23) "info-refresh"
+24) "2172"
+25) "role-reported"
+26) "master"
+27) "role-reported-time"
+28) "373779"
+29) "config-epoch"
+30) "0"
+31) "num-slaves"  <---------------------观察(检测到 master 有 1 个 slave)
+32) "1"
+33) "num-other-sentinels"   <-------------------观察(检测到还有其他 2 个 sentinels)
+34) "2"
+35) "quorum"
+36) "2"
+37) "failover-timeout"
+38) "60000"
+39) "parallel-syncs"
+40) "1"
+127.0.0.1:5000>
+
+
+      ----------------------------------------
+      As you can see, it prints a number of information about the master. There are a few that are of particular interest for us:
+
+            1) num-other-sentinels is 2, so we know the Sentinel already detected two more Sentinels for this master.
+               If you check the logs you'll see the +sentinel events generated.
+            2) flags is just master. If the master was down we could expect to see s_down or o_down flag as well here.
+            3) num-slaves is correctly set to 1, so Sentinel also detected that there is an attached slave to our master.
+
+      ----------------------------------------
+
+127.0.0.1:5000> SENTINEL slaves mymaster   <=====执行命令, 查看 mymaster 组中 slaves 相关信息
+1)  1) "name"
+    2) "192.168.175.111:6379"
+    3) "ip"
+    4) "192.168.175.111"
+    5) "port"
+    6) "6379"
+    7) "runid"
+    8) "9606f25cef1d925c12c7e36c53b2442bbd1f5353"
+    9) "flags"
+   10) "slave"
+   11) "link-pending-commands"
+   12) "0"
+   13) "link-refcount"
+   14) "1"
+   15) "last-ping-sent"
+   16) "0"
+   17) "last-ok-ping-reply"
+   18) "334"
+   19) "last-ping-reply"
+   20) "334"
+   21) "down-after-milliseconds"
+   22) "5000"
+   23) "info-refresh"
+   24) "334"
+   25) "role-reported"
+   26) "slave"
+   27) "role-reported-time"
+   28) "703247"
+   29) "master-link-down-time"
+   30) "0"
+   31) "master-link-status"
+   32) "ok"
+   33) "master-host"
+   34) "192.168.175.110"
+   35) "master-port"
+   36) "6379"
+   37) "slave-priority"
+   38) "100"
+   39) "slave-repl-offset"
+   40) "123387"
+127.0.0.1:5000>
+
+
+127.0.0.1:5000> SENTINEL sentinels mymaster   <=====执行命令, 查看其他 sentinels 相关信息
+1)  1) "name"
+    2) "7caafeb4921ae37ce3f05b7193cab0b238ff0c96"
+    3) "ip"
+    4) "192.168.175.102"
+    5) "port"
+    6) "5002"
+    7) "runid"
+    8) "7caafeb4921ae37ce3f05b7193cab0b238ff0c96"
+    9) "flags"
+   10) "sentinel"
+   11) "link-pending-commands"
+   12) "0"
+   13) "link-refcount"
+   14) "1"
+   15) "last-ping-sent"
+   16) "0"
+   17) "last-ok-ping-reply"
+   18) "935"
+   19) "last-ping-reply"
+   20) "935"
+   21) "down-after-milliseconds"
+   22) "5000"
+   23) "last-hello-message"
+   24) "157"
+   25) "voted-leader"
+   26) "?"
+   27) "voted-leader-epoch"
+   28) "0"
+2)  1) "name"
+    2) "8f89c72bf2a244ba4c00304cdbce4c2c6d9cebeb"
+    3) "ip"
+    4) "192.168.175.101"
+    5) "port"
+    6) "5001"
+    7) "runid"
+    8) "8f89c72bf2a244ba4c00304cdbce4c2c6d9cebeb"
+    9) "flags"
+   10) "sentinel"
+   11) "link-pending-commands"
+   12) "0"
+   13) "link-refcount"
+   14) "1"
+   15) "last-ping-sent"
+   16) "0"
+   17) "last-ok-ping-reply"
+   18) "935"
+   19) "last-ping-reply"
+   20) "935"
+   21) "down-after-milliseconds"
+   22) "5000"
+   23) "last-hello-message"
+   24) "1149"
+   25) "voted-leader"
+   26) "?"
+   27) "voted-leader-epoch"
+   28) "0"
+127.0.0.1:5000>
+
+
+----------------------------------------------------------------------------------------------------
+
+// 查看文件 /app/redis/conf/sentinel.conf 的变化(这也表明了 该文件为什么要设置 write 权限 )
+[root@redis_sentinel01 ~]# cat /app/redis/conf/sentinel.conf
+
+      # SENTINEL rename-command mymaster CONFIG CONFIG
+      # Generated by CONFIG REWRITE
+      protected-mode no
+      sentinel config-epoch mymaster 0
+      sentinel leader-epoch mymaster 0
+      sentinel known-replica mymaster 192.168.175.111 6379
+      sentinel known-sentinel mymaster 192.168.175.102 5002 7caafeb4921ae37ce3f05b7193cab0b238ff0c96
+      sentinel known-sentinel mymaster 192.168.175.101 5001 8f89c72bf2a244ba4c00304cdbce4c2c6d9cebeb
+      sentinel current-epoch 0
+
+
+
+
+
+[root@redis_sentinel02 ~]# cat /app/redis/conf/sentinel.conf
+
+      # SENTINEL rename-command mymaster CONFIG CONFIG
+      # Generated by CONFIG REWRITE
+      protected-mode no
+      sentinel config-epoch mymaster 0
+      sentinel leader-epoch mymaster 0
+      sentinel known-replica mymaster 192.168.175.111 6379
+      sentinel known-sentinel mymaster 192.168.175.102 5002 7caafeb4921ae37ce3f05b7193cab0b238ff0c96
+      sentinel known-sentinel mymaster 192.168.175.100 5000 c29e23e82bc34aca39ee8648a5947e399c85417b
+      sentinel current-epoch 0
+
+
+[root@redis_sentinel03 ~]# cat /app/redis/conf/sentinel.conf
+
+      # SENTINEL rename-command mymaster CONFIG CONFIG
+      # Generated by CONFIG REWRITE
+      protected-mode no
+      sentinel config-epoch mymaster 0
+      sentinel leader-epoch mymaster 0
+      sentinel known-replica mymaster 192.168.175.111 6379
+      sentinel known-sentinel mymaster 192.168.175.100 5000 c29e23e82bc34aca39ee8648a5947e399c85417b
+      sentinel known-sentinel mymaster 192.168.175.101 5001 8f89c72bf2a244ba4c00304cdbce4c2c6d9cebeb
+      sentinel current-epoch 0
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Obtaining the address of the current master (从 Sentinel 获取 当前 master 的 address)
+
+    As we already specified, Sentinel also acts as a configuration provider for clients that
+    want to connect to a set of master and slaves. Because of possible failovers or reconfigurations,
+    clients have no idea about who is the currently active master for a given set of instances,
+    so Sentinel exports an API to ask this question:
+    // 就向我们已经指出的那样, Sentinel 还扮演着 那些 想要 connect to a set of master and slaves 的 clients
+    // 的 a configuration provider 的角色. 因为 可能发生 failovers 或 reconfigurations, 所以 clients 并不清楚
+    // 谁是 当前 指定 instances 集 中有效的 master, 所以 Sentinel 导出了 an API 用于 询问这个问题:
+
+
+    127.0.0.1:5000> SENTINEL get-master-addr-by-name mymaster
+    1) "192.168.175.110"
+    2) "6379"
+
+
+----------------------------------------------------------------------------------------------------
+Testing the failover  (测试故障转移)
+
+  At this point our toy Sentinel deployment is ready to be tested. We can just kill
+  our master and check if the configuration changes. To do so we can just do:
+
+          // 让 master 睡眠 30 seconds, 使其 不可达(no longer reachable)
+          [root@redis_server01 ~]# redis-cli -p 6379 DEBUG sleep 30
+
+
+  This command will make our master no longer reachable, sleeping for 30 seconds.
+  It basically simulates a master hanging for some reason.
+
+  If you check the Sentinel logs, you should be able to see a lot of action:
+
+        注:
+            -sdown <instance details> -- The specified instance is no longer in Subjectively Down state.
+            +odown <instance details> -- The specified instance is now in Objectively Down state.
+
+        1) Each Sentinel detects the master is down with an +sdown event.
+        2) This event is later escalated to +odown, which means that multiple Sentinels agree about the fact the master is not reachable.
+        3) Sentinels vote a Sentinel that will start the first failover attempt.
+        4) The failover happens.
+
+
+        // 注: sentinel 的 sentinel id 情况如下:
+              redis_sentinel01:  c29e23e82bc34aca39ee8648a5947e399c85417b
+              redis_sentinel02:  8f89c72bf2a244ba4c00304cdbce4c2c6d9cebeb
+              redis_sentinel03:  7caafeb4921ae37ce3f05b7193cab0b238ff0c96
+
+
+// 观察 redis_sentinel01 上的 日志信息:
+    21786:X 20 Sep 2019 13:46:27.909 # +sdown master mymaster 192.168.175.110 6379  <---实例 192.168.175.110:6379 主观认定已经 down 掉了
+    21786:X 20 Sep 2019 13:46:27.969 # +new-epoch 1  <----开启新时代
+    21786:X 20 Sep 2019 13:46:28.004 # +vote-for-leader 7caafeb4921ae37ce3f05b7193cab0b238ff0c96 1 <---投票选举 redis_sentinel03 为 leader
+    21786:X 20 Sep 2019 13:46:28.004 # +odown master mymaster 192.168.175.110 6379 #quorum 3/2 <---实例 192.168.175.110:6379 客观认定已经down 掉了
+    21786:X 20 Sep 2019 13:46:28.004 # Next failover delay: I will not start a failover before Fri Sep 20 13:48:28 2019
+    21786:X 20 Sep 2019 13:46:29.110 # +config-update-from sentinel 7caafeb4921ae37ce3f05b7193cab0b238ff0c96 192.168.175.102 5002 @ mymaster 192.168.175.110 6379
+    21786:X 20 Sep 2019 13:46:29.110 # +switch-master mymaster 192.168.175.110 6379 192.168.175.111 6379
+    21786:X 20 Sep 2019 13:46:29.113 * +slave slave 192.168.175.110:6379 192.168.175.110 6379 @ mymaster 192.168.175.111 6379
+    21786:X 20 Sep 2019 13:46:34.114 # +sdown slave 192.168.175.110:6379 192.168.175.110 6379 @ mymaster 192.168.175.111 6379
+    21786:X 20 Sep 2019 13:46:51.986 # -sdown slave 192.168.175.110:6379 192.168.175.110 6379 @ mymaster 192.168.175.111 6379
+    21786:X 20 Sep 2019 13:48:51.120 # +tilt #tilt mode entered
+    21786:X 20 Sep 2019 13:49:02.621 # +tilt #tilt mode entered
+    21786:X 20 Sep 2019 13:49:32.652 # -tilt #tilt mode exited
+
+
+
+// 观察 redis_sentinel02 上的 日志信息:
+    21233:X 20 Sep 2019 13:46:27.632 # +sdown master mymaster 192.168.175.110 6379
+    21233:X 20 Sep 2019 13:46:27.754 # +new-epoch 1  <----开启新时代
+    21233:X 20 Sep 2019 13:46:27.755 # +vote-for-leader 7caafeb4921ae37ce3f05b7193cab0b238ff0c96 1  <---投票选举 redis_sentinel03 为 leader
+    21233:X 20 Sep 2019 13:46:28.763 # +odown master mymaster 192.168.175.110 6379 #quorum 3/2
+    21233:X 20 Sep 2019 13:46:28.763 # Next failover delay: I will not start a failover before Fri Sep 20 13:48:28 2019
+    21233:X 20 Sep 2019 13:46:28.876 # +config-update-from sentinel 7caafeb4921ae37ce3f05b7193cab0b238ff0c96 192.168.175.102 5002 @ mymaster 192.168.175.110 6379
+    21233:X 20 Sep 2019 13:46:28.876 # +switch-master mymaster 192.168.175.110 6379 192.168.175.111 6379
+    21233:X 20 Sep 2019 13:46:28.879 * +slave slave 192.168.175.110:6379 192.168.175.110 6379 @ mymaster 192.168.175.111 6379
+    21233:X 20 Sep 2019 13:46:33.910 # +sdown slave 192.168.175.110:6379 192.168.175.110 6379 @ mymaster 192.168.175.111 6379
+    21233:X 20 Sep 2019 13:46:51.770 # -sdown slave 192.168.175.110:6379 192.168.175.110 6379 @ mymaster 192.168.175.111 6379
+    21233:X 20 Sep 2019 13:47:01.792 * +convert-to-slave slave 192.168.175.110:6379 192.168.175.110 6379 @ mymaster 192.168.175.111 6379
+    21233:X 20 Sep 2019 13:48:57.346 # +tilt #tilt mode entered
+    21233:X 20 Sep 2019 13:49:10.753 # +tilt #tilt mode entered
+    21233:X 20 Sep 2019 13:49:40.782 # -tilt #tilt mode exited
+
+
+
+// 观察 redis_sentinel03 上的 日志信息:
+    21235:X 20 Sep 2019 13:46:27.752 # +sdown master mymaster 192.168.175.110 6379
+    21235:X 20 Sep 2019 13:46:27.827 # +odown master mymaster 192.168.175.110 6379 #quorum 2/2
+    21235:X 20 Sep 2019 13:46:27.827 # +new-epoch 1  <----开启新时代
+    21235:X 20 Sep 2019 13:46:27.827 # +try-failover master mymaster 192.168.175.110 6379
+    21235:X 20 Sep 2019 13:46:27.828 # +vote-for-leader 7caafeb4921ae37ce3f05b7193cab0b238ff0c96 1
+    21235:X 20 Sep 2019 13:46:27.854 # 8f89c72bf2a244ba4c00304cdbce4c2c6d9cebeb voted for 7caafeb4921ae37ce3f05b7193cab0b238ff0c96 1
+    21235:X 20 Sep 2019 13:46:27.868 # c29e23e82bc34aca39ee8648a5947e399c85417b voted for 7caafeb4921ae37ce3f05b7193cab0b238ff0c96 1
+    21235:X 20 Sep 2019 13:46:27.882 # +elected-leader master mymaster 192.168.175.110 6379
+    21235:X 20 Sep 2019 13:46:27.882 # +failover-state-select-slave master mymaster 192.168.175.110 6379
+    21235:X 20 Sep 2019 13:46:27.945 # +selected-slave slave 192.168.175.111:6379 192.168.175.111 6379 @ mymaster 192.168.175.110 6379
+    21235:X 20 Sep 2019 13:46:27.945 * +failover-state-send-slaveof-noone slave 192.168.175.111:6379 192.168.175.111 6379 @ mymaster 192.168.175.110 6379
+    21235:X 20 Sep 2019 13:46:28.039 * +failover-state-wait-promotion slave 192.168.175.111:6379 192.168.175.111 6379 @ mymaster 192.168.175.110 6379
+    21235:X 20 Sep 2019 13:46:28.894 # +promoted-slave slave 192.168.175.111:6379 192.168.175.111 6379 @ mymaster 192.168.175.110 6379
+    21235:X 20 Sep 2019 13:46:28.895 # +failover-state-reconf-slaves master mymaster 192.168.175.110 6379
+    21235:X 20 Sep 2019 13:46:28.966 # +failover-end master mymaster 192.168.175.110 6379
+    21235:X 20 Sep 2019 13:46:28.967 # +switch-master mymaster 192.168.175.110 6379 192.168.175.111 6379
+    21235:X 20 Sep 2019 13:46:28.968 * +slave slave 192.168.175.110:6379 192.168.175.110 6379 @ mymaster 192.168.175.111 6379
+    21235:X 20 Sep 2019 13:46:33.973 # +sdown slave 192.168.175.110:6379 192.168.175.110 6379 @ mymaster 192.168.175.111 6379
+    21235:X 20 Sep 2019 13:46:51.883 # -sdown slave 192.168.175.110:6379 192.168.175.110 6379 @ mymaster 192.168.175.111 6379
+    21235:X 20 Sep 2019 13:48:50.977 # +tilt #tilt mode entered
+    21235:X 20 Sep 2019 13:48:53.209 # +tilt #tilt mode entered
+    21235:X 20 Sep 2019 13:49:02.460 # +tilt #tilt mode entered
+    21235:X 20 Sep 2019 13:49:32.479 # -tilt #tilt mode exited
+
+
+
+// 查看一下 当前 master 的 ip 地址
+            127.0.0.1:5000> SENTINEL get-master-addr-by-name mymaster
+            1) "192.168.175.111"  <-----这正是 以前的 slave, 看来其现在已经被提升为了当前的 master
+            2) "6379"
+
+        So far so good... At this point you may jump to create your Sentinel deployment
+        or can read more to understand all the Sentinel commands and internals.
+
+
+// 观察一下 redis_sentinel01 上的配置文件 /app/redis/conf/sentinel.conf
+[root@redis_sentinel01 ~]# cat /app/redis/conf/sentinel.conf
+
+      # SENTINEL rename-command mymaster CONFIG CONFIG
+      # Generated by CONFIG REWRITE
+      protected-mode no
+      sentinel config-epoch mymaster 1
+      sentinel leader-epoch mymaster 1
+      sentinel known-replica mymaster 192.168.175.110 6379
+      sentinel known-sentinel mymaster 192.168.175.102 5002 7caafeb4921ae37ce3f05b7193cab0b238ff0c96
+      sentinel known-sentinel mymaster 192.168.175.101 5001 8f89c72bf2a244ba4c00304cdbce4c2c6d9cebeb
+      sentinel current-epoch 1
+
+
+// 观察一下 redis_sentinel02 上的配置文件 /app/redis/conf/sentinel.conf
+[root@redis_sentinel02 ~]# cat /app/redis/conf/sentinel.conf
+
+      # SENTINEL rename-command mymaster CONFIG CONFIG
+      # Generated by CONFIG REWRITE
+      protected-mode no
+      sentinel config-epoch mymaster 1
+      sentinel leader-epoch mymaster 1
+      sentinel known-replica mymaster 192.168.175.110 6379
+      sentinel known-sentinel mymaster 192.168.175.102 5002 7caafeb4921ae37ce3f05b7193cab0b238ff0c96
+      sentinel known-sentinel mymaster 192.168.175.100 5000 c29e23e82bc34aca39ee8648a5947e399c85417b
+      sentinel current-epoch 1
+
+
+
+
+// 观察一下 redis_sentinel03 上的配置文件 /app/redis/conf/sentinel.conf
+[root@redis_sentinel03 ~]# cat /app/redis/conf/sentinel.conf
+
+      # SENTINEL rename-command mymaster CONFIG CONFIG
+      # Generated by CONFIG REWRITE
+      protected-mode no
+      sentinel config-epoch mymaster 1
+      sentinel leader-epoch mymaster 1
+      sentinel known-replica mymaster 192.168.175.110 6379
+      sentinel known-sentinel mymaster 192.168.175.100 5000 c29e23e82bc34aca39ee8648a5947e399c85417b
+      sentinel known-sentinel mymaster 192.168.175.101 5001 8f89c72bf2a244ba4c00304cdbce4c2c6d9cebeb
+      sentinel current-epoch 1
+
+
+// 观察一下 redis_server01 上的相关日志(即执行了命令 `redis-cli -p 6379 DEBUG sleep 30`后 等待一段时间后输出的日志)
+      21406:M 20 Sep 2019 13:46:50.985 # Connection with replica 192.168.175.111:6379 lost.
+      OK
+      21406:S 20 Sep 2019 13:47:01.038 * Before turning into a replica, using my master parameters to synthesize a cached master: I may be able to synchronize with the new master with just a partial transfer.
+      21406:S 20 Sep 2019 13:47:01.038 * REPLICAOF 192.168.175.111:6379 enabled (user request from 'id=23 addr=192.168.175.101:60132 fd=28 name=sentinel-8f89c72b-cmd age=10 idle=0 flags=x db=0 sub=0 psub=0 multi=3 qbuf=155 qbuf-free=32613 obl=36 oll=0 omem=0 events=r cmd=exec')
+      21406:S 20 Sep 2019 13:47:01.044 # CONFIG REWRITE executed with success.  <------观察(重写了配置文件/app/redis/conf/redis.conf)
+      21406:S 20 Sep 2019 13:47:01.059 * Connecting to MASTER 192.168.175.111:6379
+      21406:S 20 Sep 2019 13:47:01.060 * MASTER <-> REPLICA sync started
+      21406:S 20 Sep 2019 13:47:01.060 * Non blocking connect for SYNC fired the event.
+      21406:S 20 Sep 2019 13:47:01.062 * Master replied to PING, replication can continue...
+      21406:S 20 Sep 2019 13:47:01.065 * Trying a partial resynchronization (request 412e92cb646a2415d802e30a0817332144678fbc:625408).
+      21406:S 20 Sep 2019 13:47:01.095 * Full resync from master: 3fed308fcee0cbdd60a97679e777435e9f32e165:559766
+      21406:S 20 Sep 2019 13:47:01.095 * Discarding previously cached master state.
+      21406:S 20 Sep 2019 13:47:01.114 * MASTER <-> REPLICA sync: receiving 178 bytes from master
+      21406:S 20 Sep 2019 13:47:01.114 * MASTER <-> REPLICA sync: Flushing old data
+      21406:S 20 Sep 2019 13:47:01.114 * MASTER <-> REPLICA sync: Loading DB in memory
+      21406:S 20 Sep 2019 13:47:01.114 * MASTER <-> REPLICA sync: Finished with success
+
+
+// 观察一下 redis_server02 上的相关日志
+      21343:M 20 Sep 2019 13:46:27.215 # Setting secondary replication ID to 412e92cb646a2415d802e30a0817332144678fbc, valid up to offset: 551968. New replication ID is 3fed308fcee0cbdd60a97679e777435e9f32e165  <---------观察, 生成了一个新的 replication ID
+      21343:M 20 Sep 2019 13:46:27.215 # Connection with master lost.
+      21343:M 20 Sep 2019 13:46:27.215 * Caching the disconnected master state.
+      21343:M 20 Sep 2019 13:46:27.215 * Discarding previously cached master state.
+      21343:M 20 Sep 2019 13:46:27.215 * MASTER MODE enabled (user request from 'id=8 addr=192.168.175.102:50050 fd=13 name=sentinel-7caafeb4-cmd age=2523 idle=0 flags=x db=0 sub=0 psub=0 multi=3 qbuf=140 qbuf-free=32628 obl=36 oll=0 omem=0 events=r cmd=exec')
+      21343:M 20 Sep 2019 13:46:27.219 # CONFIG REWRITE executed with success. <------观察(重写了配置文件/app/redis/conf/redis.conf)
+      21343:M 20 Sep 2019 13:47:01.094 * Replica 192.168.175.110:6379 asks for synchronization
+      21343:M 20 Sep 2019 13:47:01.094 * Partial resynchronization not accepted: Requested offset for second ID was 625408, but I can reply up to 551968
+      21343:M 20 Sep 2019 13:47:01.094 * Starting BGSAVE for SYNC with target: disk
+      21343:M 20 Sep 2019 13:47:01.123 * Background saving started by pid 21373
+      21373:C 20 Sep 2019 13:47:01.129 * DB saved on disk
+      21373:C 20 Sep 2019 13:47:01.130 * RDB: 0 MB of memory used by copy-on-write
+      21343:M 20 Sep 2019 13:47:01.142 * Background saving terminated with success
+      21343:M 20 Sep 2019 13:47:01.143 * Synchronization with replica 192.168.175.110:6379 succeeded
+
+
+// 查看一下 redis_server01 上被 rewrite 后的配置文件:
+[root@redis_server01 ~]# less /app/redis/conf/redis.conf
+
+      # Generated by CONFIG REWRITE
+      replicaof 192.168.175.111 6379  <----观察(rewrite时生成了这一条信息, 即将 redis_server01 设置为 redis_server02 的 slave)
+
+
+// 查看一下 redis_server02 上被 rewrite 后的配置文件:
+// 其实可以发现,旧有的设置  replicaof 192.168.175.110 6379 被删除了
+[root@redis_server02 ~]# less /app/redis/conf/redis.conf
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Sentinel API
+
+Sentinel provides an API in order to inspect its state, check the health of monitored masters and slaves,
+subscribe in order to receive specific notifications, and change the Sentinel configuration at run time.
+
+By default Sentinel runs using TCP port 26379 (note that 6379 is the normal Redis port).
+Sentinels accept commands using the Redis protocol, so you can use redis-cli
+or any other unmodified Redis client in order to talk with Sentinel.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
