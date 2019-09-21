@@ -1117,10 +1117,110 @@ Sentinels and Slaves auto discovery
 ----------------------------------------------------------------------------------------------------
 Sentinel reconfiguration of instances outside the failover procedure
 
+  Even when no failover is in progress, Sentinels will always try
+  to set the current configuration on monitored instances. Specifically:
+  // 即使没有 进行故障转移, Sentinels 也会 始终尝试在 monitored instances 上设置 the current configuration, 特别地:
+
+      - Slaves (according to the current configuration) that claim to be masters,
+        will be configured as slaves to replicate with the current master.
+        // 声称是 masters 的 Slaves(根据当前的配置),将被配置为 从 the current master 复制的 slaves.
+           (注：如上这句话意思是: 某些 redis instance 根据 当前的 configuration
+                其应该是作为 slaves, 但其却声称自己是 masters, 则其会被配置为 the current master 的 slaves
+                以使其 与  the current configuration 保持一致)
+
+      - Slaves connected to a wrong master, will be reconfigured to replicate with the right master.
+        // 连接到 一个错误 master 的 slaves, 将被重新配置为 从 正确的 master 进行复制.
+
+
+
+  For Sentinels to reconfigure slaves, the wrong configuration must be
+  observed for some time, that is greater than the period used to broadcast new configurations.
+  // 为了使 Sentinels 重新配置(reconfigure) slaves, 必须在 一段时间内 观察到 the wrong configuration,
+  // 该时间 大于 被用于 broadcast new configurations 的 时间.
+
+  This prevents Sentinels with a stale configuration (for example because they just rejoined from a partition)
+  will try to change the slaves configuration before receiving an update.
+
+
+
+  Also note how the semantics of always trying to impose the current
+  configuration makes the failover more resistant to partitions:
+
+    - Masters failed over are reconfigured as slaves when they return available.
+    - Slaves partitioned away during a partition are reconfigured once reachable.
+
+  The important lesson to remember about this section is: Sentinel is a system where each
+  process will always try to impose the last logical configuration to the set of monitored instances.
+  // 关于 section 需要记住的重要的一课(学到的东西)是: Sentinel 是 一个 其 每个 process 将始终 试图 把
+  // the last logical configuration 强加(impose) 到  the set of monitored instances 的系统(system).
 
 
 
 
+----------------------------------------------------------------------------------------------------
+Slave selection and priority
+
+When a Sentinel instance is ready to perform a failover, since the master
+is in ODOWN state and the Sentinel received the authorization to failover
+from the majority of the Sentinel instances known, a suitable slave needs to be selected.
+
+The slave selection process evaluates the following information about slaves:
+//  选择 The slave 的过程 会评估 与 slaves 相关的 如下信息:
+
+        1) Disconnection time from the master.
+        2) Slave priority.
+        3) Replication offset processed.
+        4) Run ID.
+
+
+  // 故障转移时 挑选 slave 时 会被 跳过(即 不考虑)的情况:
+  A slave that is found to be disconnected from the master for more than ten times
+  the configured master timeout (down-after-milliseconds option), plus the time the
+  master is also not available from the point of view of the Sentinel doing the failover,
+  is considered to be not suitable for the failover and is skipped.
+
+  In more rigorous terms, a slave whose the INFO output suggests to be disconnected from the master for more than:
+
+        (down-after-milliseconds * 10) + milliseconds_since_master_is_in_SDOWN_state
+
+  Is considered to be unreliable and is disregarded entirely.
+
+
+  The slave selection only considers the slaves that passed the above test,
+  and sorts it based on the above criteria, in the following order.
+  // The slave 的选择过程仅考虑 那些通过 如上的 测试(test) 的 slaves, 并
+  // 并根据上述标准(criteria)按照以下顺序对其进行排序
+
+      1) The slaves are sorted by slave-priority as configured in the redis.conf file of
+         the Redis instance. A lower priority will be preferred.
+         // slave-priority 数字越小, 则会优先选择
+         // 但是要注意的是: 其 slave-priority 为 特殊值 0 时, 表示该 slave 永远不参与 new master 的竞选
+
+      2) If the priority is the same, the replication offset processed by the slave is checked,
+         and the slave that received more data from the master is selected.
+        // slave-priority 一样的情况下, 选择处理的 复制 offset 最大的, 即复制同步 data 最多的那个 slave 会被选中.
+
+      3) If multiple slaves have the same priority and processed the same data from the master,
+         a further check is performed, selecting the slave with the lexicographically
+         smaller run ID. Having a lower run ID is not a real advantage for a slave,
+         but is useful in order to make the process of slave selection more deterministic,
+         instead of resorting to select a random slave.
+        // 如果其他 情况(条件) 都一样, 则 按字典顺序 最小的 run ID 的 slave 会被选择.
+
+  Redis masters (that may be turned into slaves after a failover), and slaves, all must be configured
+  with a slave-priority if there are machines to be strongly preferred. Otherwise
+  all the instances can run with the default run ID (which is the suggested setup,
+  since it is far more interesting to select the slave by replication offset).
+
+  A Redis instance can be configured with a special slave-priority of zero in order
+  to be never selected by Sentinels as the new master. However a slave configured
+  in this way will still be reconfigured by Sentinels in order to replicate with
+  he new master after a failover, the only difference is that it will never become a master itself.
+  // 但是要注意的是: 其 slave-priority 为 特殊值 0 时, 表示该 slave 永远不参与 new master 的竞选
+
+
+----------------------------------------------------------------------------------------------------
+Algorithms and internals
 
 
 
