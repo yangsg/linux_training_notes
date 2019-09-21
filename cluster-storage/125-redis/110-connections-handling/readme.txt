@@ -100,6 +100,9 @@ Maximum number of clients
         sysctl -w fs.file-max=100000
 
 
+        注:  可以使用命令 ulimit -n 100000 同时设置 hard limit 和 soft limit
+            https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/01-full/209-ulimit.txt
+
 ----------------------------------------------------------------------------------------------------
 Output buffers limits
 
