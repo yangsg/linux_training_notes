@@ -17,6 +17,10 @@ redis_server01: 192.168.175.110:6379  (master)
 redis_server02: 192.168.175.111:6380  (slave)
 
 
+注: 仅需手动 在 sentinel 上配置 当前 master 的信息,
+    而其他信息(如其他 sentinels, slaves) 由 sentinel system
+    通过其 auto discovery 机制自动动态配置
+
 ----------------------------------------------------------------------------------------------------
 // 构建基本的编译环境
 [root@redis_sentinel01 ~]# yum -y install gcc gcc-c++ autoconf automake
