@@ -150,7 +150,7 @@ client: 192.168.175.30  <-----用于测试
 
 
 [root@redis_server01 ~]# cp ~/download/redis-5.0.5/redis.conf /app/redis/conf/
-[root@redis_server01 ~]# chown -R redis:redis /var/log/redis/
+[root@redis_server01 ~]# chown -R redis:redis /app/redis/conf/
 
 
 
@@ -365,7 +365,7 @@ client: 192.168.175.30  <-----用于测试
 
 
 [root@redis_server02 ~]# cp ~/download/redis-5.0.5/redis.conf /app/redis/conf/
-[root@redis_server02 ~]# chown -R redis:redis /var/log/redis/
+[root@redis_server02 ~]# chown -R redis:redis /app/redis/conf/
 
 
 
@@ -594,6 +594,395 @@ client: 192.168.175.30  <-----用于测试
 
 
 ----------------------------------------------------------------------------------------------------
+准备 redis_sentinel01
+
+      注: 如果 是在 docker 等 重映射了 ip 或 port 的环境中部署redis, 需要注意其他事项
+
+
+
+
+
+// 为了提高安全, 创建 redis 账号, 后续会以该 redis 普通账号的身份来启动 redis 相关服务
+[root@redis_sentinel01 ~]# useradd -M -s /sbin/nologin redis
+[root@redis_sentinel01 ~]# grep redis /etc/passwd
+      redis:x:1001:1001::/home/redis:/sbin/nologin
+
+
+
+
+// 创建并保护 配置文件目录
+[root@redis_sentinel01 ~]# mkdir /app/redis/conf
+[root@redis_sentinel01 ~]# chown redis:redis /app/redis/conf/
+[root@redis_sentinel01 ~]# chmod u=rwx,go-rwx /app/redis/conf
+
+
+// 创建并保护 运行时文件目录
+[root@redis_sentinel01 ~]# mkdir /var/run/redis/
+[root@redis_sentinel01 ~]# chown redis:redis /var/run/redis
+[root@redis_sentinel01 ~]# chmod u=rwx,go-rwx /var/run/redis
+
+
+
+// 创建并保护 日志文件目录
+[root@redis_sentinel01 ~]# mkdir /var/log/redis
+[root@redis_sentinel01 ~]# chown redis:redis /var/log/redis/
+[root@redis_sentinel01 ~]# chmod u=rwx,go-rwx /var/log/redis
+
+[root@redis_sentinel01 ~]# cp ~/download/redis-5.0.5/sentinel.conf /app/redis/conf/
+[root@redis_sentinel01 ~]# chown -R redis:redis /app/redis/conf/
+
+
+[root@redis_sentinel01 ~]# vim /app/redis/conf/sentinel.conf
+
+          bind 127.0.0.1 192.168.175.101
+          port 26379
+          daemonize yes
+          pidfile /var/run/redis/redis-sentinel.pid
+          logfile /var/log/redis/redis-sentinel.log
+          #sentinel monitor <master-name> <ip> <redis-port> <quorum>
+          sentinel monitor mymaster 192.168.175.111 6379 2
+          #sentinel auth-pass <master-name> <password>
+          sentinel auth-pass mymaster redhat
+          #sentinel down-after-milliseconds <master-name> <milliseconds>
+          # 此处设置为 5 seconds
+          sentinel down-after-milliseconds mymaster 5000
+          #sentinel parallel-syncs <master-name> <numreplicas>
+          sentinel parallel-syncs mymaster 1
+          # sentinel failover-timeout <master-name> <milliseconds>
+          # 此处设置为 3 minutes
+          sentinel failover-timeout mymaster 180000
+          # 重命名 指令 CONFIG
+          SENTINEL rename-command mymaster CONFIG e374fda5-dcf5-41f2-bf69-a5928aa81874--d1e25c85-961d-4e27-ba88-b8ecf7f99c7a
+          # 从 Redis 5.0.1 版本开始, 还可以使用指令 requirepass 为 Sentinel instance 本身设置认证密码
+          requirepass redhat_sentinel
+
+
+
+
+
+
+// 临时修改 nofile 的限制
+[root@redis_sentinel01 ~]# ulimit -n 100032
+
+// 持久化 设置 nofile 的限制(centos7 中 相对于使用 ulimit 的方式)
+[root@redis_sentinel01 ~]# vim /etc/systemd/system.conf
+      DefaultLimitNOFILE=100032
+
+[root@redis_server01 ~]# sysctl -a | grep file-max
+      fs.file-max = 95856  <------观察
+      sysctl: reading key "net.ipv6.conf.all.stable_secret"
+      sysctl: reading key "net.ipv6.conf.default.stable_secret"
+      sysctl: reading key "net.ipv6.conf.ens33.stable_secret"
+      sysctl: reading key "net.ipv6.conf.lo.stable_secret"
+
+
+
+[root@redis_sentinel01 ~]# vim /etc/sysctl.conf
+
+      net.core.somaxconn = 1024
+      vm.overcommit_memory = 1
+
+      net.ipv4.tcp_max_syn_backlog = 1024
+
+      fs.file-max = 100032
+
+
+[root@redis_sentinel01 ~]# sysctl -p
+      net.core.somaxconn = 1024
+      vm.overcommit_memory = 1
+      net.ipv4.tcp_max_syn_backlog = 1024
+      fs.file-max = 100032
+
+
+
+
+
+[root@redis_sentinel01 ~]# sysctl -a | grep -E  'somaxconn|overcommit_memory|tcp_max_syn_backlog|file-max'
+        fs.file-max = 100032   <-------
+        sysctl: reading key "net.ipv6.conf.all.stable_secret"
+        sysctl: reading key "net.ipv6.conf.default.stable_secret"
+        sysctl: reading key "net.ipv6.conf.ens33.stable_secret"
+        sysctl: reading key "net.ipv6.conf.lo.stable_secret"
+        net.core.somaxconn = 1024  <-------
+        net.ipv4.tcp_max_syn_backlog = 1024 <-------
+        vm.overcommit_memory = 1  <-------
+
+
+
+
+
+[root@redis_sentinel01 ~]# su -l redis -s /bin/bash -c 'redis-sentinel /app/redis/conf/sentinel.conf'
+      su: warning: cannot change directory to /home/redis: No such file or directory
+
+[root@redis_sentinel01 ~]# netstat -anptu | grep redis
+      tcp        0      0 192.168.175.101:26379   0.0.0.0:*               LISTEN      22393/redis-sentine
+      tcp        0      0 127.0.0.1:26379         0.0.0.0:*               LISTEN      22393/redis-sentine
+
+
+[root@redis_sentinel01 ~]# ps aux | grep redis
+      redis     22393  0.4  0.7 153892  7860 ?        Ssl  20:48   0:00 redis-sentinel 127.0.0.1:26379 [sentinel]
+
+[root@redis_sentinel01 ~]# cat /var/log/redis/redis-sentinel.log
+      22372:X 22 Sep 2019 20:48:06.658 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+      22372:X 22 Sep 2019 20:48:06.658 # Redis version=5.0.5, bits=64, commit=00000000, modified=0, pid=22372, just started
+      22372:X 22 Sep 2019 20:48:06.658 # Configuration loaded
+      22393:X 22 Sep 2019 20:48:06.964 * Running mode=sentinel, port=26379.
+      22393:X 22 Sep 2019 20:48:06.986 # Sentinel ID is e7d077382711be9e8139bdcf1f8376b27d2848ef
+      22393:X 22 Sep 2019 20:48:06.986 # +monitor master mymaster 192.168.175.111 6379 quorum 2
+      22393:X 22 Sep 2019 20:48:11.690 # +sdown master mymaster 192.168.175.111 6379
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+准备 redis_sentinel02
+
+      注: 如果 是在 docker 等 重映射了 ip 或 port 的环境中部署redis, 需要注意其他事项
+
+
+
+
+
+// 为了提高安全, 创建 redis 账号, 后续会以该 redis 普通账号的身份来启动 redis 相关服务
+[root@redis_sentinel02 ~]# useradd -M -s /sbin/nologin redis
+[root@redis_sentinel02 ~]# grep redis /etc/passwd
+      redis:x:1001:1001::/home/redis:/sbin/nologin
+
+
+// 创建并保护 配置文件目录
+[root@redis_sentinel02 ~]# mkdir /app/redis/conf
+[root@redis_sentinel02 ~]# chown redis:redis /app/redis/conf/
+[root@redis_sentinel02 ~]# chmod u=rwx,go-rwx /app/redis/conf
+
+
+// 创建并保护 运行时文件目录
+[root@redis_sentinel02 ~]# mkdir /var/run/redis/
+[root@redis_sentinel02 ~]# chown redis:redis /var/run/redis
+[root@redis_sentinel02 ~]# chmod u=rwx,go-rwx /var/run/redis
+
+
+
+// 创建并保护 日志文件目录
+[root@redis_sentinel02 ~]# mkdir /var/log/redis
+[root@redis_sentinel02 ~]# chown redis:redis /var/log/redis/
+[root@redis_sentinel02 ~]# chmod u=rwx,go-rwx /var/log/redis
+
+[root@redis_sentinel02 ~]# cp ~/download/redis-5.0.5/sentinel.conf /app/redis/conf/
+[root@redis_sentinel02 ~]# chown -R redis:redis /app/redis/conf/
+
+[root@redis_sentinel02 ~]# rsync -av root@192.168.175.101:/app/redis/conf/sentinel.conf  /app/redis/conf/sentinel.conf
+[root@redis_sentinel02 ~]# ls -l /app/redis/conf/sentinel.conf
+      -rw-r--r-- 1 redis redis 10317 Sep 22  2019 /app/redis/conf/sentinel.conf
+
+
+
+
+
+[root@redis_sentinel02 ~]# vim /app/redis/conf/sentinel.conf
+
+          bind 127.0.0.1 192.168.175.102
+
+
+
+
+
+// 临时修改 nofile 的限制
+[root@redis_sentinel02 ~]# ulimit -n 100032
+
+// 持久化 设置 nofile 的限制(centos7 中 相对于使用 ulimit 的方式)
+[root@redis_sentinel02 ~]# vim /etc/systemd/system.conf
+      DefaultLimitNOFILE=100032
+
+[root@redis_server02 ~]# sysctl -a | grep file-max
+      fs.file-max = 95856  <------观察
+      sysctl: reading key "net.ipv6.conf.all.stable_secret"
+      sysctl: reading key "net.ipv6.conf.default.stable_secret"
+      sysctl: reading key "net.ipv6.conf.ens33.stable_secret"
+      sysctl: reading key "net.ipv6.conf.lo.stable_secret"
+
+
+
+[root@redis_sentinel02 ~]# vim /etc/sysctl.conf
+
+      net.core.somaxconn = 1024
+      vm.overcommit_memory = 1
+
+      net.ipv4.tcp_max_syn_backlog = 1024
+
+      fs.file-max = 100032
+
+
+[root@redis_sentinel02 ~]# sysctl -p
+      net.core.somaxconn = 1024
+      vm.overcommit_memory = 1
+      net.ipv4.tcp_max_syn_backlog = 1024
+      fs.file-max = 100032
+
+
+[root@redis_sentinel02 ~]# sysctl -a | grep -E  'somaxconn|overcommit_memory|tcp_max_syn_backlog|file-max'
+        sysctl: reading key "net.ipv6.conf.all.stable_secret"
+        sysctl: reading key "net.ipv6.conf.default.stable_secret"
+        sysctl: reading key "net.ipv6.conf.ens33.stable_secret"
+        sysctl: reading key "net.ipv6.conf.lo.stable_secret"
+        fs.file-max = 100032   <-------
+        net.core.somaxconn = 1024   <-------
+        net.ipv4.tcp_max_syn_backlog = 1024   <-------
+        vm.overcommit_memory = 1   <-------
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+准备 redis_sentinel03
+
+      注: 如果 是在 docker 等 重映射了 ip 或 port 的环境中部署redis, 需要注意其他事项
+
+
+
+
+
+// 为了提高安全, 创建 redis 账号, 后续会以该 redis 普通账号的身份来启动 redis 相关服务
+[root@redis_sentinel03 ~]# useradd -M -s /sbin/nologin redis
+[root@redis_sentinel03 ~]# grep redis /etc/passwd
+      redis:x:1001:1001::/home/redis:/sbin/nologin
+
+
+// 创建并保护 配置文件目录
+[root@redis_sentinel03 ~]# mkdir /app/redis/conf
+[root@redis_sentinel03 ~]# chown redis:redis /app/redis/conf/
+[root@redis_sentinel03 ~]# chmod u=rwx,go-rwx /app/redis/conf
+
+
+// 创建并保护 运行时文件目录
+[root@redis_sentinel03 ~]# mkdir /var/run/redis/
+[root@redis_sentinel03 ~]# chown redis:redis /var/run/redis
+[root@redis_sentinel03 ~]# chmod u=rwx,go-rwx /var/run/redis
+
+
+
+// 创建并保护 日志文件目录
+[root@redis_sentinel03 ~]# mkdir /var/log/redis
+[root@redis_sentinel03 ~]# chown redis:redis /var/log/redis/
+[root@redis_sentinel03 ~]# chmod u=rwx,go-rwx /var/log/redis
+
+[root@redis_sentinel03 ~]# cp ~/download/redis-5.0.5/sentinel.conf /app/redis/conf/
+[root@redis_sentinel03 ~]# chown -R redis:redis /app/redis/conf/
+
+[root@redis_sentinel03 ~]# rsync -av root@192.168.175.101:/app/redis/conf/sentinel.conf  /app/redis/conf/sentinel.conf
+[root@redis_sentinel03 ~]# ls -l /app/redis/conf/sentinel.conf
+      -rw-r--r-- 1 redis redis 10317 Sep 22  2019 /app/redis/conf/sentinel.conf
+
+
+
+
+
+[root@redis_sentinel03 ~]# vim /app/redis/conf/sentinel.conf
+
+          bind 127.0.0.1 192.168.175.103
+
+
+
+
+
+// 临时修改 nofile 的限制
+[root@redis_sentinel03 ~]# ulimit -n 100032
+
+// 持久化 设置 nofile 的限制(centos7 中 相对于使用 ulimit 的方式)
+[root@redis_sentinel03 ~]# vim /etc/systemd/system.conf
+      DefaultLimitNOFILE=100032
+
+[root@redis_server02 ~]# sysctl -a | grep file-max
+      fs.file-max = 95856  <------观察
+      sysctl: reading key "net.ipv6.conf.all.stable_secret"
+      sysctl: reading key "net.ipv6.conf.default.stable_secret"
+      sysctl: reading key "net.ipv6.conf.ens33.stable_secret"
+      sysctl: reading key "net.ipv6.conf.lo.stable_secret"
+
+
+
+[root@redis_sentinel03 ~]# vim /etc/sysctl.conf
+
+      net.core.somaxconn = 1024
+      vm.overcommit_memory = 1
+
+      net.ipv4.tcp_max_syn_backlog = 1024
+
+      fs.file-max = 100032
+
+
+[root@redis_sentinel03 ~]# sysctl -p
+      net.core.somaxconn = 1024
+      vm.overcommit_memory = 1
+      net.ipv4.tcp_max_syn_backlog = 1024
+      fs.file-max = 100032
+
+
+[root@redis_sentinel03 ~]# sysctl -a | grep -E  'somaxconn|overcommit_memory|tcp_max_syn_backlog|file-max'
+        sysctl: reading key "net.ipv6.conf.all.stable_secret"
+        sysctl: reading key "net.ipv6.conf.default.stable_secret"
+        sysctl: reading key "net.ipv6.conf.ens33.stable_secret"
+        sysctl: reading key "net.ipv6.conf.lo.stable_secret"
+        fs.file-max = 100032   <-------
+        net.core.somaxconn = 1024   <-------
+        net.ipv4.tcp_max_syn_backlog = 1024   <-------
+        vm.overcommit_memory = 1   <-------
+
+
+[root@redis_sentinel03 ~]# sysctl -a | grep -E  'somaxconn|overcommit_memory|tcp_max_syn_backlog|file-max'
+        fs.file-max = 100032   <-------
+        net.core.somaxconn = 1024   <-------
+        net.ipv4.tcp_max_syn_backlog = 1024   <-------
+        sysctl: reading key "net.ipv6.conf.all.stable_secret"
+        sysctl: reading key "net.ipv6.conf.default.stable_secret"
+        sysctl: reading key "net.ipv6.conf.ens33.stable_secret"
+        sysctl: reading key "net.ipv6.conf.lo.stable_secret"
+        vm.overcommit_memory = 1   <-------
+
+
+
+----------------------------------------------------------------------------------------------------
+
+[root@redis_sentinel01 ~]# su -l redis -s /bin/bash -c 'redis-sentinel /app/redis/conf/sentinel.conf'
+[root@redis_sentinel02 ~]# su -l redis -s /bin/bash -c 'redis-sentinel /app/redis/conf/sentinel.conf'
+[root@redis_sentinel03 ~]# su -l redis -s /bin/bash -c 'redis-sentinel /app/redis/conf/sentinel.conf'
+
+[root@redis_sentinel02 ~]# netstat -anptu | grep redis
+
+
+[root@redis_sentinel02 ~]# ps aux | grep redis
+
+[root@redis_sentinel02 ~]# cat /var/log/redis/redis-sentinel.log
+
+
+
+
+----------------------------------------------------------------------------------------------------
+
+
+
+redis-cli -h 192.168.175.101  -p 26379  SENTINEL RESET mymaster
+redis-cli -h 192.168.175.102  -p 26379  SENTINEL RESET mymaster
+redis-cli -h 192.168.175.103  -p 26379  SENTINEL RESET mymaster
+
+
+redis-cli -h 192.168.175.101 -a redhat_sentinel -p 5000  shutdown
+redis-cli -h 192.168.175.102 -a redhat_sentinel -p 5001  shutdown
+redis-cli -h 192.168.175.103 -a redhat_sentinel -p 5002  shutdown
+
+
 
 
 
