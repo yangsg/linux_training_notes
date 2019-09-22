@@ -222,11 +222,25 @@ Replication ID explained
 ----------------------------------------------------------------------------------------------------
 Configuration
 
+
+// 注: 查看 slaveof 的帮助可以发现, slaveof 从 redis 5开始已被废弃(Deprecated), 取而代之应该使用 REPLICAOF
+
+
 在 slave 的配置文件中配置, 如:
 
     slaveof 192.168.1.1 6379
 
 当然, 也可以使用 SLAVEOF 命令来配置
+
+
+
+// 注: 查看 slaveof 的帮助可以发现, slaveof 从 redis 5开始已被废弃(Deprecated), 取而代之应该使用 REPLICAOF
+  127.0.0.1:6379> help slaveof
+
+    SLAVEOF host port
+    summary: Make the server a replica of another instance, or promote it as master. Deprecated starting with Redis 5. Use REPLICAOF instead.
+    since: 1.0.0
+    group: server
 
 
 与 replication 相关的其他参数(parameters)或选项:
