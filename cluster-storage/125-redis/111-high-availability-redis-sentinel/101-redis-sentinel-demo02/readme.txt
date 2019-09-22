@@ -1,0 +1,315 @@
+
+
+https://redis.io/topics/sentinel
+
+
+参考笔记:
+
+    https://github.com/yangsg/linux_training_notes/blob/master/cluster-storage/125-redis/111-high-availability-redis-sentinel/100-redis-sentinel-demo01.draft.txt
+    https://github.com/yangsg/linux_training_notes/tree/master/cluster-storage/125-redis/111-high-availability-redis-sentinel
+
+----------------------------------------------------------------------------------------------------
+
+
+redis_sentinel01: 192.168.175.101:26379   <----采用 sentinel 默认的 tcp 端口 26379, 其用于接收 其他 Sentinel instances 的 connections.
+redis_sentinel02: 192.168.175.102:26379
+redis_sentinel03: 192.168.175.103:26379
+
+redis_server01: 192.168.175.111:6379  (master)
+redis_server02: 192.168.175.112:6379  (slave)
+
+client: 192.168.175.30  <-----用于测试
+
+注: 仅需手动 在 sentinel 上配置 当前 master 的信息,
+    而其他信息(如其他 sentinels, slaves) 由 sentinel system
+    通过其 auto discovery 机制自动动态配置
+
+
+----------------------------------------------------------------------------------------------------
+在所有节点(即如下主机)上 安装 redis 软件
+
+      redis_sentinel01
+      redis_sentinel02
+      redis_sentinel03
+      redis_server01
+      redis_server02
+      client
+
+此处以在 redis_server01 上安装  redis 软件为例:
+
+[root@redis_server01 ~]# yum -y install gcc gcc-c++ autoconf automake
+
+[root@redis_server01 ~]# mkdir /app
+
+
+[root@redis_server01 ~]# mkdir download
+[root@redis_server01 ~]# cd download/
+
+[root@redis_server01 download]# wget http://download.redis.io/releases/redis-5.0.5.tar.gz
+
+[root@redis_server01 download]# ls
+    redis-5.0.5.tar.gz
+
+[root@redis_server01 download]# tar -xvf redis-5.0.5.tar.gz
+
+[root@redis_server01 download]# ls
+      redis-5.0.5  redis-5.0.5.tar.gz
+
+[root@redis_server01 download]# cd redis-5.0.5/
+
+[root@redis_server01 redis-5.0.5]# ls      #发现已经存在 Makefile 文件, 所有无需执行 configure 命令了
+      00-RELEASENOTES  CONTRIBUTING  deps     Makefile   README.md   runtest          runtest-moduleapi  sentinel.conf  tests
+      BUGS             COPYING       INSTALL  MANIFESTO  redis.conf  runtest-cluster  runtest-sentinel   src            utils
+
+[root@redis_server01 redis-5.0.5]# make
+[root@redis_server01 redis-5.0.5]# make PREFIX=/app/redis install
+
+[root@redis_server01 redis-5.0.5]# cd
+[root@redis_server01 ~]# vim /etc/profile
+
+        export PATH=$PATH:/app/redis/bin
+
+[root@redis_server01 ~]# source /etc/profile
+
+[root@redis_server01 ~]# which redis-server redis-sentinel redis-cli
+    /app/redis/bin/redis-server
+    /app/redis/bin/redis-sentinel
+    /app/redis/bin/redis-cli
+
+
+[root@redis_server01 ~]# tree /app/redis/
+      /app/redis/
+      └── bin
+          ├── redis-benchmark                 #redis性能测试
+          ├── redis-check-aof                 #检测aof日志文件
+          ├── redis-check-rdb                 #检测rdb文件
+          ├── redis-cli                       #redis客户端工具
+          ├── redis-sentinel -> redis-server
+          └── redis-server                    #启动redis服务
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+准备 redis_server01 作为 master
+
+
+
+[root@redis_server01 ~]# vim /etc/sysctl.conf
+
+      net.core.somaxconn = 1024
+      vm.overcommit_memory = 1
+
+[root@redis_server01 ~]# sysctl -p
+    net.core.somaxconn = 1024
+    vm.overcommit_memory = 1
+
+
+[root@redis_server01 ~]# echo never > /sys/kernel/mm/transparent_hugepage/enabled
+[root@redis_server01 ~]# vim /etc/rc.d/rc.local
+      echo never > /sys/kernel/mm/transparent_hugepage/enabled
+
+[root@redis_server01 ~]# chmod +x /etc/rc.d/rc.local
+
+// 查看验证 如上设置
+[root@redis_server01 ~]# cat /proc/sys/net/core/somaxconn
+      1024
+[root@redis_server01 ~]# cat /proc/sys/vm/overcommit_memory
+      1
+[root@redis_server01 ~]# cat /sys/kernel/mm/transparent_hugepage/enabled
+      always madvise [never]
+
+
+// 为了提高安全, 创建 redis 账号, 后续会以该 redis 普通账号的身份来启动 redis 相关服务
+[root@redis_sentinel01 ~]# useradd -M -s /sbin/nologin redis
+[root@redis_sentinel01 ~]# grep redis /etc/passwd
+          redis:x:1001:1001::/home/redis:/sbin/nologin
+
+
+// 创建并保护 数据文件目录
+[root@redis_server01 ~]# mkdir /data  #该目录会用于存放 redis 的持久化文件(包括 rdb 和 aof 文件)
+[root@redis_server01 ~]# chown redis:redis /data/
+[root@redis_server01 ~]# chmod u=rwx,go-rwx /data
+
+// 创建并保护 配置文件目录
+[root@redis_server01 ~]# mkdir /app/redis/conf
+[root@redis_server01 ~]# chown redis:redis /app/redis/conf/
+[root@redis_server01 ~]# chmod u=rwx,go-rwx /app/redis/conf
+
+// 创建并保护 运行时文件目录
+[root@redis_server01 ~]# mkdir /var/run/redis/
+[root@redis_server01 ~]# chown redis:redis /var/run/redis
+[root@redis_server01 ~]# chmod u=rwx,go-rwx /var/run/redis
+
+
+// 创建并保护 日志文件目录
+[root@redis_server01 ~]# mkdir /var/log/redis
+[root@redis_server01 ~]# chown redis:redis /var/log/redis/
+[root@redis_server01 ~]# chmod u=rwx,go-rwx /var/log/redis
+
+
+[root@redis_server01 ~]# cp ~/download/redis-5.0.5/redis.conf /app/redis/conf/
+[root@redis_server01 ~]# chown -R redis:redis /var/log/redis/
+
+
+
+[root@redis_server01 ~]# vim /app/redis/conf/redis.conf
+
+    bind 192.168.175.111 127.0.0.1
+    port 6379
+    #https://blog.csdn.net/ccy19910925/article/details/88396480
+    #设置 tcp-backlog 时还需要设置或确认内核参数 somaxconn 和 tcp_max_syn_backlog 的值
+    tcp-backlog 1024
+    # Close the connection after a client is idle for N seconds (0 to disable)
+    timeout 10
+    daemonize yes
+    pidfile /var/run/redis/redis_6379.pid
+    logfile "/var/log/redis/redis_6379.log"
+    dbfilename redis_db.rdb
+    dir /data
+
+    masterauth redhat
+    requirepass redhat
+
+    rename-command CONFIG e374fda5-dcf5-41f2-bf69-a5928aa81874--d1e25c85-961d-4e27-ba88-b8ecf7f99c7a
+
+    #设置 maxclients 时, 注意使用命令 `ulimit -n 100032` 和 内核参数 file-max 设置 系统的限制
+    maxclients 100000
+
+    #建议为物理内存的 3/5
+    maxmemory 614mb
+    maxmemory-policy allkeys-lru
+
+    #启用 aof 日志文件
+    appendonly yes
+    appendfilename "redis_appendonly.aof"
+
+
+// 临时修改 nofile 的限制
+[root@redis_server01 ~]# ulimit -n 100032
+
+// 持久化 设置 nofile 的限制(centos7 中 相对于使用 ulimit 的方式)
+[root@redis_server01 ~]# vim /etc/systemd/system.conf
+      DefaultLimitNOFILE=100032
+
+
+
+
+[root@redis_server01 ~]# sysctl -a | grep file-max
+      fs.file-max = 95856  <------观察
+      sysctl: reading key "net.ipv6.conf.all.stable_secret"
+      sysctl: reading key "net.ipv6.conf.default.stable_secret"
+      sysctl: reading key "net.ipv6.conf.ens33.stable_secret"
+      sysctl: reading key "net.ipv6.conf.lo.stable_secret"
+
+
+
+[root@redis_server01 ~]# vim /etc/sysctl.conf
+
+      net.core.somaxconn = 1024
+      vm.overcommit_memory = 1
+
+      net.ipv4.tcp_max_syn_backlog = 1024
+
+      fs.file-max = 100032
+
+
+[root@redis_server01 ~]# sysctl -p
+      net.core.somaxconn = 1024
+      vm.overcommit_memory = 1
+      net.ipv4.tcp_max_syn_backlog = 1024
+      fs.file-max = 100032
+
+
+
+
+[root@redis_server01 ~]# sysctl -a | grep -E  'somaxconn|overcommit_memory|tcp_max_syn_backlog|file-max'
+      sysctl: reading key "net.ipv6.conf.all.stable_secret"
+      sysctl: reading key "net.ipv6.conf.default.stable_secret"
+      sysctl: reading key "net.ipv6.conf.ens33.stable_secret"
+      sysctl: reading key "net.ipv6.conf.lo.stable_secret"
+      fs.file-max = 100032        <-------
+      net.core.somaxconn = 1024   <-------
+      net.ipv4.tcp_max_syn_backlog = 1024  <-------
+      vm.overcommit_memory = 1             <-------
+
+
+
+
+
+
+
+// 启动 redis-server 服务
+[root@redis_server01 ~]# su -l redis -s /bin/bash -c 'redis-server /app/redis/conf/redis.conf'
+      su: warning: cannot change directory to /home/redis: No such file or directory
+
+
+// 查看一下 网络端口
+[root@redis_server01 ~]# netstat -anptu | grep redis
+      tcp        0      0 127.0.0.1:6379          0.0.0.0:*               LISTEN      21450/redis-server
+      tcp        0      0 192.168.175.111:6379    0.0.0.0:*               LISTEN      21450/redis-server
+
+
+// 查看一下进程
+[root@redis_server01 ~]# ps aux | grep redis
+      redis     21450  0.1  0.5 163108  5144 ?        Ssl  14:36   0:00 redis-server 192.168.175.111:6379
+
+
+
+
+// 查看一下日志
+[root@redis_server01 ~]# cat /var/log/redis/redis_6379.log
+        21429:C 22 Sep 2019 14:36:57.297 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+        21429:C 22 Sep 2019 14:36:57.297 # Redis version=5.0.5, bits=64, commit=00000000, modified=0, pid=21429, just started
+        21429:C 22 Sep 2019 14:36:57.297 # Configuration loaded
+                        _._
+                   _.-``__ ''-._
+              _.-``    `.  `_.  ''-._           Redis 5.0.5 (00000000/0) 64 bit
+          .-`` .-```.  ```\/    _.,_ ''-._
+         (    '      ,       .-`  | `,    )     Running in standalone mode
+         |`-._`-...-` __...-.``-._|'` _.-'|     Port: 6379
+         |    `-._   `._    /     _.-'    |     PID: 21450
+          `-._    `-._  `-./  _.-'    _.-'
+         |`-._`-._    `-.__.-'    _.-'_.-'|
+         |    `-._`-._        _.-'_.-'    |           http://redis.io
+          `-._    `-._`-.__.-'_.-'    _.-'
+         |`-._`-._    `-.__.-'    _.-'_.-'|
+         |    `-._`-._        _.-'_.-'    |
+          `-._    `-._`-.__.-'_.-'    _.-'
+              `-._    `-.__.-'    _.-'
+                  `-._        _.-'
+                      `-.__.-'
+
+        21450:M 22 Sep 2019 14:36:57.306 # Server initialized
+        21450:M 22 Sep 2019 14:36:57.306 * Ready to accept connections
+
+
+
+// 设置开机自启
+[root@redis_server01 ~]# vim /etc/rc.d/rc.local
+
+        echo never > /sys/kernel/mm/transparent_hugepage/enabled
+        #注: redis 服务的启动一定要放在 transparent_hugepage 被禁用之后
+        su -l redis -s /bin/bash -c 'redis-server /app/redis/conf/redis.conf'
+
+
+
+----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
