@@ -122,8 +122,8 @@ client: 192.168.175.30  <-----用于测试
 
 
 // 为了提高安全, 创建 redis 账号, 后续会以该 redis 普通账号的身份来启动 redis 相关服务
-[root@redis_sentinel01 ~]# useradd -M -s /sbin/nologin redis
-[root@redis_sentinel01 ~]# grep redis /etc/passwd
+[root@redis_server01 ~]# useradd -M -s /sbin/nologin redis
+[root@redis_server01 ~]# grep redis /etc/passwd
           redis:x:1001:1001::/home/redis:/sbin/nologin
 
 
@@ -634,7 +634,11 @@ client: 192.168.175.30  <-----用于测试
 
 [root@redis_sentinel01 ~]# vim /app/redis/conf/sentinel.conf
 
-          bind 127.0.0.1 192.168.175.101
+          # 注意, bind 中 各 ip 的顺序很重要,即 127.0.0.1 必须出现在 192.168.175.101 之后, 否则
+          # sentinel 无法正常工作, 更多信息见 后面的 "注意事项01"
+          #bind 127.0.0.1 192.168.175.101  <----错误
+          bind 192.168.175.101 127.0.0.1
+          protected-mode yes
           port 26379
           daemonize yes
           pidfile /var/run/redis/redis-sentinel.pid
@@ -711,25 +715,6 @@ client: 192.168.175.30  <-----用于测试
 
 
 
-[root@redis_sentinel01 ~]# su -l redis -s /bin/bash -c 'redis-sentinel /app/redis/conf/sentinel.conf'
-      su: warning: cannot change directory to /home/redis: No such file or directory
-
-[root@redis_sentinel01 ~]# netstat -anptu | grep redis
-      tcp        0      0 192.168.175.101:26379   0.0.0.0:*               LISTEN      22393/redis-sentine
-      tcp        0      0 127.0.0.1:26379         0.0.0.0:*               LISTEN      22393/redis-sentine
-
-
-[root@redis_sentinel01 ~]# ps aux | grep redis
-      redis     22393  0.4  0.7 153892  7860 ?        Ssl  20:48   0:00 redis-sentinel 127.0.0.1:26379 [sentinel]
-
-[root@redis_sentinel01 ~]# cat /var/log/redis/redis-sentinel.log
-      22372:X 22 Sep 2019 20:48:06.658 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
-      22372:X 22 Sep 2019 20:48:06.658 # Redis version=5.0.5, bits=64, commit=00000000, modified=0, pid=22372, just started
-      22372:X 22 Sep 2019 20:48:06.658 # Configuration loaded
-      22393:X 22 Sep 2019 20:48:06.964 * Running mode=sentinel, port=26379.
-      22393:X 22 Sep 2019 20:48:06.986 # Sentinel ID is e7d077382711be9e8139bdcf1f8376b27d2848ef
-      22393:X 22 Sep 2019 20:48:06.986 # +monitor master mymaster 192.168.175.111 6379 quorum 2
-      22393:X 22 Sep 2019 20:48:11.690 # +sdown master mymaster 192.168.175.111 6379
 
 
 
@@ -784,7 +769,11 @@ client: 192.168.175.30  <-----用于测试
 
 [root@redis_sentinel02 ~]# vim /app/redis/conf/sentinel.conf
 
-          bind 127.0.0.1 192.168.175.102
+          # 注意, bind 中 各 ip 的顺序很重要,即 127.0.0.1 必须出现在 192.168.175.102 之后, 否则
+          # sentinel 无法正常工作, 更多信息见 后面的 "注意事项01"
+          #bind 127.0.0.1 192.168.175.102  <----错误
+          bind 192.168.175.102 127.0.0.1
+          protected-mode yes
 
 
 
@@ -891,8 +880,11 @@ client: 192.168.175.30  <-----用于测试
 
 [root@redis_sentinel03 ~]# vim /app/redis/conf/sentinel.conf
 
-          bind 127.0.0.1 192.168.175.103
-
+          # 注意, bind 中 各 ip 的顺序很重要,即 127.0.0.1 必须出现在 192.168.175.103 之后, 否则
+          # sentinel 无法正常工作, 更多信息见 后面的 "注意事项01"
+          #bind 127.0.0.1 192.168.175.103  <----错误
+          bind 192.168.175.103 127.0.0.1
+          protected-mode yes
 
 
 
@@ -971,21 +963,18 @@ client: 192.168.175.30  <-----用于测试
 
 ----------------------------------------------------------------------------------------------------
 
+[root@redis_sentinel01 ~]# su -l redis -s /bin/bash -c 'redis-sentinel /app/redis/conf/sentinel.conf'
+      su: warning: cannot change directory to /home/redis: No such file or directory
 
-
-redis-cli -h 192.168.175.101  -p 26379  SENTINEL RESET mymaster
-redis-cli -h 192.168.175.102  -p 26379  SENTINEL RESET mymaster
-redis-cli -h 192.168.175.103  -p 26379  SENTINEL RESET mymaster
-
-
-redis-cli -h 192.168.175.101 -a redhat_sentinel -p 5000  shutdown
-redis-cli -h 192.168.175.102 -a redhat_sentinel -p 5001  shutdown
-redis-cli -h 192.168.175.103 -a redhat_sentinel -p 5002  shutdown
-
-
-
-
-
+// 查看日志, 发现状态为 '+sdown', 这不是一个正常情况
+[root@redis_sentinel01 ~]# cat /var/log/redis/redis-sentinel.log
+      6570:X 23 Sep 2019 11:19:35.484 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+      6570:X 23 Sep 2019 11:19:35.484 # Redis version=5.0.5, bits=64, commit=00000000, modified=0, pid=6570, just started
+      6570:X 23 Sep 2019 11:19:35.484 # Configuration loaded
+      6591:X 23 Sep 2019 11:19:35.489 * Running mode=sentinel, port=26379.
+      6591:X 23 Sep 2019 11:19:35.490 # Sentinel ID is efe2afc86b74c88bd2f342be15bc7e65d5012630
+      6591:X 23 Sep 2019 11:19:35.490 # +monitor master mymaster 192.168.175.111 6379 quorum 2
+      6591:X 23 Sep 2019 11:19:40.535 # +sdown master mymaster 192.168.175.111 6379 <-------观察(+sdown 为非正常现象)
 
 
 
@@ -993,6 +982,43 @@ redis-cli -h 192.168.175.103 -a redhat_sentinel -p 5002  shutdown
 
 
 
+redis-cli -h 192.168.175.101  -a redhat_sentinel -p 26379  SENTINEL RESET mymaster
+redis-cli -h 192.168.175.102  -a redhat_sentinel -p 26379  SENTINEL RESET mymaster
+redis-cli -h 192.168.175.103  -a redhat_sentinel -p 26379  SENTINEL RESET mymaster
+
+
+redis-cli -h 192.168.175.101 -a redhat_sentinel -p 26379  shutdown
+redis-cli -h 192.168.175.102 -a redhat_sentinel -p 26379  shutdown
+redis-cli -h 192.168.175.103 -a redhat_sentinel -p 26379  shutdown
+
+
+
+----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+[root@redis_sentinel01 ~]# su -l redis -s /bin/bash -c 'redis-sentinel /app/redis/conf/sentinel.conf'
+      su: warning: cannot change directory to /home/redis: No such file or directory
+
+[root@redis_sentinel01 ~]# netstat -anptu | grep redis
+      tcp        0      0 192.168.175.101:26379   0.0.0.0:*               LISTEN      22393/redis-sentine
+      tcp        0      0 127.0.0.1:26379         0.0.0.0:*               LISTEN      22393/redis-sentine
+
+
+[root@redis_sentinel01 ~]# ps aux | grep redis
+      redis     22393  0.4  0.7 153892  7860 ?        Ssl  20:48   0:00 redis-sentinel 127.0.0.1:26379 [sentinel]
+
+[root@redis_sentinel01 ~]# cat /var/log/redis/redis-sentinel.log
+      22372:X 22 Sep 2019 20:48:06.658 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+      22372:X 22 Sep 2019 20:48:06.658 # Redis version=5.0.5, bits=64, commit=00000000, modified=0, pid=22372, just started
+      22372:X 22 Sep 2019 20:48:06.658 # Configuration loaded
+      22393:X 22 Sep 2019 20:48:06.964 * Running mode=sentinel, port=26379.
+      22393:X 22 Sep 2019 20:48:06.986 # Sentinel ID is e7d077382711be9e8139bdcf1f8376b27d2848ef
+      22393:X 22 Sep 2019 20:48:06.986 # +monitor master mymaster 192.168.175.111 6379 quorum 2
+      22393:X 22 Sep 2019 20:48:11.690 # +sdown master mymaster 192.168.175.111 6379
 
 
 
@@ -1000,4 +1026,61 @@ redis-cli -h 192.168.175.103 -a redhat_sentinel -p 5002  shutdown
 
 
 
+
+
+
+----------------------------------------------------------------------------------------------------
+搭建中遇到的一下问题 或 注意事项
+
+注意事项01:
+关于 bind 和 protected-mode 配置的问题:
+sentinel 配置中 默认 protected-mode 是 enabled(即默认其值为 yes)
+如下列出了 能正常工作 和 不能够正常工作的 一些配置:
+
+            ------------------------------
+            // 方式一  ok(可以通过 192.168.175.102 或 127.0.0.1 访问):
+            #  https://stackoverflow.com/questions/34417051/redis-sentinel-marks-slaves-as-down
+            #  https://github.com/antirez/redis/commit/edd4d555df57dc84265fdfb4ef59a4678832f6da
+            # 注意: 这里 bind 中 ips 的 顺序很重要, 其中 127.0.0.1 必须在 192.168.175.102 之后, 否该该 sentinel 实例无法正常工作
+            bind 192.168.175.102 127.0.0.1
+            protected-mode yes
+            ------------------------------
+
+            ------------------------------
+            // 方式二  ok(类似于方式一, 只是无法再通过 127.0.0.1 访问):
+            bind 192.168.175.102
+            protected-mode yes
+            ------------------------------
+
+            ------------------------------
+            //方式三 ok (即不指定bind, 可以通过所有 interfaces 或 所有ip 访问)
+            #bind 192.168.175.102
+            protected-mode no
+            ------------------------------
+
+            ------------------------------
+            //方式四 wrong, not work(虽然看起来和 方式一相似, 但是 此处因为指令 bind 中顺序上 127.0.0.1 在 192.168.175.102 之前, 所以sentinel 无法正常工作)
+            // wrong, not work
+            bind 127.0.0.1 192.168.175.102
+            protected-mode yes
+            ------------------------------
+
+            ------------------------------
+            //方式五 wrong, not work(和 方式四类似. 即使把protected-mode 设置为 no, 因为指令 bind 中顺序上 127.0.0.1 在 192.168.175.102 之前, 所以sentinel 还是无法正常工作)
+            // wrong, not work
+            bind 127.0.0.1 192.168.175.102
+            protected-mode no
+            ------------------------------
+
+      // 注: 如上 无法 使 sentinel 正常工作的配置(即错误的 方式四 和 方式五) 会导致类似如下的 日志中的错误信息:
+      [root@redis_sentinel01 ~]# cat /var/log/redis/redis-sentinel.log
+            6570:X 23 Sep 2019 11:19:35.484 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+            6570:X 23 Sep 2019 11:19:35.484 # Redis version=5.0.5, bits=64, commit=00000000, modified=0, pid=6570, just started
+            6570:X 23 Sep 2019 11:19:35.484 # Configuration loaded
+            6591:X 23 Sep 2019 11:19:35.489 * Running mode=sentinel, port=26379.
+            6591:X 23 Sep 2019 11:19:35.490 # Sentinel ID is efe2afc86b74c88bd2f342be15bc7e65d5012630
+            6591:X 23 Sep 2019 11:19:35.490 # +monitor master mymaster 192.168.175.111 6379 quorum 2
+            6591:X 23 Sep 2019 11:19:40.535 # +sdown master mymaster 192.168.175.111 6379 <-------观察(始终为 +sdown , 这是一个非正常现象)
+
+----------------------------------------------------------------------------------------------------
 
