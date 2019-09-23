@@ -933,30 +933,505 @@ client: 192.168.175.30  <-----用于测试
         vm.overcommit_memory = 1   <-------
 
 
-[root@redis_sentinel03 ~]# sysctl -a | grep -E  'somaxconn|overcommit_memory|tcp_max_syn_backlog|file-max'
-        fs.file-max = 100032   <-------
-        net.core.somaxconn = 1024   <-------
-        net.ipv4.tcp_max_syn_backlog = 1024   <-------
-        sysctl: reading key "net.ipv6.conf.all.stable_secret"
-        sysctl: reading key "net.ipv6.conf.default.stable_secret"
-        sysctl: reading key "net.ipv6.conf.ens33.stable_secret"
-        sysctl: reading key "net.ipv6.conf.lo.stable_secret"
-        vm.overcommit_memory = 1   <-------
 
 
 
 ----------------------------------------------------------------------------------------------------
 
+// 启动  redis_sentinel01 上的 redis-sentinel
 [root@redis_sentinel01 ~]# su -l redis -s /bin/bash -c 'redis-sentinel /app/redis/conf/sentinel.conf'
+        su: warning: cannot change directory to /home/redis: No such file or directory
+
+// 查看 redis_sentinel01 上的 日志文件
+[root@redis_sentinel01 ~]# cat /var/log/redis/redis-sentinel.log
+        6404:X 23 Sep 2019 20:08:25.544 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+        6404:X 23 Sep 2019 20:08:25.544 # Redis version=5.0.5, bits=64, commit=00000000, modified=0, pid=6404, just started
+        6404:X 23 Sep 2019 20:08:25.544 # Configuration loaded
+        6425:X 23 Sep 2019 20:08:25.548 * Running mode=sentinel, port=26379.
+        6425:X 23 Sep 2019 20:08:25.550 # Sentinel ID is dace638f24504101e3328d2b93c4c2f153d2b8bd
+        6425:X 23 Sep 2019 20:08:25.550 # +monitor master mymaster 192.168.175.111 6379 quorum 2
+        6425:X 23 Sep 2019 20:08:25.562 * +slave slave 192.168.175.112:6379 192.168.175.112 6379 @ mymaster 192.168.175.111 6379
+
+
+
+// 启动  redis_sentinel02 上的 redis-sentinel
 [root@redis_sentinel02 ~]# su -l redis -s /bin/bash -c 'redis-sentinel /app/redis/conf/sentinel.conf'
-[root@redis_sentinel03 ~]# su -l redis -s /bin/bash -c 'redis-sentinel /app/redis/conf/sentinel.conf'
-
-[root@redis_sentinel02 ~]# netstat -anptu | grep redis
+        su: warning: cannot change directory to /home/redis: No such file or directory
 
 
-[root@redis_sentinel02 ~]# ps aux | grep redis
-
+// 查看 redis_sentinel02 上的 日志文件
 [root@redis_sentinel02 ~]# cat /var/log/redis/redis-sentinel.log
+        6051:X 23 Sep 2019 20:10:42.956 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+        6051:X 23 Sep 2019 20:10:42.956 # Redis version=5.0.5, bits=64, commit=00000000, modified=0, pid=6051, just started
+        6051:X 23 Sep 2019 20:10:42.956 # Configuration loaded
+        6072:X 23 Sep 2019 20:10:42.962 * Running mode=sentinel, port=26379.
+        6072:X 23 Sep 2019 20:10:42.963 # Sentinel ID is 0525b602bd6806c3ebc5269a626d0ba5bcb329d3
+        6072:X 23 Sep 2019 20:10:42.963 # +monitor master mymaster 192.168.175.111 6379 quorum 2
+        6072:X 23 Sep 2019 20:10:42.966 * +slave slave 192.168.175.112:6379 192.168.175.112 6379 @ mymaster 192.168.175.111 6379
+        6072:X 23 Sep 2019 20:10:43.593 * +sentinel sentinel dace638f24504101e3328d2b93c4c2f153d2b8bd 192.168.175.101 26379 @ mymaster 192.168.175.111 6379
+
+// 查看 启动  redis_sentinel02 上的 redis-sentinel 后 redis_sentinel01 上 redis-sentinel 的 日志文件 新增的内容
+[root@redis_sentinel01 ~]# cat /var/log/redis/redis-sentinel.log
+
+      6425:X 23 Sep 2019 20:10:45.460 * +sentinel sentinel 0525b602bd6806c3ebc5269a626d0ba5bcb329d3 192.168.175.102 26379 @ mymaster 192.168.175.111 6379
+
+
+// 在 redis_sentinel01 实时观察 redis-sentinel 上的日志文件:
+[root@redis_sentinel01 ~]# tail -f  /var/log/redis/redis-sentinel.log
+
+
+// 在 redis_sentinel02 实时观察 redis-sentinel 上的日志文件:
+[root@redis_sentinel02 ~]# tail -f  /var/log/redis/redis-sentinel.log
+
+
+// 启动  redis_sentinel03 上的 redis-sentinel
+[root@redis_sentinel03 ~]# su -l redis -s /bin/bash -c 'redis-sentinel /app/redis/conf/sentinel.conf'
+        su: warning: cannot change directory to /home/redis: No such file or directory
+
+[root@redis_sentinel03 ~]# cat /var/log/redis/redis-sentinel.log
+        6380:X 23 Sep 2019 20:17:56.717 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+        6380:X 23 Sep 2019 20:17:56.717 # Redis version=5.0.5, bits=64, commit=00000000, modified=0, pid=6380, just started
+        6380:X 23 Sep 2019 20:17:56.717 # Configuration loaded
+        6401:X 23 Sep 2019 20:17:56.725 * Running mode=sentinel, port=26379.
+        6401:X 23 Sep 2019 20:17:56.726 # Sentinel ID is b033e9929be780dfbc017d8a5debb02c43378510
+        6401:X 23 Sep 2019 20:17:56.726 # +monitor master mymaster 192.168.175.111 6379 quorum 2
+        6401:X 23 Sep 2019 20:17:56.729 * +slave slave 192.168.175.112:6379 192.168.175.112 6379 @ mymaster 192.168.175.111 6379
+        6401:X 23 Sep 2019 20:17:58.166 * +sentinel sentinel dace638f24504101e3328d2b93c4c2f153d2b8bd 192.168.175.101 26379 @ mymaster 192.168.175.111 6379
+        6401:X 23 Sep 2019 20:17:58.564 * +sentinel sentinel 0525b602bd6806c3ebc5269a626d0ba5bcb329d3 192.168.175.102 26379 @ mymaster 192.168.175.111 6379
+
+
+// 如下为 在 redis_sentinel01 上实时观察到的 redis-sentinel 的日志文件中 新增的内容:
+      6425:X 23 Sep 2019 20:17:59.637 * +sentinel sentinel b033e9929be780dfbc017d8a5debb02c43378510 192.168.175.103 26379 @ mymaster 192.168.175.111 6379
+
+// 如下为 在 redis_sentinel02 上实时观察到的 redis-sentinel 的日志文件中 新增的内容:
+      6072:X 23 Sep 2019 20:17:59.180 * +sentinel sentinel b033e9929be780dfbc017d8a5debb02c43378510 192.168.175.103 26379 @ mymaster 192.168.175.111 6379
+
+[root@redis_sentinel01 ~]# netstat -anptu | grep redis
+      tcp        0      0 127.0.0.1:26379         0.0.0.0:*               LISTEN      6425/redis-sentinel
+      tcp        0      0 192.168.175.101:26379   0.0.0.0:*               LISTEN      6425/redis-sentinel
+      tcp        0      0 192.168.175.101:26379   192.168.175.102:39513   ESTABLISHED 6425/redis-sentinel
+      tcp        0      0 192.168.175.101:53357   192.168.175.111:6379    ESTABLISHED 6425/redis-sentinel
+      tcp        0      0 192.168.175.101:34547   192.168.175.112:6379    ESTABLISHED 6425/redis-sentinel
+      tcp        0      0 192.168.175.101:35918   192.168.175.111:6379    ESTABLISHED 6425/redis-sentinel
+      tcp        0      0 192.168.175.101:34227   192.168.175.102:26379   ESTABLISHED 6425/redis-sentinel
+      tcp        0      0 192.168.175.101:26379   192.168.175.103:40669   ESTABLISHED 6425/redis-sentinel
+      tcp        0      0 192.168.175.101:58321   192.168.175.103:26379   ESTABLISHED 6425/redis-sentinel
+      tcp        0      0 192.168.175.101:35788   192.168.175.112:6379    ESTABLISHED 6425/redis-sentinel
+
+
+[root@redis_sentinel01 ~]# ps aux | grep redis
+      redis      6425  0.3  0.7 153892  7848 ?        Ssl  20:08   0:07 redis-sentinel 192.168.175.101:26379 [sentinel]
+
+
+
+[root@redis_sentinel01 ~]# redis-cli -p 26379
+127.0.0.1:26379> auth redhat_sentinel
+OK
+127.0.0.1:26379> sentinel master mymaster
+ 1) "name"
+ 2) "mymaster"
+ 3) "ip"
+ 4) "192.168.175.111"
+ 5) "port"
+ 6) "6379"
+ 7) "runid"
+ 8) "dc41151f036d8dfc3704f5ce1bb83ad28b093ab6"
+ 9) "flags"
+10) "master"
+11) "link-pending-commands"
+12) "0"
+13) "link-refcount"
+14) "1"
+15) "last-ping-sent"
+16) "0"
+17) "last-ok-ping-reply"
+18) "235"
+19) "last-ping-reply"
+20) "235"
+21) "down-after-milliseconds"
+22) "5000"
+23) "info-refresh"
+24) "1198"
+25) "role-reported"
+26) "master"
+27) "role-reported-time"
+28) "2319916"
+29) "config-epoch"
+30) "0"
+31) "num-slaves"
+32) "1"
+33) "num-other-sentinels"
+34) "2"
+35) "quorum"
+36) "2"
+37) "failover-timeout"
+38) "180000"
+39) "parallel-syncs"
+40) "1"
+127.0.0.1:26379> SENTINEL slaves mymaster
+1)  1) "name"
+    2) "192.168.175.112:6379"
+    3) "ip"
+    4) "192.168.175.112"
+    5) "port"
+    6) "6379"
+    7) "runid"
+    8) "9337a3cb7f6ccb998dda8f61da804c16d2ccb136"
+    9) "flags"
+   10) "slave"
+   11) "link-pending-commands"
+   12) "0"
+   13) "link-refcount"
+   14) "1"
+   15) "last-ping-sent"
+   16) "0"
+   17) "last-ok-ping-reply"
+   18) "169"
+   19) "last-ping-reply"
+   20) "169"
+   21) "down-after-milliseconds"
+   22) "5000"
+   23) "info-refresh"
+   24) "1512"
+   25) "role-reported"
+   26) "slave"
+   27) "role-reported-time"
+   28) "2380846"
+   29) "master-link-down-time"
+   30) "0"
+   31) "master-link-status"
+   32) "ok"
+   33) "master-host"
+   34) "192.168.175.111"
+   35) "master-port"
+   36) "6379"
+   37) "slave-priority"
+   38) "100"
+   39) "slave-repl-offset"
+   40) "1294524"
+127.0.0.1:26379> SENTINEL get-master-addr-by-name mymaster
+1) "192.168.175.111"
+2) "6379"
+127.0.0.1:26379> SENTINEL masters
+1)  1) "name"
+    2) "mymaster"
+    3) "ip"
+    4) "192.168.175.111"
+    5) "port"
+    6) "6379"
+    7) "runid"
+    8) "dc41151f036d8dfc3704f5ce1bb83ad28b093ab6"
+    9) "flags"
+   10) "master"
+   11) "link-pending-commands"
+   12) "0"
+   13) "link-refcount"
+   14) "1"
+   15) "last-ping-sent"
+   16) "0"
+   17) "last-ok-ping-reply"
+   18) "436"
+   19) "last-ping-reply"
+   20) "436"
+   21) "down-after-milliseconds"
+   22) "5000"
+   23) "info-refresh"
+   24) "42"
+   25) "role-reported"
+   26) "master"
+   27) "role-reported-time"
+   28) "2499531"
+   29) "config-epoch"
+   30) "0"
+   31) "num-slaves"
+   32) "1"
+   33) "num-other-sentinels"
+   34) "2"
+   35) "quorum"
+   36) "2"
+   37) "failover-timeout"
+   38) "180000"
+   39) "parallel-syncs"
+   40) "1"
+127.0.0.1:26379>
+
+
+127.0.0.1:26379> SENTINEL sentinels mymaster
+1)  1) "name"
+    2) "b033e9929be780dfbc017d8a5debb02c43378510"
+    3) "ip"
+    4) "192.168.175.103"
+    5) "port"
+    6) "26379"
+    7) "runid"
+    8) "b033e9929be780dfbc017d8a5debb02c43378510"
+    9) "flags"
+   10) "sentinel"
+   11) "link-pending-commands"
+   12) "0"
+   13) "link-refcount"
+   14) "1"
+   15) "last-ping-sent"
+   16) "0"
+   17) "last-ok-ping-reply"
+   18) "562"
+   19) "last-ping-reply"
+   20) "562"
+   21) "down-after-milliseconds"
+   22) "5000"
+   23) "last-hello-message"
+   24) "909"
+   25) "voted-leader"
+   26) "?"
+   27) "voted-leader-epoch"
+   28) "0"
+2)  1) "name"
+    2) "0525b602bd6806c3ebc5269a626d0ba5bcb329d3"
+    3) "ip"
+    4) "192.168.175.102"
+    5) "port"
+    6) "26379"
+    7) "runid"
+    8) "0525b602bd6806c3ebc5269a626d0ba5bcb329d3"
+    9) "flags"
+   10) "sentinel"
+   11) "link-pending-commands"
+   12) "0"
+   13) "link-refcount"
+   14) "1"
+   15) "last-ping-sent"
+   16) "0"
+   17) "last-ok-ping-reply"
+   18) "561"
+   19) "last-ping-reply"
+   20) "561"
+   21) "down-after-milliseconds"
+   22) "5000"
+   23) "last-hello-message"
+   24) "906"
+   25) "voted-leader"
+   26) "?"
+   27) "voted-leader-epoch"
+   28) "0"
+127.0.0.1:26379> SENTINEL ckquorum mymaster
+OK 3 usable Sentinels. Quorum and failover authorization can be reached
+
+
+
+Testing the failover  (测试故障转移)
+
+
+[root@redis_server01 ~]# redis-cli -h 127.0.0.1 -a redhat -p 6379 DEBUG sleep 30
+Warning: Using a password with '-a' or '-u' option on the command line interface may not be safe.
+
+
+
+6425:X 23 Sep 2019 20:56:25.450 # +sdown master mymaster 192.168.175.111 6379
+6425:X 23 Sep 2019 20:56:25.949 # +new-epoch 1
+6425:X 23 Sep 2019 20:56:25.950 # +vote-for-leader b033e9929be780dfbc017d8a5debb02c43378510 1
+6425:X 23 Sep 2019 20:56:26.535 # +odown master mymaster 192.168.175.111 6379 #quorum 3/2
+6425:X 23 Sep 2019 20:56:26.536 # Next failover delay: I will not start a failover before Mon Sep 23 21:02:26 2019
+6425:X 23 Sep 2019 20:56:27.142 # +config-update-from sentinel b033e9929be780dfbc017d8a5debb02c43378510 192.168.175.103 26379 @ mymaster 192.168.175.111 6379
+6425:X 23 Sep 2019 20:56:27.142 # +switch-master mymaster 192.168.175.111 6379 192.168.175.112 6379
+6425:X 23 Sep 2019 20:56:27.146 * +slave slave 192.168.175.111:6379 192.168.175.111 6379 @ mymaster 192.168.175.112 6379
+6425:X 23 Sep 2019 20:56:32.152 # +sdown slave 192.168.175.111:6379 192.168.175.111 6379 @ mymaster 192.168.175.112 6379
+6425:X 23 Sep 2019 20:56:50.057 # -sdown slave 192.168.175.111:6379 192.168.175.111 6379 @ mymaster 192.168.175.112 6379
+6425:X 23 Sep 2019 20:57:00.067 * +convert-to-slave slave 192.168.175.111:6379 192.168.175.111 6379 @ mymaster 192.168.175.112 6379
+
+
+
+
+6072:X 23 Sep 2019 20:56:25.465 # +sdown master mymaster 192.168.175.111 6379
+6072:X 23 Sep 2019 20:56:25.492 # +new-epoch 1
+6072:X 23 Sep 2019 20:56:25.493 # +vote-for-leader b033e9929be780dfbc017d8a5debb02c43378510 1
+6072:X 23 Sep 2019 20:56:25.536 # +odown master mymaster 192.168.175.111 6379 #quorum 3/2
+6072:X 23 Sep 2019 20:56:25.552 # Next failover delay: I will not start a failover before Mon Sep 23 21:02:26 2019
+6072:X 23 Sep 2019 20:56:26.685 # +config-update-from sentinel b033e9929be780dfbc017d8a5debb02c43378510 192.168.175.103 26379 @ mymaster 192.168.175.111 6379
+6072:X 23 Sep 2019 20:56:26.686 # +switch-master mymaster 192.168.175.111 6379 192.168.175.112 6379
+6072:X 23 Sep 2019 20:56:26.687 * +slave slave 192.168.175.111:6379 192.168.175.111 6379 @ mymaster 192.168.175.112 6379
+6072:X 23 Sep 2019 20:56:31.701 # +sdown slave 192.168.175.111:6379 192.168.175.111 6379 @ mymaster 192.168.175.112 6379
+6072:X 23 Sep 2019 20:56:49.575 # -sdown slave 192.168.175.111:6379 192.168.175.111 6379 @ mymaster 192.168.175.112 6379
+
+
+6401:X 23 Sep 2019 20:56:24.959 # +sdown master mymaster 192.168.175.111 6379
+6401:X 23 Sep 2019 20:56:25.036 # +odown master mymaster 192.168.175.111 6379 #quorum 2/2
+6401:X 23 Sep 2019 20:56:25.036 # +new-epoch 1
+6401:X 23 Sep 2019 20:56:25.036 # +try-failover master mymaster 192.168.175.111 6379
+6401:X 23 Sep 2019 20:56:25.037 # +vote-for-leader b033e9929be780dfbc017d8a5debb02c43378510 1
+6401:X 23 Sep 2019 20:56:25.042 # dace638f24504101e3328d2b93c4c2f153d2b8bd voted for b033e9929be780dfbc017d8a5debb02c43378510 1
+6401:X 23 Sep 2019 20:56:25.043 # 0525b602bd6806c3ebc5269a626d0ba5bcb329d3 voted for b033e9929be780dfbc017d8a5debb02c43378510 1
+6401:X 23 Sep 2019 20:56:25.128 # +elected-leader master mymaster 192.168.175.111 6379
+6401:X 23 Sep 2019 20:56:25.128 # +failover-state-select-slave master mymaster 192.168.175.111 6379
+6401:X 23 Sep 2019 20:56:25.182 # +selected-slave slave 192.168.175.112:6379 192.168.175.112 6379 @ mymaster 192.168.175.111 6379
+6401:X 23 Sep 2019 20:56:25.182 * +failover-state-send-slaveof-noone slave 192.168.175.112:6379 192.168.175.112 6379 @ mymaster 192.168.175.111 6379
+6401:X 23 Sep 2019 20:56:25.283 * +failover-state-wait-promotion slave 192.168.175.112:6379 192.168.175.112 6379 @ mymaster 192.168.175.111 6379
+6401:X 23 Sep 2019 20:56:26.125 # +promoted-slave slave 192.168.175.112:6379 192.168.175.112 6379 @ mymaster 192.168.175.111 6379
+6401:X 23 Sep 2019 20:56:26.125 # +failover-state-reconf-slaves master mymaster 192.168.175.111 6379
+6401:X 23 Sep 2019 20:56:26.223 # +failover-end master mymaster 192.168.175.111 6379
+6401:X 23 Sep 2019 20:56:26.223 # +switch-master mymaster 192.168.175.111 6379 192.168.175.112 6379
+6401:X 23 Sep 2019 20:56:26.225 * +slave slave 192.168.175.111:6379 192.168.175.111 6379 @ mymaster 192.168.175.112 6379
+6401:X 23 Sep 2019 20:56:31.272 # +sdown slave 192.168.175.111:6379 192.168.175.111 6379 @ mymaster 192.168.175.112 6379
+6401:X 23 Sep 2019 20:56:49.067 # -sdown slave 192.168.175.111:6379 192.168.175.111 6379 @ mymaster 192.168.175.112 6379
+
+
+
+[root@redis_sentinel01 ~]# redis-cli -p 26379
+127.0.0.1:26379> auth redhat_sentinel
+OK
+127.0.0.1:26379> SENTINEL ckquorum mymaster
+OK 3 usable Sentinels. Quorum and failover authorization can be reached
+
+127.0.0.1:26379> SENTINEL get-master-addr-by-name mymaster
+1) "192.168.175.112"
+2) "6379"
+
+
+127.0.0.1:26379> SENTINEL masters
+1)  1) "name"
+    2) "mymaster"
+    3) "ip"
+    4) "192.168.175.112"
+    5) "port"
+    6) "6379"
+    7) "runid"
+    8) "9337a3cb7f6ccb998dda8f61da804c16d2ccb136"
+    9) "flags"
+   10) "master"
+   11) "link-pending-commands"
+   12) "0"
+   13) "link-refcount"
+   14) "1"
+   15) "last-ping-sent"
+   16) "0"
+   17) "last-ok-ping-reply"
+   18) "235"
+   19) "last-ping-reply"
+   20) "235"
+   21) "down-after-milliseconds"
+   22) "5000"
+   23) "info-refresh"
+   24) "2347"
+   25) "role-reported"
+   26) "master"
+   27) "role-reported-time"
+   28) "193023"
+   29) "config-epoch"
+   30) "1"
+   31) "num-slaves"
+   32) "1"
+   33) "num-other-sentinels"
+   34) "2"
+   35) "quorum"
+   36) "2"
+   37) "failover-timeout"
+   38) "180000"
+   39) "parallel-syncs"
+   40) "1"
+127.0.0.1:26379> SENTINEL slaves mymaster
+1)  1) "name"
+    2) "192.168.175.111:6379"
+    3) "ip"
+    4) "192.168.175.111"
+    5) "port"
+    6) "6379"
+    7) "runid"
+    8) "dc41151f036d8dfc3704f5ce1bb83ad28b093ab6"
+    9) "flags"
+   10) "slave"
+   11) "link-pending-commands"
+   12) "0"
+   13) "link-refcount"
+   14) "1"
+   15) "last-ping-sent"
+   16) "0"
+   17) "last-ok-ping-reply"
+   18) "707"
+   19) "last-ping-reply"
+   20) "707"
+   21) "down-after-milliseconds"
+   22) "5000"
+   23) "info-refresh"
+   24) "1914"
+   25) "role-reported"
+   26) "slave"
+   27) "role-reported-time"
+   28) "212802"
+   29) "master-link-down-time"
+   30) "0"
+   31) "master-link-status"
+   32) "ok"
+   33) "master-host"
+   34) "192.168.175.112"
+   35) "master-port"
+   36) "6379"
+   37) "slave-priority"
+   38) "100"
+   39) "slave-repl-offset"
+   40) "1455644"
+127.0.0.1:26379> SENTINEL sentinels mymaster
+1)  1) "name"
+    2) "b033e9929be780dfbc017d8a5debb02c43378510"
+    3) "ip"
+    4) "192.168.175.103"
+    5) "port"
+    6) "26379"
+    7) "runid"
+    8) "b033e9929be780dfbc017d8a5debb02c43378510"
+    9) "flags"
+   10) "sentinel"
+   11) "link-pending-commands"
+   12) "0"
+   13) "link-refcount"
+   14) "1"
+   15) "last-ping-sent"
+   16) "0"
+   17) "last-ok-ping-reply"
+   18) "424"
+   19) "last-ping-reply"
+   20) "424"
+   21) "down-after-milliseconds"
+   22) "5000"
+   23) "last-hello-message"
+   24) "675"
+   25) "voted-leader"
+   26) "?"
+   27) "voted-leader-epoch"
+   28) "0"
+2)  1) "name"
+    2) "0525b602bd6806c3ebc5269a626d0ba5bcb329d3"
+    3) "ip"
+    4) "192.168.175.102"
+    5) "port"
+    6) "26379"
+    7) "runid"
+    8) "0525b602bd6806c3ebc5269a626d0ba5bcb329d3"
+    9) "flags"
+   10) "sentinel"
+   11) "link-pending-commands"
+   12) "0"
+   13) "link-refcount"
+   14) "1"
+   15) "last-ping-sent"
+   16) "0"
+   17) "last-ok-ping-reply"
+   18) "424"
+   19) "last-ping-reply"
+   20) "424"
+   21) "down-after-milliseconds"
+   22) "5000"
+   23) "last-hello-message"
+   24) "182"
+   25) "voted-leader"
+   26) "?"
+   27) "voted-leader-epoch"
+   28) "0"
+127.0.0.1:26379>
+
+
+
+
+
+
 
 
 
@@ -1081,6 +1556,23 @@ sentinel 配置中 默认 protected-mode 是 enabled(即默认其值为 yes)
             6591:X 23 Sep 2019 11:19:35.490 # Sentinel ID is efe2afc86b74c88bd2f342be15bc7e65d5012630
             6591:X 23 Sep 2019 11:19:35.490 # +monitor master mymaster 192.168.175.111 6379 quorum 2
             6591:X 23 Sep 2019 11:19:40.535 # +sdown master mymaster 192.168.175.111 6379 <-------观察(始终为 +sdown , 这是一个非正常现象)
+
+
+
+注意事项02:
+   有时 使用命令 `redis-sentinel /app/redis/conf/sentinel.conf` 启动 redis-sentinel 后 查看日志, 发现仍然还是
+   类似 '+sdown master mymaster 192.168.175.111 6379' 这样的效果, 此时可以使用指令 `SENTINEL reset <pattern>` 来
+   refresh 一下 master 相关的信息, 如下:
+
+        redis-cli -h 192.168.175.101  -a redhat_sentinel -p 26379  SENTINEL RESET mymaster
+
+
+  https://redis.io/topics/sentinel
+
+      SENTINEL reset <pattern>  说明: This command will reset all the masters with matching name. The pattern argument
+                                      is a glob-style pattern. The reset process clears any previous state in
+                                      a master (including a failover in progress), and removes every slave
+                                      and sentinel already discovered and associated with the master.
 
 ----------------------------------------------------------------------------------------------------
 
