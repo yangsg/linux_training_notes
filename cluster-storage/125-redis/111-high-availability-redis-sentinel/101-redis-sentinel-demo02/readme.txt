@@ -1084,3 +1084,103 @@ sentinel 配置中 默认 protected-mode 是 enabled(即默认其值为 yes)
 
 ----------------------------------------------------------------------------------------------------
 
+[root@redis_sentinel01 ~]# vim /app/redis/conf/sentinel.sh
+
+          #!/bin/bash
+
+          export PATH=$PATH:/app/redis/bin
+
+          pidfile=/var/run/redis/redis-sentinel.pid
+          debug_file=/dev/null
+          sentinel_port=26379
+          sentinel_password=redhat_sentinel
+
+
+          function start() {
+            redis-sentinel /app/redis/conf/sentinel.conf
+            sleep 1
+            # 使用指令 SENTINEL RESET 刷新旧的状态数据
+            redis-cli -h 127.0.0.1 -a $sentinel_password -p $sentinel_port  SENTINEL RESET mymaster
+          }
+
+          function stop() {
+            if [ ! -f "$pidfile" ]; then
+              echo "文件${pidfile} 不存在" >> debug_file
+              exit 1
+            fi
+
+            pid=$(cat $pidfile)
+            if [[ ! $pid =~ ^[[:digit:]]+$ ]]; then
+              echo "文件${pidfile} 内容不为数字" >> debug_file
+              exit 2
+            fi
+
+            kill -s SIGTERM $pid
+          }
+
+          function restart() {
+            stop
+            sleep 2
+            start
+          }
+
+          case "$1" in
+            start|stop|restart)
+              $1
+              ;;
+            *)
+              echo $"Usage: $0 {start|stop|restart}"
+              exit 2
+              ;;
+          esac
+          exit $?
+
+
+
+
+[root@redis_sentinel01 ~]# chown redis:redis /app/redis/conf/sentinel.sh
+[root@redis_sentinel01 ~]# chmod u=rwx,go-rwx /app/redis/conf/sentinel.sh
+
+
+[root@redis_sentinel01 ~]# touch /etc/systemd/system/redis-sentinel.service
+[root@redis_sentinel01 ~]# chmod 664 /etc/systemd/system/redis-sentinel.service
+[root@redis_sentinel01 ~]# vim /etc/systemd/system/redis-sentinel.service
+
+[root@redis_sentinel01 ~]# cat /etc/systemd/system/redis-sentinel.service
+        [Unit]
+        Description=Redis Sentinel
+        After=network.target
+        After=network-online.target
+        Wants=network-online.target
+
+        [Service]
+        ExecStartPre=/usr/bin/echo never > /sys/kernel/mm/transparent_hugepage/enabled
+        ExecStart=/app/redis/conf/sentinel.sh start
+        ExecStop=/app/redis/conf/sentinel.sh stop
+        Type=forking
+        User=redis
+        Group=redis
+        PIDFile=/var/run/redis/redis-sentinel.pid
+        LimitNOFILE=100032
+
+
+        [Install]
+        WantedBy=multi-user.target
+
+
+
+[root@redis_sentinel01 ~]# systemctl daemon-reload
+[root@redis_sentinel01 ~]# systemctl start redis-sentinel.service
+[root@redis_sentinel01 ~]# systemctl enable redis-sentinel.service
+      Created symlink from /etc/systemd/system/multi-user.target.wants/redis-sentinel.service to /etc/systemd/system/redis-sentinel.service.
+
+
+
+
+
+
+
+
+
+
+
