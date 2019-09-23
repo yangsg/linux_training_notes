@@ -1506,7 +1506,6 @@ Testing the failover  (测试故障转移)
 [root@redis_sentinel01 ~]# chmod 664 /etc/systemd/system/redis-sentinel.service
 [root@redis_sentinel01 ~]# vim /etc/systemd/system/redis-sentinel.service
 
-[root@redis_sentinel01 ~]# cat /etc/systemd/system/redis-sentinel.service
         [Unit]
         Description=Redis Sentinel
         After=network.target
@@ -1522,7 +1521,11 @@ Testing the failover  (测试故障转移)
         Group=redis
         PIDFile=/var/run/redis/redis-sentinel.pid
         LimitNOFILE=100032
-
+        #https://blog.hqcodeshop.fi/archives/93-Handling-varrun-with-systemd.html
+        #https://serverfault.com/questions/779634/create-a-directory-under-var-run-at-boot
+        #man systemd.exec
+        RuntimeDirectory=redis
+        RuntimeDirectoryMode=0755
 
         [Install]
         WantedBy=multi-user.target
