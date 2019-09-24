@@ -1660,8 +1660,15 @@ Testing the failover  (测试故障转移)
 
 
 
-----------------------------------------------------------------------------------------------------
 
+
+
+
+
+----------------------------------------------------------------------------------------------------
+执行 一个 java 小程序 简单测试一下 redis sentinel 是否可以正常访问:
+
+  java 的 jdk 和 maven 安装见: https://github.com/yangsg/linux_training_notes/blob/master/mysql_mariadb/mysql_01_install/mysql_install_from_source_5.7_for_utf8mb4/jdbc_driver_test.txt
 
 
 
