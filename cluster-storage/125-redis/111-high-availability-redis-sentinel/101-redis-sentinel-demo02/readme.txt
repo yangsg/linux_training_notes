@@ -1544,14 +1544,107 @@ Testing the failover  (测试故障转移)
 
 
 
+----------------------------------------------------------------------------------------------------
+设置 redis_sentinel01 上 sentinel 的开机自启
+
+[root@redis_sentinel02 ~]# rsync -av root@192.168.175.101:/app/redis/conf/sentinel.sh  /app/redis/conf/sentinel.sh
+
+[root@redis_sentinel02 ~]# ls -l /app/redis/conf/sentinel.sh
+      -rwx------ 1 redis redis 856 Sep 23 23:05 /app/redis/conf/sentinel.sh
+
+[root@redis_sentinel02 ~]# rsync -av root@192.168.175.101:/etc/systemd/system/redis-sentinel.service  /etc/systemd/system/redis-sentinel.service
+
+[root@redis_sentinel02 ~]# ls -l /etc/systemd/system/redis-sentinel.service
+      -rw-rw-r-- 1 root root 646 Sep 24 00:07 /etc/systemd/system/redis-sentinel.service
+
+
+[root@redis_sentinel02 ~]# systemctl start redis-sentinel.service
+[root@redis_sentinel02 ~]# systemctl enable redis-sentinel.service
+      Created symlink from /etc/systemd/system/multi-user.target.wants/redis-sentinel.service to /etc/systemd/system/redis-sentinel.service.
+
+
+----------------------------------------------------------------------------------------------------
+设置 redis_sentinel01 上 sentinel 的开机自启
+
+[root@redis_sentinel03 ~]# rsync -av root@192.168.175.101:/app/redis/conf/sentinel.sh  /app/redis/conf/sentinel.sh
+
+[root@redis_sentinel03 ~]# ls -l /app/redis/conf/sentinel.sh
+      -rwx------ 1 redis redis 856 Sep 23 23:05 /app/redis/conf/sentinel.sh
+
+[root@redis_sentinel03 ~]# rsync -av root@192.168.175.101:/etc/systemd/system/redis-sentinel.service  /etc/systemd/system/redis-sentinel.service
+
+[root@redis_sentinel03 ~]# ls -l /etc/systemd/system/redis-sentinel.service
+      -rw-rw-r-- 1 root root 646 Sep 24 00:07 /etc/systemd/system/redis-sentinel.service
+
+
+[root@redis_sentinel03 ~]# systemctl start redis-sentinel.service
+[root@redis_sentinel03 ~]# systemctl enable redis-sentinel.service
+      Created symlink from /etc/systemd/system/multi-user.target.wants/redis-sentinel.service to /etc/systemd/system/redis-sentinel.service.
 
 
 
+----------------------------------------------------------------------------------------------------
+重新启动, 测试是否成功正常工作
+
+此处以 redis_sentinel01 上的测试为例:
+
+// 查看 unit 状态信息
+[root@redis_sentinel01 ~]# systemctl status redis-sentinel.service
+      ● redis-sentinel.service - Redis Sentinel
+         Loaded: loaded (/etc/systemd/system/redis-sentinel.service; enabled; vendor preset: disabled)
+         Active: active (running) since Tue 2019-09-24 08:59:33 CST; 41s ago
+        Process: 876 ExecStart=/app/redis/conf/sentinel.sh start (code=exited, status=0/SUCCESS)
+        Process: 875 ExecStartPre=/usr/bin/echo never > /sys/kernel/mm/transparent_hugepage/enabled (code=exited, status=0/SUCCESS)
+       Main PID: 881 (redis-sentinel)
+         CGroup: /system.slice/redis-sentinel.service
+                 └─881 redis-sentinel 192.168.175.101:26379 [sentinel]
+
+      Sep 24 08:59:29 redis_sentinel01 systemd[1]: Starting Redis Sentinel...
+      Sep 24 08:59:33 redis_sentinel01 sentinel.sh[876]: Warning: Using a password with '-a' or '-u' option on the command line interface may not be safe.
+      Sep 24 08:59:33 redis_sentinel01 sentinel.sh[876]: 1
+      Sep 24 08:59:33 redis_sentinel01 systemd[1]: Started Redis Sentinel.
+
+
+// 查看相关端口
+[root@redis_sentinel01 ~]# netstat -anptu | grep redis
+      tcp        0      0 127.0.0.1:26379         0.0.0.0:*               LISTEN      881/redis-sentinel
+      tcp        0      0 192.168.175.101:26379   0.0.0.0:*               LISTEN      881/redis-sentinel
+      tcp        0      0 192.168.175.101:40236   192.168.175.111:6379    ESTABLISHED 881/redis-sentinel
+      tcp        0      0 192.168.175.101:26379   192.168.175.103:33112   ESTABLISHED 881/redis-sentinel
+      tcp        0      0 192.168.175.101:26379   192.168.175.102:56234   ESTABLISHED 881/redis-sentinel
+      tcp        0      0 192.168.175.101:58149   192.168.175.102:26379   ESTABLISHED 881/redis-sentinel
+      tcp        0      0 192.168.175.101:59826   192.168.175.103:26379   ESTABLISHED 881/redis-sentinel
+      tcp        0      0 192.168.175.101:43064   192.168.175.111:6379    ESTABLISHED 881/redis-sentinel
+      tcp        0      0 192.168.175.101:47065   192.168.175.112:6379    ESTABLISHED 881/redis-sentinel
+      tcp        0      0 192.168.175.101:52485   192.168.175.112:6379    ESTABLISHED 881/redis-sentinel
+
+
+// 查看进程
+[root@redis_sentinel01 ~]# ps aux | grep redis
+      redis       881  0.3  0.7 153892  7932 ?        Ssl  08:59   0:00 redis-sentinel 192.168.175.101:26379 [sentinel]
+
+// 查看日志
+[root@redis_sentinel01 ~]# tail -f /var/log/redis/redis-sentinel.log
+        880:X 24 Sep 2019 08:59:31.146 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+        880:X 24 Sep 2019 08:59:31.146 # Redis version=5.0.5, bits=64, commit=00000000, modified=0, pid=880, just started
+        880:X 24 Sep 2019 08:59:31.147 # Configuration loaded
+        881:X 24 Sep 2019 08:59:31.150 * Running mode=sentinel, port=26379.
+        881:X 24 Sep 2019 08:59:31.150 # Sentinel ID is dace638f24504101e3328d2b93c4c2f153d2b8bd
+        881:X 24 Sep 2019 08:59:31.150 # +monitor master mymaster 192.168.175.112 6379 quorum 2
+        881:X 24 Sep 2019 08:59:33.197 # +reset-master master mymaster 192.168.175.112 6379
+        881:X 24 Sep 2019 08:59:41.249 * +slave slave 192.168.175.111:6379 192.168.175.111 6379 @ mymaster 192.168.175.112 6379
+        881:X 24 Sep 2019 08:59:43.357 * +sentinel sentinel 0525b602bd6806c3ebc5269a626d0ba5bcb329d3 192.168.175.102 26379 @ mymaster 192.168.175.112 6379
+        881:X 24 Sep 2019 08:59:47.599 * +sentinel sentinel b033e9929be780dfbc017d8a5debb02c43378510 192.168.175.103 26379 @ mymaster 192.168.175.112 6379
+
+
+// 查看当前配置是否具备故障转移能力
+[root@redis_sentinel01 ~]# redis-cli -h 127.0.0.1 -p 26379 -a redhat_sentinel SENTINEL ckquorum mymaster
+      Warning: Using a password with '-a' or '-u' option on the command line interface may not be safe.
+      OK 3 usable Sentinels. Quorum and failover authorization can be reached  <-----观察
 
 
 
-
-
+----------------------------------------------------------------------------------------------------
 
 
 
