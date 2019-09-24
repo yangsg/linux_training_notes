@@ -1725,6 +1725,9 @@ redis sentinel 哨兵集群实现 tomcat 的会话保持
 tomcat 需要的 redis 插件 的插:
       https://github.com/ran-jit/tomcat-cluster-redis-session-manager
 
+      其他参考:
+          https://blog.51cto.com/13447608/2295799
+
 该插件的官方介绍:
     Tomcat Clustering Redis Session Manager
 
