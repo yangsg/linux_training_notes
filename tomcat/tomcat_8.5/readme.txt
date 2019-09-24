@@ -87,12 +87,14 @@ Features of the APR connector:
 
 // 安装 tc-native 的依赖组件 (centos上 tc-native 依赖apr-devel openssl-devel,
 // 但yum仓库中apr-devel版本比较旧，所以待会直接编译安装apr)
+// 关于 apr 的更多信息, 见笔记 https://github.com/yangsg/linux_training_notes/tree/master/httpd/httpd02_install_from_source_code
 [root@tomcat85server ~]# yum -y install openssl-devel
 
 // 安装基础编译构建环境
 [root@tomcat85server ~]# yum -y install gcc gcc-c++ autoconf automake
 
-[root@tomcat85server download]# wget http://mirrors.shu.edu.cn/apache/apr/apr-1.6.5.tar.gz
+[root@tomcat85server download]# wget https://archive.apache.org/dist/apr/apr-1.6.5.tar.gz
+
 
 [root@tomcat85server download]# tar -xvf apr-1.6.5.tar.gz
 [root@tomcat85server download]# cd apr-1.6.5/
