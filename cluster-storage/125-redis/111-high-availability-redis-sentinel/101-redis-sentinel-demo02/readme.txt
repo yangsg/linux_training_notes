@@ -1765,6 +1765,65 @@ nginx  ------------->  tomcat01    --------------- sentinel01 sentinel02  sentin
       https://github.com/yangsg/linux_training_notes/tree/master/tomcat/tomcat_8.5/tomcat_basic01/multiple_tomcat_instances_on_one_server
 
 
+[root@client ~]# curl http://192.168.175.100:8180/
+        <h1>tomcat01 instance</h1>
+
+[root@client ~]# curl http://192.168.175.100:8280/
+        <h1>tomcat02 instance</h1>
+
+[root@tomcat85server ~]# vim /app/tomcat_multi_instances/tomcat01/webapps/ROOT/index.jsp
+
+        <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+        <!doctype html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <style type="text/css">
+                h1, p {
+                  text-align:center;
+                }
+            </style>
+          </head>
+          <body>
+            <h1>tomcat01 instance</h1>
+
+            <%-- 获取用户请求的会话ID --%>
+            <p style="">
+              <%= request.getSession().getId() %>
+            </p>
+          </body>
+        </html>
+
+[root@tomcat85server ~]# vim /app/tomcat_multi_instances/tomcat02/webapps/ROOT/index.jsp
+
+        <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+        <!doctype html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <style type="text/css">
+                h1, p {
+                  text-align:center;
+                }
+            </style>
+          </head>
+          <body>
+            <h1>tomcat02 instance</h1>
+
+            <%-- 获取用户请求的会话ID --%>
+            <p style="">
+              <%= request.getSession().getId() %>
+            </p>
+          </body>
+        </html>
+
+
+[root@tomcat85server ~]# yum -y install nginx
+
+
+
+
+
 
 
 
