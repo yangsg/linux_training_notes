@@ -658,7 +658,12 @@ client: 192.168.175.30  <-----用于测试
           # 重命名 指令 CONFIG
           SENTINEL rename-command mymaster CONFIG e374fda5-dcf5-41f2-bf69-a5928aa81874--d1e25c85-961d-4e27-ba88-b8ecf7f99c7a
           # 从 Redis 5.0.1 版本开始, 还可以使用指令 requirepass 为 Sentinel instance 本身设置认证密码
-          requirepass redhat_sentinel
+          # 但是, java 的 redis 客户端库 jedis 现在(即 3.1.0 版本)还不支持 sentinel 自身的密码认证功能,
+          # 所以这里不对 Sentinel 的 requirepass 指令进行配置
+          # jedis 相关的 网上资料:
+          # https://github.com/xetorthio/jedis/issues/1636
+          # https://github.com/karltinawi/jedis/commit/dd46bdd767ed660e15e33d055dd4c2088c74abcb
+          #requirepass redhat_sentinel
 
 
 
@@ -1453,14 +1458,25 @@ Testing the failover  (测试故障转移)
           pidfile=/var/run/redis/redis-sentinel.pid
           debug_file=/dev/null
           sentinel_port=26379
-          sentinel_password=redhat_sentinel
+
+          #因 jedis 3.1.0 不支持 sentinel 自身的 password 认证功能, 所以这里不对 sentinel 自身的 password 认证功能提供支持
+          is_sentinel_password_support_needed=no  #有效值: yes 或 no
+
+          if [ "$is_sentinel_password_support_needed" = 'yes' ]; then
+            sentinel_password=redhat_sentinel
+          fi
 
 
           function start() {
             redis-sentinel /app/redis/conf/sentinel.conf
             sleep 1
+
             # 使用指令 SENTINEL RESET 刷新旧的状态数据
-            redis-cli -h 127.0.0.1 -a $sentinel_password -p $sentinel_port  SENTINEL RESET mymaster
+            if [ "$is_sentinel_password_support_needed" != 'yes' ]; then
+              redis-cli -h 127.0.0.1 -p $sentinel_port  SENTINEL RESET mymaster
+            else
+              redis-cli -h 127.0.0.1 -a $sentinel_password -p $sentinel_port  SENTINEL RESET mymaster
+            fi
           }
 
           function stop() {
