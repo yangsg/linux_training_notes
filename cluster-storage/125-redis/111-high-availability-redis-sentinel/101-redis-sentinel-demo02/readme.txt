@@ -1671,6 +1671,41 @@ Testing the failover  (测试故障转移)
   java 的 jdk 和 maven 安装见: https://github.com/yangsg/linux_training_notes/blob/master/mysql_mariadb/mysql_01_install/mysql_install_from_source_5.7_for_utf8mb4/jdbc_driver_test.txt
 
 
+  代码见:
+      https://github.com/yangsg/linux_training_notes/tree/master/cluster-storage/125-redis/111-high-availability-redis-sentinel/101-redis-sentinel-demo02/java_code_for_test_redis_sentinel
+
+
+[root@client ~]# mkdir test_dir
+[root@client ~]# cd test_dir/
+
+[root@client test_dir]# wget -O pom.xml  https://raw.githubusercontent.com/yangsg/linux_training_notes/master/cluster-storage/125-redis/111-high-availability-redis-sentinel/101-redis-sentinel-demo02/java_code_for_test_redis_sentinel/pom.xml
+
+[root@client test_dir]# mkdir -p src/main/java/com/mycompany/app
+[root@client test_dir]# wget -O ./src/main/java/com/mycompany/app/TestRedisSentinel.java  https://github.com/yangsg/linux_training_notes/raw/master/cluster-storage/125-redis/111-high-availability-redis-sentinel/101-redis-sentinel-demo02/java_code_for_test_redis_sentinel/TestRedisSentinel.java
+
+
+[root@client test_dir]# mvn clean
+[root@client test_dir]# mvn package
+
+[root@client test_dir]# mvn exec:java -Dexec.mainClass="com.mycompany.app.TestRedisSentinel"
+
+      ==============================start======================================
+      [com.mycompany.app.TestRedisSentinel.main()] INFO redis.clients.jedis.JedisSentinelPool - Trying to find master from available Sentinels...
+      [com.mycompany.app.TestRedisSentinel.main()] INFO redis.clients.jedis.JedisSentinelPool - Redis master running at 192.168.175.112:6379, starting Sentinel listeners...
+      [com.mycompany.app.TestRedisSentinel.main()] INFO redis.clients.jedis.JedisSentinelPool - Created JedisPool to master at 192.168.175.112:6379
+      set data: key(test_key)  ----->  value(TestRedisSentinel_2019-09-24 16:02:13)
+      get data: key(test_key)  ----->  value(TestRedisSentinel_2019-09-24 16:02:13)
+      ==============================end======================================
+
+
+
+相关参考:
+      https://www.jianshu.com/p/111c8f25d786
+      https://scalegrid.io/blog/high-availability-with-redis-sentinels-connecting-to-redis-masterslave-sets/
+      https://www.runoob.com/redis/redis-java.html
+      https://blog.csdn.net/u010696630/article/details/84991116
+      https://blog.csdn.net/qq_35830949/article/details/79996360
+      https://www.cnblogs.com/sharpest/p/7879377.html
 
 
 
