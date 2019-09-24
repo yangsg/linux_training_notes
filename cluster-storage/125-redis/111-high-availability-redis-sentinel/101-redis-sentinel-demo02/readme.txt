@@ -1711,6 +1711,63 @@ Testing the failover  (测试故障转移)
 
 
 
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+redis sentinel 哨兵集群实现 tomcat 的会话保持
+
+
+tomcat 需要的 redis 插件 的插:
+      https://github.com/ran-jit/tomcat-cluster-redis-session-manager
+
+该插件的官方介绍:
+    Tomcat Clustering Redis Session Manager
+
+        The Redis session manager is pluggable one. It stores session into Redis
+        for easy distribution of HTTP Requests across a cluster of Tomcat servers.
+
+        Here the Sessions are implemented as non-sticky (means, each request can able to
+        go to any server in the cluster, unlike the Apache provided Tomcat clustering setup.)
+
+        Request Sessions will be stored into Redis immediately (Session attributes must be Serializable),
+        for the use of other servers. When tomcat receives a request from the client, Sessions are loaded directly from Redis.
+        // 请求 Sessions 将为直接存储到 Redis 中(Session attributes 必须是 可序列化的) 以实现 与其他 servers 共享,
+        // 当 tomcat 接收 到 来自 client 的 a request 时, Sessions 会 直接从 Redis 中被 直接 loaded.
+
+        Supports Redis default, sentinel and cluster mode, based on the configuration.
+        // 模式支持 直接的 Redis, 而 sentinel 和 cluster 模式(mode), 则需要基于 configuration 来实现.
+
+        Going forward, we no need to enable sticky session (JSESSIONID) in Load Balancer.
+
+        支持的 Tomcat 版本:
+              Apache Tomcat 7
+              Apache Tomcat 8
+              Apache Tomcat 9
+
+
+
+nginx  ------------->  tomcat01    --------------- sentinel01 sentinel02  sentinel03
+                       tomcat02
+
+                                                      redis_master    redis_slave
+
+
+
+安装 tomcat 笔记见:
+      https://github.com/yangsg/linux_training_notes/tree/master/tomcat/tomcat_8.5
+
+部署 tomcat 多实例笔记见:
+      https://github.com/yangsg/linux_training_notes/tree/master/tomcat/tomcat_8.5/tomcat_basic01/multiple_tomcat_instances_on_one_server
+
+
+
+
+
 ----------------------------------------------------------------------------------------------------
 搭建中遇到的一下问题 或 注意事项
 

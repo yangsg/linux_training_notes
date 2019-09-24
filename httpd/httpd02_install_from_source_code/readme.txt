@@ -4,6 +4,7 @@
 // apr apr-util相关的网址:
 // http://apr.apache.org/
 // http://apr.apache.org/download.cgi
+// https://archive.apache.org/dist/apr/
 // apr: Apache Portable Runtime library,一个免费的C语言库，包含一些数据结构和例程，形成一个在不同操作系统之间的可移植层。
 // apr-util和apr类似，也是一个包含了数据结构和例程的C语言库，它为apr提供了额外的实用程序接口,
 // 包含了对XML, LDAP, database interfaces, URI parsing等的支持
