@@ -1764,12 +1764,19 @@ nginx  ------------->  tomcat01    --------------- sentinel01 sentinel02  sentin
 部署 tomcat 多实例笔记见:
       https://github.com/yangsg/linux_training_notes/tree/master/tomcat/tomcat_8.5/tomcat_basic01/multiple_tomcat_instances_on_one_server
 
+[root@tomcat85server ~]# netstat -anptu | grep java
+      tcp6       0      0 127.0.0.1:8205          :::*                    LISTEN      1099/java
+      tcp6       0      0 :::8180                 :::*                    LISTEN      1079/java
+      tcp6       0      0 :::8280                 :::*                    LISTEN      1099/java
+      tcp6       0      0 127.0.0.1:8105          :::*                    LISTEN      1079/java
 
 [root@client ~]# curl http://192.168.175.100:8180/
         <h1>tomcat01 instance</h1>
 
 [root@client ~]# curl http://192.168.175.100:8280/
         <h1>tomcat02 instance</h1>
+
+
 
 [root@tomcat85server ~]# vim /app/tomcat_multi_instances/tomcat01/webapps/ROOT/index.jsp
 
@@ -1818,7 +1825,194 @@ nginx  ------------->  tomcat01    --------------- sentinel01 sentinel02  sentin
         </html>
 
 
+
 [root@tomcat85server ~]# yum -y install nginx
+[root@tomcat85server ~]# vim /etc/nginx/nginx.conf
+
+    upstream TomcatServer {
+        server 192.168.175.100:8180 weight=1 max_fails=2 fail_timeout=5s;
+        server 192.168.175.100:8280 weight=1 max_fails=2 fail_timeout=5s;
+    }
+
+    server {
+        location ~ \.jsp$ {
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_pass http://TomcatServer;
+        }
+    }
+
+[root@tomcat85server ~]# systemctl start nginx.service
+[root@tomcat85server ~]# systemctl enable nginx.service
+      Created symlink from /etc/systemd/system/multi-user.target.wants/nginx.service to /usr/lib/systemd/system/nginx.service.
+
+
+使用浏览器访问  http://192.168.175.100/index.jsp
+尝试不断刷新浏览器, 可以看到页面上  session id  一直在不停地在 变化(因还未对 多个 tomcat instances 做会话保持)
+
+
+
+在如下页面可以看到 插件 tomcat-cluster-redis-session-manager 各不同版本:
+    https://github.com/ran-jit/tomcat-cluster-redis-session-manager/releases
+
+// 下载 tomcat-cluster-redis-session-manager.zip
+// 针对该插件, 这里可以考虑下载 较新的 版本, 因为从该插件的 Changes Log 中可以看到 插件的作者在 一直在不断地 修复该 插件的 bug
+[root@tomcat85server download]# wget https://github.com/ran-jit/tomcat-cluster-redis-session-manager/releases/download/3.0.3/tomcat-cluster-redis-session-manager.zip
+
+[root@tomcat85server download]# yum -y install unzip
+
+[root@tomcat85server download]# unzip tomcat-cluster-redis-session-manager.zip
+
+[root@tomcat85server download]# tree tomcat-cluster-redis-session-manager
+      tomcat-cluster-redis-session-manager
+      ├── conf
+      │   └── redis-data-cache.properties
+      ├── lib
+      │   ├── commons-pool2-2.6.2.jar
+      │   ├── jedis-3.0.1.jar
+      │   ├── slf4j-api-1.7.26.jar  <---注意: 因为使用了 slf4j-api-1.7.26.jar, 所以还需要单独下载一个 slf4j-simple-1.7.26.jar 配合其 一起使用
+                                        否则 tomcat 启动时 日志中会报 如 "SLF4J: Failed to load class “org.slf4j.impl.StaticLoggerBinder" 这样的错误
+      │   └── tomcat-cluster-redis-session-manager-3.0.3.jar
+      └── readMe.txt
+
+
+
+关于 关于 slf4j-simple-xxx.jar 的网上资料 或 相关的某些资源如下:
+        https://stackoverflow.com/questions/7421612/slf4j-failed-to-load-class-org-slf4j-impl-staticloggerbinder
+        https://mvnrepository.com/artifact/org.slf4j/slf4j-simple
+        https://mvnrepository.com/artifact/org.slf4j/slf4j-simple/1.7.26
+        https://github.com/ran-jit/tomcat-cluster-redis-session-manager/blob/master/pom.xml
+
+[root@tomcat85server tomcat-cluster-redis-session-manager]# wget -O ./lib/slf4j-simple-1.7.26.jar  https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/1.7.26/slf4j-simple-1.7.26.jar
+[root@tomcat85server tomcat-cluster-redis-session-manager]# tree
+        .
+        ├── conf
+        │   └── redis-data-cache.properties
+        ├── lib
+        │   ├── commons-pool2-2.6.2.jar
+        │   ├── jedis-3.0.1.jar
+        │   ├── slf4j-api-1.7.26.jar
+        │   ├── slf4j-simple-1.7.26.jar  <--------观察已经下载了 slf4j-simple-1.7.26.jar
+        │   └── tomcat-cluster-redis-session-manager-3.0.3.jar
+        └── readMe.txt
+
+
+
+
+
+[root@tomcat85server download]# cd tomcat-cluster-redis-session-manager/
+[root@tomcat85server tomcat-cluster-redis-session-manager]# ls lib/
+      commons-pool2-2.6.2.jar  jedis-3.0.1.jar  slf4j-api-1.7.26.jar  slf4j-simple-1.7.26.jar  tomcat-cluster-redis-session-manager-3.0.3.jar
+
+
+[root@tomcat85server tomcat-cluster-redis-session-manager]# cp lib/*.jar /app/tomcat_multi_instances/tomcat01/lib/
+[root@tomcat85server tomcat-cluster-redis-session-manager]# cp lib/*.jar /app/tomcat_multi_instances/tomcat02/lib/
+
+[root@tomcat85server tomcat-cluster-redis-session-manager]# ls -1 /app/tomcat_multi_instances/tomcat01/lib/
+        commons-pool2-2.6.2.jar
+        jedis-3.0.1.jar
+        slf4j-api-1.7.26.jar
+        slf4j-simple-1.7.26.jar
+        tomcat-cluster-redis-session-manager-3.0.3.jar
+
+
+[root@tomcat85server tomcat-cluster-redis-session-manager]# ls -1 /app/tomcat_multi_instances/tomcat02/lib/
+        commons-pool2-2.6.2.jar
+        jedis-3.0.1.jar
+        slf4j-api-1.7.26.jar
+        slf4j-simple-1.7.26.jar
+        tomcat-cluster-redis-session-manager-3.0.3.jar
+
+
+--------------------------------------------------------------------------------
+[root@tomcat85server tomcat01]# /app/tomcat_multi_instances/tomcat01/tomcat.sh stop
+
+[root@tomcat85server tomcat-cluster-redis-session-manager]# cp -pv conf/redis-data-cache.properties /app/tomcat_multi_instances/tomcat01/conf/
+      ‘conf/redis-data-cache.properties’ -> ‘/app/tomcat_multi_instances/tomcat01/conf/redis-data-cache.properties’
+
+
+[root@tomcat85server tomcat-cluster-redis-session-manager]# cd /app/tomcat_multi_instances/tomcat01
+
+[root@tomcat85server tomcat01]# vim conf/redis-data-cache.properties
+
+      redis.hosts=192.168.175.101:26379, 192.168.175.102:26379, 192.168.175.103:26379
+      redis.password=redhat
+      redis.cluster.enabled=false
+      redis.sentinel.enabled=true
+      redis.sentinel.master=mymaster
+      lb.sticky-session.enabled=false
+      session.persistent.policies=DEFAULT
+
+
+
+[root@tomcat85server tomcat01]# vim conf/context.xml
+      <!-- 在<Context>标签里面配置 <Valve> 和 <Manager> -->
+      <Valve className="tomcat.request.session.redis.SessionHandlerValve" />
+      <Manager className="tomcat.request.session.redis.SessionManager" />
+
+
+
+[root@tomcat85server tomcat01]# vim conf/web.xml
+      <!-- 确认默认的 session 过期时间, 这里为 30 minutes, 可根据实际需求修改 -->
+      <session-config>
+          <session-timeout>30</session-timeout>
+      </session-config>
+
+[root@tomcat85server tomcat01]# /app/tomcat_multi_instances/tomcat01/tomcat.sh start
+
+
+--------------------------------------------------------------------------------
+[root@tomcat85server tomcat02]# /app/tomcat_multi_instances/tomcat02/tomcat.sh stop
+
+[root@tomcat85server tomcat-cluster-redis-session-manager]# cp -pv conf/redis-data-cache.properties /app/tomcat_multi_instances/tomcat02/conf/
+      ‘conf/redis-data-cache.properties’ -> ‘/app/tomcat_multi_instances/tomcat02/conf/redis-data-cache.properties’
+
+[root@tomcat85server tomcat02]# vim conf/redis-data-cache.properties
+
+      redis.hosts=192.168.175.101:26379, 192.168.175.102:26379, 192.168.175.103:26379
+      redis.password=redhat
+      redis.cluster.enabled=false
+      redis.sentinel.enabled=true
+      redis.sentinel.master=mymaster
+      lb.sticky-session.enabled=false
+      session.persistent.policies=DEFAULT
+
+[root@tomcat85server tomcat02]# vim conf/context.xml
+      <!-- 在<Context>标签里面配置 <Valve> 和 <Manager> -->
+      <Valve className="tomcat.request.session.redis.SessionHandlerValve" />
+      <Manager className="tomcat.request.session.redis.SessionManager" />
+
+
+[root@tomcat85server tomcat02]# vim conf/web.xml
+      <!-- 确认默认的 session 过期时间, 这里为 30 minutes, 可根据实际需求修改 -->
+      <session-config>
+          <session-timeout>30</session-timeout>
+      </session-config>
+
+[root@tomcat85server tomcat02]# /app/tomcat_multi_instances/tomcat02/tomcat.sh start
+
+[root@tomcat85server tomcat02]# netstat -anptu | grep java
+      tcp6       0      0 127.0.0.1:8205          :::*                    LISTEN      2094/java
+      tcp6       0      0 :::8180                 :::*                    LISTEN      1985/java
+      tcp6       0      0 :::8280                 :::*                    LISTEN      2094/java
+      tcp6       0      0 127.0.0.1:8105          :::*                    LISTEN      1985/java
+      tcp6       0      0 192.168.175.100:51750   192.168.175.102:26379   ESTABLISHED 2094/java
+      tcp6       0      0 192.168.175.100:51724   192.168.175.102:26379   ESTABLISHED 1985/java
+      tcp6       0      0 192.168.175.100:41096   192.168.175.103:26379   ESTABLISHED 1985/java
+      tcp6       1      0 192.168.175.100:56180   192.168.175.112:6379    CLOSE_WAIT  1985/java
+      tcp6       0      0 192.168.175.100:39042   192.168.175.101:26379   ESTABLISHED 1985/java
+      tcp6       0      0 192.168.175.100:39068   192.168.175.101:26379   ESTABLISHED 2094/java
+      tcp6       0      0 192.168.175.100:41122   192.168.175.103:26379   ESTABLISHED 2094/java
+
+
+
+浏览器
+http://192.168.175.100/index.jsp
+
+
+// 设置  catalina.base 环境变量
+
 
 
 
