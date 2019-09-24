@@ -50,6 +50,10 @@ download/
         # 类似tomcat的一些启动脚本会使用 CATALINA_HOME 环境变量
         export CATALINA_HOME=/app/apache-tomcat-8.5.39
 
+
+[root@tomcat85server download]# source /etc/profile
+
+
 // 启动 tomcat 服务  (参考 less /app/apache-tomcat-8.5.39/RUNNING.txt 帮助文档 )
 [root@tomcat85server ~]# $CATALINA_HOME/bin/startup.sh      #或 $CATALINA_HOME/bin/catalina.sh start
 
