@@ -1848,6 +1848,7 @@ nginx  ------------->  tomcat01    --------------- sentinel01 sentinel02  sentin
       Created symlink from /etc/systemd/system/multi-user.target.wants/nginx.service to /usr/lib/systemd/system/nginx.service.
 
 
+// 访问观察
 使用浏览器访问  http://192.168.175.100/index.jsp
 尝试不断刷新浏览器, 可以看到页面上  session id  一直在不停地在 变化(因还未对 多个 tomcat instances 做会话保持)
 
@@ -1926,14 +1927,41 @@ nginx  ------------->  tomcat01    --------------- sentinel01 sentinel02  sentin
 
 
 --------------------------------------------------------------------------------
+// 暂时关闭 tomcat01 实例 的进程(即暂时停止 tomcat01 实例服务)
 [root@tomcat85server tomcat01]# /app/tomcat_multi_instances/tomcat01/tomcat.sh stop
 
+// 配置 环境变量  export CATALINA_BASE=/app/tomcat_multi_instances/tomcat01
+// 不过 我的环境中 已经配置了该变量, 如果在 以后其他环境部署中还未配置该变量，一定要对环境变量 CATALINA_BASE 进行配置以确保其存在
+[root@tomcat85server tomcat-cluster-redis-session-manager]# cat /app/tomcat_multi_instances/tomcat01/tomcat.sh
+
+          #!/bin/bash
+
+          export CATALINA_HOME=/app/apache-tomcat-8.5.39
+          export CATALINA_BASE=/app/tomcat_multi_instances/tomcat01
+
+          case $1 in
+            start)
+              $CATALINA_HOME/bin/startup.sh
+              ;;
+            stop)
+              $CATALINA_HOME/bin/shutdown.sh
+              ;;
+            restart)
+              $CATALINA_HOME/bin/shutdown.sh
+              sleep 3
+              $CATALINA_HOME/bin/startup.sh
+              ;;
+          esac
+
+
+
+// 将插件目录中文件  conf/redis-data-cache.properties 复制到 tomcat01 instance 的 配置目录 conf 下
 [root@tomcat85server tomcat-cluster-redis-session-manager]# cp -pv conf/redis-data-cache.properties /app/tomcat_multi_instances/tomcat01/conf/
       ‘conf/redis-data-cache.properties’ -> ‘/app/tomcat_multi_instances/tomcat01/conf/redis-data-cache.properties’
 
 
+// 修改 tomcat01 instance 的 配置目录中的配置文件 conf/redis-data-cache.properties
 [root@tomcat85server tomcat-cluster-redis-session-manager]# cd /app/tomcat_multi_instances/tomcat01
-
 [root@tomcat85server tomcat01]# vim conf/redis-data-cache.properties
 
       redis.hosts=192.168.175.101:26379, 192.168.175.102:26379, 192.168.175.103:26379
@@ -1945,29 +1973,58 @@ nginx  ------------->  tomcat01    --------------- sentinel01 sentinel02  sentin
       session.persistent.policies=DEFAULT
 
 
-
+// 修改 tomcat01 instance 的 配置目录中的配置文件 conf/context.xml
 [root@tomcat85server tomcat01]# vim conf/context.xml
       <!-- 在<Context>标签里面配置 <Valve> 和 <Manager> -->
       <Valve className="tomcat.request.session.redis.SessionHandlerValve" />
       <Manager className="tomcat.request.session.redis.SessionManager" />
 
 
-
+// 确认(必要时修改) tomcat01 instance 的 配置目录中的配置文件 conf/web.xml 中的 session-timeout 满足业务需求
 [root@tomcat85server tomcat01]# vim conf/web.xml
       <!-- 确认默认的 session 过期时间, 这里为 30 minutes, 可根据实际需求修改 -->
       <session-config>
           <session-timeout>30</session-timeout>
       </session-config>
 
+// 启动 tomcat01 实例 的进程(即启动 tomcat01 实例服务)
 [root@tomcat85server tomcat01]# /app/tomcat_multi_instances/tomcat01/tomcat.sh start
 
 
 --------------------------------------------------------------------------------
+// 暂时关闭 tomcat02 实例 的进程(即暂时停止 tomcat02 实例服务)
 [root@tomcat85server tomcat02]# /app/tomcat_multi_instances/tomcat02/tomcat.sh stop
 
+// 配置 环境变量  export CATALINA_BASE=/app/tomcat_multi_instances/tomcat02
+// 不过 我的环境中 已经配置了该变量, 如果在 以后其他环境部署中还未配置该变量，一定要对环境变量 CATALINA_BASE 进行配置以确保其存在
+[root@tomcat85server tomcat-cluster-redis-session-manager]# cat /app/tomcat_multi_instances/tomcat02/tomcat.sh
+
+          #!/bin/bash
+
+          export CATALINA_HOME=/app/apache-tomcat-8.5.39
+          export CATALINA_BASE=/app/tomcat_multi_instances/tomcat02
+
+          case $1 in
+            start)
+              $CATALINA_HOME/bin/startup.sh
+              ;;
+            stop)
+              $CATALINA_HOME/bin/shutdown.sh
+              ;;
+            restart)
+              $CATALINA_HOME/bin/shutdown.sh
+              sleep 3
+              $CATALINA_HOME/bin/startup.sh
+              ;;
+          esac
+
+
+
+// 将插件目录中文件  conf/redis-data-cache.properties 复制到 tomcat02 instance 的 配置目录 conf 下
 [root@tomcat85server tomcat-cluster-redis-session-manager]# cp -pv conf/redis-data-cache.properties /app/tomcat_multi_instances/tomcat02/conf/
       ‘conf/redis-data-cache.properties’ -> ‘/app/tomcat_multi_instances/tomcat02/conf/redis-data-cache.properties’
 
+// 修改 tomcat02 instance 的 配置目录中的配置文件 conf/redis-data-cache.properties
 [root@tomcat85server tomcat02]# vim conf/redis-data-cache.properties
 
       redis.hosts=192.168.175.101:26379, 192.168.175.102:26379, 192.168.175.103:26379
@@ -1978,19 +2035,25 @@ nginx  ------------->  tomcat01    --------------- sentinel01 sentinel02  sentin
       lb.sticky-session.enabled=false
       session.persistent.policies=DEFAULT
 
+// 修改 tomcat02 instance 的 配置目录中的配置文件 conf/context.xml
 [root@tomcat85server tomcat02]# vim conf/context.xml
       <!-- 在<Context>标签里面配置 <Valve> 和 <Manager> -->
       <Valve className="tomcat.request.session.redis.SessionHandlerValve" />
       <Manager className="tomcat.request.session.redis.SessionManager" />
 
 
+// 确认(必要时修改) tomcat02 instance 的 配置目录中的配置文件 conf/web.xml 中的 session-timeout 满足业务需求
 [root@tomcat85server tomcat02]# vim conf/web.xml
       <!-- 确认默认的 session 过期时间, 这里为 30 minutes, 可根据实际需求修改 -->
       <session-config>
           <session-timeout>30</session-timeout>
       </session-config>
 
+// 启动 tomcat02 实例 的进程(即启动 tomcat01 实例服务)
 [root@tomcat85server tomcat02]# /app/tomcat_multi_instances/tomcat02/tomcat.sh start
+
+------------------------------
+
 
 [root@tomcat85server tomcat02]# netstat -anptu | grep java
       tcp6       0      0 127.0.0.1:8205          :::*                    LISTEN      2094/java
@@ -2007,16 +2070,9 @@ nginx  ------------->  tomcat01    --------------- sentinel01 sentinel02  sentin
 
 
 
-浏览器
-http://192.168.175.100/index.jsp
-
-
-// 设置  catalina.base 环境变量
-
-
-
-
-
+// 测试:
+浏览器 访问 http://192.168.175.100/index.jsp
+并 不断刷新, 可以观察到 session id 保持不变, 即 会话保持已经起作用了
 
 
 
