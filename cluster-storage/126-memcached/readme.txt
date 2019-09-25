@@ -314,6 +314,8 @@ php连接memcachced
       https://www.runoob.com/memcached/java-memcached.html
 
 
+  https://www.php.net/manual/zh/book.memcache.php
+
 
 
 
