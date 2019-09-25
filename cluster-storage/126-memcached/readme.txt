@@ -256,6 +256,7 @@ Choosing between Redis and Memcached  https://aws.amazon.com/cn/elasticache/redi
 ----------------------------------------------------------------------------------------------------
 测试:
 
+----------------------------------------
 // 使用 telnet 测试
 [root@memcached_server ~]# yum -y install telnet
 
@@ -279,50 +280,38 @@ Choosing between Redis and Memcached  https://aws.amazon.com/cn/elasticache/redi
       Connection closed by foreign host.
 
 
+----------------------------------------
+php连接memcachced
+
+[root@memcached_server ~]# yum install -y httpd php php-gd gd php-mysql mariadb-server php-pecl-memcache
+
+[root@memcached_server ~]# php -m | grep memca
+    memcache
+
+[root@memcached_server ~]# vim /var/www/html/test_memcached.php
+
+      <?php
+        $memcache_obj = memcache_connect('192.168.175.130', 11211);
+        $memcache_obj->add("name", "test");
+        echo $memcache_obj->get("name");
+      ?>
+
+
+// 演示一下直接在 命令行 上 执行 php 脚本
+[root@memcached_server ~]# php -f /var/www/html/test_memcached.php
+      test
+
+
+注: 如果仅想在 command line 中执行 最基本的(即没有使用特殊的 module) php 代码, 在centos7 中仅安装  php-cli package 就可以了
+      https://www.php.net/manual/en/features.commandline.php
+
+
+
 ----------------------------------------------------------------------------------------------------
+网上资料:
 
-
-
-
-
-
-
-
-
-https://www.php.net/manual/en/features.commandline.php
-    如果仅想在 command line 中执行 最基本的(即没有使用特殊的 module) php 代码, 在centos7 中仅安装  php-cli package 就可以了
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  java 连接 memcached 的方式见:
+      https://www.runoob.com/memcached/java-memcached.html
 
 
 
