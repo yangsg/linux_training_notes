@@ -200,6 +200,10 @@ Redis Cluster consistency guarantees
 
 
 
+TODO: 继续完成该 redis cluster 的学习 和 笔记
+
+
+
 
 
 
