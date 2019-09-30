@@ -104,6 +104,104 @@ Containers and Virtual Machines Together
 
 
 ----------------------------------------------------------------------------------------------------
+[root@localhost ~]# yum -y install docker
+
+[root@localhost ~]# systemctl start docker
+[root@localhost ~]# systemctl enable docker
+
+
+[root@localhost ~]# docker version
+
+    Client:
+     Version:         1.13.1
+     API version:     1.26
+     Package version: docker-1.13.1-103.git7f2769b.el7.centos.x86_64
+     Go version:      go1.10.3
+     Git commit:      7f2769b/1.13.1
+     Built:           Sun Sep 15 14:06:47 2019
+     OS/Arch:         linux/amd64
+
+    Server:
+     Version:         1.13.1
+     API version:     1.26 (minimum version 1.12)
+     Package version: docker-1.13.1-103.git7f2769b.el7.centos.x86_64
+     Go version:      go1.10.3
+     Git commit:      7f2769b/1.13.1
+     Built:           Sun Sep 15 14:06:47 2019
+     OS/Arch:         linux/amd64
+     Experimental:    false
+
+
+[root@localhost ~]# ip a
+      1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+          link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+          inet 127.0.0.1/8 scope host lo
+             valid_lft forever preferred_lft forever
+          inet6 ::1/128 scope host
+             valid_lft forever preferred_lft forever
+      2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+          link/ether 00:0c:29:52:8e:39 brd ff:ff:ff:ff:ff:ff
+          inet 192.168.175.139/24 brd 192.168.175.255 scope global dynamic ens33
+             valid_lft 1351sec preferred_lft 1351sec
+          inet6 fe80::20c:29ff:fe52:8e39/64 scope link
+             valid_lft forever preferred_lft forever
+      3: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN  <-----观察
+          link/ether 02:42:0f:0d:77:2f brd ff:ff:ff:ff:ff:ff
+          inet 172.17.0.1/16 scope global docker0
+             valid_lft forever preferred_lft forever
+
+[root@localhost ~]# cat /proc/sys/net/ipv4/ip_forward
+    1
+
+[root@localhost ~]# iptables -t nat -nL
+    Chain PREROUTING (policy ACCEPT)
+    target     prot opt source               destination
+    DOCKER     all  --  0.0.0.0/0            0.0.0.0/0            ADDRTYPE match dst-type LOCAL
+
+    Chain INPUT (policy ACCEPT)
+    target     prot opt source               destination
+
+    Chain OUTPUT (policy ACCEPT)
+    target     prot opt source               destination
+    DOCKER     all  --  0.0.0.0/0           !127.0.0.0/8          ADDRTYPE match dst-type LOCAL
+
+    Chain POSTROUTING (policy ACCEPT)
+    target     prot opt source               destination
+    MASQUERADE  all  --  172.17.0.0/16        0.0.0.0/0   <---- 观察
+
+    Chain DOCKER (2 references)
+    target     prot opt source               destination
+    RETURN     all  --  0.0.0.0/0            0.0.0.0/0
+
+
+
+----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
