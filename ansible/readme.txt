@@ -69,6 +69,27 @@ https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.ht
     /etc/ansible/hosts   <------主机清单Inventory文件
 
 
+// 测试
+[root@controller_node ~]# echo "127.0.0.1" > ~/ansible_hosts
+[root@controller_node ~]# export ANSIBLE_INVENTORY=~/ansible_hosts  #指定自己的 inventory file 而非 /etc/ansible/hosts
+[root@controller_node ~]# ansible all -m ping --ask-pass   #使用 ping 命令测试一下
+    SSH password:  <===输入登录密码
+    127.0.0.1 | SUCCESS => {
+        "ansible_facts": {
+            "discovered_interpreter_python": "/usr/bin/python"
+        },
+        "changed": false,
+        "ping": "pong"
+    }
+
+    注:
+      If using sudo features and when sudo requires a password,
+      also supply --ask-become-pass (previously --ask-sudo-pass which has been deprecated).
+
+[root@controller_node ~]# unset ANSIBLE_INVENTORY
+
+
+
 ----------------------------------------------------------------------------------------------------
 https://docs.ansible.com/ansible/latest/installation_guide/intro_configuration.html
 https://docs.ansible.com/ansible/latest/reference_appendices/config.html#ansible-configuration-settings-locations
@@ -102,6 +123,118 @@ https://docs.ansible.com/ansible/latest/reference_appendices/config.html#ansible
 
 
 ----------------------------------------------------------------------------------------------------
+
+// 使用 命令 生成 非对称秘钥对
+[root@controller_node ~]# ssh-keygen  #注: ssh-keygen 不带任何参数时, 默认生成 用于 SSH protocol 2 的 2048 bits 的 RSA key
+      Generating public/private rsa key pair.
+      Enter file in which to save the key (/root/.ssh/id_rsa): <=====直接 Enter
+      Enter passphrase (empty for no passphrase):  <=====直接 Enter
+      Enter same passphrase again:  <=====直接 Enter
+      Your identification has been saved in /root/.ssh/id_rsa.
+      Your public key has been saved in /root/.ssh/id_rsa.pub.
+      The key fingerprint is:
+      SHA256:5B2c3yTM9ma41WU0DH4xu3VXmxQ6FlAGC9wDDxr8TAM root@controller_node
+      The key's randomart image is:
+      +---[RSA 2048]----+
+      |      .Eo+oo+=o*+|
+      |       .o=+*+ +oO|
+      |       .= =o*=.=*|
+      |       o + +.*oo*|
+      |        S . o *..|
+      |             =   |
+      |            .    |
+      |                 |
+      |                 |
+      +----[SHA256]-----+
+
+
+[root@controller_node ~]# ssh-copy-id root@192.168.175.101
+[root@controller_node ~]# ssh-copy-id root@192.168.175.102
+[root@controller_node ~]# ssh-copy-id root@192.168.175.103
+
+
+
+[root@controller_node ~]# vim /etc/hosts
+
+    192.168.175.101 node01.linux.com
+    192.168.175.102 node02.linux.com
+    192.168.175.103 node03.linux.com
+
+
+// 将 managed node 添加到 清单文件(inventory file)中
+// https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html
+[root@controller_node ~]# vim /etc/ansible/hosts
+
+    # 注: 该清单文件中自带了 example
+    192.168.175.101
+    node02.linux.com
+
+
+// 禁用(disable) Host Key Checking (注:编辑文件 /etc/ansible/ansible.cfg 或 ~/.ansible.cfg)
+[root@controller_node ~]# vim /etc/ansible/ansible.cfg
+
+      #Ansible has host key checking enabled by default.
+      #If a host is reinstalled and has a different key in ‘known_hosts’,
+      #this will result in an error message until corrected. If a host is not initially in ‘known_hosts’ this will
+      #result in prompting for confirmation of the key, which results in an interactive
+      #experience if using Ansible, from say, cron. You might not want this.
+      # https://docs.ansible.com/ansible/latest/user_guide/intro_getting_started.html#host-key-checking
+
+      [defaults]
+      host_key_checking = False
+      # 注: 还可以通过 修改环境变量 `export ANSIBLE_HOST_KEY_CHECKING=False` 来禁用(disable) Host Key Checking
+
+
+
+[root@controller_node ~]# ansible all -m ping           # 如果没有指定 -u 选项, 则默认使用当前用户名 远程连接 machines
+[root@controller_node ~]# ansible all -m ping -u root   #以 root 用户 远程连接(remote connect) 到 machines
+[root@controller_node ~]# ansible 192.168.175.101 -m ping -u root   #前提条件: 此处的 192.168.175.101  必须出现在 清单文件中
+[root@controller_node ~]# ansible node02.linux.com -m ping -u root  #前提条件: 此处的 node02.linux.com 必须出现在 清单文件中
+
+
+// 以 group 的方式在 清单文件中提供 managed nodes 的信息
+[root@controller_node ~]# vim /etc/ansible/hosts
+
+      [dbservers]
+      192.168.175.101
+      192.168.175.102
+      192.168.175.103
+
+[root@controller_node ~]# ansible dbservers -m ping -u root
+[root@controller_node ~]# ansible 192.168.175.102 -m ping -u root   #也可以写组里的一个机器
+
+
+[root@controller_node ~]# ansible all --list-hosts   #--list-hosts:  outputs a list of matching hosts; does not execute anything else
+    hosts (3):
+      192.168.175.101
+      192.168.175.102
+      192.168.175.103
+
+[root@controller_node ~]# ansible 192.168.175.101:192.168.175.103 --list-hosts
+    hosts (2):
+      192.168.175.101
+      192.168.175.103
+
+[root@controller_node ~]# ansible 192.168.175.* --list-hosts
+    hosts (3):
+      192.168.175.102
+      192.168.175.103
+      192.168.175.101
+
+
+[root@node03 ~]# useradd bruce
+
+[root@controller_node ~]# ansible 192.168.175.103 -m ping -u root --become --become-user bruce
+   [WARNING]: Module remote_tmp /home/bruce/.ansible/tmp did not exist and was created with a mode of 0700, this may cause issues when running as another user. To avoid this, create the
+  remote_tmp dir with the correct permissions manually
+
+  192.168.175.103 | SUCCESS => {
+      "ansible_facts": {
+          "discovered_interpreter_python": "/usr/bin/python"
+      },
+      "changed": false,
+      "ping": "pong"
+  }
 
 
 
