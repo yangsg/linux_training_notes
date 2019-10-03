@@ -501,14 +501,6 @@ https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html
        -i, --inventory, --inventory-file
           specify inventory host path or comma separated host list. --inventory-file is deprecated
 
---------------------------------------------------
-Default groups
-
-存在两个默认组: all 和 ungrouped
-
-[root@controller_node ~]# ansible ungrouped --list-hosts
-  hosts (1):
-    192.168.175.101
 
 
 --------------------------------------------------
@@ -703,6 +695,254 @@ even though you can target hosts by group, variables are always flattened to the
 
 
 --------------------------------------------------
+https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html#inheriting-variable-values-group-variables-for-groups-of-groups
+
+Inheriting variable values: group variables for groups of groups
+
+You can make groups of groups using the :children suffix in INI or the children:
+entry in YAML. You can apply variables to these groups of groups using :vars or vars::
+
+
+        [atlanta]
+        host1
+        host2
+
+        [raleigh]
+        host2
+        host3
+
+        #通过后缀 :children 创建组 southeast 的子组
+        [southeast:children]
+        atlanta
+        raleigh
+
+        #通过后缀 :vars 应用变量
+        [southeast:vars]
+        some_server=foo.southeast.example.com
+        halon_system_timeout=30
+        self_destruct_countdown=60
+        escape_pods=2
+
+        [usa:children]
+        southeast
+        northeast
+        southwest
+        northwest
+
+
+Child groups have a couple of properties to note:
+
+    - Any host that is member of a child group is automatically a member of the parent group.
+    - A child group’s variables will have higher precedence (override) a parent group’s variables.
+    - Groups can have multiple parents and children, but not circular relationships.
+    - Hosts can also be in multiple groups, but there will only be one instance of a host, merging the data from the multiple groups.
+
+
+
+
+
+
+--------------------------------------------------
+https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html#default-groups
+
+Default groups
+
+
+存在两个默认组: all 和 ungrouped
+
+[root@controller_node ~]# ansible ungrouped --list-hosts
+  hosts (1):
+    192.168.175.101
+
+
+Every host will always belong to at least 2 groups. Though all and ungrouped
+are always present, they can be implicit and not appear in group listings like group_name
+
+
+
+--------------------------------------------------
+https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html#organizing-host-and-group-variables
+
+
+Organizing host and group variables
+
+
+Although you can store variables in the main inventory file, storing separate host
+and group variables files may help you track your variable values more easily.
+
+Host and group variables can be stored in individual files relative to the inventory file (not directory, it is always the file).
+
+These variable files are in YAML format. Valid file extensions include
+‘.yml’, ‘.yaml’, ‘.json’, or no file extension. See YAML Syntax if you are new to YAML.
+
+      yaml 语法见 https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html#yaml-syntax
+
+
+
+假设保持  inventory file 为 /etc/ansible/hosts, 而 主机(host)  'foosball'  同时为 组 'raleigh' 和 组 'webservers' 的 member,
+则该 host 会 使用 如下位置的 YAML files 中的 变量:
+
+        /etc/ansible/group_vars/raleigh # can optionally end in '.yml', '.yaml', or '.json'
+        /etc/ansible/group_vars/webservers
+        /etc/ansible/host_vars/foosball
+
+For instance, suppose you have hosts grouped by datacenter, and each datacenter uses some different servers.
+The data in the groupfile ‘/etc/ansible/group_vars/raleigh’ for the ‘raleigh’ group might look like:
+
+      ---
+      ntp_server: acme.example.org
+      database_server: storage.example.org
+
+
+It is okay if these files do not exist, as this is an optional feature.
+
+As an advanced use case, you can create directories(创建目录) named after your groups or hosts,
+and Ansible will read all the files in these directories in lexicographical order(字典顺序).
+An example with the ‘raleigh’ group:
+
+      /etc/ansible/group_vars/raleigh/db_settings
+      /etc/ansible/group_vars/raleigh/cluster_settings
+
+All hosts that are in the ‘raleigh’ group will have the variables defined in these files available to them.
+This can be very useful to keep your variables organized when a single file starts to be too big,
+or when you want to use Ansible Vault on a part of a group’s variables.
+
+
+Tip(小贴士):
+     The group_vars/ and host_vars/ directories can exist in the playbook directory OR the inventory directory.
+     If both paths exist, variables in the playbook directory will override variables set in the inventory directory.
+
+Tip(小贴士):
+     The ansible-playbook command looks for playbooks in the current working directory by default.
+     Other Ansible commands (for example, ansible, ansible-console, etc.) will only look for
+     group_vars/ and host_vars/ in the inventory directory unless you provide the --playbook-dir option on the command line.
+
+Tip(小贴士):
+     Keeping your inventory file and variables in a git repo (or other version control) is
+     an excellent way to track changes to your inventory and host variables.
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html#how-variables-are-merged
+
+
+How variables are merged (变量 merged 的方式)
+
+By default variables are merged/flattened to the specific host before a play is run.
+This keeps Ansible focused on the Host and Task, so groups don’t really survive outside
+of inventory and host matching. By default, Ansible overwrites variables including
+the ones defined for a group and/or host (see DEFAULT_HASH_BEHAVIOUR).
+The order/precedence is (from lowest to highest): 如下 顺序/优先级 从低到高
+
+    优先级
+    低| - all group (because it is the ‘parent’ of all other groups)
+      | - parent group
+      | - child group
+    高| - host
+      V
+
+
+
+When groups of the same parent/child level are merged, it is done alphabetically(按字母顺序),
+and the last group loaded overwrites the previous groups. For example,
+an a_group will be merged with b_group and b_group vars that match will overwrite the ones in a_group.
+
+
+New in version 2.4. (从 2.4 版本开始, 可以使用 组变量  ansible_group_priority 改变 同级别的 组中 变量 的 merge order)
+Starting in Ansible version 2.4, users can use the group variable ansible_group_priority
+to change the merge order for groups of the same level (after the parent/child order is resolved).
+The larger the number, the later it will be merged, giving it higher priority.
+This variable defaults to 1 if not set. For example:
+
+        a_group:
+            testvar: a
+            ansible_group_priority: 10
+        b_group：
+            testvar: b
+
+
+In this example, if both groups have the same priority, the result would normally have been testvar == b,
+but since we are giving the a_group a higher priority the result will be testvar == a.
+
+Note: ansible_group_priority can only be set in the inventory source and not in group_vars/ as the variable is used in the loading of group_vars.
+
+
+
+----------------------------------------------------------------------------------------------------
+https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html#using-multiple-inventory-sources
+
+
+Using multiple inventory sources
+
+As an advanced use case you can target multiple inventory sources (directories, dynamic inventory scripts
+or files supported by inventory plugins) at the same time by giving multiple inventory parameters
+from the command line or by configuring ANSIBLE_INVENTORY. This can be useful when you want to target
+normally separate environments, like staging and production, at the same time for a specific action.
+
+Target two sources from the command line like this:
+
+    ansible-playbook get_logs.yml -i staging -i production
+
+
+
+Keep in mind that if there are variable conflicts in the inventories, they are resolved according to
+the rules described in How variables are merged and Variable precedence: Where should I put a variable?.
+The merging order is controlled by the order of the inventory source parameters.
+If [all:vars] in staging inventory defines myvar = 1, but production inventory defines myvar = 2,
+the playbook will be run with myvar = 2. The result would be reversed if the playbook
+was run with -i production -i staging.
+
+    https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html#how-we-merge
+    https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html#ansible-variable-precedence
+
+
+----------------------------------------
+Aggregating inventory sources with a directory
+
+You can also create an inventory by combining multiple inventory sources and source types under a directory.
+This can be useful for combining static and dynamic hosts and managing them as one inventory.
+The following inventory combines an inventory plugin source, a dynamic inventory script, and a file with static hosts:
+
+        inventory/
+          openstack.yml          # configure inventory plugin to get hosts from Openstack cloud
+          dynamic-inventory.py   # add additional hosts with dynamic inventory script
+          static-inventory       # add static hosts and groups
+          group_vars/
+            all.yml              # assign variables to all hosts
+
+
+You can target this inventory directory simply like this:
+
+    ansible-playbook example.yml -i inventory
+
+It can be useful to control the merging order of the inventory sources if there’s variable conflicts
+or group of groups dependencies to the other inventory sources. The inventories are merged in alphabetical
+order according to the filenames so the result can be controlled by adding prefixes to the files:
+
+    inventory/
+      01-openstack.yml          # configure inventory plugin to get hosts from Openstack cloud
+      02-dynamic-inventory.py   # add additional hosts with dynamic inventory script
+      03-static-inventory       # add static hosts
+      group_vars/
+        all.yml                 # assign variables to all hosts
+
+
+If 01-openstack.yml defines myvar = 1 for the group all, 02-dynamic-inventory.py defines myvar = 2,
+and 03-static-inventory defines myvar = 3, the playbook will be run with myvar = 3.
+
+For more details on inventory plugins and dynamic inventory scripts see Inventory Plugins and Working With Dynamic Inventory.
+
+      https://docs.ansible.com/ansible/latest/plugins/inventory.html#inventory-plugins
+      https://docs.ansible.com/ansible/latest/user_guide/intro_dynamic_inventory.html#intro-dynamic-inventory
+
+
+----------------------------------------------------------------------------------------------------
+
+
+
 
 
 
