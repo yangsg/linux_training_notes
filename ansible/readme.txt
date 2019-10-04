@@ -216,6 +216,8 @@ https://docs.ansible.com/ansible/latest/reference_appendices/config.html#ansible
       192.168.175.102
       192.168.175.103
 
+// https://docs.ansible.com/ansible/latest/user_guide/intro_patterns.html
+
 [root@controller_node ~]# ansible 192.168.175.101:192.168.175.103 --list-hosts
     hosts (2):
       192.168.175.101
@@ -1760,7 +1762,261 @@ you will need to quote the value if it looks like a floating-point value:
                    https://www.jianshu.com/p/97222440cd08
                    http://www.ruanyifeng.com/blog/2016/07/yaml.html
 
+
+
+
+
+
 ----------------------------------------------------------------------------------------------------
+https://docs.ansible.com/ansible/latest/user_guide/playbooks_intro.html
+
+Intro to Playbooks
+
+一个 playbook 示例: verify-apache.yml
+
+      ---
+      - hosts: webservers
+        vars:
+          http_port: 80
+          max_clients: 200
+        remote_user: root
+        tasks:
+        - name: ensure apache is at the latest version
+          yum:
+            name: httpd
+            state: latest
+        - name: write the apache config file
+          template:
+            src: /srv/httpd.j2
+            dest: /etc/httpd.conf
+          notify:
+          - restart apache
+        - name: ensure apache is running
+          service:
+            name: httpd
+            state: started
+        handlers:
+          - name: restart apache
+            service:
+              name: httpd
+              state: restarted
+
+
+
+--------------------------------------------------
+https://docs.ansible.com/ansible/latest/user_guide/playbooks_intro.html#basics
+https://docs.ansible.com/ansible/latest/user_guide/playbooks_intro.html#hosts-and-users
+
+Hosts and Users
+
+
+--------------------------------------------------
+https://docs.ansible.com/ansible/latest/user_guide/playbooks_intro.html#tasks-list
+
+Tasks list
+
+The command and shell modules are the only modules that just take a list of arguments and
+don’t use the key=value form. This makes them work as simply as you would expect:
+
+
+      tasks:
+        - name: enable selinux
+          command: /sbin/setenforce 1
+
+
+The command and shell module care about return codes, so if you have a command whose successful exit code is not zero, you may wish to do this:
+
+
+      tasks:
+        - name: run this command and ignore the result
+          shell: /usr/bin/somecommand || /bin/true
+
+或如下:
+
+      tasks:
+        - name: run this command and ignore the result
+          shell: /usr/bin/somecommand
+          ignore_errors: True
+
+
+
+续行(当 action line 太长时):
+If the action line is getting too long for comfort you can break it on a space and indent any continuation lines:
+
+          tasks:
+            - name: Copy ansible inventory file to client
+              copy: src=/etc/ansible/hosts dest=/etc/ansible/hosts
+                      owner=root group=root mode=0644
+
+使用变量
+Variables can be used in action lines. Suppose you defined a variable called vhost in the vars section, you could do this:
+
+      tasks:
+        - name: create a virtual host file for {{ vhost }}
+          template:
+            src: somefile.j2
+            dest: /etc/httpd/conf.d/{{ vhost }}
+
+
+Those same variables are usable in templates, which we’ll get to later.
+
+
+Creating Reusable Playbooks: https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse.html
+
+
+
+
+
+--------------------------------------------------
+https://docs.ansible.com/ansible/latest/user_guide/playbooks_intro.html#action-shorthand
+
+Action Shorthand
+
+
+New in version 0.8.
+
+Ansible prefers listing modules like this:
+
+      template:
+          src: templates/foo.j2
+          dest: /etc/foo.conf
+
+
+
+Early versions of Ansible used the following format, which still works:(早期使用的格式, 现在仍有效)
+
+      action: template src=templates/foo.j2 dest=/etc/foo.conf
+
+
+--------------------------------------------------
+https://docs.ansible.com/ansible/latest/user_guide/playbooks_intro.html#handlers-running-operations-on-change
+
+Handlers: Running Operations On Change
+
+
+
+
+--------------------------------------------------
+https://docs.ansible.com/ansible/latest/user_guide/playbooks_intro.html#handlers-running-operations-on-change
+
+Handlers: Running Operations On Change
+
+
+Avoid placing variables in the name of the handler. Since handler names are templated early on,
+Ansible may not have a value available for a handler name like this:
+
+          handlers:
+          # this handler name may cause your play to fail!
+          - name: restart "{{ web_service_name }}"  非法, 不要在 handler 的 name 中 引用变量
+
+
+If the variable used in the handler name is not available, the entire play fails. Changing that variable mid-play will not result in newly created handler.
+
+Instead, place variables in the task parameters of your handler. You can load the values using include_vars like this:
+
+
+        tasks:
+          - name: Set host variables based on distribution
+            include_vars: "{{ ansible_facts.distribution }}.yml"
+
+        handlers:
+          - name: restart web service
+            service:
+              name: "{{ web_service_name | default('httpd') }}"
+              state: restarted
+
+
+
+As of Ansible 2.2, handlers can also “listen” to generic topics, and tasks can notify those topics as follows:
+
+        handlers:
+            - name: restart memcached
+              service:
+                name: memcached
+                state: restarted
+              listen: "restart web services"
+            - name: restart apache
+              service:
+                name: apache
+                state: restarted
+              listen: "restart web services"
+
+        tasks:
+            - name: restart everything
+              command: echo "this task will restart the web services"
+              notify: "restart web services"
+
+
+
+This use makes it much easier to trigger multiple handlers. It also decouples handlers from their names,
+making it easier to share handlers among playbooks and roles (especially when using 3rd party roles from a shared source like Galaxy).
+
+Note(注):
+
+  - Notify handlers are always run in the same order they are defined, not in the order listed in the notify-statement. This is also the case for handlers using listen.
+  - Handler names and listen topics live in a global namespace.
+  - Handler names are templatable and listen topics are not.
+  - Use unique handler names. If you trigger more than one handler with the same name, the first one(s) get overwritten. Only the last one defined will run.
+  - You cannot notify a handler that is defined inside of an include. As of Ansible 2.1, this does work, however the include must be static.
+
+
+Roles are described later on, but it’s worthwhile to point out that:
+
+  - handlers notified within pre_tasks, tasks, and post_tasks sections are automatically flushed in the end of section where they were notified,
+  - handlers notified within roles section are automatically flushed in the end of tasks section, but before any tasks handlers,
+  - handlers are play scoped and as such can be used outside of the role they are defined in.
+
+If you ever want to flush all the handler commands immediately you can do this:
+
+      tasks:
+         - shell: some tasks go here
+         - meta: flush_handlers
+         - shell: some other tasks
+
+
+In the above example any queued up handlers would be processed early when the meta statement was reached.
+This is a bit of a niche case but can come in handy from time to time.
+
+
+
+
+--------------------------------------------------
+https://docs.ansible.com/ansible/latest/user_guide/playbooks_intro.html#executing-a-playbook
+https://docs.ansible.com/ansible/latest/user_guide/playbooks_intro.html#other-playbook-verification-options
+https://docs.ansible.com/ansible/latest/community/other_tools_and_programs.html#validate-playbook-tools
+
+Executing A Playbook  执行剧本
+
+Now that you’ve learned playbook syntax, how do you run a playbook? It’s simple. Let’s run a playbook using a parallelism level of 10:
+
+[root@controller_node ~]# ansible-playbook --syntax-check playbook.yml
+[root@controller_node ~]# ansible-playbook playbook.yml --list-hosts
+[root@controller_node ~]# ansible-playbook playbook.yml -f 10
+[root@controller_node ~]# ansible-playbook playbook.yml --verbose
+
+
+
+--------------------------------------------------
+https://docs.ansible.com/ansible/latest/user_guide/playbooks_intro.html#ansible-pull
+
+
+Ansible-Pull
+
+
+--------------------------------------------------
+https://docs.ansible.com/ansible/latest/user_guide/playbooks_intro.html#linting-playbooks
+https://docs.ansible.com/ansible-lint/index.html
+https://docs.ansible.com/ansible-lint/rules/default_rules.html
+
+Linting playbooks
+
+[root@controller_node ~]# yum -y install python2-pip
+[root@controller_node ~]# pip install --upgrade pip
+[root@controller_node ~]# pip install ansible-lint
+
+
+
+
 
 
 
