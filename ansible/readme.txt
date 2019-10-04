@@ -1538,7 +1538,241 @@ script模块
 }
 
 
+
+
+
+
+
+
 ----------------------------------------------------------------------------------------------------
+https://docs.ansible.com/ansible/latest/user_guide/playbooks.html
+https://github.com/ansible/ansible-examples
+
+Working With Playbooks
+
+Playbooks 使用 YAML format 来表示.
+
+      vim 的 ansible 插件(plugin): https://github.com/pearofducks/ansible-vim
+        https://docs.ansible.com/ansible/latest/community/other_tools_and_programs.html#other-tools-and-programs
+
+
+  YAML Syntax (yaml 语法): https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html#yaml-syntax
+                           https://yaml.org/
+                           https://yaml.org/spec/1.2/spec.html
+
+--------------------------------------------------
+
+YAML Basics
+
+There’s another small quirk to YAML. All YAML files (regardless of their association with Ansible or not)
+can optionally(可选地) begin with --- and end with .... This is part of the YAML format and indicates the start and end of a document.
+
+列表:
+All members of a list are lines beginning at the same indentation level starting with a "- " (a dash and a space):
+
+          ---
+          # A list of tasty fruits
+          # - Apple
+          # - Orange
+          # - Strawberry
+          # - Mango
+          # ...
+
+
+字典:
+A dictionary is represented in a simple key: value form (the colon must be followed by a space):
+
+          # An employee record
+          martin:
+              name: Martin D'vloper
+              job: Developer
+              skill: Elite
+
+
+混合使用 列表 和 字典 构造更复杂的数据结构:
+More complicated data structures are possible, such as lists of dictionaries, dictionaries whose values are lists or a mix of both:
+
+          # Employee records
+          -  martin:
+              name: Martin D'vloper
+              job: Developer
+              skills:
+                - python
+                - perl
+                - pascal
+          -  tabitha:
+              name: Tabitha Bitumen
+              job: Developer
+              skills:
+                - lisp
+                - fortran
+                - erlang
+
+
+
+字典 和 列表 的 更 简短 的表示方式(有点类似 json 格式):
+Dictionaries and lists can also be represented in an abbreviated form if you really want to:
+
+        ---
+        martin: {name: Martin D'vloper, job: Developer, skill: Elite}
+        ['Apple', 'Orange', 'Strawberry', 'Mango']
+
+These are called “Flow collections”.
+
+
+多种形式 指定 a boolean value:
+Ansible doesn’t really use these too much, but you can also specify a boolean value (true/false) in several forms:
+
+    create_key: yes
+    needs_agent: no
+    knows_oop: True
+    likes_emacs: TRUE
+    uses_cvs: false
+
+
+
+Values can span multiple lines using | or >. Spanning multiple lines using a “Literal Block Scalar” |
+will include the newlines and any trailing spaces. Using a “Folded Block Scalar” > will fold newlines to spaces;
+it’s used to make what would otherwise be a very long line easier to read and edit.
+In either case the indentation will be ignored. Examples are:
+
+      include_newlines: |
+                  exactly as you see
+                  will appear these three
+                  lines of poetry
+
+      fold_newlines: >
+                  this is really a
+                  single line of text
+                  despite appearances
+
+
+While in the above > example all newlines are folded into spaces, there are two ways to enforce a newline to be kept:
+
+      fold_some_newlines: >
+          a
+          b
+
+          c
+          d
+            e
+          f
+      same_as: "a b\nc d\n  e\nf\n"
+
+
+陷阱:
+Gotchas
+https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html#gotchas
+
+
+    While you can put just about anything into an unquoted scalar, there are some exceptions.
+    A colon followed by a space (or newline) ": " is an indicator for a mapping.
+    A space followed by the pound sign " #" starts a comment.
+
+        ": " 表示 mapping
+        " #" 表示 comment
+
+Because of this, the following is going to result in a YAML syntax error:
+
+        #语法错误
+        foo: somebody said I should put a colon here: so I did 语法错误
+        #语法错误
+        windows_drive: c: 语法错误
+
+        #语法正确
+        windows_path: c:\windows
+
+使用引号(单引号 或 双引号, 其区别是 双引号 中可以使用 转移 escapes)
+You will want to quote hash values using colons followed by a space or the end of the line:
+
+          foo: 'somebody said I should put a colon here: so I did'
+
+          windows_drive: 'c:'
+
+…and then the colon will be preserved.
+
+Alternatively, you can use double quotes:
+
+          foo: "somebody said I should put a colon here: so I did"
+
+          windows_drive: "c:"
+
+The difference between single quotes and double quotes is that in double quotes you can use escapes:
+// 单引号 和 双引号 的 区别 是 可以在 双引号中 使用 转义(escapes)
+
+        foo: "a \t TAB and a \n NEWLINE"
+
+The list of allowed escapes can be found in the YAML Specification under “Escape Sequences” (YAML 1.1) or “Escape Characters” (YAML 1.2).
+
+The following is invalid YAML:
+
+      foo: "an escaped \' single quote"   非法的 yaml
+
+
+
+Ansible 通过 语法 “{{ var }}” 来使用变量, 但为了避免与 dictionary 的语法混淆, 则在 “: ” 后 使用 变量时, 必须使用 引号将 {{ variable }} 引起来, 如:
+Further, Ansible uses “{{ var }}” for variables. If a value after a colon starts with a “{“, YAML will think it is a dictionary, so you must quote it, like so:
+
+      foo: "{{ variable }}"
+
+If your value starts with a quote the entire value must be quoted, not just part of it. Here are some additional examples of how to properly quote things:
+
+      foo: "{{ variable }}/additional/string/literal"
+      foo2: "{{ variable }}\\backslashes\\are\\also\\special\\characters"
+      foo3: "even if it's just a string literal it must all be quoted"
+
+
+Not valid:
+
+      foo: "E:\\path\\"rest\\of\\path  非法
+
+
+一些 特殊字符:
+In addition to ' and " there are a number of characters that are special (or reserved) and
+cannot be used as the first character of an unquoted scalar: [] {} > | * & ! % # ` @ ,.
+
+You should also be aware of ? : -. In YAML, they are allowed at the beginning of a string
+if a non-space character follows, but YAML processor implementations differ, so it’s better to use quotes.
+
+
+In Flow Collections, the rules are a bit more strict:
+
+          a scalar in block mapping: this } is [ all , valid
+
+          flow mapping: { key: "you { should [ use , quotes here" }
+
+
+Boolean conversion is helpful, but this can be a problem when you want a literal yes or other boolean values as a string. In these cases just use quotes:
+
+        non_boolean: "yes"     此处为 a literal yes,   通过引号 避免了 Boolean conversion 行为
+        other_string: "False"  此处为 a literal False, 通过引号 避免了 Boolean conversion 行为
+
+YAML converts certain strings into floating-point values, such as the string 1.0.
+If you need to specify a version number (in a requirements.yml file, for example),
+you will need to quote the value if it looks like a floating-point value:
+
+        version: "1.0"  此处通过使用 引号 避免了 YAML 将 string "1.0" 转换为 浮点值 1.0
+
+
+
+
+更多的 yaml 语法见 https://yaml.org/spec/1.2/spec.html
+                   https://www.jianshu.com/p/97222440cd08
+                   http://www.ruanyifeng.com/blog/2016/07/yaml.html
+
+----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
