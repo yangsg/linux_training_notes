@@ -3,6 +3,7 @@ https://www.ansible.com/overview/how-ansible-works
 https://docs.ansible.com/
 https://docs.ansible.com/ansible/latest/index.html
 https://docs.ansible.com/ansible/latest/user_guide/index.html
+https://docs.ansible.com/ansible/latest/modules/list_of_all_modules.html
 
 
 
@@ -344,16 +345,153 @@ Parallelism and Shell Commands(并行执行命令)
       192.168.175.103 | CHANGED | rc=0 | (stdout) /bin/bash node03.linux.com
 
 
+[root@controller_node ~]# ansible-doc shell
+[root@controller_node ~]# ansible 192.168.175.101 -m shell -a 'chdir=/tmp pwd'
+
+
 
 ----------------------------------------------------------------------------------------------------
 https://docs.ansible.com/ansible/latest/user_guide/intro_adhoc.html#file-transfer
+https://docs.ansible.com/ansible/latest/modules/copy_module.html#copy-module
 
 File Transfer(文件传输)
 
       Ansible can SCP lots of files to multiple machines in parallel.
 
+[root@controller_node ~]# ansible-doc copy
+[root@controller_node ~]# ansible-doc copy | grep -E '^[=-]'   #观察一下该 module 有哪些 options 和 examples
+    - attributes
+    - backup
+    - checksum
+    - content
+    - decrypt
+    = dest
+    - directory_mode
+    - follow
+    - force
+    - group
+    - local_follow
+    - mode
+    - owner
+    - remote_src
+    - selevel
+    - serole
+    - setype
+    - seuser
+    - src
+    - unsafe_writes
+    - validate
+    - name: Copy file with owner and permissions
+    - name: Copy file with owner and permission, using symbolic representation
+    - name: Another symbolic mode example, adding some permissions and removing others
+    - name: Copy a new "ntp.conf file into place, backing up the original if it differs from the copied version
+    - name: Copy a new "sudoers" file into place, after passing validation with visudo
+    - name: Copy a "sudoers" file on the remote machine for editing
+    - name: Copy using inline content
+    - name: If follow=yes, /path/to/file will be overwritten by contents of foo.conf
+    - name: If follow=no, /path/to/link will become a file and be overwritten by contents of foo.conf
+
 
 [root@controller_node ~]# ansible all -m copy -a "src=/etc/hosts dest=/tmp/hosts"
+[root@controller_node ~]# ansible all -m copy -a "src=/etc/hosts dest=/tmp/hosts owner=nobody group=nobody mode='600'"
+
+[root@controller_node ~]# ansible all -m copy -a 'content="hello linux\n"  dest=/tmp/cc.txt  mode=600'
+
+----------------------------------------------------------------------------------------------------
+https://docs.ansible.com/ansible/latest/modules/fetch_module.html
+
+fetch模块
+
+  从远程主机拉取文件到本地
+    一般情况下，只会从一个远程节点拉取数据
+
+ 常见参数有：
+    dest=  从远程主机上拉取的文件存放在本地的位置，一般只能是目录
+    src=   指明远程主机上要拉取的文件，只能是文件，不能是目录
+
+[root@controller_node ~]# ansible-doc fetch
+[root@controller_node ~]# ansible-doc fetch | grep -E '^[=-]'  #观察一下该 module 有哪些 options 和 examples
+    = dest
+    - fail_on_missing
+    - flat
+    = src
+    - validate_checksum
+    - name: Store file into /tmp/fetched/host.example.com/tmp/somefile
+    - name: Specifying a path directly
+    - name: Specifying a destination path
+    - name: Storing in a path relative to the playbook
+
+
+[root@controller_node ~]# ansible 192.168.175.101 -m fetch -a 'src=/etc/passwd dest=/tmp'
+[root@controller_node ~]# find /tmp -name passwd -type f
+      /tmp/192.168.175.101/etc/passwd
+
+[root@controller_node ~]# ansible 192.168.175.101 -m fetch -a 'src=/etc/passwd dest=/tmp/ flat=yes'   #注: 此处目标目录必须加 a trailing slash
+[root@controller_node ~]# ls -l /tmp/passwd
+      -rw-r--r-- 1 root root 997 Oct  4 09:27 /tmp/passwd
+
+
+
+
+----------------------------------------------------------------------------------------------------
+https://docs.ansible.com/ansible/latest/modules/file_module.html#file-module
+
+file模块
+
+用于设定远程主机上的文件属性
+
+   常见参数有：
+        path=   指明对哪个文件修改其属性
+        src=   指明path=指明的文件是软链接文件，其对应的源文件是谁，必须要在state=link时才有用
+        state=directory|link|absent   表示创建的文件是目录还是软链接
+        owner=   指明文件的属主
+        group=   指明文件的属组
+        mode=   指明文件的权限
+
+        创建软链接的用法：
+            src=  path=  state=link
+        修改文件属性的用法：
+            path=  owner=  mode=  group=
+        创建目录的用法：
+            path=  state=directory
+        删除文件：
+            path= state=absent
+
+
+[root@controller_node ~]# ansible-doc file
+[root@controller_node ~]# ansible-doc file | grep -E '^[=-]'   #观察一下该 module 有哪些 options 和 examples
+
+    - access_time
+    - access_time_format
+    - attributes
+    - follow
+    - force
+    - group
+    - mode
+    - modification_time
+    - modification_time_format
+    - owner
+    = path      注: (Aliases: dest, name)
+    - recurse
+    - selevel
+    - serole
+    - setype
+    - seuser
+    - src
+    - state
+    - unsafe_writes
+    - name: Change file ownership, group and permissions
+    - name: Create an insecure file
+    - name: Create a symbolic link
+    - name: Create two hard links
+    - name: Touch a file, using symbolic modes to set the permissions (equivalent to 0644)
+    - name: Touch the same file, but add/remove some permissions
+    - name: Touch again the same file, but dont change times this makes the task idempotent
+    - name: Create a directory if it does not exist
+    - name: Update modification and access time of given file
+    - name: Set access time based on seconds from epoch value
+    - name: Recursively change ownership of a directory
+
 
 
 // The file module allows changing ownership and permissions on files. These same options can be passed directly to the copy module as well:
@@ -368,14 +506,145 @@ File Transfer(文件传输)
 
 
 
+
+
+
+----------------------------------------------------------------------------------------------------
+https://docs.ansible.com/ansible/latest/modules/cron_module.html
+
+cron模块
+
+管理计划任务的模块
+  常见参数有：
+    minute=  指明计划任务的分钟，支持格式：0-59，*，*/2等，与正常cron任务定义的一样的语法,省略时，默认为*，也就是每分钟都执行
+    hour=    指明计划任务的小时，支持的语法：0-23，*，*/2等，省略时，默认为*，也就是每小时都执行
+    day=     指明计划任务的天，支持的语法：1-31，*，*/2等，省略时，默认为*，也就是每天都执行
+    month=   指明计划任务的月，支持的语法为：1-12，*，*/2等，省略时，默认为*，也就是每月都执行
+    weekday= 指明计划任务的星期几，支持的语法为：0-6，*等，省略时，默认为*，也就是每星期几都执行
+    reboot   指明计划任务执行的时间为每次重启之后  注: This option is deprecated, 应该使用 special_time
+    name=    给该计划任务取个名称,必须要给明。每个任务的名称不能一样。
+    job=     执行的任务是什么，当state=present时才有意义
+    state=present|absent   表示这个任务是创建还是删除，present表示创建，absent表示删除，默认是present
+
+[root@controller_node ~]# ansible-doc cron
+[root@controller_node ~]# ansible-doc cron | grep -E '^[=-]'   #观察一下该 module 有哪些 options 和 examples
+
+      - backup
+      - cron_file
+      - day
+      - disabled
+      - env
+      - hour
+      - insertafter
+      - insertbefore
+      - job
+      - minute
+      - month
+      - name    注: This parameter will always be required in future releases.
+      - reboot  注: This option is deprecated, 应该使用 special_time
+      - special_time
+      - state
+      - user
+      - weekday
+      - name: Ensure a job that runs at 2 and 5 exists. Creates an entry like "0 5,2 * * ls -alh > /dev/null"
+      - name: 'Ensure an old job is no longer present. Removes any job that is prefixed by "#Ansible: an old job" from the crontab'
+      - name: Creates an entry like "@reboot /some/job.sh"
+      - name: Creates an entry like "PATH=/opt/bin" on top of crontab
+      - name: Creates an entry like "APP_HOME=/srv/app" and insert it after PATH declaration
+      - name: Creates a cron file under /etc/cron.d
+      - name: Removes a cron file from under /etc/cron.d
+      - name: Removes "APP_HOME" environment variable from crontab
+
+
+# 注: When using symbols such as %, they must be properly escaped(转义).
+
+[root@controller_node ~]# ansible all -m cron -a 'minute=*/5 name=Ajob job="/usr/sbin/ntpdate 172.16.8.100 &> /dev/null" state=present'
+
+[root@controller_node ~]# ansible all -m shell -a 'crontab -l'
+[root@node01 ~]# crontab -l
+    #Ansible: Ajob
+    */5 * * * * /usr/sbin/ntpdate 172.16.8.100 &> /dev/null
+
+
+
+
+[root@controller_node ~]# ansible all -m cron -a 'name=Ajob state=absent'  #删除指定的计划任务
+
+
+
+
 ----------------------------------------------------------------------------------------------------
 https://docs.ansible.com/ansible/latest/user_guide/intro_adhoc.html#managing-packages
+https://docs.ansible.com/ansible/latest/modules/yum_module.html
 
 Managing Packages(管理软件包)
 
       可用的 module: yum 和 apt
 
         注: 当然, 某些操作 也可以通过 command 或 shell 模块 执行原始的 shell 命令来完成
+
+yum模块
+
+基于yum机制，对远程主机管理程序包
+
+   常用参数有：
+        name=       指明程序包的名称，可以带上版本号，不指明版本，就是默认最新版本
+      name=httpd
+      name=httpd-2.2.15
+        state=present|lastest|absent   指明对程序包执行的操作，present表示安装程序包，latest表示安装最新版本的程序包，absent表示卸载程序包
+        disablerepo=             在用yum安装时，临时禁用某个仓库，仓库的ID
+        enablerepo=              在用yum安装时，临时启用某个仓库,仓库的ID
+        conf_file=               指明yum运行时采用哪个配置文件，而不是使用默认的配置文件
+        disable_gpg_check=yes|no      是否启用gpg-check
+
+
+[root@controller_node ~]# ansible-doc yum
+[root@controller_node ~]# ansible-doc yum | grep -E '^[=-]'   #观察一下该 module 有哪些 options 和 examples
+
+    - allow_downgrade
+    - autoremove
+    - bugfix
+    - conf_file
+    - disable_excludes
+    - disable_gpg_check
+    - disable_plugin
+    - disablerepo
+    - download_dir
+    - download_only
+    - enable_plugin
+    - enablerepo
+    - exclude
+    - install_weak_deps
+    - installroot
+    - list
+    - lock_timeout
+    - name
+    - releasever
+    - security
+    - skip_broken
+    - state
+    - update_cache
+    - update_only
+    - use_backend
+    - validate_certs
+    - name: install the latest version of Apache
+    - name: ensure a list of packages installed
+    - name: remove the Apache package
+    - name: install the latest version of Apache from the testing repo
+    - name: install one specific version of Apache
+    - name: upgrade all packages
+    - name: upgrade all packages, excluding kernel & foo related packages
+    - name: install the nginx rpm from a remote repo
+    - name: install nginx rpm from a local file
+    - name: install the 'Development tools' package group
+    - name: install the 'Gnome desktop' environment group
+    - name: List ansible packages and register result to print with debug later.
+    - name: Install package with multiple repos enabled
+    - name: Install package with multiple repos disabled
+    - name: Install a list of packages
+    - name: Download the nginx package but do not install it
+
+
 
 // Ensure a package is installed, but don’t update it:
 [root@controller_node ~]# ansible all -m yum -a "name=gcc state=present"  #保证 指定软件包被安装, 但不会对其进行 更新操作(如果没有安装软件包,则执行安装操作)
@@ -390,8 +659,75 @@ Managing Packages(管理软件包)
 [root@controller_node ~]# ansible all -m yum -a "name=gcc state=absent"  #确保 指定的 软件包没有被安装(可用于卸载软件包)
 
 
+
+[root@ansible_server ~]# ansible 192.168.175.101 -m yum -a "name=zabbix-agent state=present enablerepo=zabbix3.2 disablerepo=zabbix"
+
 ----------------------------------------------------------------------------------------------------
 https://docs.ansible.com/ansible/latest/user_guide/intro_adhoc.html#users-and-groups
+https://docs.ansible.com/ansible/latest/modules/user_module.html
+
+user模块
+
+管理远程主机上的用户的账号
+
+    常见参数有：
+        name=   指明要管理的账号名称
+        state=present|absent   指明是创建账号还是删除账号，present表示创建，absent表示删除
+        system=yes|no   指明是否为系统账号
+        uid=   指明用户UID
+        group=   指明用户的基本组
+        groups=   指明用户的附加组
+        shell=   指明默认的shell
+        home=   指明用户的家目录
+        move_home=yes|no   当home设定了家目录，如果要创建的家目录已存在，是否将已存在的家目录进行移动
+        password=   指明用户的密码，最好使用加密好的字符串
+        comment=   指明用户的注释信息
+        remove=yes|no   当state=absent时，也就是删除用户时，是否要删除用户的而家目录
+
+
+[root@controller_node ~]# ansible-doc user
+[root@controller_node ~]# ansible-doc user | grep -E '^[=-]'   #观察一下该 module 有哪些 options 和 examples
+
+    - append
+    - authorization
+    - comment
+    - create_home
+    - expires
+    - force
+    - generate_ssh_key
+    - group
+    - groups
+    - hidden
+    - home
+    - local
+    - login_class
+    - move_home
+    = name
+    - non_unique
+    - password
+    - password_lock
+    - profile
+    - remove
+    - role
+    - seuser
+    - shell
+    - skeleton
+    - ssh_key_bits
+    - ssh_key_comment
+    - ssh_key_file
+    - ssh_key_passphrase
+    - ssh_key_type
+    - state
+    - system
+    - uid
+    - update_password
+    - name: Add the user 'johnd' with a specific uid and a primary group of 'admin'
+    - name: Add the user 'james' with a bash shell, appending the group 'admins' and 'developers' to the user's groups
+    - name: Remove the user 'johnd'
+    - name: Create a 2048-bit SSH key for user jsmith in ~jsmith/.ssh/id_rsa
+    - name: Added a consultant whose account you want to expire
+    - name: Starting at Ansible 2.6, modify user, remove expiry time
+
 
 Users and Groups
 
@@ -408,6 +744,40 @@ https://docs.ansible.com/ansible/latest/user_guide/intro_adhoc.html#deploying-fr
 
 ----------------------------------------------------------------------------------------------------
 https://docs.ansible.com/ansible/latest/user_guide/intro_adhoc.html#managing-services
+https://docs.ansible.com/ansible/latest/modules/service_module.html
+
+
+service模块
+
+  用来管理远程主机上的服务的模块
+
+    常见参数有：
+        name=                             被管理的服务名称(/etc/init.d)
+        state=started|stopped|restarted   表示启动或关闭或重启
+        enabled=yes|no                    表示要不要设定该服务开机自启动
+        runlevel=2345                        如果设定了enabled开机自动启动，则要定义在哪些运行级别下自动启动
+
+
+
+[root@controller_node ~]# ansible-doc service
+[root@controller_node ~]# ansible-doc service | grep -E '^[=-]'   #观察一下该 module 有哪些 options 和 examples
+
+    - arguments
+    - enabled
+    = name
+    - pattern
+    - runlevel
+    - sleep
+    - state
+    - use
+    - name: Start service httpd, if not started
+    - name: Stop service httpd, if started
+    - name: Restart service httpd, in all cases
+    - name: Reload service httpd, in all cases
+    - name: Enable service httpd, and not touch the state
+    - name: Start service foo, based on running process /usr/bin/foo
+    - name: Restart network service for interface eth0
+
 
 Managing Services
 
@@ -479,6 +849,22 @@ Time Limited Background Operations
 
 ----------------------------------------------------------------------------------------------------
 https://docs.ansible.com/ansible/latest/user_guide/intro_adhoc.html#gathering-facts
+https://docs.ansible.com/ansible/latest/modules/setup_module.html
+
+setup模块
+
+可收集远程主机的facts变量的信息，相当于收集了目标主机的相关信息(如内核版本、操作系统信息、cpu、…)，保存在ansible的内置变量中，之后我们有需要用到时，直接调用变量即可
+
+
+[root@controller_node ~]# ansible-doc setup
+[root@controller_node ~]# ansible-doc setup | grep -E '^[=-]'   #观察一下该 module 有哪些 options 和 examples
+
+    - fact_path
+    - filter
+    - gather_subset
+    - gather_timeout
+    - name: Collect only facts returned by facter
+
 
 
 Gathering Facts
@@ -940,6 +1326,231 @@ For more details on inventory plugins and dynamic inventory scripts see Inventor
 
 
 ----------------------------------------------------------------------------------------------------
+https://docs.ansible.com/ansible/latest/modules/hostname_module.html
+
+
+hostname模块
+        管理远程主机上的主机名
+        常用参数有
+      name=  指明主机名
+
+注:
+    Set system’s hostname, supports most OSs/Distributions, including those using systemd.
+    Note, this module does NOT modify /etc/hosts. You need to modify it yourself using other modules like template or replace.
+    Windows, HP-UX and AIX are not currently supported.
+
+
+[root@controller_node ~]# ansible-doc hostname
+
+
+[root@controller_node ~]# ansible 192.168.175.101 -m hostname -a 'name=node01.linux.com'   #修改主机 192.168.175.101 的 hostname
+
+[root@controller_node ~]# ansible 192.168.175.101 -m shell -a 'hostname'
+    192.168.175.101 | CHANGED | rc=0 >>
+    node01.linux.com
+
+[root@node01 ~]# cat /etc/hostname
+  node01.linux.com
+
+
+
+
+----------------------------------------------------------------------------------------------------
+https://docs.ansible.com/ansible/latest/modules/uri_module.html
+
+uri模块
+
+  如果远端是web服务器，可以利用ansible直接请求某个网页
+
+        常见参数有：
+
+        url=       指明请求的url的路径，如：http://10.1.32.68/test.jpg
+        user=      如果请求的url需要认证，则认证的用户名是什么
+        password=  如果请求的url需要认证，则认证的密码是什么
+        method=    指明请求的方法，如GET、POST, PUT, DELETE, HEAD
+
+
+
+[root@controller_node ~]# ansible-doc uri
+[root@controller_node ~]# ansible-doc uri | grep -E '^[=-]'   #观察一下该 module 有哪些 options 和 examples
+
+    - HEADER_
+    - body
+    - body_format
+    - client_cert
+    - client_key
+    - creates
+    - dest
+    - follow_redirects
+    - force
+    - force_basic_auth
+    - headers
+    - http_agent
+    - method
+    - others
+    - remote_src
+    - removes
+    - return_content
+    - src
+    - status_code
+    - timeout
+    - unix_socket
+    = url
+    - url_password
+    - url_username
+    - use_proxy
+    - validate_certs
+    - name: Check that you can connect (GET) to a page and it returns a status 200
+    - name: Check that a page returns a status 200 and fail if the word AWESOME is not in the page contents
+    - name: Create a JIRA issue
+    - name: Login to a form based webpage, then use the returned cookie to access the app in later tasks
+    - name: Login to a form based webpage using a list of tuples
+    - name: Connect to website using a previously stored cookie
+    - name: Queue build of a project in Jenkins
+    - name: POST from contents of local file
+    - name: POST from contents of remote file
+
+
+[root@controller_node ~]# ansible 192.168.175.101 -m uri -a 'url=http://www.baidu.com'
+192.168.175.101 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python"
+    },
+    "bdpagetype": "1",
+    "bdqid": "0x8fddef4300064348",
+    "cache_control": "private",
+    "changed": false,
+    "connection": "close",
+    "content_type": "text/html",
+    "cookies": {
+        "BAIDUID": "A0EC05BC5B6DDCCFC240E5C28833499F:FG=1",
+        "BDSVRTM": "0",
+        "BD_HOME": "0",
+        "BIDUPSID": "A0EC05BC5B6DDCCFC240E5C28833499F",
+        "H_PS_PSSID": "1457_21101_29522_29720_29568_29220",
+        "PSTM": "1570157106",
+        "delPer": "0"
+    },
+    "cookies_string": "BAIDUID=A0EC05BC5B6DDCCFC240E5C28833499F:FG=1; BIDUPSID=A0EC05BC5B6DDCCFC240E5C28833499F; H_PS_PSSID=1457_21101_29522_29720_29568_29220; PSTM=1570157106; delPer=0; BDSVRTM=0; BD_HOME=0",
+    "cxy_all": "baidu+749bb0231ede655136a4b5aa3fca53c0",
+    "date": "Fri, 04 Oct 2019 02:45:06 GMT",
+    "elapsed": 0,
+    "expires": "Fri, 04 Oct 2019 02:44:09 GMT",
+    "msg": "OK (unknown bytes)",
+    "p3p": "CP=\" OTI DSP COR IVA OUR IND COM \"",
+    "redirected": false,
+    "server": "BWS/1.1",
+    "set_cookie": "BAIDUID=A0EC05BC5B6DDCCFC240E5C28833499F:FG=1; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com, BIDUPSID=A0EC05BC5B6DDCCFC240E5C28833499F; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com, PSTM=1570157106; expires=Thu, 31-Dec-37 23:55:55 GMT; max-age=2147483647; path=/; domain=.baidu.com, delPer=0; path=/; domain=.baidu.com, BDSVRTM=0; path=/, BD_HOME=0; path=/, H_PS_PSSID=1457_21101_29522_29720_29568_29220; path=/; domain=.baidu.com",
+    "status": 200,
+    "transfer_encoding": "chunked",
+    "url": "http://www.baidu.com",
+    "vary": "Accept-Encoding",
+    "x_ua_compatible": "IE=Edge,chrome=1"
+}
+
+
+
+
+----------------------------------------------------------------------------------------------------
+https://docs.ansible.com/ansible/latest/modules/group_module.html
+
+
+group模块
+
+用来添加或删除远端主机的用户组
+
+  常见参数有：
+        name=                  被管理的组名
+        state=present|absent   是添加还是删除,不指名默认为添加
+        gid=                   指明GID
+        system=yes|no          是否为系统组
+
+
+[root@controller_node ~]# ansible-doc group
+[root@controller_node ~]# ansible-doc group | grep -E '^[=-]'   #观察一下该 module 有哪些 options 和 examples
+
+    - gid
+    - local
+    = name
+    - non_unique
+    - state
+    - system
+    - name: Ensure group "somegroup" exists
+
+
+
+[root@master ~]# ansible test -m group -a 'name=hr gid=2000 state=present'
+192.168.87.102 | SUCCESS => {
+    "changed": true,
+    "gid": 2000,
+    "name": "hr",
+    "state": "present",
+    "system": false
+}
+
+[root@master ~]# ansible test -m shell -a 'tail -1 /etc/group'
+192.168.87.102 | SUCCESS | rc=0 >>
+hr:x:2000:
+
+
+
+
+----------------------------------------------------------------------------------------------------
+https://docs.ansible.com/ansible/latest/modules/script_module.html
+
+
+script模块
+
+将管理端的某个脚本，移动到远端主机(不需要指明传递到远端主机的哪个路径下，系统会自动移动，然后执行)，
+ 一般是自动移动到远端主机的/root/.ansible/tmp目录下，然后自动给予其权限，然后再开个子shell然后运行脚本，运行完成后删除脚本
+
+
+[root@controller_node ~]# ansible-doc script
+[root@controller_node ~]# ansible-doc script | grep -E '^[=-]'   #观察一下该 module 有哪些 options 和 examples
+
+[root@controller_node ~]# ansible-doc script | grep -E '^[=-]'
+
+    - chdir
+    - creates
+    - decrypt
+    - executable
+    = free_form
+    - removes
+    - name: Run a script with arguments
+    - name: Run a script only if file.txt does not exist on the remote node
+    - name: Run a script only if file.txt exists on the remote node
+    - name: Run a script using an executable in a non-system path
+    - name: Run a script using an executable in a system path
+
+
+
+
+
+测试脚本
+
+[root@master ~]# ansible test -m script -a '/root/1.sh'
+192.168.87.102 | SUCCESS => {
+    "changed": true,
+    "rc": 0,
+    "stderr": "",
+    "stdout": "",
+    "stdout_lines": []
+}
+
+
+----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
