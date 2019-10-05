@@ -6,6 +6,9 @@ https://docs.ansible.com/ansible/latest/user_guide/index.html
 https://docs.ansible.com/ansible/latest/modules/list_of_all_modules.html
 
 
+最佳实践:
+    https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.html
+
 
 ----------------------------------------------------------------------------------------------------
 Linux Ansible  (自动化引擎 automation engine)
