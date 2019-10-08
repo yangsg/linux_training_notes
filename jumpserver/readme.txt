@@ -249,6 +249,7 @@ Redis
 
 ----------------------------------------
 // 当如上的命令 进行到 安装 python-gssapi-0.6.4 时 出现如下错误(网络不可达):
+//     注: 实际试验时发现, 在 较快速的网络环境中做试验时, 没有出现 Network is unreachable 的问题
 
     distutils.errors.DistutilsError: Download error for https://files.pythonhosted.org/packages/5f/bf/6aa1925384c23ffeb579e97a5569eb9abce41b6310b329352b8252cee1c3/cffi-1.12.3-cp36-cp36m-manylinux1_x86_64.whl#sha256=59b4dc008f98fc6ee2bb4fd7fc786a8d70000d058c2bbe2698275bc53a8d3fa7: [Errno 101] Network is unreachable
 
