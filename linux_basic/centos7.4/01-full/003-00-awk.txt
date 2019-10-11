@@ -1,0 +1,14 @@
+
+因为 关于 awk 命令的笔记我是用 word 文档记的,
+所以我放在了另一个我以前的临时仓库里面,
+地址如下:
+      https://github.com/yangsg/myself_learn_notes/blob/master/awk.docx
+
+
+
+
+
+
+
+
+
