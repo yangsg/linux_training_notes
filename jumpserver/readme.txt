@@ -52,13 +52,14 @@ Redis
        Loaded: loaded (/usr/lib/systemd/system/redis.service; enabled; vendor preset: disabled)
       Drop-In: /etc/systemd/system/redis.service.d
                └─limit.conf
-       Active: active (running) since Sun 2019-10-06 13:45:47 CST; 1min 6s ago
-     Main PID: 15558 (redis-server)
+       Active: active (running) since Fri 2019-10-11 12:02:05 CST; 19s ago
+     Main PID: 15563 (redis-server)
        CGroup: /system.slice/redis.service
-               └─15558 /usr/bin/redis-server 127.0.0.1:6379
+               └─15563 /usr/bin/redis-server 127.0.0.1:6379
 
-    Oct 06 13:45:47 jump_server systemd[1]: Starting Redis persistent key-value database...
-    Oct 06 13:45:47 jump_server systemd[1]: Started Redis persistent key-value database.
+    Oct 11 12:02:05 jump_server systemd[1]: Starting Redis persistent key-value database...
+    Oct 11 12:02:05 jump_server systemd[1]: Started Redis persistent key-value database.
+
 
 
 [root@jump_server ~]# curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash
