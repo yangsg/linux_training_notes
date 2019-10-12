@@ -563,14 +563,14 @@ Redis
 // 警告: 这里 BOOTSTRAP_TOKEN 本来应该保密, 所以不应该这么指定, 但这里我就暂时偷懒了, 注意生产环境中不要这么干
 [root@jump_server ~]# docker run --name jms_coco -d -p 2222:2222 -p 5000:5000 \
                              -e CORE_HOST=http://192.168.175.100:8080 \
-                             -e BOOTSTRAP_TOKEN='kDfhgOq0LXoN9waJewc8BHl2GGFc1rK2t8ygJwVaBNelelMPtP' \
+                             -e BOOTSTRAP_TOKEN='dMyXJCBLKpayNUbb' \
                              jumpserver/jms_coco:1.4.8
 
 
 // 警告: 这里 BOOTSTRAP_TOKEN 本来应该保密, 所以不应该这么指定, 但这里我就暂时偷懒了, 注意生产环境中不要这么干
 [root@jump_server ~]# docker run --name jms_guacamole -d -p 8081:8081 \
                              -e CORE_HOST=http://192.168.175.100:8080 \
-                             -e BOOTSTRAP_TOKEN='kDfhgOq0LXoN9waJewc8BHl2GGFc1rK2t8ygJwVaBNelelMPtP' \
+                             -e BOOTSTRAP_TOKEN='dMyXJCBLKpayNUbb' \
                              jumpserver/jms_guacamole:1.4.8
 
 
@@ -647,12 +647,22 @@ Redis
 [root@jump_server ~]# systemctl reload nginx
 
 
+最后在 jumpserver 的 web 页面上执行如下操作:
+      1) 创建登录 jumpserver 的用户
+      2) 创建管理用于
+      3) 添加资产
+      4) 创建系统用户
+      5) 资产授权
+
+然后使用类似如下的方式就可以登录了:
+    xshell 使用:    ssh <jumpserver登录用户>@192.168.175.100 2222
+    linux 终端使用: ssh <jumpserver登录用户>@192.168.175.100 -p 2222
 
 
 
 
 ----------------------------------------------------------------------------------------------------
-
+其他参考资料:
 
 https://stackoverflow.com/questions/35847015/mysql-change-innodb-large-prefix
 http://www.voidcn.com/article/p-uoferwcl-bwa.html
