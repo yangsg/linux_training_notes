@@ -52,23 +52,40 @@ Redis
        Loaded: loaded (/usr/lib/systemd/system/redis.service; enabled; vendor preset: disabled)
       Drop-In: /etc/systemd/system/redis.service.d
                └─limit.conf
-       Active: active (running) since Fri 2019-10-11 12:02:05 CST; 19s ago
-     Main PID: 15563 (redis-server)
+       Active: active (running) since Sat 2019-10-12 10:21:54 CST; 11s ago
+     Main PID: 15553 (redis-server)
        CGroup: /system.slice/redis.service
-               └─15563 /usr/bin/redis-server 127.0.0.1:6379
+               └─15553 /usr/bin/redis-server 127.0.0.1:6379
 
-    Oct 11 12:02:05 jump_server systemd[1]: Starting Redis persistent key-value database...
-    Oct 11 12:02:05 jump_server systemd[1]: Started Redis persistent key-value database.
+    Oct 12 10:21:54 jump_server systemd[1]: Starting Redis persistent key-value database...
+    Oct 12 10:21:54 jump_server systemd[1]: Started Redis persistent key-value database.
 
 
 
-[root@jump_server ~]# curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash
+// 注: 如下 使用 curl 下载的 mariadb 的官方仓库 实在是太慢了, 所以改为使用国内的 mariadb 镜像仓库
+//    [root@jump_server ~]# curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash
+// 参考:
+//    https://lug.ustc.edu.cn/wiki/mirrors/help/mariadb
+//    https://downloads.mariadb.org/mariadb/repositories/#distro=CentOS&distro_release=centos7-amd64--centos7&mirror=guzel&version=10.4
+[root@jump_server ~]# vim /etc/yum.repos.d/mariadb.repo
+
+    # MariaDB 10.4 CentOS repository list - created 2019-10-12 02:33 UTC
+    # http://downloads.mariadb.org/mariadb/repositories/
+    [mariadb]
+    name = MariaDB
+    baseurl = https://mirrors.ustc.edu.cn/mariadb/yum/10.4/centos7-amd64
+    gpgkey=https://mirrors.ustc.edu.cn/mariadb/yum/RPM-GPG-KEY-MariaDB
+    gpgcheck=1
+
+
+
 [root@jump_server ~]# yum -y install  MariaDB-client MariaDB-server MariaDB-devel MariaDB-shared
 [root@jump_server ~]# rpm -q  MariaDB-client MariaDB-server MariaDB-devel MariaDB-shared
-        MariaDB-client-10.4.8-1.el7.centos.x86_64
-        MariaDB-server-10.4.8-1.el7.centos.x86_64
-        MariaDB-devel-10.4.8-1.el7.centos.x86_64
-        MariaDB-shared-10.4.8-1.el7.centos.x86_64
+    MariaDB-client-10.4.8-1.el7.centos.x86_64
+    MariaDB-server-10.4.8-1.el7.centos.x86_64
+    MariaDB-devel-10.4.8-1.el7.centos.x86_64
+    MariaDB-shared-10.4.8-1.el7.centos.x86_64
+
 
 
 // 将 mysql 字符集设置为 utf8mb4 (即真正意义上的 utf8)
@@ -105,24 +122,25 @@ Redis
        Loaded: loaded (/usr/lib/systemd/system/mariadb.service; enabled; vendor preset: disabled)
       Drop-In: /etc/systemd/system/mariadb.service.d
                └─migrated-from-my.cnf-settings.conf
-       Active: active (running) since Sun 2019-10-06 20:02:07 CST; 39s ago
+       Active: active (running) since Sat 2019-10-12 10:50:52 CST; 14s ago
          Docs: man:mysqld(8)
                https://mariadb.com/kb/en/library/systemd/
-     Main PID: 15901 (mysqld)
+     Main PID: 16080 (mysqld)
        Status: "Taking your SQL requests now..."
        CGroup: /system.slice/mariadb.service
-               └─15901 /usr/sbin/mysqld
+               └─16080 /usr/sbin/mysqld
 
-    Oct 06 20:02:07 jump_server mysqld[15901]: 2019-10-06 20:02:07 0 [Note] InnoDB: 10.4.8 started; log sequence number 139827; transaction id 21
-    Oct 06 20:02:07 jump_server mysqld[15901]: 2019-10-06 20:02:07 0 [Note] InnoDB: Loading buffer pool(s) from /var/lib/mysql/ib_buffer_pool
-    Oct 06 20:02:07 jump_server mysqld[15901]: 2019-10-06 20:02:07 0 [Note] InnoDB: Buffer pool(s) load completed at 191006 20:02:07
-    Oct 06 20:02:07 jump_server mysqld[15901]: 2019-10-06 20:02:07 0 [Note] Plugin 'FEEDBACK' is disabled.
-    Oct 06 20:02:07 jump_server mysqld[15901]: 2019-10-06 20:02:07 0 [Note] Server socket created on IP: '::'.
-    Oct 06 20:02:07 jump_server mysqld[15901]: 2019-10-06 20:02:07 0 [Note] Reading of all Master_info entries succeeded
-    Oct 06 20:02:07 jump_server mysqld[15901]: 2019-10-06 20:02:07 0 [Note] Added new Master_info '' to hash table
-    Oct 06 20:02:07 jump_server mysqld[15901]: 2019-10-06 20:02:07 0 [Note] /usr/sbin/mysqld: ready for connections.
-    Oct 06 20:02:07 jump_server mysqld[15901]: Version: '10.4.8-MariaDB'  socket: '/var/lib/mysql/mysql.sock'  port: 3306  MariaDB Server
-    Oct 06 20:02:07 jump_server systemd[1]: Started MariaDB 10.4.8 database server.
+    Oct 12 10:50:52 jump_server mysqld[16080]: 2019-10-12 10:50:52 0 [Note] InnoDB: 10.4.8 started; log sequence number 139827; transaction id 21
+    Oct 12 10:50:52 jump_server mysqld[16080]: 2019-10-12 10:50:52 0 [Note] InnoDB: Loading buffer pool(s) from /var/lib/mysql/ib_buffer_pool
+    Oct 12 10:50:52 jump_server mysqld[16080]: 2019-10-12 10:50:52 0 [Note] InnoDB: Buffer pool(s) load completed at 191012 10:50:52
+    Oct 12 10:50:52 jump_server mysqld[16080]: 2019-10-12 10:50:52 0 [Note] Plugin 'FEEDBACK' is disabled.
+    Oct 12 10:50:52 jump_server mysqld[16080]: 2019-10-12 10:50:52 0 [Note] Server socket created on IP: '::'.
+    Oct 12 10:50:52 jump_server mysqld[16080]: 2019-10-12 10:50:52 0 [Note] Reading of all Master_info entries succeeded
+    Oct 12 10:50:52 jump_server mysqld[16080]: 2019-10-12 10:50:52 0 [Note] Added new Master_info '' to hash table
+    Oct 12 10:50:52 jump_server mysqld[16080]: 2019-10-12 10:50:52 0 [Note] /usr/sbin/mysqld: ready for connections.
+    Oct 12 10:50:52 jump_server mysqld[16080]: Version: '10.4.8-MariaDB'  socket: '/var/lib/mysql/mysql.sock'  port: 3306  MariaDB Server
+    Oct 12 10:50:52 jump_server systemd[1]: Started MariaDB 10.4.8 database server.
+
 
 
 [root@jump_server ~]# mysql_secure_installation
@@ -132,7 +150,7 @@ Redis
     Switch to unix_socket authentication [Y/n] y  <======键入y
 
     Change the root password? [Y/n] y  <=====键入 y
-    New password:    <========键入 root 的新密码
+    New password:    <========键入 root 的新密码, 此处我使用简单密码 'redhat'
     Re-enter new password:  <========重复键入 root 的新密码
 
 
@@ -276,7 +294,9 @@ Redis
 // 解决了如上问题后, 重新执行 如下命令 继续安装相关  依赖的 python 模块
 (py3) [root@jump_server requirements]# pip install -r requirements.txt
 
+----------------------------------------
 
+(py3) [root@jump_server requirements]# cd /opt/jumpserver
 (py3) [root@jump_server jumpserver]# vim apps/jumpserver/settings.py
 
     DATABASES = {
@@ -296,6 +316,154 @@ Redis
         }
     }
 
+
+
+
+// 修改配置文件
+(py3) [root@jump_server jumpserver]# cp config_example.yml config.yml
+
+
+(py3) [root@jump_server jumpserver]# vim config.yml
+    # SECURITY WARNING: keep the secret key used in production secret!
+    # 加密秘钥 生产环境中请修改为随机字符串，请勿外泄, 可使用命令生成
+    # 注: 生成随机SECRET_KEY 的命令: `cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 50`
+    SECRET_KEY: kDfhgOq0LXoN9waJewc8BHl2GGFc1rK2t8ygJwVaBNelelMPtP
+
+    # SECURITY WARNING: keep the bootstrap token used in production secret!
+    # 预共享Token coco和guacamole用来注册服务账号，不在使用原来的注册接受机制
+    # 注: 生成 生成随机BOOTSTRAP_TOKEN 的命令:`cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 16`
+    BOOTSTRAP_TOKEN: dMyXJCBLKpayNUbb
+
+    # Development env open this, when error occur display the full process track, Production disable it
+    # DEBUG 模式 开启DEBUG后遇到错误时可以看到更多日志
+    DEBUG: false
+
+    # DEBUG, INFO, WARNING, ERROR, CRITICAL can set. See https://docs.djangoproject.com/en/1.10/topics/logging/
+    # 日志级别
+    LOG_LEVEL: ERROR
+    # LOG_DIR:
+
+    # Session expiration setting, Default 24 hour, Also set expired on on browser close
+    # 浏览器Session过期时间，默认24小时, 也可以设置浏览器关闭则过期
+    # SESSION_COOKIE_AGE: 86400
+    SESSION_EXPIRE_AT_BROWSER_CLOSE: true
+
+
+    # MySQL or postgres setting like
+    # 使用Mysql作为数据库
+    DB_ENGINE: mysql
+    DB_HOST: 127.0.0.1
+    DB_PORT: 3306
+    DB_USER: jumpserver
+    DB_PASSWORD: redhat
+    DB_NAME: jumpserver
+
+
+
+    # When Django start it will bind this host and port
+    # ./manage.py runserver 127.0.0.1:8080
+    # 运行时绑定端口
+    HTTP_BIND_HOST: 0.0.0.0
+    HTTP_LISTEN_PORT: 8080
+
+    # Use Redis as broker for celery and web socket
+    # Redis配置
+    REDIS_HOST: 127.0.0.1
+    REDIS_PORT: 6379
+    # REDIS_PASSWORD:
+    REDIS_DB_CELERY: 3
+    REDIS_DB_CACHE: 4
+
+
+
+// 运行 Jumpserver
+// 新版本更新了运行脚本, 使用方式./jms start|stop|status all  后台运行请添加 -d 参数
+(py3) [root@jump_server jumpserver]# ./jms start -d   # 后台运行使用 -d 参数./jms start -d
+
+
+
+
+
+
+
+(py3) [root@jump_server jumpserver]# ./jms start -d  # 后台运行使用 -d 参数./jms start -d
+
+      Sat Oct 12 11:22:09 2019
+      Jumpserver version 1.4.8, more see https://www.jumpserver.org
+
+      - Start Gunicorn WSGI HTTP Server
+      Check database connection ...
+
+
+// 使用 chrome 浏览器访问一下 http://192.168.175.100:8080
+// 浏览器会自动 重定向到 jumpserver 的登录页面, 但页面有点丑陋, 因为很多 css 和 js 文件没有被成功 loaded.
+// 此时, 先简单配置一下 nginx 以解决 css 和 js 等资源文件的加载问题:
+[root@jump_server ~]# vim /etc/nginx/conf.d/jumpserver.conf
+
+      server {
+          listen 80;
+
+          location /static/ {
+              root /opt/jumpserver/data/;  # 静态资源, 如果修改安装目录, 此处需要修改
+          }
+          location / {
+              proxy_pass http://localhost:8080;  # 如果jumpserver安装在别的服务器，请填写它的ip
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header Host $host;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          }
+      }
+
+[root@jump_server ~]# vim /etc/nginx/nginx.conf    # 注释掉如下内容
+
+    ##    server {
+    ##        listen       80 default_server;
+    ##        listen       [::]:80 default_server;
+    ##        server_name  _;
+    ##        root         /usr/share/nginx/html;
+    ##
+    ##        # Load configuration files for the default server block.
+    ##        include /etc/nginx/default.d/*.conf;
+    ##
+    ##        location / {
+    ##        }
+    ##
+    ##        error_page 404 /404.html;
+    ##            location = /40x.html {
+    ##        }
+    ##
+    ##        error_page 500 502 503 504 /50x.html;
+    ##            location = /50x.html {
+    ##        }
+    ##    }
+
+
+[root@jump_server ~]# systemctl start nginx
+[root@jump_server ~]# systemctl enable nginx
+    Created symlink from /etc/systemd/system/multi-user.target.wants/nginx.service to /usr/lib/systemd/system/nginx.service.
+
+[root@jump_server ~]# systemctl status nginx
+    ● nginx.service - The nginx HTTP and reverse proxy server
+       Loaded: loaded (/usr/lib/systemd/system/nginx.service; enabled; vendor preset: disabled)
+       Active: active (running) since Sat 2019-10-12 11:40:50 CST; 34s ago
+     Main PID: 54176 (nginx)
+       CGroup: /system.slice/nginx.service
+               ├─54176 nginx: master process /usr/sbin/nginx
+               └─54177 nginx: worker process
+
+    Oct 12 11:40:50 jump_server systemd[1]: Starting The nginx HTTP and reverse proxy server...
+    Oct 12 11:40:50 jump_server nginx[54170]: nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+    Oct 12 11:40:50 jump_server nginx[54170]: nginx: configuration file /etc/nginx/nginx.conf test is successful
+    Oct 12 11:40:50 jump_server systemd[1]: Failed to read PID from file /run/nginx.pid: Invalid argument
+    Oct 12 11:40:50 jump_server systemd[1]: Started The nginx HTTP and reverse proxy server.
+
+
+此时在用 chrome 浏览器访问一下 http://192.168.175.100 地址(即通过 nginx 来访问 jumpserver服务),
+可以发现, 此时的 jumpserver 的登录界面 美观了不少.
+
+此时可以 输入默认的登录信息进去看一下:
+    default username: admin
+    default password: admin
 
 
 
@@ -403,84 +571,6 @@ Redis
 
 
 
-
-
-
-
-// 修改配置文件
-(py3) [root@jump_server requirements]# cd /opt/jumpserver
-(py3) [root@jump_server jumpserver]#
-(py3) [root@jump_server jumpserver]# cp config_example.yml config.yml
-
-
-(py3) [root@jump_server jumpserver]# vim config.yml
-    # SECURITY WARNING: keep the secret key used in production secret!
-    # 加密秘钥 生产环境中请修改为随机字符串，请勿外泄, 可使用命令生成
-    # 注: 生成随机SECRET_KEY 的命令: `cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 50`
-    SECRET_KEY: kDfhgOq0LXoN9waJewc8BHl2GGFc1rK2t8ygJwVaBNelelMPtP
-
-    # SECURITY WARNING: keep the bootstrap token used in production secret!
-    # 预共享Token coco和guacamole用来注册服务账号，不在使用原来的注册接受机制
-    # 注: 生成 生成随机BOOTSTRAP_TOKEN 的命令:`cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 16`
-    BOOTSTRAP_TOKEN: dMyXJCBLKpayNUbb
-
-    # Development env open this, when error occur display the full process track, Production disable it
-    # DEBUG 模式 开启DEBUG后遇到错误时可以看到更多日志
-    DEBUG: false
-
-    # DEBUG, INFO, WARNING, ERROR, CRITICAL can set. See https://docs.djangoproject.com/en/1.10/topics/logging/
-    # 日志级别
-    LOG_LEVEL: ERROR
-    # LOG_DIR:
-
-    # Session expiration setting, Default 24 hour, Also set expired on on browser close
-    # 浏览器Session过期时间，默认24小时, 也可以设置浏览器关闭则过期
-    # SESSION_COOKIE_AGE: 86400
-    SESSION_EXPIRE_AT_BROWSER_CLOSE: true
-
-
-    # MySQL or postgres setting like
-    # 使用Mysql作为数据库
-    DB_ENGINE: mysql
-    DB_HOST: 127.0.0.1
-    DB_PORT: 3306
-    DB_USER: jumpserver
-    DB_PASSWORD: redhat
-    DB_NAME: jumpserver
-
-
-
-    # When Django start it will bind this host and port
-    # ./manage.py runserver 127.0.0.1:8080
-    # 运行时绑定端口
-    HTTP_BIND_HOST: 0.0.0.0
-    HTTP_LISTEN_PORT: 8080
-
-    # Use Redis as broker for celery and web socket
-    # Redis配置
-    REDIS_HOST: 127.0.0.1
-    REDIS_PORT: 6379
-    # REDIS_PASSWORD:
-    REDIS_DB_CELERY: 3
-    REDIS_DB_CACHE: 4
-
-
-
-(py3) [root@jump_server jumpserver]# cd /opt/jumpserver/utils/
-(py3) [root@jump_server utils]# bash make_migrations.sh
-(py3) [root@jump_server utils]# cd /opt/jumpserver/
-
-
-
-
-
-
-(py3) [root@jump_server jumpserver]# ./jms start -d  # 后台运行使用 -d 参数./jms start -d
-          Sun Oct  6 16:53:23 2019
-          Jumpserver version 1.4.8, more see https://www.jumpserver.org
-
-          - Start Gunicorn WSGI HTTP Server
-          Check database connection ...
 
 
 
