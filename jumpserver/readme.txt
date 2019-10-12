@@ -4,6 +4,48 @@
 在线体验: https://demo.jumpserver.org/auth/login/
 文档: https://jumpserver.readthedocs.io/zh/master/
 
+------------------------------------------------------------------------------------------
+1.4.8 版本:
+    https://docs.jumpserver.org/zh/1.4.8/setup_by_centos7.html
+    https://docs.jumpserver.org/zh/1.4.8/setup_by_prod.html#id2
+
+组件说明
+    - Jumpserver 为管理后台, 管理员可以通过 Web 页面进行资产管理、用户管理、资产授权等操作, 用户可以通过 Web 页面进行资产登录, 文件管理等操作
+    - Coco 为 SSH Server 和 Web Terminal Server 。用户可以使用自己的账户通过 SSH 或者 Web Terminal 访问 SSH 协议和 Telnet 协议资产
+    - Luna 为 Web Terminal Server 前端页面, 用户使用 Web Terminal 方式登录所需要的组件
+    - Guacamole 为 RDP 协议和 VNC 协议资产组件, 用户可以通过 Web Terminal 来连接 RDP 协议和 VNC 协议资产 (暂时只能通过 Web Terminal 来访问)
+
+端口说明
+    - Jumpserver 默认端口为 8080/tcp 配置文件 jumpserver/config.yml
+    - Coco 默认 SSH 端口为 2222/tcp, 默认 Web Terminal 端口为 5000/tcp 配置文件在 coco/config.yml
+    - Guacamole 默认端口为 8081/tcp, 配置文件 /config/tomcat8/conf/server.xml
+    - Nginx 默认端口为 80/tcp
+    - Redis 默认端口为 6379/tcp
+    - Mysql 默认端口为 3306/tcp
+
+
+------------------------------------------------------------------------------------------
+1.5.3版本:
+
+组件说明: https://jumpserver.readthedocs.io/zh/master/setup_by_prod.html#id3
+
+    - Jumpserver 为管理后台, 管理员可以通过 Web 页面进行资产管理、用户管理、资产授权等操作, 用户可以通过 Web 页面进行资产登录, 文件管理等操作
+    - koko 为 SSH Server 和 Web Terminal Server 。用户可以使用自己的账户通过 SSH 或者 Web Terminal 访问 SSH 协议和 Telnet 协议资产
+    - Luna 为 Web Terminal Server 前端页面, 用户使用 Web Terminal 方式登录所需要的组件
+    - Guacamole 为 RDP 协议和 VNC 协议资产组件, 用户可以通过 Web Terminal 来连接 RDP 协议和 VNC 协议资产 (暂时只能通过 Web Terminal 来访问)
+
+端口说明: https://jumpserver.readthedocs.io/zh/master/setup_by_prod.html#id4
+
+    - Jumpserver 默认 Web 端口为 8080/tcp, 默认 WS 端口为 8070/tcp, 配置文件 jumpserver/config.yml
+    - koko 默认 SSH 端口为 2222/tcp, 默认 Web Terminal 端口为 5000/tcp 配置文件在 koko/config.yml
+    - Guacamole 默认端口为 8081/tcp, 配置文件 /config/tomcat9/conf/server.xml
+    - Nginx 默认端口为 80/tcp
+    - Redis 默认端口为 6379/tcp
+    - Mysql 默认端口为 3306/tcp
+
+------------------------------------------------------------------------------------------
+
+
 Docs » 安装文档 » 一站式、分布式安装文档 » CentOS 7 安装文档
       https://jumpserver.readthedocs.io/zh/master/setup_by_centos7.html
 
@@ -18,6 +60,9 @@ Python = 3.6.x
 Mysql Server ≥ 5.6
 Mariadb Server ≥ 5.5.56
 Redis
+
+
+
 
 ----------------------------------------------------------------------------------------------------
 // 安装 epel 源(我的试验环境已有 epel 源, 此处略过)
@@ -378,14 +423,6 @@ Redis
 
 // 运行 Jumpserver
 // 新版本更新了运行脚本, 使用方式./jms start|stop|status all  后台运行请添加 -d 参数
-(py3) [root@jump_server jumpserver]# ./jms start -d   # 后台运行使用 -d 参数./jms start -d
-
-
-
-
-
-
-
 (py3) [root@jump_server jumpserver]# ./jms start -d  # 后台运行使用 -d 参数./jms start -d
 
       Sat Oct 12 11:22:09 2019
@@ -393,6 +430,43 @@ Redis
 
       - Start Gunicorn WSGI HTTP Server
       Check database connection ...
+
+
+// 下载 jumpserver 的 systemd 的 service unit 文件
+(py3) [root@jump_server jumpserver]# wget -O /usr/lib/systemd/system/jms.service https://demo.jumpserver.org/download/shell/centos/jms.service
+
+// 观察一下是否适合当前环境
+(py3) [root@jump_server jumpserver]# cat /usr/lib/systemd/system/jms.service
+
+    [Unit]
+    Description=jms
+    After=network.target mariadb.service redis.service docker.service
+    Wants=mariadb.service redis.service docker.service
+
+    [Service]
+    Type=forking
+    TimeoutStartSec=0
+    WorkingDirectory=/opt/jumpserver
+    Environment="PATH=/opt/py3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin"
+    ExecStart=/opt/jumpserver/jms start all -d
+    ExecReload=
+    ExecStop=/opt/jumpserver/jms stop
+
+    [Install]
+    WantedBy=multi-user.target
+
+
+(py3) [root@jump_server jumpserver]# chmod 755 /usr/lib/systemd/system/jms.service
+
+// 配置为开机自启
+(py3) [root@jump_server jumpserver]# systemctl enable jms
+    Created symlink from /etc/systemd/system/multi-user.target.wants/jms.service to /usr/lib/systemd/system/jms.service.
+
+
+
+
+
+
 
 
 // 使用 chrome 浏览器访问一下 http://192.168.175.100:8080
@@ -469,108 +543,108 @@ Redis
 
 
 
+
 ----------------------------------------------------------------------------------------------------
+// 安装 docker 部署 koko 与 guacamole
+[root@jump_server ~]# yum install -y yum-utils device-mapper-persistent-data lvm2
+[root@jump_server ~]# yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+[root@jump_server ~]# yum makecache fast
+[root@jump_server ~]# rpm --import https://mirrors.aliyun.com/docker-ce/linux/centos/gpg
 
-// 安装 mysql 服务器 (注: 此处选择 mariadb)
-[root@jump_server ~]# yum -y install mariadb-server mariadb-devel mariadb
-[root@jump_server ~]# rpm -q mariadb-server mariadb-devel mariadb
-      mariadb-server-5.5.64-1.el7.x86_64
-      mariadb-devel-5.5.64-1.el7.x86_64
-      mariadb-5.5.64-1.el7.x86_64
+[root@jump_server ~]# yum -y install docker-ce
+[root@jump_server ~]# systemctl enable docker
+    Created symlink from /etc/systemd/system/multi-user.target.wants/docker.service to /usr/lib/systemd/system/docker.service.
 
+[root@jump_server ~]# curl -sSL https://get.daocloud.io/daotools/set_mirror.sh | sh -s http://f1361db2.m.daocloud.io
+[root@jump_server ~]# systemctl restart docker
 
-[root@jump_server ~]# vim /etc/my.cnf
-
-      [client]  # 注: [client] group 是 所有的 mysql client 工具都会读取的配置文件
-      loose-default-character-set = utf8mb4   # 加 loose- 前缀是为解决 [mysqlbinlog] group 不识别该 选项的 问题
-
-      [mysql]
-      default-character-set = utf8mb4
-
-      [mysqlbinlog]
-      set_charset=utf8mb4
-
-      [mysqld]
-      # 设置 mysql 字符集为 utf8mb4
-      character-set-client-handshake = FALSE  # 忽略 client 端的 character set 设置
-      character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
-      collation-server = utf8mb4_unicode_ci
+// http://<Jumpserver_url> 指向 jumpserver 的服务端口, 如 http://192.168.175.100:8080
+// BOOTSTRAP_TOKEN 为 Jumpserver/config.yml 里面的 BOOTSTRAP_TOKEN
+// 警告: 这里 BOOTSTRAP_TOKEN 本来应该保密, 所以不应该这么指定, 但这里我就暂时偷懒了, 注意生产环境中不要这么干
+[root@jump_server ~]# docker run --name jms_coco -d -p 2222:2222 -p 5000:5000 \
+                             -e CORE_HOST=http://192.168.175.100:8080 \
+                             -e BOOTSTRAP_TOKEN='kDfhgOq0LXoN9waJewc8BHl2GGFc1rK2t8ygJwVaBNelelMPtP' \
+                             jumpserver/jms_coco:1.4.8
 
 
-[root@jump_server ~]# systemctl start mariadb
-[root@jump_server ~]# systemctl enable mariadb
-      Created symlink from /etc/systemd/system/multi-user.target.wants/mariadb.service to /usr/lib/systemd/system/mariadb.service.
-
-[root@jump_server ~]# systemctl status mariadb
-    ● mariadb.service - MariaDB database server
-       Loaded: loaded (/usr/lib/systemd/system/mariadb.service; enabled; vendor preset: disabled)
-       Active: active (running) since Sun 2019-10-06 13:48:47 CST; 10s ago
-     Main PID: 15714 (mysqld_safe)
-       CGroup: /system.slice/mariadb.service
-               ├─15714 /bin/sh /usr/bin/mysqld_safe --basedir=/usr
-               └─15912 /usr/libexec/mysqld --basedir=/usr --datadir=/var/lib/mysql --plugin-dir=/usr/lib64/mysql/plugin --log-error=/var/log/mariadb/mariadb.log --pid-file=/var/run/mariadb/...
-
-    Oct 06 13:48:45 jump_server mariadb-prepare-db-dir[15628]: MySQL manual for more instructions.
-    Oct 06 13:48:45 jump_server mariadb-prepare-db-dir[15628]: Please report any problems at http://mariadb.org/jira
-    Oct 06 13:48:45 jump_server mariadb-prepare-db-dir[15628]: The latest information about MariaDB is available at http://mariadb.org/.
-    Oct 06 13:48:45 jump_server mariadb-prepare-db-dir[15628]: You can find additional information about the MySQL part at:
-    Oct 06 13:48:45 jump_server mariadb-prepare-db-dir[15628]: http://dev.mysql.com
-    Oct 06 13:48:45 jump_server mariadb-prepare-db-dir[15628]: Consider joining MariaDB's strong and vibrant community:
-    Oct 06 13:48:45 jump_server mariadb-prepare-db-dir[15628]: https://mariadb.org/get-involved/
-    Oct 06 13:48:46 jump_server mysqld_safe[15714]: 191006 13:48:46 mysqld_safe Logging to '/var/log/mariadb/mariadb.log'.
-    Oct 06 13:48:46 jump_server mysqld_safe[15714]: 191006 13:48:46 mysqld_safe Starting mysqld daemon with databases from /var/lib/mysql
-    Oct 06 13:48:47 jump_server systemd[1]: Started MariaDB database server.
+// 警告: 这里 BOOTSTRAP_TOKEN 本来应该保密, 所以不应该这么指定, 但这里我就暂时偷懒了, 注意生产环境中不要这么干
+[root@jump_server ~]# docker run --name jms_guacamole -d -p 8081:8081 \
+                             -e CORE_HOST=http://192.168.175.100:8080 \
+                             -e BOOTSTRAP_TOKEN='kDfhgOq0LXoN9waJewc8BHl2GGFc1rK2t8ygJwVaBNelelMPtP' \
+                             jumpserver/jms_guacamole:1.4.8
 
 
+// 安装 Web Terminal 前端: Luna  需要 Nginx 来运行访问 访问(https://github.com/jumpserver/luna/releases)下载对应版本的 release 包, 直接解压, 不需要编译
+[root@jump_server ~]# cd /opt
+[root@jump_server opt]# wget https://github.com/jumpserver/luna/releases/download/1.4.8/luna.tar.gz
+
+[root@jump_server opt]# tar -xvf luna.tar.gz
+[root@jump_server opt]# chown -R root:root luna
 
 
+[root@jump_server ~]# vim /etc/nginx/conf.d/jumpserver.conf
+
+        server {
+            listen 80;
+
+            client_max_body_size 100m;  # 录像及文件上传大小限制
+
+            location /luna/ {
+                try_files $uri / /index.html;
+                alias /opt/luna/;  # luna 路径, 如果修改安装目录, 此处需要修改
+            }
+
+            location /media/ {
+                add_header Content-Encoding gzip;
+                root /opt/jumpserver/data/;  # 录像位置, 如果修改安装目录, 此处需要修改
+            }
+
+            location /static/ {
+                root /opt/jumpserver/data/;  # 静态资源, 如果修改安装目录, 此处需要修改
+            }
+
+            location /socket.io/ {
+                proxy_pass       http://localhost:5000/socket.io/;
+                proxy_buffering off;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection "upgrade";
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header Host $host;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                access_log off;
+            }
+
+            location /coco/ {
+                proxy_pass       http://localhost:5000/coco/;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header Host $host;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                access_log off;
+            }
+
+            location /guacamole/ {
+                proxy_pass       http://localhost:8081/;
+                proxy_buffering off;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection $http_connection;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header Host $host;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                access_log off;
+            }
+
+            location / {
+                proxy_pass http://localhost:8080;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header Host $host;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            }
+        }
 
 
-[root@jump_server ~]# mysql_secure_installation
-
-        ......
-        Enter current password for root (enter for none):  <======直接按 Enter 键回车
-
-        ......
-        Set root password? [Y/n] y
-        New password:   <=========为 root 键入新密码
-        Re-enter new password: <=========重复为 root 键入新密码
-        ......
-
-
-[root@jump_server ~]# mysql -u root -p
-    Enter password:
-
-    // 查看字符集信息
-    MariaDB [(none)]> SHOW VARIABLES WHERE Variable_name LIKE 'character_set_%' OR Variable_name LIKE 'collation%';
-    +--------------------------+----------------------------+
-    | Variable_name            | Value                      |
-    +--------------------------+----------------------------+
-    | character_set_client     | utf8mb4                    |
-    | character_set_connection | utf8mb4                    |
-    | character_set_database   | utf8mb4                    |
-    | character_set_filesystem | binary                     |
-    | character_set_results    | utf8mb4                    |
-    | character_set_server     | utf8mb4                    |
-    | character_set_system     | utf8                       |
-    | character_sets_dir       | /usr/share/mysql/charsets/ |
-    | collation_connection     | utf8mb4_unicode_ci         |
-    | collation_database       | utf8mb4_unicode_ci         |
-    | collation_server         | utf8mb4_unicode_ci         |
-    +--------------------------+----------------------------+
-
-
-   变量 character_set_system : The character set used by the server for storing identifiers. The value is always utf8.
-
-
-    // 创建数据库 Jumpserver 并授权
-    MariaDB [(none)]> create database jumpserver charset utf8mb4;
-    MariaDB [(none)]> grant all on jumpserver.* to 'jumpserver'@'127.0.0.1' identified by 'redhat';
-    MariaDB [(none)]> flush privileges;
-
-
-
-
+[root@jump_server ~]# systemctl reload nginx
 
 
 
