@@ -139,6 +139,10 @@ Redis
 // 将 mysql 字符集设置为 utf8mb4 (即真正意义上的 utf8)
 // https://blog.csdn.net/zhnxin_163/article/details/82879586
 // https://github.com/yangsg/linux_training_notes/tree/master/mysql_mariadb/mysql_02_basic/replication.dir/006-mha4mysql-semi-sync-gtid-utf8mb4-rpm
+// 如下 3 个是  emoji 字符 相关的网址, 后续可以找一些其上的 emoji 字符来做简单的测试, 来判断 mysql 和 客户端 是否可以支持 utf8mb4:
+//      https://baike.baidu.com/item/emoji/8154456?fr=aladdin
+//      https://www.iemoji.com/
+//      http://getemoji.com/
 [root@jump_server ~]# vim /etc/my.cnf
 
     [client]  # 注: [client] group 是 所有的 mysql client 工具都会读取的配置文件
