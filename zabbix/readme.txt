@@ -3,6 +3,10 @@
 https://www.zabbix.com/documentation/current/manual
 https://www.zabbix.com/documentation/4.4/start
 
+zabbix 安全设置方面的最佳实践 及 其他一些与 web 安全(security)相关的资料:
+    https://www.zabbix.com/documentation/4.4/manual/installation/requirements/best_practices
+    https://developer.mozilla.org/en-US/docs/Web/Security
+    https://geekflare.com/nginx-webserver-security-hardening-guide/
 
 
 特性: https://www.zabbix.com/documentation/4.4/manual/introduction/features
