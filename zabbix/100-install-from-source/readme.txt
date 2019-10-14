@@ -205,7 +205,8 @@ MariaDB [(none)]> quit
 
 点击页面 http://192.168.175.100/zabbix/setup.php 上的按钮 [Next Step],
 发现有一些参数和模块没满足要求, 则需要解决
-[root@zabbix_server ~]# yum -y install php-bcmath php-mbstring php-xml
+[root@zabbix_server ~]# yum -y install php-bcmath php-mbstring php-xml php-ldap
+
 
 [root@zabbix_server ~]# vim /etc/php.ini
 
