@@ -194,11 +194,12 @@ https://www.zabbix.com/documentation/4.4/manual/installation/install_from_packag
 // 重新加载 httpd, 使如上的配置修改生效
 [root@zabbix_server ~]# systemctl reload httpd
 
-上完成
 参考 https://www.zabbix.com/documentation/4.4/manual/installation/install#installing_frontend
 在页面
    http://192.168.175.100/zabbix/setup.php
 上完成 zabbix frontend 的配置
+
+
 
 // 最后查看 通过在页面 setup.php 上操作生成的 zabbix.conf.php 配置文件:
 [root@zabbix_server ~]# cat /etc/zabbix/web/zabbix.conf.php
