@@ -148,7 +148,7 @@ MariaDB [(none)]> quit
     StatsAllowedIP=127.0.0.1
 
 
-// 其中 zabbix_server 服务进程
+// 启动 zabbix_server 服务进程
 [root@zabbix_server ~]# zabbix_server
 
 
@@ -217,6 +217,71 @@ MariaDB [(none)]> quit
 
 
 [root@zabbix_server ~]# systemctl reload httpd
+
+
+
+再次访问 页面:
+    http://192.168.175.100/zabbix/setup.php
+
+根据提示 完成如下相关配置:
+
+      - Welcome
+      - Check of pre-requisites
+      - Configure DB connection
+      - Zabbix server details
+      - Pre-installation summary
+      - Install  <-----注: 在该 步骤的 页面上 点击链接 "1. Download the configuration file" 下载文件 zabbix.conf.php
+                           并将其放置在 /var/www/html/zabbix/conf/zabbix.conf.php, 最后点击 [Finish] 按钮
+
+[root@zabbix_server ~]# ls -1 /var/www/html/zabbix/conf/
+      maintenance.inc.php
+      zabbix.conf.php     <------
+      zabbix.conf.php.example
+
+
+// 观察一下 配置文件 zabbix.conf.php 的内容
+[root@zabbix_server ~]# cat /var/www/html/zabbix/conf/zabbix.conf.php
+
+        <?php
+        // Zabbix GUI configuration file.
+        global $DB;
+
+        $DB['TYPE']     = 'MYSQL';
+        $DB['SERVER']   = 'localhost';
+        $DB['PORT']     = '3306';
+        $DB['DATABASE'] = 'zabbix';
+        $DB['USER']     = 'zabbix';
+        $DB['PASSWORD'] = 'redhat';
+
+        // Schema name. Used for IBM DB2 and PostgreSQL.
+        $DB['SCHEMA'] = '';
+
+        $ZBX_SERVER      = 'localhost';
+        $ZBX_SERVER_PORT = '10051';
+        $ZBX_SERVER_NAME = 'zabbix_server';
+
+        $IMAGE_FORMAT_DEFAULT = IMAGE_FORMAT_PNG;
+
+
+
+此时浏览器 访问   http://192.168.175.100/zabbix/
+则 显示的是 zabbix 的登录表单，键入默认的用户信息登录即可, 如下:
+
+      default username: Admin
+      default password: zabbix
+
+成功则跳转到 Dashboard 页面
+
+
+
+----------------------------------------------------------------------------------------------------
+TODO: 完成后续组件的安装
+
+
+
+
+
+
 
 
 
