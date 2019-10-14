@@ -154,7 +154,8 @@ MariaDB [(none)]> quit
 
 
 // 安装 Zabbix web interface
-[root@zabbix_server ~]# yum install -y httpd php gd php-gd php-mysql
+[root@zabbix_server ~]# yum install -y httpd php gd php-gd php-mysqlnd   #注: 这里安装的是 性能更好的 php-mysqlnd, 而没有安装 php-mysql
+
 
 [root@zabbix_server ~]# systemctl start httpd.service
 [root@zabbix_server ~]# systemctl enable httpd.service
