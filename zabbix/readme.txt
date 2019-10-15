@@ -3,6 +3,20 @@
 https://www.zabbix.com/documentation/current/manual
 https://www.zabbix.com/documentation/4.4/start
 
+
+https://www.zabbix.com/documentation/4.4/manual/installation/requirements
+硬件配置示例表:
+-------------------------------------------------------------------------------------------------------------------
+Name         Platform                   CPU/Memory          Database                               Monitored hosts
+-------------------------------------------------------------------------------------------------------------------
+Small        CentOS                     Virtual Appliance   MySQL InnoDB                           100
+Medium       CentOS                     2 CPU cores/2GB     MySQL InnoDB                           500
+Large        RedHat Enterprise Linux    4 CPU cores/8GB     RAID10 MySQL InnoDB or PostgreSQL       >1000
+Very large   RedHat Enterprise Linux    8 CPU cores/16GB    Fast RAID10 MySQL InnoDB or PostgreSQL  >10000
+-------------------------------------------------------------------------------------------------------------------
+
+
+
 zabbix 安全设置方面的最佳实践 及 其他一些与 web 安全(security)相关的资料:
     https://www.zabbix.com/documentation/4.4/manual/installation/requirements/best_practices
     https://developer.mozilla.org/en-US/docs/Web/Security
