@@ -39,7 +39,7 @@ https://www.zabbix.com/documentation/4.4/manual/installation/install_from_packag
 
 
 // 安装 Zabbix server
-[root@localhost ~]# yum -y install zabbix-server-mysql
+[root@localhost ~]# yum -y install zabbix-server-mysql zabbix-get  #这里同时将 命令 zabbix_get 所在的包也装上
 
 // 安装 支持 mysql/apache 的 Zabbix frontend
 [root@localhost ~]# yum -y install zabbix-web-mysql
@@ -237,11 +237,62 @@ https://www.zabbix.com/documentation/4.4/manual/installation/install_from_packag
 
 
 ----------------------------------------------------------------------------------------------------
+在 zabbix_server 安装 agent, 实现 自监控
+
+
+// 安装 zabbix-agent
+[root@zabbix_server ~]# yum -y install zabbix-agent
+
+
+// 在 zabbix_agentd.conf 中配置 zabbix server 地址信息 及 agent 所在被监控主机的名称作为唯一标志
+[root@zabbix_server ~]# vim /etc/zabbix/zabbix_agentd.conf
+
+      # agent 被动模式下zabbix server的地址
+      Server=192.168.175.100
+      # agent 主动模式下zabbix server的地址
+      ServerActive=192.168.175.100
+      # 被监控机的显示名称
+      Hostname=zabbix_server
+
+
+// 启动 zabbix-agent 服务并设为开机自启
+[root@zabbix_server ~]# systemctl start zabbix-agent.service
+[root@zabbix_server ~]# systemctl enable zabbix-agent.service
+      Created symlink from /etc/systemd/system/multi-user.target.wants/zabbix-agent.service to /usr/lib/systemd/system/zabbix-agent.service.
+
+[root@zabbix_server ~]# systemctl status zabbix-agent.service
+    ● zabbix-agent.service - Zabbix Agent
+       Loaded: loaded (/usr/lib/systemd/system/zabbix-agent.service; enabled; vendor preset: disabled)
+       Active: active (running) since Wed 2019-10-16 15:44:05 CST; 26s ago
+     Main PID: 18451 (zabbix_agentd)
+       CGroup: /system.slice/zabbix-agent.service
+               ├─18451 /usr/sbin/zabbix_agentd -c /etc/zabbix/zabbix_agentd.conf
+               ├─18452 /usr/sbin/zabbix_agentd: collector [idle 1 sec]
+               ├─18453 /usr/sbin/zabbix_agentd: listener #1 [waiting for connection]
+               ├─18454 /usr/sbin/zabbix_agentd: listener #2 [waiting for connection]
+               ├─18455 /usr/sbin/zabbix_agentd: listener #3 [waiting for connection]
+               └─18456 /usr/sbin/zabbix_agentd: active checks #1 [idle 1 sec]
+
+    Oct 16 15:44:05 zabbix_server systemd[1]: Starting Zabbix Agent...
+    Oct 16 15:44:05 zabbix_server systemd[1]: PID file /run/zabbix/zabbix_agentd.pid not readable (yet?) after start.
+    Oct 16 15:44:05 zabbix_server systemd[1]: Started Zabbix Agent.
+
+
+// 观察 一下 端口信息
+[root@zabbix_server ~]# netstat -anptu | grep zabbix
+    tcp        0      0 0.0.0.0:10050           0.0.0.0:*               LISTEN      18451/zabbix_agentd
+    tcp        0      0 0.0.0.0:10051           0.0.0.0:*               LISTEN      1763/zabbix_server
+    tcp6       0      0 :::10050                :::*                    LISTEN      18451/zabbix_agentd
+    tcp6       0      0 :::10051                :::*                    LISTEN      1763/zabbix_server
+
+
+    web操作: 在页面 [Configuration\Hosts] 上操作将 agent 的 Interface 字段对应的 ip(即127.0.0.1) 修改为 192.168.175.100,
+    同时将其 Hostname 改为 zabbix_server (因为本示例在 zabbix_agentd.conf 中修改了 Hostname, 最好保持一致以便区分)
+    等待一段时间后,  "Availability" 字段下的  "ZBX"  图标会 变为 绿色(green), 表示 可以正常收集 agent 主机信息
 
 
 
-
-
+----------------------------------------------------------------------------------------------------
 
 
 
