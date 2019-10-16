@@ -434,6 +434,14 @@ https://www.zabbix.com/documentation/4.4/manual/installation/install_from_packag
 [root@zabbix_server ~]# systemctl daemon-reload
 [root@zabbix_server ~]# systemctl start zabbix-agent.service
 
+// 重新 enable  zabbix-agent (更新链接)
+[root@zabbix_server ~]# systemctl disable zabbix-agent.service
+      Removed symlink /etc/systemd/system/multi-user.target.wants/zabbix-agent.service.
+
+[root@zabbix_server ~]# systemctl enable zabbix-agent.service
+      Created symlink from /etc/systemd/system/multi-user.target.wants/zabbix-agent.service to /etc/systemd/system/zabbix-agent.service.
+
+
 [root@zabbix_server ~]# systemctl status zabbix-agent.service
       ● zabbix-agent.service - Zabbix Agent
          Loaded: loaded (/etc/systemd/system/zabbix-agent.service; enabled; vendor preset: disabled)
