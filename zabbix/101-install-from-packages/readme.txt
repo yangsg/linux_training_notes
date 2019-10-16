@@ -239,6 +239,8 @@ https://www.zabbix.com/documentation/4.4/manual/installation/install_from_packag
 ----------------------------------------------------------------------------------------------------
 在 zabbix_server 安装 agent, 实现 自监控
 
+  zabbix server默认安装后，会自动监控本机；但本机的监控默认是禁用的，若想实现真正本机的监控，需要额外的配置
+
 
 // 安装 zabbix-agent
 [root@zabbix_server ~]# yum -y install zabbix-agent
@@ -290,6 +292,195 @@ https://www.zabbix.com/documentation/4.4/manual/installation/install_from_packag
     同时将其 Hostname 改为 zabbix_server (因为本示例在 zabbix_agentd.conf 中修改了 Hostname, 最好保持一致以便区分)
     等待一段时间后,  "Availability" 字段下的  "ZBX"  图标会 变为 绿色(green), 表示 可以正常收集 agent 主机信息
 
+
+-----------------------------------------------------------------------
+示例: 创建一个 区别于 zabbix 用户不同的 用户 zabbix_agent 来 单独运行 zabbix agent 服务
+      该 部分仅是官网 考虑到安全因素 而 推荐的做法, 并非必须. 如果嫌 麻烦, 可以直接 跳过(skip)
+
+
+// 默认 zabbix server 和 agent 服务 都是以 zabbix 用户身份运行, 这有可能导致安全问题, 如 agent 进程 访问 server 的一些敏感信息,
+// 可以采用如下方式 让 agent 以不同的用户身份(different user)运行:
+//  参考   https://www.zabbix.com/documentation/4.4/manual/installation/requirements/best_practices
+//         https://www.zabbix.com/forum/zabbix-help/31161-how-to-change-agent-user-account
+//         https://www.zabbix.com/documentation/4.4/manual/appendix/config/zabbix_agentd
+
+
+[root@zabbix_server ~]# systemctl stop zabbix-agent.service
+
+
+
+// 观察一下安装 软件包 zabbix-server-mysql 时生成的文件
+[root@zabbix_server ~]# rpm -ql zabbix-server-mysql
+    /etc/logrotate.d/zabbix-server
+    /etc/zabbix/zabbix_server.conf
+    /usr/lib/systemd/system/zabbix-server.service
+    /usr/lib/tmpfiles.d/zabbix-server.conf
+    /usr/lib/zabbix/alertscripts
+    /usr/lib/zabbix/externalscripts
+    /usr/sbin/zabbix_server_mysql
+    /usr/share/doc/zabbix-server-mysql-4.4.0
+    /usr/share/doc/zabbix-server-mysql-4.4.0/AUTHORS
+    /usr/share/doc/zabbix-server-mysql-4.4.0/COPYING
+    /usr/share/doc/zabbix-server-mysql-4.4.0/ChangeLog
+    /usr/share/doc/zabbix-server-mysql-4.4.0/NEWS
+    /usr/share/doc/zabbix-server-mysql-4.4.0/README
+    /usr/share/doc/zabbix-server-mysql-4.4.0/create.sql.gz
+    /usr/share/man/man8/zabbix_server.8.gz
+    /var/log/zabbix  <-----------
+    /var/run/zabbix  <-----------
+
+
+// 观察一下安装 软件包 zabbix-agent 时生成的文件
+[root@zabbix_server ~]# rpm -ql zabbix-agent
+    /etc/logrotate.d/zabbix-agent  <------
+    /etc/zabbix/zabbix_agentd.conf
+    /etc/zabbix/zabbix_agentd.d
+    /etc/zabbix/zabbix_agentd.d/userparameter_mysql.conf
+    /usr/lib/systemd/system/zabbix-agent.service
+    /usr/lib/tmpfiles.d/zabbix-agent.conf
+    /usr/sbin/zabbix_agentd
+    /usr/share/doc/zabbix-agent-4.4.0
+    /usr/share/doc/zabbix-agent-4.4.0/AUTHORS
+    /usr/share/doc/zabbix-agent-4.4.0/COPYING
+    /usr/share/doc/zabbix-agent-4.4.0/ChangeLog
+    /usr/share/doc/zabbix-agent-4.4.0/NEWS
+    /usr/share/doc/zabbix-agent-4.4.0/README
+    /usr/share/man/man8/zabbix_agentd.8.gz
+    /var/log/zabbix  <---------- 与 zabbix-server-mysql 的 目录 /var/log/zabbix 冲突(本例准备创建新的目录 /var/log/zabbix_agent 来避免此问题)
+    /var/run/zabbix  <---------- 与 zabbix-server-mysql 的 目录 /var/run/zabbix 冲突(本例准备创建新的目录 /var/run/zabbix_agent 来避免此问题)
+
+
+
+
+
+可以发现, 如果 要让 zabbix agent 服务以不同的用户身份(本示例中为用户 'zabbix_agent')运行, 则还要解决 相关目录(权限)冲突的问题.
+
+
+
+// 创建一个 不同的用户 'zabbix_agent' 来 运行 zabbix agent 服务
+[root@zabbix_server ~]# useradd -M -s /sbin/nologin zabbix_agent
+[root@zabbix_server ~]# vim /etc/zabbix/zabbix_agentd.conf
+
+    PidFile=/var/run/zabbix_agent/zabbix_agentd.pid
+    User=zabbix_agent
+    LogFile=/var/log/zabbix_agent/zabbix_agentd.log
+
+
+
+[root@zabbix_server ~]# mkdir /var/log/zabbix_agent
+[root@zabbix_server ~]# chown zabbix_agent:zabbix_agent /var/log/zabbix_agent
+[root@zabbix_server ~]# ls -ld /var/log/zabbix_agent
+      drwxr-xr-x 2 zabbix_agent zabbix_agent 6 Oct 16 18:06 /var/log/zabbix_agent
+
+
+
+
+// 确保 logrotate 以 zabbix_agent 身份来创建 新日志文件
+[root@zabbix_server ~]# vim /etc/logrotate.d/zabbix-agent
+
+    /var/log/zabbix_agent/zabbix_agentd.log {
+      weekly
+      rotate 12
+      compress
+      delaycompress
+      missingok
+      notifempty
+      create 0664 zabbix_agent zabbix_agent
+    }
+
+
+[root@zabbix_server ~]# cp -a /usr/lib/systemd/system/zabbix-agent.service  /etc/systemd/system/zabbix-agent.service
+[root@zabbix_server ~]# vim /etc/systemd/system/zabbix-agent.service
+
+    [Unit]
+    Description=Zabbix Agent
+    After=syslog.target
+    After=network.target
+
+    [Service]
+    Environment="CONFFILE=/etc/zabbix/zabbix_agentd.conf"
+    EnvironmentFile=-/etc/sysconfig/zabbix-agent
+    Type=forking
+    Restart=on-failure
+    #PIDFile=/run/zabbix/zabbix_agentd.pid
+    PIDFile=/var/run/zabbix_agent/zabbix_agentd.pid
+    KillMode=control-group
+    ExecStart=/usr/sbin/zabbix_agentd -c $CONFFILE
+
+    # 如下 加一行 配置 'ExecStartPost=/bin/sleep 0.1' 是为了解决 如下在该配置未加时 start 的时候报
+    # 警告信息: Oct 16 19:30:46 zabbix_server systemd[1]: PID file /var/run/zabbix_agent/zabbix_agentd.pid not readable (yet?) after start.
+    # 其实该警告信息直接忽略也是可以的
+    # 相关参考:
+    # https://blog.csdn.net/yuanfangPOET/article/details/90646154
+    # https://access.redhat.com/solutions/1598173
+    # https://support.zabbix.com/browse/ZBX-10867
+    #    This looks to be similar but there is no issue after stopping and restarting, but rather the
+    #    perky warning message due to systemd reading the PID before the service is fully up.
+    #                           原因: systemd 在 the service 完全启动之前 读取了 the PID
+    ExecStartPost=/bin/sleep 0.1
+    ExecStop=/bin/kill -SIGTERM $MAINPID
+    RestartSec=10s
+    User=zabbix_agent
+    Group=zabbix_agent
+    # 参考笔记 https://github.com/yangsg/linux_training_notes/blob/master/cluster-storage/125-redis/111-high-availability-redis-sentinel/101-redis-sentinel-demo02/readme.txt
+    RuntimeDirectory=zabbix_agent
+    RuntimeDirectoryMode=0755
+
+    [Install]
+    WantedBy=multi-user.target
+
+
+
+[root@zabbix_server ~]# systemctl daemon-reload
+[root@zabbix_server ~]# systemctl start zabbix-agent.service
+
+[root@zabbix_server ~]# systemctl status zabbix-agent.service
+      ● zabbix-agent.service - Zabbix Agent
+         Loaded: loaded (/etc/systemd/system/zabbix-agent.service; enabled; vendor preset: disabled)
+         Active: active (running) since Wed 2019-10-16 19:42:30 CST; 4s ago
+        Process: 25290 ExecStop=/bin/kill -SIGTERM $MAINPID (code=exited, status=0/SUCCESS)
+        Process: 25304 ExecStartPost=/bin/sleep 0.1 (code=exited, status=0/SUCCESS)
+        Process: 25302 ExecStart=/usr/sbin/zabbix_agentd -c $CONFFILE (code=exited, status=0/SUCCESS)
+       Main PID: 25305 (zabbix_agentd)
+         CGroup: /system.slice/zabbix-agent.service
+                 ├─25305 /usr/sbin/zabbix_agentd -c /etc/zabbix/zabbix_agentd.conf
+                 ├─25306 /usr/sbin/zabbix_agentd: collector [idle 1 sec]
+                 ├─25307 /usr/sbin/zabbix_agentd: listener #1 [waiting for connection]
+                 ├─25308 /usr/sbin/zabbix_agentd: listener #2 [waiting for connection]
+                 ├─25309 /usr/sbin/zabbix_agentd: listener #3 [waiting for connection]
+                 └─25310 /usr/sbin/zabbix_agentd: active checks #1 [idle 1 sec]
+
+      Oct 16 19:42:29 zabbix_server systemd[1]: Starting Zabbix Agent...
+      Oct 16 19:42:30 zabbix_server systemd[1]: Started Zabbix Agent.
+
+
+// 观察一下 运行 zabbix_agentd 的用户
+[root@zabbix_server ~]# ps aux | grep zabbix_agent
+    zabbix_+  25305  0.0  0.1  78636  1256 ?        S    19:42   0:00 /usr/sbin/zabbix_agentd -c /etc/zabbix/zabbix_agentd.conf
+    zabbix_+  25306  0.0  0.1  78636  1356 ?        S    19:42   0:00 /usr/sbin/zabbix_agentd: collector [idle 1 sec]
+    zabbix_+  25307  0.0  0.2  78752  2460 ?        S    19:42   0:00 /usr/sbin/zabbix_agentd: listener #1 [waiting for connection]
+    zabbix_+  25308  0.0  0.2  78752  2564 ?        S    19:42   0:00 /usr/sbin/zabbix_agentd: listener #2 [waiting for connection]
+    zabbix_+  25309  0.0  0.2  78752  2472 ?        S    19:42   0:00 /usr/sbin/zabbix_agentd: listener #3 [waiting for connection]
+    zabbix_+  25310  0.0  0.2  78636  2092 ?        S    19:42   0:00 /usr/sbin/zabbix_agentd: active checks #1 [idle 1 sec]
+    root      25941  0.0  0.0 112660   664 pts/1    R+   20:08   0:00 grep --color=auto zabbix_agent
+
+
+
+//注: 因为 用户名 'zabbix_agent' 的名字太长, 显示效果中将 zabbix_agent 截断了 并使用 加号 '+' 来代替,
+//      为了解决此问题, 可以采用如下方式:
+//      参考  https://askubuntu.com/questions/523673/ps-aux-for-long-charactered-usernames-shows-a-plus-sign
+[root@zabbix_server ~]# ps axo user:20,pid,pcpu,pmem,vsz,rss,tty,stat,start,time,comm  | grep zabbix_agent
+    zabbix_agent          25305  0.0  0.1  78636  1256 ?        S    19:42:29 00:00:00 zabbix_agentd
+    zabbix_agent          25306  0.0  0.1  78636  1356 ?        S    19:42:29 00:00:00 zabbix_agentd
+    zabbix_agent          25307  0.0  0.2  78752  2460 ?        S    19:42:29 00:00:00 zabbix_agentd
+    zabbix_agent          25308  0.0  0.2  78752  2564 ?        S    19:42:29 00:00:00 zabbix_agentd
+    zabbix_agent          25309  0.0  0.2  78752  2472 ?        S    19:42:29 00:00:00 zabbix_agentd
+    zabbix_agent          25310  0.0  0.2  78636  2092 ?        S    19:42:29 00:00:00 zabbix_agentd
+
+
+
+
+-----------------------------------------------------------------------
 
 
 ----------------------------------------------------------------------------------------------------
