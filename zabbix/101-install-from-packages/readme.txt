@@ -494,7 +494,7 @@ https://www.zabbix.com/documentation/4.4/manual/installation/install_from_packag
 ----------------------------------------------------------------------------------------------------
 
 ------------------------------
-Login and configuring user:
+Login and configuring user  (用户)
 
   https://www.zabbix.com/documentation/4.4/manual/quickstart/login
 
@@ -509,9 +509,11 @@ Login and configuring user:
 
 
 ------------------------------
-New host
+New host  (网络实体)
 
   https://www.zabbix.com/documentation/4.4/manual/quickstart/host
+
+    Hosts and host groups 配置: https://www.zabbix.com/documentation/4.4/manual/config/hosts
 
   路线： Configuration → Hosts
 
@@ -603,15 +605,176 @@ Host name 的合法字符: Alphanumerics, spaces, dots, dashes and underscores
 
 
 ----------------------------------------------------------------------------------------------------
-New item
+New item (监控项)
 
 路线: Configuration → Hosts  (因所有 item 按 host 进行分组)
 
   https://www.zabbix.com/documentation/4.4/manual/quickstart/item
 
 
+ Items 配置: https://www.zabbix.com/documentation/4.4/manual/config/items
+
+
+  Key:
+    https://www.zabbix.com/documentation/4.4/manual/config/items/itemtypes/zabbix_agent
+
+
+  注:
+    You may also want to reduce the amount of days item history will be kept, to 7 or 14.
+    This is good practice to relieve the database from keeping lots of historical values.
+
+  item attributes:
+    https://www.zabbix.com/documentation/4.4/manual/config/items/item#configuration
+
 
 ----------------------------------------------------------------------------------------------------
+New trigger  (触发器)
+
+  https://www.zabbix.com/documentation/4.4/manual/quickstart/trigger
+
+    trigger 为 计算 通过 item 收集到的 data 的 逻辑表达式(logical expressions), 并表示 系统当前的状态
+
+  Triggers 配置: https://www.zabbix.com/documentation/4.4/manual/config/triggers
+
+
+  Items only collect data. To automatically evaluate incoming data we need to define triggers.
+  A trigger contains an expression that defines a threshold of what is an acceptable level for the data.
+
+  If that level is surpassed by the incoming data, a trigger will “fire” or go into a 'Problem'
+  state- letting us know that something has happened that may require attention.
+  If the level is acceptable again, trigger returns to an 'Ok' state.
+
+
+        OK <--------------------------> Problem
+      (data 在可接受水平)              (超出 threshold 水平)
+
+
+  路径: Configuration → Hosts
+
+
+  syntax of trigger expressions(触发器表达式语法): https://www.zabbix.com/documentation/4.4/manual/config/triggers/expression
+
+      例子: {New host:system.cpu.load.avg(3m)}>2
+
+
+  Displaying trigger status(显示触发器状态)
+      路径: Monitoring → Problems
+
+
+
+----------------------------------------------------------------------------------------------------
+Receiving problem notification (通知)
+
+  https://www.zabbix.com/documentation/4.4/manual/quickstart/notification
+
+  报警机制 (alerting mechanism)
+
+    E-mail
+
+
+  https://www.zabbix.com/documentation/4.4/manual/config/notifications/media
+
+
+  Media types
+
+      https://www.zabbix.com/documentation/4.4/manual/config/notifications/media
+
+    Media are the delivery channels used for sending notifications and alerts from Zabbix.
+    Media 是从 Zabbix 发送 notifications 和 alerts 的 传递渠道(delivery channels)
+
+
+      Media 类型:
+          E-mail                https://www.zabbix.com/documentation/4.4/manual/config/notifications/media/email
+          SMS                   https://www.zabbix.com/documentation/4.4/manual/config/notifications/media/sms
+          Custom alertscripts   https://www.zabbix.com/documentation/4.4/manual/config/notifications/media/script
+          Webhook               https://www.zabbix.com/documentation/4.4/manual/config/notifications/media/webhook
+
+              路径: Administration → Media types
+
+
+
+      注: 'SMTP email' will be used as the 'From' address for the notifications sent from Zabbix.
+
+          A media type must be linked to users by defining specific delivery addresses (like we did when configuring a new user), otherwise it will not be used.
+
+  New action
+
+    路径: Configuration → Actions
+
+    zabbix 中 action 所做的事情之一 就是 传递通知(Delivering notifications)
+
+      item(collect data) -----------> trigger (exceed the threshold)-----> action --(Delivering notifications by media that linked to user)---> user
+
+    注: In the most simple case, if we do not add any more specific conditions, the action will be taken upon any trigger change from 'Ok' to 'Problem'.
+
+    action 具体做什么事情由 Operations 定义
+
+
+
+    If notifications do not work: (如果没有收到通知, 需要关注的某些地方)
+      - verify once again that both the e-mail settings and the action have been configured properly
+      - make sure the user you created has at least read permissions on the host which generated the event,
+        as noted in the Adding user step. The user, being part of the 'Zabbix administrators' user group
+        must have at least read access to 'Linux servers' host group that our host belongs to.
+      - Additionally, you can check out the action log by going to Reports → Action log.
+
+
+
+
+----------------------------------------------------------------------------------------------------
+New template  (模板)
+
+  https://www.zabbix.com/documentation/4.4/manual/quickstart/template
+
+
+  Templates allow to group useful items, triggers and other entities so that those can be reused again and again by applying to hosts in a single step.
+  When a template is linked to a host, the host inherits all entities of the template. So, basically a pre-prepared bunch of checks can be applied very quickly.
+
+
+    路径: Configuration → Templates
+
+
+  Template name 允许的合法字符: Alpha-numericals, spaces and underscores
+
+  The template must belong to a group.
+
+    Adding item to template 见官网 (注: 实际页面和官网步骤基本一致, 但略有不同, 可能是该官方文档还未来得及更新)
+
+    Linking template to host
+
+
+    Linking pre-defined templates to hosts
+
+        As you may have noticed, Zabbix comes with a set of predefined templates for various OS,
+        devices and applications. To get started with monitoring very quickly, you may link
+        the appropriate one of them to a host, but beware that these templates need to be fine-tuned for your environment.
+        Some checks may not be needed, and polling intervals may be way too frequent.
+
+
+
+----------------------------------------------------------------------------------------------------
+Events (事件)
+
+    https://www.zabbix.com/documentation/4.4/manual/config/events
+
+Zabbix 中的 Events 类型有:
+
+    - trigger events - whenever a trigger changes its status (OK→PROBLEM→OK)
+    - discovery events - when hosts or services are detected
+    - auto registration events - when active agents are auto-registered by server
+    - internal events - when an item/low-level discovery rule becomes unsupported or a trigger goes into an unknown state
+
+
+      Events are time-stamped and can be the basis of actions such as sending notification e-mail etc.
+
+----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
 
 
 
