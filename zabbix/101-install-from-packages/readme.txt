@@ -493,10 +493,125 @@ https://www.zabbix.com/documentation/4.4/manual/installation/install_from_packag
 
 ----------------------------------------------------------------------------------------------------
 
+------------------------------
+Login and configuring user:
+
+  https://www.zabbix.com/documentation/4.4/manual/quickstart/login
+
+  路线： Administration → Users
+
+    In Zabbix, access rights to hosts are assigned to user groups, not individual users.
+
+
+    a Zabbix superuser: 'Admin'
+    a special default user: 'Guest'
 
 
 
+------------------------------
+New host
 
+  https://www.zabbix.com/documentation/4.4/manual/quickstart/host
+
+  路线： Configuration → Hosts
+
+host:  (广义)网络实体
+
+    A host in Zabbix is a networked entity (physical, virtual) that you wish to monitor.
+    The definition of what can be a “host” in Zabbix is quite flexible.
+    It can be a physical server, a network switch, a virtual machine or some application.
+
+
+一个 pre-defined host: 'Zabbix server'
+
+
+Host name 的合法字符: Alphanumerics, spaces, dots, dashes and underscores
+
+  注: All access permissions are assigned to host groups, not individual hosts. That is why a host must belong to at least one group.
+
+  注: 如果 Zabbix server 和 Zabbix agent 在同一主机, 则 此处 ip 必须与  zabbix_agentd.conf 中 'Server' 指令 指定的 ip 一致
+
+  关于 'Availability' 列:
+     If the ZBX icon in the Availability column is red, there is some error with communication -
+     move your mouse cursor over it to see the error message. If that icon is gray,
+     no status update has happened so far. Check that Zabbix server is running, and try refreshing the page later as well.
+
+----------
+添加远程(remote) 监控主机示例:
+//查看 ip 地址
+[root@node01 ~]# ip addr show ens33  | awk '/inet / {print $2}'  # 查看 ip 地址
+    192.168.175.111/24
+
+
+// 配置 阿里的 zabbix 镜像 yum 源
+[root@node01 ~]# vim /etc/yum.repos.d/zabbix.repo
+
+    [zabbix]
+    name=Zabbix Official Repository(mirrors.aliyun.com) - $basearch
+    baseurl=https://mirrors.aliyun.com/zabbix/zabbix/4.4/rhel/7/x86_64/
+    enabled=1
+    gpgcheck=0
+
+    [zabbix-non-supported]
+    name=Zabbix Official Repository non-supported(mirrors.aliyun.com) - $basearch
+    baseurl=https://mirrors.aliyun.com/zabbix/non-supported/rhel/7/x86_64/
+    enabled=1
+    gpgcheck=0
+
+
+[root@node01 ~]# yum -y install zabbix-agent
+[root@node01 ~]# rpm -q zabbix-agent
+    zabbix-agent-4.4.0-1.el7.x86_64
+
+
+[root@node01 ~]# vim /etc/zabbix/zabbix_agentd.conf
+
+    Server=192.168.175.100
+    ServerActive=192.168.175.100
+    Hostname=node01
+
+[root@node01 ~]# systemctl start zabbix-agent.service
+[root@node01 ~]# systemctl enable zabbix-agent.service
+
+[root@node01 ~]# systemctl status zabbix-agent.service
+    ● zabbix-agent.service - Zabbix Agent
+       Loaded: loaded (/usr/lib/systemd/system/zabbix-agent.service; enabled; vendor preset: disabled)
+       Active: active (running) since Thu 2019-10-17 13:07:43 CST; 42s ago
+     Main PID: 1347 (zabbix_agentd)
+       CGroup: /system.slice/zabbix-agent.service
+               ├─1347 /usr/sbin/zabbix_agentd -c /etc/zabbix/zabbix_agentd.conf
+               ├─1348 /usr/sbin/zabbix_agentd: collector [idle 1 sec]
+               ├─1349 /usr/sbin/zabbix_agentd: listener #1 [waiting for connection]
+               ├─1350 /usr/sbin/zabbix_agentd: listener #2 [waiting for connection]
+               ├─1351 /usr/sbin/zabbix_agentd: listener #3 [waiting for connection]
+               └─1352 /usr/sbin/zabbix_agentd: active checks #1 [idle 1 sec]
+
+    Oct 17 13:07:43 node01 systemd[1]: Starting Zabbix Agent...
+    Oct 17 13:07:43 node01 systemd[1]: PID file /run/zabbix/zabbix_agentd.pid not readable (yet?) after start. <---- 这里直接忽略该警告了
+    Oct 17 13:07:43 node01 systemd[1]: Started Zabbix Agent.
+
+[root@node01 ~]# netstat -anptu | grep zabbix
+    tcp        0      0 0.0.0.0:10050           0.0.0.0:*               LISTEN      1347/zabbix_agentd
+    tcp6       0      0 :::10050                :::*                    LISTEN      1347/zabbix_agentd
+
+
+
+接下来在页面上执行如下操作:
+    1)  创建 host group (路线: Configuration → Host groups)(因为 所有 权限都是被 赋予  host groups, 所以 host 必须至少 属于 one group)
+          注: 练习时 可以创建 类似名为 "a_test_host_group" 主机组, 这里加前缀 'a_' 使其 显示在 host groups 列表的第一行, 方便查看和操作
+    2)  添加 host
+
+
+----------------------------------------------------------------------------------------------------
+New item
+
+路线: Configuration → Hosts  (因所有 item 按 host 进行分组)
+
+  https://www.zabbix.com/documentation/4.4/manual/quickstart/item
+
+
+
+----------------------------------------------------------------------------------------------------
 
 
 
