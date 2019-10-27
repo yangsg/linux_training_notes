@@ -1,4 +1,5 @@
 
+docker 是使用 go 语言实现的
 
 https://docs.docker.com/
 
@@ -9,8 +10,132 @@ docker 国内加速地址
   https://www.jianshu.com/p/b5006ebf1522
 
 
+docker 概览:
+  https://docs.docker.com/engine/docker-overview/
+
 docker 架构:
   https://docs.docker.com/engine/docker-overview/#docker-architecture
+
+
+
+----------------------------------------------------------------------------------------------------
+docker 概览:
+    https://docs.docker.com/engine/docker-overview/
+
+
+Docker Engine (docker 容器引擎)
+
+    Docker Engine is a client-server application with these major components:
+    // 即 Docker Engine 是一个 C/S 架构的应用
+
+                         Docker REST API
+      client(docker) ---------------------> server(dockerd)
+
+
+    The daemon creates and manages Docker objects, such as images, containers, networks, and volumes.
+
+
+Docker architecture (docker 架构)
+
+
+    |client            |           docker_host              |    registry            |
+    |------------------|------------------------------------|------------------------|
+    |docker build      |           docker daemon            |     repo_01            |
+    |docker pull       |                                    |       img_01 img02     |
+    |docker run        |          containers   images       |                        |
+    |                  |           c1           img_01      |     repo_02            |
+    |                  |           c2           img_01      |       img_001  img_002 |
+    |                  |           c3                       |                        |
+    |                  |           c4                       |                        |
+    |                  |           c5                       |                        |
+    |                  |                                    |                        |
+
+
+    文档中出现的缩略语:
+        DDC: Docker Datacenter
+        DTR: Docker Trusted Registry
+
+
+Docker objects (Docker 对象)
+
+- images
+
+    An image is a read-only template with instructions for creating a Docker container.
+    Often, an image is based on another image, with some additional customization.
+
+      Each instruction in a Dockerfile creates a layer in the image.
+      When you change the Dockerfile and rebuild the image, only those layers which have changed are rebuilt.
+
+- containers
+
+执行 命令 `docker run -i -t ubuntu /bin/bash` 背后所发生的事情:
+
+    1) If you do not have the ubuntu image locally, Docker pulls it from
+       your configured registry, as though you had run docker pull ubuntu manually.
+
+    2) Docker creates a new container, as though you had run a docker container create command manually.
+
+    3) Docker allocates a read-write filesystem to the container, as its final layer.
+       This allows a running container to create or modify files and directories in its local filesystem.
+       // 分配(创建) 可 读写层
+
+    4) Docker creates a network interface to connect the container to the default network,
+       since you did not specify any networking options. This includes assigning an
+       IP address to the container. By default, containers can connect to external
+       networks using the host machine’s network connection.
+      // 创建 网卡
+
+    5) Docker starts the container and executes /bin/bash. Because the container is
+       running interactively and attached to your terminal (due to the -i and -t flags),
+       you can provide input using your keyboard while the output is logged to your terminal.
+
+    6) When you type exit to terminate the /bin/bash command,
+       the container stops but is not removed. You can start it again or remove it.
+
+- services
+
+The underlying technology (底层技术)
+
+Namespaces (名称空间)
+
+  Docker uses a technology called namespaces to provide the isolated workspace called the container.
+  When you run a container, Docker creates a set of namespaces for that container.
+
+  These namespaces provide a layer of isolation. Each aspect of a container
+  runs in a separate namespace and its access is limited to that namespace.
+
+
+Docker Engine uses namespaces such as the following on Linux:
+
+    - The pid namespace: Process isolation (PID: Process ID).
+    - The net namespace: Managing network interfaces (NET: Networking).
+    - The ipc namespace: Managing access to IPC resources (IPC: InterProcess Communication).
+    - The mnt namespace: Managing filesystem mount points (MNT: Mount).
+    - The uts namespace: Isolating kernel and version identifiers. (UTS: Unix Timesharing System).
+
+
+- Control groups
+
+    Docker Engine on Linux also relies on another technology called control groups (cgroups).
+    A cgroup limits an application to a specific set of resources. Control groups allow
+    Docker Engine to share available hardware resources to containers and optionally enforce
+    limits and constraints. For example, you can limit the memory available to a specific container.
+
+
+- Union file systems
+
+    Union file systems, or UnionFS, are file systems that operate by creating layers,
+    making them very lightweight and fast. Docker Engine uses UnionFS to provide the building
+    blocks for containers. Docker Engine can use multiple UnionFS variants,
+    including AUFS, btrfs, vfs, and DeviceMapper.
+
+- Container format
+
+    Docker Engine combines the namespaces, control groups, and UnionFS into a wrapper called a container format.
+    The default container format is libcontainer. In the future, Docker may support other container
+    formats by integrating with technologies such as BSD Jails or Solaris Zones.
+
+
 
 
 
@@ -230,13 +355,15 @@ docker-ce 对 OS 的要求:
 
 此时 docker0 虚拟网卡 和 iptables 中 docker 相关的规则依然存在, 此时可以简单地重启(reboot)一下主机
 
+
+
+
+
+
 ----------------------------------------------------------------------------------------------------
+示例:  容器化 一个 nodejs 的 web 应用程序 (即 构建该 web app 的 docker image)
 
-
-
-
-
-
+    https://docs.docker.com/get-started/part2/
 
 
 [root@node01 ~]# git clone -b v1 https://github.com/docker-training/node-bulletin-board
