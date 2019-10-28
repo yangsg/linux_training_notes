@@ -577,23 +577,141 @@ docker-ce 对 OS 的要求:
 
 
 ----------------------------------------------------------------------------------------------------
+docker 网络
+
+https://docs.docker.com/network/
+
+
+https://docs.docker.com/network/iptables/
+https://success.docker.com/article/networking
+
+
+Network drivers (网络驱动)
+
+    - bridge  默认的网络驱动
+    - host    直接使用宿主机的网络
+    - overlay
+    - macvlan
+    - none
+    - Network plugins
+
+
+Network driver summary (网络驱动总结)
+
+    - User-defined bridge networks are best when you need multiple containers to communicate on the same Docker host.
+      // 适用于 相同 宿主机 上的 多个容器 需要彼此通信时
+
+    - Host networks are best when the network stack should not be isolated from the Docker host,
+      but you want other aspects of the container to be isolated.
+      // 适用于 仅让 容器的网络 与 宿主机的 网络 不被隔离的情况(容器共享宿主机的网络,其他资源隔离).
+
+    - Overlay networks are best when you need containers running on different Docker hosts to communicate,
+      or when multiple applications work together using swarm services.
+      // 适用于 多个 不同的 宿主机 上的 容器 需要彼此 通信的情况
+
+    - Macvlan networks are best when you are migrating from a VM setup or need your containers
+      to look like physical hosts on your network, each with a unique MAC address.
+
+    - Third-party network plugins allow you to integrate Docker with specialized network stacks.
 
 
 
 
 
+----------------------------------------------------------------------------------------------------
+Use bridge networks
+
+    https://docs.docker.com/network/bridge/
+
+
+  When you start Docker, a default bridge network (also called bridge) is created automatically,
+  and newly-started containers connect to it unless otherwise specified.
+
+  选择使用 bridge 网络时, 生产环境中推荐使用 User-defined bridge networks
+
+
+----------
+Differences between user-defined bridges and the default bridge (用户定义的 bridges 与 默认 bridge 的区别)
+
+  1) User-defined bridges provide better isolation and interoperability between containerized applications.
+     // User-defined bridges 提供 更好的 隔离 和 互操作性
+
+      Containers connected to the same user-defined bridge network automatically expose all ports to each other,
+      and no ports to the outside world. This allows containerized applications to communicate
+      with each other easily, without accidentally opening access to the outside world.
+      // 连接到 相同 user-defined bridge network 的 Containers 向彼此 暴露(导出) 所有端口(expose all ports),
+      // 但是 没有端口 会被暴露(导出) 到 the outside world. 这允许容器之间 很容易 做到 彼此访问, 而不会意外的
+      // 向 the outside world 开放 访问权限.
+
+      如 某个应用 由 一个 web 前端 和 一个 database 后端 组成，The outside world 仅需 访问 web 前端(如 80 端口),
+      当 仅 后端本身 需要访问 the database host and port, 使用 a user-defined bridge, 仅需对外开放 web 端口(如 80 端口),
+      而 database 应用程序 不需要 对外 开放 任何端口, 因为 web 前端 可以通过 the user-defined bridge 访问到该 database.
+
+      而 如果你在 the default bridge network 中 使用相同的 应用栈(application stack),
+      你需要同时 通过 -p 或 --publish 选项 来开放 该 web 端口 和 该 database 端口, 这意味着
+      Docker host 需要依靠 其他方式 来 阻止对 该 database 端口的 访问.
+
+    2) User-defined bridges provide automatic DNS resolution between containers.
+
+      在 the default bridge network 中的 Containers 仅能通过 ip 地址来访问彼此, 除非使用 遗留(legacy)的 --link 选项,
+      而在 user-defined bridge network 中, containers 可以通过 name 或 alias 来 解析(resolve)彼此.
+
+      比如在 user-defined bridge network 中, web 前端 和 database 后端应用 所在的 containers 分别 叫做 'web' 和 'db',
+      该 web 容器可以 connect 到 处于 'db' 处的 db 容器, 而 不管 该 application stack 运行于 哪个 Docker host.
+
+      而 如果你在 the default bridge network 中跑 相同的 application stack, 你需要使用 遗留(legacy)的 --link 选项 在
+      the containers 之间 手动创建 links, 这些 links 需要被 双向创建(即在 两个方向上 都被创建), 因此 你会看到
+      在多于 2 个以上的 containers 之间 需要彼此通信时 情况会变得 复杂.
+      另一种替代 方式是 修改 the containers 中的 /etc/hosts 文件, 但这会产生 难以 调试(debug) 的 problems.
+
+    3) Containers can be attached and detached from user-defined networks on the fly.
+      // 容器 可以 从 user-defined networks 中 动态地(on the fly) 被 attached 和 detached.
+
+      During a container’s lifetime, you can connect or disconnect it from user-defined networks on the fly.
+      To remove a container from the default bridge network,
+      you need to stop the container and recreate it with different network options.
+      // 在 container 的 生命期间, 你 可以动态的(on the fly) 与 user-defined networks 建立连接(connect) 或 断开连接(disconnect).
+      // 而为了 从 the default bridge network 中 移除 一个 容器, 你需要 停止(stop) 该容器 并 使用 不同的 network 选项 来对其重新创建.
+
+    4) Each user-defined network creates a configurable bridge.
+
+      如果你的容器 使用了 the default bridge network, 你可以 对其 进行配置, 但是
+      所有的 containers 将使用 相同的 settings, 如 MTU 和 iptables rules.
+      另外, configuring the default bridge network happens outside of Docker itself,
+      且 必须 重启(restart) Docker.
+
+      User-defined bridge networks are created and configured using docker network create.
+      If different groups of applications have different network requirements,
+      you can configure each user-defined bridge separately, as you create it.
+      // User-defined bridge networks 通过 使用命令 `docker network create` 被 创建(created) 和 配置(configured)
+      // 如果 不同 组的 applications 要求 不同的 network 需求(requirements), 你可以 对每个 user-defined bridge
+      // 分别配置, 就如同其被你创建时一样。
+
+    5) Linked containers on the default bridge network share environment variables.
+
+        Originally, the only way to share environment variables between two containers was
+        to link them using the --link flag. This type of variable sharing is not possible
+        with user-defined networks. However, there are superior ways(更高级的方法)
+        to share environment variables. A few ideas:
+
+      - Multiple containers can mount a file or directory containing the shared information, using a Docker volume.
+        // 使用 Docker 卷(volume)
+
+      - Multiple containers can be started together using docker-compose and the compose file can define the shared variables.
+
+      - You can use swarm services instead of standalone containers, and take advantage of shared secrets and configs.
+
+
+    Containers connected to the same user-defined bridge network effectively expose all ports to each other.
+    For a port to be accessible to containers or non-Docker hosts on different networks,
+    that port must be published using the -p or --publish flag.
+    // 对外开放的 容器端口 必须使用通过 -p 或 --publish 选项 来 发布.
 
 
 
 
 
-
-
-
-
-
-
-
+----------------------------------------------------------------------------------------------------
 
 
 
