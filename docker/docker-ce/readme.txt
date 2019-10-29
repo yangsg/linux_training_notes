@@ -1386,7 +1386,571 @@ Networking using the host network
 
 
 
+
+
+
+
 ----------------------------------------------------------------------------------------------------
+Manage data in Docker
+
+    https://docs.docker.com/storage/
+
+
+By default all files created inside a container are stored on a writable container layer. This means that:
+// 默认在容器中创建的所有的文件 被 存储在 一个 可写的 容器层中, 这意味着:
+
+    - The data doesn’t persist when that container no longer exists,
+      and it can be difficult to get the data out of the container if another process needs it.
+      //  data 无法在 容器不存在时 维持(如 容器一旦被删除, data 也就丢失了). 且 如果其他 process
+      //  需要这些数据, 很难再 容器外部 获取 这些数据.
+
+    - A container’s writable layer is tightly coupled to the host machine where the container is running.
+      You can’t easily move the data somewhere else.
+      // 容器的 可写层 与 运行容器的 宿主机  耦合 紧密, 你无法轻松地将数据移动到 其他地方.
+
+    - Writing into a container’s writable layer requires a storage driver to manage the filesystem.
+      The storage driver provides a union filesystem, using the Linux kernel. This extra abstraction reduces performance
+      as compared to using data volumes, which write directly to the host filesystem.
+      // 向 容器的 writable layer 需要 a storage driver 来 管理 the filesystem.
+      // 该 storage driver 使用 Linux kernel 提供了 a union filesystem (联合文件系统).
+      // 该额外的 抽象 比起 使用 data volumes 降低了 性能, 因为 data volumes 是 直接写入 the host filesystem.
+
+        考虑方面: 数据共享 及 持久存储，容器 和 数据 迁移 , 性能
+
+
+          volumes  <---- 推荐 recommend
+          bind mounts
+
+      Linux 上还可使用 tmpfs mount
+
+
+          +------host-------------------------------------------------------+
+          |                              +------------+                     |
+          |              +---------------|  container |------+              |
+          |              |               +------------+      |              |
+          |   bind mount |                       |           |              |
+          |              V                       |volume     |              |
+          |           +--------------------+     |           |tmpfs mount   |
+          |           |                    |     |           |              |
+          |           |  Filesystem        |     |           |              |
+          |           |                    |     |           V              |
+          |           |  +-------------+   |     |      +--------+          |
+          |           |  |Docker area  |<--|-----+      | Memory |          |
+          |           |  +-------------+   |            +--------+          |
+          |           |                    |                                |
+          |           +--------------------+                                |
+          |                                                                 |
+          +-----------------------------------------------------------------+
+
+
+    - Volumes are stored in a part of the host filesystem which is managed by Docker (/var/lib/docker/volumes/ on Linux).
+      Non-Docker processes should not modify this part of the filesystem. Volumes are the best way to persist data in Docker.
+
+    - Bind mounts may be stored anywhere on the host system. They may even be important system files or directories.
+      Non-Docker processes on the Docker host or a Docker container can modify them at any time.
+
+    - tmpfs mounts are stored in the host system’s memory only, and are never written to the host system’s filesystem.
+
+
+--------------------
+https://docs.docker.com/storage/
+
+  https://docs.docker.com/storage/volumes/
+
+Volumes:
+      Created and managed by Docker. You can create a volume explicitly using the docker volume create command,
+      or Docker can create a volume during container or service creation.
+      // 卷(Volumes) 由 Docker 创建并管理. 可以显示地使用命令 `docker volume create` 创建卷, 或在 container 或 service
+      // 创建期间 创建 卷
+
+      When you create a volume, it is stored within a directory on the Docker host.
+      When you mount the volume into a container, this directory is what is mounted into the container.
+      This is similar to the way that bind mounts work, except that volumes are managed
+      by Docker and are isolated from the core functionality of the host machine.
+
+      A given volume can be mounted into multiple containers simultaneously.
+      When no running container is using a volume, the volume is still available to Docker
+      and is not removed automatically. You can remove unused volumes using docker volume prune.
+      // 一个 volume 可以同时(simultaneously) 被多个 containers 挂载. 当 没有运行着的 容器正在使用 卷时,
+      // 该 volume 对 Docker 仍然 可用(available) 且 不会被 自动删除(removed), 你 可以使用
+      // 命令 `docker volume prune` 来 remove 不再被使用的 volumes.
+
+      When you mount a volume, it may be named or anonymous. Anonymous volumes are
+      not given an explicit name when they are first mounted into a container,
+      so Docker gives them a random name that is guaranteed to be unique within a given Docker host.
+      Besides the name, named and anonymous volumes behave in the same ways.
+      // 当 你挂载 a volume, 其可以被 命令(named) 或 是匿名的(anonymous)
+
+      Volumes also support the use of volume drivers, which allow you to store
+      your data on remote hosts or cloud providers, among other possibilities.
+
+
+Bind mounts:
+
+    Available since the early days of Docker. Bind mounts have limited functionality compared to volumes.
+    When you use a bind mount, a file or directory on the host machine is mounted into a container.
+    The file or directory is referenced by its full path on the host machine.
+    The file or directory does not need to exist on the Docker host already.
+    It is created on demand if it does not yet exist. Bind mounts are very performant,
+    but they rely on the host machine’s filesystem having a specific directory structure available.
+    If you are developing new Docker applications, consider using named volumes instead.
+    You can’t use Docker CLI commands to directly manage bind mounts.
+    // 如果你 正在 开发 新的 Docker applications, 应考虑使用 named volumes 而非 bind mounts.
+    // 你无法 使用 Docker 命令行工具 来直接 管理 bind mounts.
+
+
+  Bind mounts allow access to sensitive files (Bind mounts的一个副作用: 允许 访问敏感文件)
+      One side effect of using bind mounts, for better or for worse,
+      is that you can change the host filesystem via processes running in a container,
+      including creating, modifying, or deleting important system files or directories.
+      This is a powerful ability which can have security implications,
+      including impacting non-Docker processes on the host system.
+
+
+tmpfs mounts:
+    A tmpfs mount is not persisted on disk, either on the Docker host or within a container.
+    It can be used by a container during the lifetime of the container,
+    to store non-persistent state or sensitive information. For instance, internally,
+    swarm services use tmpfs mounts to mount secrets into a service’s containers.
+
+
+
+Bind mounts and volumes can both be mounted into containers using the -v or --volume flag,
+but the syntax for each is slightly different. For tmpfs mounts, you can use the --tmpfs flag.
+However, in Docker 17.06 and higher, we recommend using the --mount flag for both containers and services,
+for bind mounts, volumes, or tmpfs mounts, as the syntax is more clear.
+
+------------------------------
+Good use cases for volumes (卷 的 好的使用场景)
+
+   作为首
+
+Volumes are the preferred way to persist data in Docker containers and services. Some use cases for volumes include:
+// Volumes 应 视为 Docker containers 和 services 的 数据持久化的 首选方式, 其一些使用场景包括:
+
+    - Sharing data among multiple running containers. If you don’t explicitly create it,
+      a volume is created the first time it is mounted into a container. When that container stops
+      or is removed, the volume still exists. Multiple containers can mount the same volume simultaneously,
+      either read-write or read-only. Volumes are only removed when you explicitly remove them.
+      // 多个 运行的 容器之间 共享 数据
+
+    - When the Docker host is not guaranteed to have a given directory or file structure.
+      Volumes help you decouple the configuration of the Docker host from the container runtime.
+      // 当 Docker host 不能保证 具有指定 目录 或 文件 结构的时候.
+      // Volumes 能帮你 将 Docker host 的 the configuration  与 the container runtime 进行解耦.
+
+    - When you want to store your container’s data on a remote host or a cloud provider, rather than locally.
+      // 当 你想要 将 你的 container’s data 存储在 a remote host 或 a cloud provider 而非 本地时
+
+    - When you need to back up, restore, or migrate data from one Docker host to another, volumes are a better choice.
+      You can stop containers using the volume, then back up the volume’s directory (such as /var/lib/docker/volumes/<volume-name>).
+      // 需要 在 不同宿主机上 进行 数据 备份, 还原 或 迁移 时, volumes 是更好的选择.
+
+
+
+
+------------------------------
+Good use cases for bind mounts (bind mounts 的 好的使用场景)
+
+  In general, you should use volumes where possible. Bind mounts are appropriate for the following types of use case:
+
+    - Sharing configuration files from the host machine to containers. This is how Docker provides
+      DNS resolution to containers by default, by mounting /etc/resolv.conf from the host machine into each container.
+
+    - Sharing source code or build artifacts between a development environment on the Docker host and a container.
+      For instance, you may mount a Maven target/ directory into a container, and each time you build
+      the Maven project on the Docker host, the container gets access to the rebuilt artifacts.
+
+      If you use Docker for development this way, your production Dockerfile would copy the
+      production-ready artifacts directly into the image, rather than relying on a bind mount.
+
+    - When the file or directory structure of the Docker host is guaranteed to be consistent with the bind mounts the containers require.
+
+
+------------------------------
+Good use cases for tmpfs mounts
+
+  tmpfs mounts are best used for cases when you do not want the data to persist either on
+  the host machine or within the container. This may be for security reasons or to protect
+  the performance of the container when your application needs to write a large volume of non-persistent state data.
+
+------------------------------
+提示, 使用 bind mounts 或 volumes 需要注意的一些地方
+
+Tips for using bind mounts or volumes
+
+  If you use either bind mounts or volumes, keep the following in mind:
+
+      - If you mount an empty volume into a directory in the container in which files or directories exist,
+        these files or directories are propagated (copied) into the volume. Similarly,
+        if you start a container and specify a volume which does not already exist,
+        an empty volume is created for you. This is a good way to pre-populate data that another container needs.
+        // 挂载 空 卷到  容器中的某个 非空目录时, 该非空目录下的 文件 或 目录 会被 拷贝到 该 空卷中.
+        // 类似地，如果启动了 一个容器 并制定了 一个 尚 不存在的 卷, 一个 空卷 会被 创建.
+        // 这是 预填充(pre-populate) 另外的 容器 所需要的数据 的 好方法。
+
+      - If you mount a bind mount or non-empty volume into a directory in the container in which some files or directories exist,
+        these files or directories are obscured by the mount, just as if you saved files into /mnt on
+        a Linux host and then mounted a USB drive into /mnt. The contents of /mnt would be obscured by
+        the contents of the USB drive until the USB drive were unmounted. The obscured files are not removed or altered,
+        but are not accessible while the bind mount or volume is mounted.
+        // 如果你 挂载一个 bind mount 或 非空 卷 到  容器中的 一个 非空 目录, 则 该 非空目录下的 文件或目录
+        // 会被  隐藏掩盖(obscured)起来
+
+----------------------------------------------------------------------------------------------------
+Use volumes  (使用卷)
+
+    https://docs.docker.com/storage/volumes/
+
+  Volumes use 'rprivate' bind propagation, and bind propagation is not configurable for volumes.
+
+
+Choose the -v or --mount flag  (Docker 17.06 或 更高的版本推荐使用 --mount 选项. --mount 更加 明确 和 详细)
+
+      New users should try --mount syntax which is simpler than --volume syntax.
+
+  If you need to specify volume driver options, you must use --mount.
+  // 如果需要 指定 volume driver 选项, 则 必须 使用 --mount
+
+
+--mount: Consists of multiple key-value pairs, separated by commas(逗号) and each consisting of a <key>=<value> tuple.
+         The --mount syntax is more verbose than -v or --volume, but the order of the keys is not significant,
+         and the value of the flag is easier to understand.
+
+      - The 'type' of the mount, which can be 'bind', 'volume', or 'tmpfs'.
+        This topic discusses volumes, so the type is always 'volume'.
+
+      - The 'source' of the mount. For named volumes, this is the name of the volume.
+        For anonymous volumes, this field is omitted. May be specified as 'source' or 'src'.
+
+      - The 'destination' takes as its value the path where the file or directory is
+        mounted in the container. May be specified as 'destination', 'dst', or 'target'.
+
+      - The 'readonly' option, if present, causes the bind mount to be mounted into the container as read-only.
+
+      - The 'volume-opt' option, which can be specified more than once,
+        takes a key-value pair consisting of the option name and its value.
+
+
+  --------------------
+  Escape values from outer CSV parser (关于转义)
+
+      If your volume driver accepts a comma-separated list as an option,
+      you must escape the value from the outer CSV parser. To escape a volume-opt,
+      surround it with double quotes (") and surround the entire mount parameter with single quotes (').
+
+      For example, the local driver accepts mount options as a comma-separated list in the o parameter.
+      This example shows the correct way to escape the list.
+
+    $ docker service create \
+         --mount 'type=volume,src=<VOLUME-NAME>,dst=<CONTAINER-PATH>,volume-driver=local,volume-opt=type=nfs,volume-opt=device=<nfs-server>:<nfs-path>,"volume-opt=o=addr=<nfs-address>,vers=4,soft,timeo=180,bg,tcp,rw"'
+        --name myservice \
+        <IMAGE>
+  --------------------
+
+
+Create and manage volumes
+
+    Unlike a bind mount, you can create and manage volumes outside the scope of any container.
+
+// Create a volume(创建 卷):
+[root@node01 ~]# docker volume create my-vol
+    my-vol
+
+// List volumes(列出 卷):
+[root@node01 ~]# docker volume ls
+    DRIVER              VOLUME NAME
+    local               my-vol
+
+// Inspect a volume(观察 卷详细信息):
+[root@node01 ~]# docker volume inspect my-vol
+    [
+        {
+            "CreatedAt": "2019-10-29T19:45:53+08:00",
+            "Driver": "local",
+            "Labels": {},
+            "Mountpoint": "/var/lib/docker/volumes/my-vol/_data",
+            "Name": "my-vol",
+            "Options": {},
+            "Scope": "local"
+        }
+    ]
+
+// Remove a volume(移除 卷):
+[root@node01 ~]# docker volume rm my-vol
+    my-vol
+
+
+// Start a container with a volume()
+
+  If you start a container with a volume that does not yet exist, Docker creates the volume for you.
+  The following example mounts the volume myvol2 into /app/ in the container.
+
+
+[root@node01 ~]# docker run -d --name devtest --mount source=myvol2,target=/app  nginx:latest
+    9983fc16bf55c3714a5a95aafea76e2141b43708f19ef3d6feb97d96623a7cdd
+
+
+[root@node01 ~]# docker inspect devtest
+
+    ......
+        "Mounts": [
+            {
+                "Type": "volume",
+                "Name": "myvol2",
+                "Source": "/var/lib/docker/volumes/myvol2/_data",
+                "Destination": "/app",
+                "Driver": "local",
+                "Mode": "z",
+                "RW": true,
+                "Propagation": ""
+            }
+        ],
+    ......
+
+
+
+
+// 删除 卷(volume) 'myvol2'
+
+  1) 停止容器
+  [root@node01 ~]# docker container stop devtest
+      devtest
+
+  2) 删除容器
+  [root@node01 ~]# docker container rm devtest
+      devtest
+
+  3) 删除 卷 (volume) 'myvol2'
+  [root@node01 ~]# docker volume rm myvol2
+      myvol2
+
+
+
+--------------------
+Populate a volume using a container
+
+    If you start a container which creates a new volume, as above, and the container has files
+    or directories in the directory to be mounted (such as /app/ above), the directory’s
+    contents are copied into the volume. The container then mounts and uses the volume,
+    and other containers which use the volume also have access to the pre-populated content.
+
+
+  To illustrate this, this example starts an nginx container and populates the new volume nginx-vol
+  with the contents of the container’s /usr/share/nginx/html directory,
+  which is where Nginx stores its default HTML content.
+
+
+// 使用 容器 填充 新的空卷 'nginx-vol'
+// 注: 该命令中 volume 'nginx-vol' 不存在, 随意会自动被新建, 而同时卷所挂载到的 容器中的目录 /usr/share/nginx/html 为非空目录
+//     所以 该容器目录 /usr/share/nginx/html 下的 内容(contents) 会被自动 copy 到 挂载卷中
+[root@node01 ~]# docker run -d --name=nginxtest --mount source=nginx-vol,destination=/usr/share/nginx/html  nginx:latest
+    5d4657d8354f7ac7a5fa252dfe93f316c7a4f12395e67fa72b875f95de486b12
+
+// 观察一下卷 'nginx-vol' 的详细信息
+[root@node01 ~]# docker volume inspect nginx-vol
+    [
+        {
+            "CreatedAt": "2019-10-29T20:32:23+08:00",
+            "Driver": "local",
+            "Labels": null,
+            "Mountpoint": "/var/lib/docker/volumes/nginx-vol/_data",  <----
+            "Name": "nginx-vol",
+            "Options": null,
+            "Scope": "local"
+        }
+    ]
+
+
+// 观察一下 容器 'nginxtest' 的详细信息(这里主要关注 卷 挂载信息)
+[root@node01 ~]# docker container inspect nginxtest
+
+    ......
+        "Mounts": [
+            {
+                "Type": "volume",
+                "Name": "nginx-vol",
+                "Source": "/var/lib/docker/volumes/nginx-vol/_data", <----
+                "Destination": "/usr/share/nginx/html",  <----
+                "Driver": "local",
+                "Mode": "z",
+                "RW": true,
+                "Propagation": ""
+            }
+        ],
+    ......
+
+
+// 查看卷 在 宿主机上  对应的数据目录
+[root@node01 ~]# ls /var/lib/docker/volumes/nginx-vol/_data
+    50x.html  index.html  <----
+
+
+// 删除卷 'nginx-vol'
+[root@node01 ~]# docker container stop nginxtest #停止使用 卷'nginx-vol' 的容器 'nginxtest'
+[root@node01 ~]# docker container rm nginxtest   #删除容器 'nginxtest'
+[root@node01 ~]# docker volume rm nginx-vol      #删除卷
+
+
+--------------------------------------------------
+Use a read-only volume  (使用只读卷)
+
+// 在挂载卷 选项中指定了 readonly 选项
+[root@node01 ~]# docker run -d --name=nginxtest --mount source=nginx-vol,destination=/usr/share/nginx/html,readonly  nginx:latest
+    b93d1210be881f3fbe431640df84c29b9dcffafcf38134f6fd4e8d07f25e09b3
+
+[root@node01 ~]# docker container inspect nginxtest
+
+    ......
+        "Mounts": [
+            {
+                "Type": "volume",
+                "Name": "nginx-vol",
+                "Source": "/var/lib/docker/volumes/nginx-vol/_data",
+                "Destination": "/usr/share/nginx/html",
+                "Driver": "local",
+                "Mode": "z",
+                "RW": false,  <----观察
+                "Propagation": ""
+            }
+        ],
+    ......
+
+
+// 尝试在 容器中 通过 卷的挂载目录 向 该只读卷中写入数据 (可以发现写入操作失败, 这和 readonly 卷的预期效果相符)
+[root@node01 ~]# docker container exec -it nginxtest bash
+    root@b93d1210be88:/# ls /usr/share/nginx/html/
+      50x.html  index.html
+    root@b93d1210be88:/# echo 'hello' > /usr/share/nginx/html/hello.html
+      bash: /usr/share/nginx/html/hello.html: Read-only file system  <----观察, 写入失败
+    root@b93d1210be88:/# exit
+      exit
+
+// 删除卷 'nginx-vol'
+[root@node01 ~]# docker container stop nginxtest
+[root@node01 ~]# docker container rm nginxtest
+[root@node01 ~]# docker volume rm nginx-vol
+
+
+--------------------------------------------------
+Share data among machines
+Use a volume driver
+
+      见官方文档  https://docs.docker.com/storage/volumes/
+
+
+
+
+
+
+--------------------------------------------------
+Backup, restore, or migrate data volumes
+
+
+--------------------
+Backup a container (备份一个容器)
+
+    Volumes 对于 backups, restores, 和 migrations 很有用. 使用 --volumes-from  选项 以 创建一个 挂载了指定 container(s) 中的 volumes 的新容器
+
+
+[root@node01 ~]# docker container  run --help
+      --volumes-from list              Mount volumes from the specified container(s)
+
+
+
+
+[root@node01 ~]# docker container run --mount destination=/dbdata --name dbstore ubuntu /bin/bash
+
+[root@node01 ~]# docker volume ls
+    DRIVER              VOLUME NAME
+    local               2a73973c277f0de4afed08d6e33f185b14ccd7f41df8de549125612c233d8bd6
+
+[root@node01 ~]# docker container run --rm --volumes-from dbstore --mount type=bind,source=$(pwd),destination=/backup ubuntu tar cvf /backup/backup.tar /dbdata
+
+
+
+--------------------
+Restore container from backup(从备份中还原容器)
+
+    With the backup just created, you can restore it to the same container, or another that you made elsewhere.
+
+
+// 创建一个新容器 'dbstore2'
+[root@node01 ~]# docker container run --mount destination=/dbdata --name dbstore2 ubuntu /bin/bash
+
+[root@node01 ~]# docker container run --rm --volumes-from dbstore2 --mount type=bind,source=$(pwd),destination=/backup ubuntu bash -c "cd /dbdata && tar xvf /backup/backup.tar --strip 1"
+
+
+You can use the techniques above to automate backup, migration and restore testing using your preferred tools.
+
+
+
+
+
+--------------------
+Remove volumes (删除卷)
+
+A Docker data volume persists after a container is deleted. There are two types of volumes to consider:
+
+    - Named volumes(命令卷) have a specific source from outside the container, for example awesome:/bar.
+    - Anonymous volumes(匿名卷) have no specific source so when the container is deleted, instruct the Docker Engine daemon to remove them.
+
+
+Remove anonymous volumes (自动删除匿名卷)
+
+  To automatically remove anonymous volumes, use the --rm option. For example,
+  this command creates an anonymous /foo volume. When the container is removed,
+  the Docker Engine removes the /foo volume but not the awesome volume.
+
+
+// 注: 此处的 选项 --rm  不仅会导致 容器退出(exited) 后该容器会被自动删除, 还会导致 其中的匿名卷(Anonymous volumes) 也会被自动删除
+[root@node01 ~]# docker container run --rm --mount destination=/foo --mount source=awesome,destination=/bar busybox top
+
+
+[root@node01 ~]# docker container ls
+    CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+    549704d70d30        busybox             "top"               17 seconds ago      Up 16 seconds                           charming_engelbart
+
+[root@node01 ~]# docker volume ls
+    DRIVER              VOLUME NAME
+    local               0e93e392c8d9f1efecd08a095a6b0f93aab00646fcb3c1bde00eeae7f359538e  <----观察该 匿名卷
+    local               awesome
+
+
+[root@node01 ~]# docker container stop 549704d70d30
+    549704d70d30
+
+[root@node01 ~]# docker container ls -a
+    CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                      PORTS                    NAMES
+    7bf55b4d7744        bulletinboard:1.0   "npm start"         2 days ago          Exited (255) 26 hours ago   0.0.0.0:8000->8080/tcp   bb
+    d30997a78cc3        hello-world         "/hello"            2 days ago          Exited (0) 2 days ago                                nervous_hugle
+
+
+// 列出观察 卷, 发现 曾经的匿名卷 已经不见了(因其被删除了)
+[root@node01 ~]# docker volume ls
+    DRIVER              VOLUME NAME
+    local               awesome
+
+
+
+--------------------
+Remove all volumes  (删除所有卷)
+
+To remove all unused volumes and free up space:
+
+[root@node01 ~]# docker volume prune  #删除所有没有被任何容器使用到的 local volumes
+    WARNING! This will remove all local volumes not used by at least one container.
+    Are you sure you want to continue? [y/N]
+
+
+----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
 
 
 
