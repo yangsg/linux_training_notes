@@ -709,6 +709,681 @@ Differences between user-defined bridges and the default bridge (用户定义的
 
 
 
+----------
+Manage a user-defined bridge (管理用户自定义网络)
+
+// 查看命令 `docker network` 简要帮助
+[root@node01 ~]# docker network --help
+
+        Usage:  docker network COMMAND
+
+        Manage networks
+
+        Commands:
+          connect     Connect a container to a network
+          create      Create a network
+          disconnect  Disconnect a container from a network
+          inspect     Display detailed information on one or more networks
+          ls          List networks
+          prune       Remove all unused networks
+          rm          Remove one or more networks
+
+        Run 'docker network COMMAND --help' for more information on a command.
+
+
+// 查看命令 `docker network create` 简要帮助, 更多详细帮助见 `man docker-network-create`
+[root@node01 ~]# docker network create --help
+
+        Usage:  docker network create [OPTIONS] NETWORK
+
+        Create a network
+
+        Options:
+              --attachable           Enable manual container attachment
+              --aux-address map      Auxiliary IPv4 or IPv6 addresses used by Network driver (default map[])
+              --config-from string   The network from which copying the configuration
+              --config-only          Create a configuration only network
+          -d, --driver string        Driver to manage the Network (default "bridge")  <----默认为 bridge
+              --gateway strings      IPv4 or IPv6 Gateway for the master subnet
+              --ingress              Create swarm routing-mesh network
+              --internal             Restrict external access to the network
+              --ip-range strings     Allocate container ip from a sub-range
+              --ipam-driver string   IP Address Management Driver (default "default")
+              --ipam-opt map         Set IPAM driver specific options (default map[])
+              --ipv6                 Enable IPv6 networking
+              --label list           Set metadata on a network
+          -o, --opt map              Set driver specific options (default map[])
+              --scope string         Control the network's scope
+              --subnet strings       Subnet in CIDR format that represents a network segment
+
+
+
+// 使用命令 `docker network create` 创建 a user-defined bridge network
+[root@node01 ~]# docker network create my-net
+    f359161e8488e2428b588b89e724bfbc95f06b2e0216457f05b0c0d2456523b1
+
+[root@node01 ~]# docker network ls
+      NETWORK ID          NAME                DRIVER              SCOPE
+      3e3e7e11ec22        bridge              bridge              local
+      b95038e2394a        host                host                local
+      f359161e8488        my-net              bridge              local <-----
+      28e6958b6080        none                null                local
+
+[root@node01 ~]# docker network inspect my-net
+    [
+        {
+            "Name": "my-net",
+            "Id": "f359161e8488e2428b588b89e724bfbc95f06b2e0216457f05b0c0d2456523b1",
+            "Created": "2019-10-29T07:46:26.872317567+08:00",
+            "Scope": "local",
+            "Driver": "bridge",
+            "EnableIPv6": false,
+            "IPAM": {
+                "Driver": "default",
+                "Options": {},
+                "Config": [
+                    {
+                        "Subnet": "172.18.0.0/16", <----
+                        "Gateway": "172.18.0.1"    <----观察,此为宿主机上虚拟网卡 br-f359161e8488 的地址
+                    }
+                ]
+            },
+            "Internal": false,
+            "Attachable": false,
+            "Ingress": false,
+            "ConfigFrom": {
+                "Network": ""
+            },
+            "ConfigOnly": false,
+            "Containers": {},
+            "Options": {},
+            "Labels": {}
+        }
+    ]
+
+
+// 观察 宿主机 网卡信息变化: 新增了 一块新的虚拟网卡 'br-f359161e8488'
+[root@node01 ~]# ip a
+    1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+        link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+        inet 127.0.0.1/8 scope host lo
+           valid_lft forever preferred_lft forever
+        inet6 ::1/128 scope host
+           valid_lft forever preferred_lft forever
+    2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+        link/ether 00:0c:29:52:8e:39 brd ff:ff:ff:ff:ff:ff
+        inet 192.168.175.100/24 brd 192.168.175.255 scope global ens33
+           valid_lft forever preferred_lft forever
+        inet6 fe80::20c:29ff:fe52:8e39/64 scope link
+           valid_lft forever preferred_lft forever
+    3: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN
+        link/ether 02:42:61:d4:59:bf brd ff:ff:ff:ff:ff:ff
+        inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+           valid_lft forever preferred_lft forever
+    4: br-f359161e8488: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN   <-----观察
+        link/ether 02:42:32:cb:04:a6 brd ff:ff:ff:ff:ff:ff
+        inet 172.18.0.1/16 brd 172.18.255.255 scope global br-f359161e8488
+           valid_lft forever preferred_lft forever
+
+
+
+// 观察 iptables 中 nat 表相关规则
+[root@node01 ~]# iptables -t nat -nL
+    Chain PREROUTING (policy ACCEPT)
+    target     prot opt source               destination
+    DOCKER     all  --  0.0.0.0/0            0.0.0.0/0            ADDRTYPE match dst-type LOCAL
+
+    Chain INPUT (policy ACCEPT)
+    target     prot opt source               destination
+
+    Chain OUTPUT (policy ACCEPT)
+    target     prot opt source               destination
+    DOCKER     all  --  0.0.0.0/0           !127.0.0.0/8          ADDRTYPE match dst-type LOCAL
+
+    Chain POSTROUTING (policy ACCEPT)
+    target     prot opt source               destination
+    MASQUERADE  all  --  172.18.0.0/16        0.0.0.0/0           <----
+    MASQUERADE  all  --  172.17.0.0/16        0.0.0.0/0
+
+    Chain DOCKER (2 references)
+    target     prot opt source               destination
+    RETURN     all  --  0.0.0.0/0            0.0.0.0/0            <----
+    RETURN     all  --  0.0.0.0/0            0.0.0.0/0
+
+// 观察路由表信息
+[root@node01 ~]# route -n
+    Kernel IP routing table
+    Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+    0.0.0.0         192.168.175.2   0.0.0.0         UG    100    0        0 ens33
+    172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0
+    172.18.0.0      0.0.0.0         255.255.0.0     U     0      0        0 br-f359161e8488 <----
+    192.168.175.0   0.0.0.0         255.255.255.0   U     100    0        0 ens33
+
+
+
+----------
+Connect a container to a user-defined bridge (见容器 连接到 用户自定义网络)
+
+
+    When you create a new container, you can specify one or more --network flags.
+
+// 查看一下 命令 `docker container create` 简要帮助
+[root@node01 ~]# docker container create --help     #更多详细帮助见 `man docker-container-create`
+
+      Usage:  docker container create [OPTIONS] IMAGE [COMMAND] [ARG...]
+
+      Create a new container
+
+      Options:
+            --add-host list                  Add a custom host-to-IP mapping (host:ip)
+        -a, --attach list                    Attach to STDIN, STDOUT or STDERR
+            --blkio-weight uint16            Block IO (relative weight), between 10 and 1000, or 0 to disable (default 0)
+            --blkio-weight-device list       Block IO weight (relative device weight) (default [])
+            --cap-add list                   Add Linux capabilities
+            --cap-drop list                  Drop Linux capabilities
+            --cgroup-parent string           Optional parent cgroup for the container
+            --cidfile string                 Write the container ID to the file
+            --cpu-period int                 Limit CPU CFS (Completely Fair Scheduler) period
+            --cpu-quota int                  Limit CPU CFS (Completely Fair Scheduler) quota
+            --cpu-rt-period int              Limit CPU real-time period in microseconds
+            --cpu-rt-runtime int             Limit CPU real-time runtime in microseconds
+        -c, --cpu-shares int                 CPU shares (relative weight)
+            --cpus decimal                   Number of CPUs
+            --cpuset-cpus string             CPUs in which to allow execution (0-3, 0,1)
+            --cpuset-mems string             MEMs in which to allow execution (0-3, 0,1)
+            --device list                    Add a host device to the container
+            --device-cgroup-rule list        Add a rule to the cgroup allowed devices list
+            --device-read-bps list           Limit read rate (bytes per second) from a device (default [])
+            --device-read-iops list          Limit read rate (IO per second) from a device (default [])
+            --device-write-bps list          Limit write rate (bytes per second) to a device (default [])
+            --device-write-iops list         Limit write rate (IO per second) to a device (default [])
+            --disable-content-trust          Skip image verification (default true)
+            --dns list                       Set custom DNS servers
+            --dns-option list                Set DNS options
+            --dns-search list                Set custom DNS search domains
+            --domainname string              Container NIS domain name
+            --entrypoint string              Overwrite the default ENTRYPOINT of the image
+        -e, --env list                       Set environment variables
+            --env-file list                  Read in a file of environment variables
+            --expose list                    Expose a port or a range of ports
+            --gpus gpu-request               GPU devices to add to the container ('all' to pass all GPUs)
+            --group-add list                 Add additional groups to join
+            --health-cmd string              Command to run to check health
+            --health-interval duration       Time between running the check (ms|s|m|h) (default 0s)
+            --health-retries int             Consecutive failures needed to report unhealthy
+            --health-start-period duration   Start period for the container to initialize before starting health-retries countdown (ms|s|m|h) (default 0s)
+            --health-timeout duration        Maximum time to allow one check to run (ms|s|m|h) (default 0s)
+            --help                           Print usage
+        -h, --hostname string                Container host name
+            --init                           Run an init inside the container that forwards signals and reaps processes
+        -i, --interactive                    Keep STDIN open even if not attached
+            --ip string                      IPv4 address (e.g., 172.30.100.104)
+            --ip6 string                     IPv6 address (e.g., 2001:db8::33)
+            --ipc string                     IPC mode to use
+            --isolation string               Container isolation technology
+            --kernel-memory bytes            Kernel memory limit
+        -l, --label list                     Set meta data on a container
+            --label-file list                Read in a line delimited file of labels
+            --link list                      Add link to another container
+            --link-local-ip list             Container IPv4/IPv6 link-local addresses
+            --log-driver string              Logging driver for the container
+            --log-opt list                   Log driver options
+            --mac-address string             Container MAC address (e.g., 92:d0:c6:0a:29:33)
+        -m, --memory bytes                   Memory limit
+            --memory-reservation bytes       Memory soft limit
+            --memory-swap bytes              Swap limit equal to memory plus swap: '-1' to enable unlimited swap
+            --memory-swappiness int          Tune container memory swappiness (0 to 100) (default -1)
+            --mount mount                    Attach a filesystem mount to the container
+            --name string                    Assign a name to the container
+            --network network                Connect a container to a network  <---注: 选项 --network 可以指定多次
+            --network-alias list             Add network-scoped alias for the container
+            --no-healthcheck                 Disable any container-specified HEALTHCHECK
+            --oom-kill-disable               Disable OOM Killer
+            --oom-score-adj int              Tune host's OOM preferences (-1000 to 1000)
+            --pid string                     PID namespace to use
+            --pids-limit int                 Tune container pids limit (set -1 for unlimited)
+            --privileged                     Give extended privileges to this container
+        -p, --publish list                   Publish a container's port(s) to the host
+        -P, --publish-all                    Publish all exposed ports to random ports
+            --read-only                      Mount the container's root filesystem as read only
+            --restart string                 Restart policy to apply when a container exits (default "no")
+            --rm                             Automatically remove the container when it exits
+            --runtime string                 Runtime to use for this container
+            --security-opt list              Security Options
+            --shm-size bytes                 Size of /dev/shm
+            --stop-signal string             Signal to stop a container (default "SIGTERM")
+            --stop-timeout int               Timeout (in seconds) to stop a container
+            --storage-opt list               Storage driver options for the container
+            --sysctl map                     Sysctl options (default map[])
+            --tmpfs list                     Mount a tmpfs directory
+        -t, --tty                            Allocate a pseudo-TTY
+            --ulimit ulimit                  Ulimit options (default [])
+        -u, --user string                    Username or UID (format: <name|uid>[:<group|gid>])
+            --userns string                  User namespace to use
+            --uts string                     UTS namespace to use
+        -v, --volume list                    Bind mount a volume
+            --volume-driver string           Optional volume driver for the container
+            --volumes-from list              Mount volumes from the specified container(s)
+        -w, --workdir string                 Working directory inside the container
+
+
+
+// 基于 image 'nginx:latest' 创建 名为 'my-nginx' 的容器, 并将其连接到 'my-net' 网络, 且将容器中的 80 端口发布到 宿主机上的 8080 端口
+// 注: 此处的 create 和 run 的区别是 子命令 create 创建容器 但 不会 自动启动运行容器
+[root@node01 ~]# docker container create --name my-nginx --network my-net --publish 8080:80 nginx:latest
+
+      Unable to find image 'nginx:latest' locally
+      latest: Pulling from library/nginx
+      8d691f585fa8: Pull complete
+      5b07f4e08ad0: Pull complete
+      abc291867bca: Pull complete
+      Digest: sha256:922c815aa4df050d4df476e92daed4231f466acc8ee90e0e774951b0fd7195a4
+      Status: Downloaded newer image for nginx:latest
+      e86279a2b8d6f9c226b3a09767e96cbbf93e74d78c099e47e3c4cd5265acd618
+
+// 查看 运行着的 容器
+[root@node01 ~]# docker container ls
+    CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+// 查看 所有的 容器
+[root@node01 ~]# docker container ls -a   #注: 可以使用 --no-trunc 查看 非截断的信息
+    CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS                      PORTS                    NAMES
+    e86279a2b8d6        nginx:latest        "nginx -g 'daemon of…"   8 minutes ago       Created                                              my-nginx <----
+    7bf55b4d7744        bulletinboard:1.0   "npm start"              38 hours ago        Exited (255) 11 hours ago   0.0.0.0:8000->8080/tcp   bb
+    d30997a78cc3        hello-world         "/hello"                 39 hours ago        Exited (0) 39 hours ago                              nervous_hugle
+
+
+[root@node01 ~]# docker container inspect  my-nginx
+[
+    {
+        "Id": "e86279a2b8d6f9c226b3a09767e96cbbf93e74d78c099e47e3c4cd5265acd618",
+        "Created": "2019-10-29T00:13:39.413127247Z",
+        "Path": "nginx",
+        "Args": [
+            "-g",
+            "daemon off;"
+        ],
+
+      ......
+            "NetworkMode": "my-net",
+            "PortBindings": {
+                "80/tcp": [
+                    {
+                        "HostIp": "",
+                        "HostPort": "8080"
+                    }
+                ]
+            },
+      ......
+        "NetworkSettings": {
+            "Bridge": "",
+            "SandboxID": "",
+            "HairpinMode": false,
+            "LinkLocalIPv6Address": "",
+            "LinkLocalIPv6PrefixLen": 0,
+            "Ports": {},
+            "SandboxKey": "",
+            "SecondaryIPAddresses": null,
+            "SecondaryIPv6Addresses": null,
+            "EndpointID": "",
+            "Gateway": "",
+            "GlobalIPv6Address": "",
+            "GlobalIPv6PrefixLen": 0,
+            "IPAddress": "",
+            "IPPrefixLen": 0,
+            "IPv6Gateway": "",
+            "MacAddress": "",
+            "Networks": {
+                "my-net": { <---
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": null,
+                    "NetworkID": "",
+                    "EndpointID": "",
+                    "Gateway": "",
+                    "IPAddress": "",
+                    "IPPrefixLen": 0,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "MacAddress": "",
+                    "DriverOpts": null
+                }
+            }
+
+[root@node01 ~]# docker container start my-nginx
+    my-nginx
+[root@node01 ~]# docker container ls
+    CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                  NAMES
+    e86279a2b8d6        nginx:latest        "nginx -g 'daemon of…"   23 minutes ago      Up 5 seconds        0.0.0.0:8080->80/tcp   my-nginx
+
+
+
+[root@node01 ~]# docker container inspect  my-nginx
+
+              "Networks": {
+                  "my-net": { <----
+                      "IPAMConfig": null,
+                      "Links": null,
+                      "Aliases": [
+                          "e86279a2b8d6"
+                      ],
+                      "NetworkID": "f359161e8488e2428b588b89e724bfbc95f06b2e0216457f05b0c0d2456523b1",
+                      "EndpointID": "e4a32139454a493bf83f5a3337d984dbcdd0d74117362d0dff0a63af6686f2ee",
+                      "Gateway": "172.18.0.1",   <----
+                      "IPAddress": "172.18.0.2", <----
+                      "IPPrefixLen": 16,
+                      "IPv6Gateway": "",
+                      "GlobalIPv6Address": "",
+                      "GlobalIPv6PrefixLen": 0,
+                      "MacAddress": "02:42:ac:12:00:02",
+                      "DriverOpts": null
+                  }
+              }
+
+
+[root@node01 ~]# docker network inspect my-net
+[
+    {
+        "Name": "my-net",
+        "Id": "f359161e8488e2428b588b89e724bfbc95f06b2e0216457f05b0c0d2456523b1",
+        "Created": "2019-10-29T07:46:26.872317567+08:00",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": {},
+            "Config": [
+                {
+                    "Subnet": "172.18.0.0/16",
+                    "Gateway": "172.18.0.1"
+                }
+            ]
+        },
+
+    ... ...
+        "Containers": {
+            "e86279a2b8d6f9c226b3a09767e96cbbf93e74d78c099e47e3c4cd5265acd618": {
+                "Name": "my-nginx",  <-----
+                "EndpointID": "e4a32139454a493bf83f5a3337d984dbcdd0d74117362d0dff0a63af6686f2ee",
+                "MacAddress": "02:42:ac:12:00:02",
+                "IPv4Address": "172.18.0.2/16",  <-----
+                "IPv6Address": ""
+            }
+        },
+
+
+
+// 将运行着的 容器 'my-nginx' 与 用户自定义的 bridge 网络 ‘my-net’ 断开连接
+[root@node01 ~]# docker network disconnect my-net my-nginx
+
+[root@node01 ~]# docker network inspect my-net
+
+        "Containers": {},
+
+[root@node01 ~]# docker container inspect my-nginx
+
+  ......
+        "NetworkSettings": {
+            "Bridge": "",
+            "SandboxID": "1cd8bd90bbeeabb58201e551e78e318b41d25a3dee3adc01379639209c71fcde",
+            "HairpinMode": false,
+            "LinkLocalIPv6Address": "",
+            "LinkLocalIPv6PrefixLen": 0,
+            "Ports": {},
+            "SandboxKey": "/var/run/docker/netns/1cd8bd90bbee",
+            "SecondaryIPAddresses": null,
+            "SecondaryIPv6Addresses": null,
+            "EndpointID": "",
+            "Gateway": "",
+            "GlobalIPv6Address": "",
+            "GlobalIPv6PrefixLen": 0,
+            "IPAddress": "",
+            "IPPrefixLen": 0,
+            "IPv6Gateway": "",
+            "MacAddress": "",
+            "Networks": {}
+        }
+  ......
+
+
+// 将 运行着的 容器 'my-nginx' 与 用户自定义的 bridge 网络 'my-net' 建立连接
+[root@node01 ~]# docker network connect my-net my-nginx
+
+[root@node01 ~]# docker network inspect my-net
+
+    ......
+        "Containers": {
+            "e86279a2b8d6f9c226b3a09767e96cbbf93e74d78c099e47e3c4cd5265acd618": {
+                "Name": "my-nginx",
+                "EndpointID": "e92d5fed1c4fe390dad5d4bb6ebd7ac30d723257346205cc277eff6393f580be",
+                "MacAddress": "02:42:ac:12:00:02",
+                "IPv4Address": "172.18.0.2/16",
+                "IPv6Address": ""
+            }
+    ......
+
+
+// 使用命令 `docker network rm` 移除 a user-defined bridge network, 注: remove 前需要将当前连接到 该network 的 container 断开连接
+[root@node01 ~]# docker network disconnect my-net my-nginx   #断开容器 'my-nginx' 与网络 'my-net' 的连接
+[root@node01 ~]# docker network rm my-net      #删除(remove)网络 'my-net'
+    my-net
+
+[root@node01 ~]# docker network ls
+    NETWORK ID          NAME                DRIVER              SCOPE
+    3e3e7e11ec22        bridge              bridge              local
+    b95038e2394a        host                host                local
+    28e6958b6080        none                null                local
+
+      --------------------
+      // 启用 ipv6 的支持
+            https://docs.docker.com/config/daemon/ipv6/
+            https://docs.docker.com/network/bridge/
+            https://github.com/moby/moby/issues/36954
+            https://docs.docker.com/v17.09/engine/userguide/networking/default_network/ipv6/
+        中文:
+            https://blog.csdn.net/taiyangdao/article/details/83066009
+            https://blog.csdn.net/bleatingsheep/article/details/80534153
+
+      --------------------
+
+
+      --------------------
+      // Enable forwarding from Docker containers to the outside world (为 the default bridge network 中的 容器提供 路由转发功能)
+
+      1) Configure the Linux kernel to allow IP forwarding.
+
+            $ sysctl net.ipv4.conf.all.forwarding=1
+
+      2) Change the policy for the iptables FORWARD policy from DROP to ACCEPT.
+
+            $ sudo iptables -P FORWARD ACCEPT
+
+      These settings do not persist across a reboot, so you may need to add them to a start-up script.
+      --------------------
+
+
+  ------------------------------
+  Use the default bridge network (使用默认的 bridge 网络) (不推荐)
+
+      the default bridge network 被认为是 Docker 的遗留过时的 detail 且不建议在 生产环境(production)中使用.
+      配置它 需要手动操作, 且 其 存在 技术缺陷(technical shortcomings)
+
+  - Connect a container to the default bridge network
+
+      If you do not specify a network using the --network flag, and you do specify a network driver,
+      your container is connected to the default 'bridge' network by default.
+      Containers connected to the default 'bridge' network can communicate,
+      but only by IP address, unless they are linked using the legacy --link flag.
+
+  - Configure the default bridge network (/etc/docker/daemon.json)
+
+        {
+          "bip": "192.168.1.5/24",
+          "fixed-cidr": "192.168.1.5/25",
+          "fixed-cidr-v6": "2001:db8::/64",
+          "mtu": 1500,
+          "default-gateway": "10.20.1.1",
+          "default-gateway-v6": "2001:db8:abcd::89",
+          "dns": ["10.20.1.2","10.20.1.3"]
+        }
+
+      核心选项为bip，即bridge ip之意，用于指定docker0桥自身的IP地址；其它选项可通过此地址计算得出。
+
+      配置后 需要重启 docker
+  ------------------------------
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+Use host networking   注: host 网络驱动仅工作在 Linux hosts 上
+
+    https://docs.docker.com/network/host/
+    https://docs.docker.com/network/network-tutorial-host/
+
+  container 和 宿主机 共享 网络名称空间, container 不会单独分配其自己的 ip 地址, 例如,
+  如果 你 运行一个 bind 到 80 号端口的容器 且使用的是 host networking, 则 该 容器的 application
+  在 宿主机的 ip 上的 80 号端口是 可用的.
+
+    ----------
+    Note: Given that the container does not have its own IP-address when using host mode networking,
+          port-mapping does not take effect, and the -p, --publish, -P, and --publish-all
+          option are ignored, producing a warning instead:
+
+          WARNING: Published ports are discarded when using host network mode
+    ----------
+
+  Host mode networking can be useful to optimize performance, and in situations where
+  a container needs to handle a large range of ports, as it does not require network address translation (NAT),
+  and no “userland-proxy” is created for each port.
+
+  The host networking driver only works on Linux hosts, and is not supported on Docker Desktop for Mac,
+  Docker Desktop for Windows, or Docker EE for Windows Server.
+  //  host 网络驱动仅工作在 Linux hosts 上.
+
+
+Networking using the host network
+    https://docs.docker.com/network/network-tutorial-host/
+
+
+示例: 将 nginx 通过 host 网络的方式 直接绑定到 Docker 上的 80 端口,
+      从网络的角度来看, 这就好像是 nginx 进程 直接运行于 Docker 宿主机上 而非 容器中。
+      但是，在其他方面，例如 storage, process namespace, 和 user namespace,  nginx 和 宿主机 是 隔离的.
+
+
+
+[root@node01 ~]# docker container run --rm -d --network host --name my_nginx nginx    #注: 选项 --rm 用于在 容器 exits 时自动删除容器
+    09bc947045398fef4a0a36bb0a355156941a8c757119c0122549f3bbea18096c
+
+浏览器访问  http://192.168.175.100/
+
+[root@node01 ~]# docker container ls
+    CONTAINER ID        IMAGE               COMMAND                  CREATED              STATUS              PORTS               NAMES
+    09bc94704539        nginx               "nginx -g 'daemon of…"   About a minute ago   Up About a minute                       my_nginx
+
+
+// 观察一下 宿主机 网卡信息: 发现并没有 新的网卡被 创建添加
+[root@node01 ~]# ip addr show
+    1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+        link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+        inet 127.0.0.1/8 scope host lo
+           valid_lft forever preferred_lft forever
+        inet6 ::1/128 scope host
+           valid_lft forever preferred_lft forever
+    2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+        link/ether 00:0c:29:52:8e:39 brd ff:ff:ff:ff:ff:ff
+        inet 192.168.175.100/24 brd 192.168.175.255 scope global ens33
+           valid_lft forever preferred_lft forever
+        inet6 fe80::20c:29ff:fe52:8e39/64 scope link
+           valid_lft forever preferred_lft forever
+    3: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN
+        link/ether 02:42:37:15:02:c3 brd ff:ff:ff:ff:ff:ff
+        inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+           valid_lft forever preferred_lft forever
+
+// 查看端口信息
+[root@node01 ~]# netstat -tulpn | grep :80
+    tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      2126/nginx: master
+
+
+
+[root@node01 ~]# docker container inspect my_nginx
+
+    ......
+            "Networks": {
+                "host": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": null,
+                    "NetworkID": "b95038e2394a7ec3e54af5e677d7be7f837445b2ed59645e9ddab8387ea9a812",
+                    "EndpointID": "39e04209ade2815dec9739a0ecbedafe5dc8d40dd6177058e8304303059385b9",
+                    "Gateway": "",
+                    "IPAddress": "",
+                    "IPPrefixLen": 0,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "MacAddress": "",
+                    "DriverOpts": null
+                }
+            }
+    ......
+
+[root@node01 ~]# docker network ls
+    NETWORK ID          NAME                DRIVER              SCOPE
+    8e384223d2e1        bridge              bridge              local
+    b95038e2394a        host                host                local <-----
+    28e6958b6080        none                null                local
+
+[root@node01 ~]# docker network inspect host
+
+    [
+        {
+            "Name": "host",
+            "Id": "b95038e2394a7ec3e54af5e677d7be7f837445b2ed59645e9ddab8387ea9a812",
+            "Created": "2019-10-27T17:29:40.887513119+08:00",
+            "Scope": "local",
+            "Driver": "host",  <----
+            "EnableIPv6": false,
+            "IPAM": {
+                "Driver": "default",
+                "Options": null,
+                "Config": []
+            },
+            "Internal": false,
+            "Attachable": false,
+            "Ingress": false,
+            "ConfigFrom": {
+                "Network": ""
+            },
+            "ConfigOnly": false,
+            "Containers": {
+                "09bc947045398fef4a0a36bb0a355156941a8c757119c0122549f3bbea18096c": {
+                    "Name": "my_nginx", <-----
+                    "EndpointID": "39e04209ade2815dec9739a0ecbedafe5dc8d40dd6177058e8304303059385b9",
+                    "MacAddress": "",
+                    "IPv4Address": "",
+                    "IPv6Address": ""
+                }
+            },
+            "Options": {},
+            "Labels": {}
+        }
+    ]
+
+
+// 停止(stop)  容器 'my_nginx'
+[root@node01 ~]# docker container stop my_nginx
+    my_nginx
+
+[root@node01 ~]# docker container ls -a
+    CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                      PORTS                    NAMES
+    7bf55b4d7744        bulletinboard:1.0   "npm start"         45 hours ago        Exited (255) 18 hours ago   0.0.0.0:8000->8080/tcp   bb
+    d30997a78cc3        hello-world         "/hello"            46 hours ago        Exited (0) 46 hours ago                              nervous_hugle
+
+
 
 
 ----------------------------------------------------------------------------------------------------
