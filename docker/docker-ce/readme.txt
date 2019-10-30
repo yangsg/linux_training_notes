@@ -2202,6 +2202,291 @@ FROM    |   | 273fc2106a02               188.1 MB|        |                     
               Container (Base on ubuntu:18.04 image)
 
 
+storage driver 的作用: 处理 各 layer 与 layer 之间 交互 的细节
+    A storage driver handles the details about the way these layers interact with each other.
+    Different storage drivers are available, which have advantages and disadvantages in different situations.
+
+
+--------------------------------------------------
+Container and layers
+
+  每个容器 都有自己的 可写层(即 容器层), 且多个 容器 可以 共享 底层 的 image layers.
+
+    The major difference between a container and an image is the top writable layer.
+    All writes to the container that add new or modify existing data are stored in this writable layer.
+    When the container is deleted, the writable layer is also deleted.
+    The underlying image remains unchanged.
+
+    Because each container has its own writable container layer, and all changes are stored in this container layer,
+    multiple containers can share access to the same underlying image and yet have their own data state.
+    The diagram below shows multiple containers sharing the same Ubuntu 18.04 image.
+
+
+
+
+            Container_01      Container_02         Container_03
+                  |                  |               |
+                  |                  |               |
+       Thin_R/W_layer_01   Thin_R/W_layer_02   Thin_R/W_layer_03
+                  Λ                  Λ               Λ
+                  |                  |               |
+                  V                  V               V
+          |+------------------------------------------------+
+          |                                                 |
+          |   +------------------------------------+        |
+          |   | 5a1ee5e7e5a2                    0 B|        |
+          |   +------------------------------------+        |
+          |                                                 |
+          |   +------------------------------------+        |
+          |   | e27aefd94cc8               1.895 KB|        |
+          |   +------------------------------------+        |
+          |                                                 |
+          |   +------------------------------------+        |
+          |   | c7b462a3a162               194.5 KB|        |
+          |   +------------------------------------+        |
+          |                                                 |
+          |   +------------------------------------+        |
+          |   | 273fc2106a02               188.1 MB|        |
+          |   +------------------------------------+        |
+          |                                                 |
+          |        ubuntu:18.04                             |
+          +-------------------------------------------------+
+                Container (Base on ubuntu:18.04 image)
+
+
+
+Note: If you need multiple images to have shared access to the exact same data,
+      store this data in a Docker volume and mount it into your containers.
+      // 如果你 需要 多个 images 共享访问 完全相同的 data, 可以 把 该 data
+      // 存储 在 a Docker volume 中 并 将其 挂载到 你的 containers 中.
+
+Docker uses storage drivers to manage the contents of the image layers and the writable container layer.
+Each storage driver handles the implementation differently,
+but all drivers use stackable image layers and the copy-on-write (CoW) strategy.
+  // 所有的 驱动 使用了  stackable image layers 和 写时复制 策略.
+
+
+--------------------------------------------------
+Container size on disk (容器的磁盘大小)
+
+      https://docs.docker.com/storage/storagedriver/
+
+
+[root@node01 ~]# docker container run --rm -d --name nginx_test  nginx:latest
+    60c72edef8f58b7c6c5f4e54e4a4b14634b5c64502d56933062dbdc61c682bad
+
+// 使用命令 `docker ps -s` 查看 容器的 'size' 和 'virtual size'
+[root@node01 ~]# docker ps -s
+    CONTAINER ID        IMAGE               COMMAND                  CREATED              STATUS              PORTS               NAMES               SIZE
+    60c72edef8f5        nginx:latest        "nginx -g 'daemon of…"   About a minute ago   Up About a minute   80/tcp              nginx_test          2B (virtual 126MB)
+
+
+[root@node01 ~]# docker container stop nginx_test
+
+
+
+To view the approximate size of a running container, you can use the `docker ps -s` command. Two different columns relate to size.
+
+  - 'size':         the amount of data (on disk) that is used for the writable layer(可写层) of each container.
+  - 'virtual size': the amount of data used for the read-only image data(只读的镜像数据) used by the container plus(加上) the container’s
+                    writable layer(可写层) size. Multiple containers may share some or all read-only image data.
+                    Two containers started from the same image share 100% of the read-only data,
+                    while two containers with different images which have layers in common share those common layers.
+                    Therefore, you can’t just total the virtual sizes. This over-estimates the total
+                    disk usage by a potentially non-trivial amount.
+
+  The total disk space used by all of the running containers on disk is some combination of each container’s
+  'size' and the 'virtual size' values. If multiple containers started from the same exact image,
+  the total size on disk for these containers would be SUM ('size' of containers) plus one image size ('virtual size'- 'size').
+
+This also does not count the following additional ways a container can take up disk space:
+
+    - Disk space used for log files if you use the json-file logging driver.
+      This can be non-trivial if your container generates a large amount of logging data and log rotation is not configured.
+
+    - Volumes and bind mounts used by the container.
+
+    - Disk space used for the container’s configuration files, which are typically small.
+
+    - Memory written to disk (if swapping is enabled).
+
+    - Checkpoints, if you’re using the experimental checkpoint/restore feature.
+
+
+
+
+
+
+
+--------------------------------------------------
+The copy-on-write (CoW) strategy  (写时复制策略)
+
+      https://docs.docker.com/storage/storagedriver/
+
+    Copy-on-write is a strategy of sharing and copying files for maximum efficiency. If a file or
+    directory exists in a lower layer within the image, and another layer (including the writable layer)
+    needs read access to it, it just uses the existing file. The first time another layer needs
+    to modify the file (when building the image or running the container)(注: 写时复制可以发生在 image的构建或容器的运行时),
+    the file is copied into that layer and modified. This minimizes I/O and the size
+    of each of the subsequent layers. These advantages are explained in more depth below.
+
+
+Sharing promotes smaller images (共享可以促成更小的 images)
+
+
+  When you use docker pull to pull down an image from a repository, or when you create a container
+  from an image that does not yet exist locally, each layer is pulled down separately,
+  and stored in Docker’s local storage area, which is usually
+  /var/lib/docker/ on Linux hosts. You can see these layers being pulled in this example:
+
+
+// 拉取 下载 镜像 'ubuntu:18.04'
+[root@node01 ~]# docker image pull ubuntu:18.04
+    18.04: Pulling from library/ubuntu
+    22e816666fd6: Pull complete    <----- 下载 layer
+    079b6d2a1e53: Pull complete    <----- 下载 layer
+    11048ebae908: Pull complete    <----- 下载 layer
+    c58094023a2e: Pull complete    <----- 下载 layer
+    Digest: sha256:a7b8b7b33e44b123d7f997bd4d3d0a59fafc63e203d17efedf09ff3f6f516152
+    Status: Downloaded newer image for ubuntu:18.04
+    docker.io/library/ubuntu:18.04
+
+Each of these layers is stored in its own directory inside the Docker host’s local storage area.
+To examine the layers on the filesystem, list the contents of
+/var/lib/docker/<storage-driver>. This example uses the overlay2 storage driver:
+
+[root@node01 ~]# docker image ls
+    REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+    ubuntu              18.04               cf0f3ca922e0        11 days ago         64.2MB
+
+[root@node01 ~]# ls -1 /var/lib/docker/overlay2
+    5b5f526af60283dfb6255ac475550f2fb51ca0384e2be67f2d5389012ef5c7d6
+    6eb211802c02aeb97c1b70c3ca746dbd46324576c8cd929ec804d40d0743e5bd
+    b26b24f202724f10e6b92c44f77b991d33b72b847eb47b66364802dc42c640f0
+    backingFsBlockDev
+    cf59eb7d3a0197a7012f135459525e48c038aca5e63ed01d30e3b5f46fb82c46
+    l
+
+    The directory names do not correspond to the layer IDs (this has been true since Docker 1.10).
+    // 目录名 和 层的 IDs 并不对应
+
+
+// 1) Make a new directory cow-test/ and change into it.
+
+[root@node01 ~]# mkdir cow-test/
+[root@node01 ~]# cd cow-test/
+[root@node01 cow-test]#
+
+// 2) Within cow-test/, create a new file called hello.sh with the following contents:
+[root@node01 cow-test]# vim hello.sh
+
+    #!/bin/sh
+    echo "Hello world"
+
+// Save the file, and make it executable:
+[root@node01 cow-test]# chmod +x hello.sh
+[root@node01 cow-test]# ls -l hello.sh
+    -rwxr-xr-x 1 root root 29 Oct 30 23:39 hello.sh
+
+// 3) Copy the contents of the first Dockerfile above into a new file called Dockerfile.base
+[root@node01 cow-test]# vim Dockerfile.base
+
+    FROM ubuntu:18.04
+    COPY . /app
+
+// 4) Copy the contents of the second Dockerfile above into a new file called Dockerfile
+[root@node01 cow-test]# vim Dockerfile
+
+    FROM acme/my-base-image:1.0
+    CMD /app/hello.sh
+
+
+// 5) Within the cow-test/ directory, build the first image. Don’t forget to include the final '.' in the command.
+      That sets the PATH, which tells Docker where to look for any files that need to be added to the image.
+
+[root@node01 cow-test]# docker image build -t acme/my-base-image:1.0 -f Dockerfile.base .
+    Sending build context to Docker daemon  4.096kB
+    Step 1/2 : FROM ubuntu:18.04
+     ---> cf0f3ca922e0
+    Step 2/2 : COPY . /app
+     ---> 4045fd4cc6a2
+    Successfully built 4045fd4cc6a2
+    Successfully tagged acme/my-base-image:1.0
+
+
+// 6) Build the second image
+
+[root@node01 cow-test]# docker image build -t acme/my-final-image:1.0 -f Dockerfile .
+    Sending build context to Docker daemon  4.096kB
+    Step 1/2 : FROM acme/my-base-image:1.0
+     ---> 4045fd4cc6a2
+    Step 2/2 : CMD /app/hello.sh
+     ---> Running in 882b9941ca09
+    Removing intermediate container 882b9941ca09
+     ---> daca8e3b9294
+    Successfully built daca8e3b9294
+    Successfully tagged acme/my-final-image:1.0
+
+
+// 7) Check out the sizes of the images:
+[root@node01 cow-test]# docker image ls
+    REPOSITORY            TAG                 IMAGE ID            CREATED              SIZE
+    acme/my-final-image   1.0                 daca8e3b9294        About a minute ago   64.2MB
+    acme/my-base-image    1.0                 4045fd4cc6a2        3 minutes ago        64.2MB
+    ubuntu                18.04               cf0f3ca922e0        11 days ago          64.2MB
+
+
+// 8) Check out the layers that comprise each image:
+
+[root@node01 cow-test]# docker image history 4045fd4cc6a2
+    IMAGE               CREATED             CREATED BY                                      SIZE                COMMENT
+    4045fd4cc6a2        7 minutes ago       /bin/sh -c #(nop) COPY dir:60e6768edfda1227e…   105B
+    cf0f3ca922e0        11 days ago         /bin/sh -c #(nop)  CMD ["/bin/bash"]            0B
+    <missing>           11 days ago         /bin/sh -c mkdir -p /run/systemd && echo 'do…   7B
+    <missing>           11 days ago         /bin/sh -c set -xe   && echo '#!/bin/sh' > /…   745B
+    <missing>           11 days ago         /bin/sh -c [ -z "$(apt-get indextargets)" ]     987kB
+    <missing>           11 days ago         /bin/sh -c #(nop) ADD file:d13b09e8b3cc98bf0…   63.2MB
+
+
+[root@node01 cow-test]# docker image history daca8e3b9294
+    IMAGE               CREATED             CREATED BY                                      SIZE                COMMENT
+    daca8e3b9294        6 minutes ago       /bin/sh -c #(nop)  CMD ["/bin/sh" "-c" "/app…   0B    <----观察
+    4045fd4cc6a2        8 minutes ago       /bin/sh -c #(nop) COPY dir:60e6768edfda1227e…   105B
+    cf0f3ca922e0        11 days ago         /bin/sh -c #(nop)  CMD ["/bin/bash"]            0B
+    <missing>           11 days ago         /bin/sh -c mkdir -p /run/systemd && echo 'do…   7B
+    <missing>           11 days ago         /bin/sh -c set -xe   && echo '#!/bin/sh' > /…   745B
+    <missing>           11 days ago         /bin/sh -c [ -z "$(apt-get indextargets)" ]     987kB
+    <missing>           11 days ago         /bin/sh -c #(nop) ADD file:d13b09e8b3cc98bf0…   63.2MB
+
+
+Notice that all the layers are identical except the top layer of the second image.
+All the other layers are shared between the two images, and are only stored once in /var/lib/docker/.
+The new layer actually doesn’t take any room at all,
+because it is not changing any files, but only running a command.
+
+Note: The <missing> lines in the `docker history` output indicate that those layers
+were built on another system and are not available locally. This can be ignored.
+
+
+----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
