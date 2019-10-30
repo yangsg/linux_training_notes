@@ -2108,18 +2108,98 @@ Use a read-only bind mount  (使用 只读 的 bind 挂载)
 
 
 --------------------------------------------------
+Configure bind propagation  (配置 bind 传播)
+
+    https://docs.docker.com/storage/bind-mounts/
+
+
+注: 在设置 bind-propagation 之前, 还需要确保 宿主机的 文件系统已经支持  bind propagation.
+    见 https://www.kernel.org/doc/Documentation/filesystems/sharedsubtree.txt
+
+  Bind propagation defaults to rprivate for both bind mounts and volumes. It is only configurable for bind mounts,
+  and only on Linux host machines. Bind propagation is an advanced topic and many users never need to configure it.
+  // Bind propagation 对于 bind mounts 和 volumes 的默认值都是 'rprivate'.
+  // 且 仅针对于 bind mounts 其是可配置的(volumes 就是固定的 'rprivate', 无法配置), 且仅针对于 linux 宿主机.
+  // Bind propagation 是一个 高级的 主题 且 许多 users 从不需要 配置它。
+
+  更多信息见官网  https://docs.docker.com/storage/bind-mounts/
 
 
 
 
 
 
+--------------------------------------------------
+About storage drivers (关于 存储驱动)
+
+      https://docs.docker.com/storage/storagedriver/
+
+       docker image 的 分层构建、联合挂载
 
 
 
+To use storage drivers effectively, it’s important to know how Docker builds and stores images,
+and how these images are used by containers. You can use this information to make informed
+choices about the best way to persist data from your applications and avoid performance problems along the way.
+
+Storage drivers allow you to create data in the writable layer of your container.
+The files won’t be persisted after the container is deleted,
+and both read and write speeds are lower than native file system performance.
+
+// 读和写的操作在 速度上 native file system performance 更高效,
+// 所以 卷(volumes) 不只是提供持久化能力, 还可以提升读写性能及其他等特性
 
 
+A Docker image is built up from a series of layers. Each layer represents an instruction
+in the image’s Dockerfile. Each layer except the very last one is read-only.
+Consider the following Dockerfile:
 
+      FROM ubuntu:18.04
+      COPY . /app
+      RUN make /app
+      CMD python /app/app.py
+
+
+  This Dockerfile contains four commands, each of which creates a layer(每个指令都创建了一个层).
+  The `FROM` statement starts out by creating a layer from the 'ubuntu:18.04' image.
+  The `COPY` command adds some files from your Docker client’s current directory.
+  The `RUN` command builds your application using the 'make' command. Finally,
+  the last layer specifies what command to run within the container.
+
+  Each layer is only a set of differences from the layer before it. The layers are stacked on top of each other.
+  When you create a new container, you add a new writable layer(新的可写层) on top of the underlying layers.
+  This layer is often called the “container layer”(容器层). All changes made to the running container,
+  such as writing new files, modifying existing files, and deleting files, are written to this
+  thin writable container layer(可写的容器层). The diagram below shows a container based on the Ubuntu 18.04 image.
+
+
+        +-------------------------------------------------+
+        |              Thin R/W layer                     |  <------Container layer (可读可写层)
+        +-------------------------------------------------+
+             Λ         Λ         Λ          Λ         Λ
+             |         |         |          |         |
+             V         V         V          V         V
+        |+------------------------------------------------+-----------------------------
+        |                                                 |                     Λ
+        |   +------------------------------------+        |                     |
+CMD     |   | 5a1ee5e7e5a2                    0 B|        |                     |
+        |   +------------------------------------+        |                     |
+        |                                                 |                     |
+        |   +------------------------------------+        |                     |
+RUN     |   | e27aefd94cc8               1.895 KB|        |                     |
+        |   +------------------------------------+        |                     |
+        |                                            (locked/readonly)          |image layers (readonly)
+        |   +------------------------------------+        |                     |
+COPY    |   | c7b462a3a162               194.5 KB|        |                     |
+        |   +------------------------------------+        |                     |
+        |                                                 |                     |
+        |   +------------------------------------+        |                     |
+FROM    |   | 273fc2106a02               188.1 MB|        |                     |
+        |   +------------------------------------+        |                     |
+        |                                                 |                     |
+        |        ubuntu:18.04                             |                     V
+        +-------------------------------------------------+-----------------------------
+              Container (Base on ubuntu:18.04 image)
 
 
 
