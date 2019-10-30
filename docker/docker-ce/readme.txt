@@ -1943,7 +1943,176 @@ To remove all unused volumes and free up space:
     Are you sure you want to continue? [y/N]
 
 
+
+
+
+
 ----------------------------------------------------------------------------------------------------
+Use bind mounts  (使用 bind 挂载)
+
+    https://docs.docker.com/storage/bind-mounts/
+
+  注: 使用 bind mounts 之前，应优先考虑 named volumes 是否是 更好的选择
+
+
+  When you use a bind mount, a file(文件) or directory(目录) on the host machine is mounted into a container.
+  The file or directory is referenced by its full(全/绝对路径) or relative path(相对路径) on the host machine.
+
+  The file or directory does not need to exist on the Docker host already. It is created on demand(按需) if it does not yet exist.
+  // 这里的按需 创建 是指 使用 -v 选项的时候(即是 -v 的行为), 而 --mount 选项不会按需创建, 如果不存在，则 --mount 会生成 an error.
+
+
+Choose the -v or --mount flag (推荐 --mount 选项, 因 --mount 选项清晰，详细, 可读性更好)
+
+
+--mount: Consists of multiple key-value pairs, separated by commas(逗号) and each consisting of a <key>=<value> tuple.
+         The --mount syntax is more verbose than -v or --volume, but the order of the keys is not significant,
+         and the value of the flag is easier to understand.
+
+      - The 'type' of the mount, which can be 'bind', 'volume', or 'tmpfs'.
+        This topic discusses bind mounts, so the type is always 'bind'.
+
+      - The 'source' of the mount. For bind mounts, this is the path to
+        the file or directory on the Docker daemon host. May be specified as 'source' or 'src'.
+
+      - The 'destination' takes as its value the path where the file or directory is mounted in the container.
+        May be specified as 'destination', 'dst', or 'target'.
+
+      - The 'readonly' option, if present, causes the bind mount to be mounted into the container as read-only.
+
+      - The 'bind-propagation' option, if present, changes the bind propagation.
+        May be one of 'rprivate', 'private', 'rshared', 'shared', 'rslave', 'slave'.
+
+      - The 'consistency' option, if present, may be one of 'consistent', 'delegated', or 'cached'.
+        This setting only applies to Docker Desktop for Mac, and is ignored on all other platforms.
+
+      - The --mount flag does not support z or Z options for modifying selinux labels.
+
+Differences between -v and --mount behavior (-v 和 --mount 行为上的一点不同)
+
+  there is one behavior that is different between -v and --mount
+
+    If you use -v or --volume to bind-mount a file or directory that does not yet exist on the Docker host,
+    -v creates the endpoint for you. It is always created as a directory.
+    // 使用 -v 时, 如果 file 或 directory 在 宿主机上 尚不 存在时, 会 以 directory 方式创建 该 endpoint
+
+    If you use --mount to bind-mount a file or directory that does not yet exist on the Docker host,
+    Docker does not automatically create it for you, but generates an error.
+    // 使用 --mount 时不会自动创建 宿主机 上 尚不未在 的 a file or directory, 而是生成 an error.
+
+
+--------------------------------------------------
+示例: Start a container with a bind mount (启动容器时 指定 a bind mount)
+
+    https://docs.docker.com/storage/bind-mounts/
+
+// 先在 宿主机上创建 预 bind mounts 的 目录(因为 本示例打算使用 --mount 选项, 其不具备 -v 选项那种 按需创建 directory 的特性)
+[root@node01 ~]# mkdir -p /tmp/source/target
+[root@node01 ~]# cd /tmp/source/
+
+
+// 运行容器的时候 指定将 宿主机上目录 /tmp/source/target 绑定挂载到 容器 中的 目录 /app
+[root@node01 source]# docker container run -d -it --name devtest --mount type=bind,source="$(pwd)"/target,target=/app nginx:latest
+    3d1ea6a888e99e8f9f26e1335bac3785ed902ddfc03a5280e82e0c611db9957e
+
+[root@node01 source]# docker container ls
+    CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+    3d1ea6a888e9        nginx:latest        "nginx -g 'daemon of…"   25 seconds ago      Up 21 seconds       80/tcp              devtest
+
+
+// 观察一下 容器 'devtest' 挂载 相关的信息
+[root@node01 source]# docker container inspect devtest
+
+    ......
+        "Mounts": [
+            {
+                "Type": "bind",
+                "Source": "/tmp/source/target",
+                "Destination": "/app",
+                "Mode": "",
+                "RW": true,
+                "Propagation": "rprivate"
+            }
+        ],
+    ......
+
+
+[root@node01 ~]# docker container stop devtest   #停止容器 'devtest'
+[root@node01 ~]# docker container rm devtest     #删除容器 'devtest'
+
+--------------------------------------------------
+示例: Mount into a non-empty directory on the container (bind 挂载 到 容器中的 一个 非空目录)
+        注: 该示例中 bind 挂载之后, 容器中 原本 的 bind 挂载到的目标目录中的内容将被 隐藏掩盖(obscured)
+
+    https://docs.docker.com/storage/bind-mounts/
+
+
+  If you bind-mount into a non-empty directory on the container, the directory’s existing contents
+  are obscured by the bind mount. This can be beneficial, such as when you want to test a new version
+  of your application without building a new image. However, it can also be surprising and
+  this behavior differs from that of docker volumes.
+
+
+//注: 这个例子 仅作为演示效果, 其会导致 容器 无法正常工作(因为使用了宿主机 /tmp 下的内容隐藏/掩盖 了容器中 目录 /usr 下的内容)
+//    所以该 容器 会被创建； 但却 无法 正常启动(start).
+[root@node01 ~]# docker container run -d -it --name broken-container --mount type=bind,source=/tmp,target=/usr nginx:latest
+    b5525f488fe78d94382dc2ce24f5465eefbd400284ea68d9af5da19ef2b8c1fc
+    docker: Error response from daemon: OCI runtime create failed: container_linux.go:346: starting container process caused "exec: \"nginx\": executable file not found in $PATH": unknown.
+
+
+[root@node01 ~]# docker container rm broken-container  #删除容器 'broken-container'
+
+
+
+
+
+--------------------------------------------------
+Use a read-only bind mount  (使用 只读 的 bind 挂载)
+
+    https://docs.docker.com/storage/bind-mounts/
+
+// 将 宿主机上的 目录 /tmp/source/target 以只读的方式 bind 挂载到 容器中的 目录 /app
+[root@node01 source]# docker container run -d -it --name devtest --mount type=bind,source="$(pwd)"/target,target=/app,readonly  nginx:latest
+    cc649f79d365d6d5c2bc6a0aec5316694411de216ba604a13ca815acaad2eedb
+
+// 观察一下 容器 'devtest' 挂载相关的信息
+[root@node01 source]# docker container inspect devtest
+
+    ......
+        "Mounts": [
+            {
+                "Type": "bind",
+                "Source": "/tmp/source/target",
+                "Destination": "/app",
+                "Mode": "",
+                "RW": false,  <---观察
+                "Propagation": "rprivate"
+            }
+        ],
+    ......
+
+[root@node01 source]# docker container exec -it devtest /bin/bash
+    root@cc649f79d365:/# echo hello > /app/hello.html
+      bash: /app/hello.html: Read-only file system  <---观察, 写入失败, 因为指定为了 只读的 bind 挂载
+    root@cc649f79d365:/# ls /app/
+    root@cc649f79d365:/# exit
+      exit
+
+
+// 停止 并 删除 容器 'devtest'
+[root@node01 source]# docker container stop devtest
+[root@node01 source]# docker container rm devtest
+
+
+
+
+
+--------------------------------------------------
+
+
+
+
+
 
 
 
