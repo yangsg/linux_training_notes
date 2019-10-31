@@ -2469,7 +2469,133 @@ were built on another system and are not available locally. This can be ignored.
 
 
 ----------------------------------------------------------------------------------------------------
+Copying makes containers efficient (复制使 容器高效)
 
+
+    https://docs.docker.com/storage/storagedriver/
+
+When you start a container, a thin writable container layer is added on top of the other layers.
+Any changes the container makes to the filesystem are stored here. Any files the container
+does not change do not get copied to this writable layer. This means that the writable layer is as small as possible.
+// 容器做的 所有的文件系统修改 都被存储在 该 可写的 container layer.
+
+
+When an existing file in a container is modified, the storage driver performs a copy-on-write operation.
+The specifics steps involved depend on the specific storage driver. For the aufs,
+overlay, and overlay2 drivers, the copy-on-write operation follows this rough sequence:
+// 存储驱动 aufs, overlay 和 overlay2 的  copy-on-write 操作的大体步骤:
+
+    - Search through the image layers for the file to update. The process starts at the newest layer
+      and works down to the base layer one layer at a time. When results are found,
+      they are added to a cache to speed future operations.
+      // 在 image layers 上从上往下搜索预修改的文件, 如果找到 便 将其 加入 cache 中以 加速 将来的操作.
+
+    - Perform a copy_up operation on the first copy of the file that is found, to copy the file to the container’s writable layer.
+      // 执行 向上复制(copy_up) 操作, 将 找到的 file 的 first copy 复制到 容器的 可写层.
+
+    - Any modifications are made to this copy of the file, and the container cannot see
+      the read-only copy of the file that exists in the lower layer.
+      // 任何修改 都在 该 file 的 copy 副本上 执行, 容器无法再看到 底层(lower layer) 存在的 该 file 的 只读副本(read-only).
+      // 即 file 的 上层副本 会 掩盖隐藏 下层的 副本.
+
+
+Btrfs, ZFS, and other drivers handle the copy-on-write differently.
+You can read more about the methods of these drivers later in their detailed descriptions.
+// Btrfs, ZFS 和 其他 drivers 以 不同的方式 处理 copy-on-write
+
+Containers that write a lot of data consume more space than containers that do not.
+This is because most write operations consume new space in the container’s thin writable top layer.
+
+
+Note: for write-heavy applications, you should not store the data in the container.
+Instead, use Docker volumes, which are independent of the running container and
+are designed to be efficient for I/O. In addition, volumes can be shared
+among containers and do not increase the size of your container’s writable layer.
+// 注: 对于大量写入的 applications, 你应该使用 Docker volumes, 即使用 native file system 以
+//     获取高效的 I/O 性能。另外, volumes 可以在 多个 containers 之间共享 且 不会 增加
+//     容器 可写层的 size.
+
+
+A copy_up operation can incur a noticeable performance overhead.
+This overhead is different depending on which storage driver(存储驱动) is in use.
+Large files(大文件), lots of layers(大量层), and deep directory trees(深的目录树) can make the impact more noticeable.
+This is mitigated by the fact that each copy_up operation only occurs the first time a given file is modified.
+
+
+示例:
+To verify the way that copy-on-write works, the following procedures spins up 5 containers
+based on the acme/my-final-image:1.0 image we built earlier and examines how much room they take up.
+
+    Note: This procedure doesn’t work on Docker Desktop for Mac or Docker Desktop for Windows.
+
+1) From a terminal on your Docker host, run the following docker run commands. The strings at the end are the IDs of each container.
+
+[root@node01 ~]# docker container run -dit --name my_container_1 acme/my-final-image:1.0 bash \
+                   && docker container run -dit --name my_container_2 acme/my-final-image:1.0 bash \
+                   && docker container run -dit --name my_container_3 acme/my-final-image:1.0 bash \
+                   && docker container run -dit --name my_container_4 acme/my-final-image:1.0 bash \
+                   && docker container run -dit --name my_container_5 acme/my-final-image:1.0 bash
+
+    f370efe43d83b2ec48b7dddb2e7a2ba39182269c5bb5a547d67eb6eb0b60e575
+    a5304d12704c5a7cc5dc12c6877dc0eb2467ce9eea57e23a2bb62ccd24b99970
+    0a8d9f3d982bd29c82c89bfeafebf61b2f48ed9b092079049d2a3cdcf5e8ab9f
+    c74bd1ab157244575df75c3310a11db0af8c9d53de489a42834db35110ca213f
+    447a604aa52bf2e3b7595a6bba6716cf954989578da7e67a974400d74bc3c86b
+
+2) Run the docker ps command to verify the 5 containers are running.
+
+[root@node01 ~]# docker ps    #注: 命令 `docker ps` 是 命令 `docker container ls` 的别名
+  CONTAINER ID        IMAGE                     COMMAND             CREATED             STATUS              PORTS               NAMES
+  447a604aa52b        acme/my-final-image:1.0   "bash"              2 minutes ago       Up 2 minutes                            my_container_5
+  c74bd1ab1572        acme/my-final-image:1.0   "bash"              2 minutes ago       Up 2 minutes                            my_container_4
+  0a8d9f3d982b        acme/my-final-image:1.0   "bash"              2 minutes ago       Up 2 minutes                            my_container_3
+  a5304d12704c        acme/my-final-image:1.0   "bash"              2 minutes ago       Up 2 minutes                            my_container_2
+  f370efe43d83        acme/my-final-image:1.0   "bash"              2 minutes ago       Up 2 minutes                            my_container_1
+
+[root@node01 ~]# docker container ls
+  CONTAINER ID        IMAGE                     COMMAND             CREATED             STATUS              PORTS               NAMES
+  447a604aa52b        acme/my-final-image:1.0   "bash"              4 minutes ago       Up 4 minutes                            my_container_5
+  c74bd1ab1572        acme/my-final-image:1.0   "bash"              4 minutes ago       Up 4 minutes                            my_container_4
+  0a8d9f3d982b        acme/my-final-image:1.0   "bash"              4 minutes ago       Up 4 minutes                            my_container_3
+  a5304d12704c        acme/my-final-image:1.0   "bash"              4 minutes ago       Up 4 minutes                            my_container_2
+  f370efe43d83        acme/my-final-image:1.0   "bash"              4 minutes ago       Up 4 minutes                            my_container_1
+
+
+3) List the contents of the local storage area.
+
+[root@node01 ~]# ls -1 /var/lib/docker/containers
+    0a8d9f3d982bd29c82c89bfeafebf61b2f48ed9b092079049d2a3cdcf5e8ab9f
+    447a604aa52bf2e3b7595a6bba6716cf954989578da7e67a974400d74bc3c86b
+    a5304d12704c5a7cc5dc12c6877dc0eb2467ce9eea57e23a2bb62ccd24b99970
+    c74bd1ab157244575df75c3310a11db0af8c9d53de489a42834db35110ca213f
+    f370efe43d83b2ec48b7dddb2e7a2ba39182269c5bb5a547d67eb6eb0b60e575
+
+4) Now check out their sizes:
+
+[root@node01 ~]# du -sh /var/lib/docker/containers/*
+    24K /var/lib/docker/containers/0a8d9f3d982bd29c82c89bfeafebf61b2f48ed9b092079049d2a3cdcf5e8ab9f
+    24K /var/lib/docker/containers/447a604aa52bf2e3b7595a6bba6716cf954989578da7e67a974400d74bc3c86b
+    24K /var/lib/docker/containers/a5304d12704c5a7cc5dc12c6877dc0eb2467ce9eea57e23a2bb62ccd24b99970
+    24K /var/lib/docker/containers/c74bd1ab157244575df75c3310a11db0af8c9d53de489a42834db35110ca213f
+    24K /var/lib/docker/containers/f370efe43d83b2ec48b7dddb2e7a2ba39182269c5bb5a547d67eb6eb0b60e575
+
+
+  Each of these containers only takes up 24K of space on the filesystem.
+
+  Not only does copy-on-write save space, but it also reduces start-up time.
+  When you start a container (or multiple containers from the same image), Docker only needs to create the thin writable container layer.
+
+  If Docker had to make an entire copy of the underlying image stack each time it started a new container,
+  container start times and disk space used would be significantly increased.
+  This would be similar to the way that virtual machines work, with one or more virtual disks per virtual machine.
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
 
 
 
