@@ -2136,6 +2136,7 @@ About storage drivers (关于 存储驱动)
 
        docker image 的 分层构建、联合挂载
 
+  存储驱动 overlay2(推荐): https://docs.docker.com/storage/storagedriver/overlayfs-driver/
 
 
 To use storage drivers effectively, it’s important to know how Docker builds and stores images,
@@ -2596,6 +2597,293 @@ based on the acme/my-final-image:1.0 image we built earlier and examines how muc
 
 
 ----------------------------------------------------------------------------------------------------
+select storage driver  (选择 存储引擎)
+
+Docker storage drivers
+
+    https://docs.docker.com/storage/storagedriver/select-storage-driver/
+
+      推荐: overlay2, 如果使用其他存储驱动, 可能需要自己承担一些风险
+
+Ideally, very little data is written to a container’s writable layer, and you use Docker volumes to write data.
+However, some workloads require you to be able to write to the container’s writable layer.
+This is where storage drivers come in.
+// 理想的情况下, 很少的 data 被 写入到 容器的可写层, 同时 使用 Docker volumes 来 写入数据
+
+Docker supports several different storage drivers, using a pluggable architecture.
+The storage driver controls how images and containers are stored and managed on your Docker host.
+// storage driver 控制着 images 和 containers 在 宿主机上 被 存储 和 管理的方式
+
+
+After you have read the storage driver overview, the next step is to choose the best storage driver for your workloads.
+In making this decision, there are three high-level factors to consider:
+
+If multiple storage drivers are supported in your kernel, Docker has a prioritized list
+of which storage driver to use if no storage driver is explicitly configured, assuming that the storage driver meets the prerequisites.
+
+Use the storage driver with the best overall performance and stability in the most usual scenarios.
+// 在 大多数情况下，应使用 具有最佳 整体性能 和 稳定性 的 storage driver
+
+Docker supports the following storage drivers:
+// Docker 支持 如下 的 storage drivers:
+
+  - 'overlay2' is the preferred storage driver, for all currently supported Linux distributions, and requires no extra configuration.
+    // 'overlay2' 是 首选的 storage driver (对于当前所有被支持的 Linux distributions), 且 不需要 额外的配置.
+
+  - 'aufs' is the preferred storage driver for Docker 18.06 and older, when running on Ubuntu 14.04 on kernel 3.13 which has no support for overlay2.
+
+  - 'devicemapper' is supported, but requires direct-lvm for production environments, because loopback-lvm,
+    while zero-configuration, has very poor performance(很低的性能). devicemapper was the recommended storage driver for CentOS and RHEL,
+    as their kernel version did not support overlay2.  However, current versions of CentOS and RHEL now have support for overlay2, which is now the recommended driver.
+    // 注: 当前版本的 CentOS 和 RHEL 已经支持 overlay2, 所以 推荐 overlay2
+
+  - The 'btrfs' and 'zfs' storage drivers are used if they are
+    the backing filesystem (the filesystem of the host on which Docker is installed).
+    These filesystems allow for advanced options, such as creating “snapshots”,
+    but require more maintenance and setup. Each of these relies on the backing filesystem being configured correctly.
+
+
+  - The 'vfs' storage driver is intended for testing purposes(测试目的), and for situations where no copy-on-write filesystem can be used.
+    Performance of this storage driver is poor, and is not generally recommended for production use.
+    // 'vfs' 用于测试目的, 即 不能使用 写时复制的 场景。其性能 很差, 通过不建议在 生产环境中 使用.
+
+NOTE: Your choice may be limited by your Docker edition(Docker 版本), operating system(操作系统), and distribution(发行版).
+      For instance, aufs is only supported on Ubuntu and Debian, and may require extra packages to be installed,
+      while btrfs is only supported on SLES, which is only supported with Docker Enterprise.
+      See Support storage drivers per Linux distribution for more information.
+
+
+--------------------------------------------------
+Supported storage drivers per Linux distribution
+
+    https://docs.docker.com/storage/storagedriver/select-storage-driver/
+
+  At a high level, the storage drivers you can use is partially determined by the Docker edition you use.
+
+  In addition, Docker does not recommend any configuration that requires you to disable security
+  features of your operating system, such as the need to disable selinux if you use the 'overlay' or 'overlay2' driver on CentOS.
+
+
+--------------------------------------------------
+Docker Engine - Community
+
+For Docker Engine - Community, only some configurations are tested,
+and your operatingsystem’s kernel may not support every storage driver.
+In general,the following configurations work on recent versions of the Linux distribution:
+
+
+------------------------------------|--------------------------------------------------------------------|-----------------------------------
+Linux distribution                  | Recommended storage drivers                                        |  Alternative drivers
+------------------------------------|--------------------------------------------------------------------|-----------------------------------
+Docker Engine - Community on Ubuntu |  overlay2 or aufs (for Ubuntu 14.04 running on kernel 3.13)        |  overlay¹, devicemapper², zfs, vfs
+------------------------------------|--------------------------------------------------------------------|-----------------------------------
+Docker Engine - Community on Debian |  overlay2 (Debian Stretch), aufs or devicemapper (older versions)  |   overlay¹, vfs
+------------------------------------|--------------------------------------------------------------------|-----------------------------------
+Docker Engine - Community on CentOS |  overlay2                                                          |   overlay¹, devicemapper², zfs, vfs
+------------------------------------|--------------------------------------------------------------------|-----------------------------------
+Docker Engine - Community on Fedora |  overlay2                                                          |   overlay¹, devicemapper², zfs, vfs
+------------------------------------|--------------------------------------------------------------------|-----------------------------------
+
+
+The overlay storage driver is deprecated in Docker Engine - Enterprise 18.09, and will be removed in a future release.
+It is recommended that users of the overlay storage driver migrate to overlay2.
+// overlay 存储驱动 在 Docker Engine - Enterprise 18.09 中 已经过时了, 且在未来版本中 其会被删除
+// 所以建议 使用 overlay 存储驱动的用户 迁移到 overlay2
+
+
+The devicemapper storage driver is deprecated in Docker Engine 18.09, and will be removed in a future release.
+It is recommended that users of the devicemapper storage driver migrate to overlay2.
+// devicemapper 存储驱动在 Docker Engine 18.09 中已经过时了, 且在未来版本中 其会被删除
+// 所以建议 使用 devicemapper 存储驱动的用户 迁移到 overlay2
+
+When possible, overlay2 is the recommended storage driver. When installing Docker for the first time,
+overlay2 is used by default. Previously, aufs was used by default when available,
+but this is no longer the case. If you want to use aufs on new installations going forward,
+you need to explicitly configure it, and you may need to install extra packages, such as linux-image-extra. See aufs.
+// 只要有可能, overlay2 就是 被推荐的 存储引擎, 首次安装 Docker 时, overlay2 就是默认被使用的.
+
+
+    Expectations for non-recommended storage drivers: Commercial support is not available for Docker Engine - Community,
+    and you can technically use any storage driver that is available for your platform. For instance,
+    you can use btrfs with Docker Engine - Community, even though it is not recommended
+    on any platform for Docker Engine - Community, and you do so at your own risk.
+
+    The recommendations in the table above are based on automated regression testing and the configurations
+    that are known to work for a large number of users. If you use a recommended configuration
+    and find a reproducible issue, it is likely to be fixed very quickly. If the driver that you
+    want to use is not recommended according to this table, you can run it at your own risk.
+    You can and should still report any issues you run into. However,
+    such issues have a lower priority than issues encountered when using a recommended configuration.
+    // 使用 非推荐 的 存储驱动， 你可以要自己承担运行风险
+
+
+--------------------------------------------------
+Supported backing filesystems
+
+  https://docs.docker.com/storage/storagedriver/select-storage-driver/
+
+With regard to Docker, the backing filesystem is the filesystem where
+/var/lib/docker/ is located. Some storage drivers only work with specific backing filesystems.
+
+
+      ----------------------+----------------------------------
+      Storage driver        |   Supported backing filesystems
+      ----------------------|----------------------------------
+        overlay2, overlay   |   xfs with ftype=1, ext4
+      ----------------------|----------------------------------
+        aufs                |   xfs, ext4
+      ----------------------|----------------------------------
+        devicemapper        |   direct-lvm
+      ----------------------|----------------------------------
+        btrfs               |   btrfs
+      ----------------------|----------------------------------
+        zfs                 |   zfs
+      ----------------------|----------------------------------
+        vfs                 |   any filesystem
+      ----------------------+----------------------------------
+
+
+--------------------------------------------------
+Other considerations (其他注意事项)
+
+    https://docs.docker.com/storage/storagedriver/select-storage-driver/
+
+----------
+Suitability for your workload
+
+
+  Among other things, each storage driver has its own performance characteristics that
+  make it more or less suitable for different workloads. Consider the following generalizations:
+
+      - overlay2, aufs, and overlay all operate at the file level rather than the block level.
+        This uses memory more efficiently, but the container’s writable layer may grow quite large in write-heavy workloads.
+
+      - Block-level storage drivers such as devicemapper, btrfs, and zfs perform better for write-heavy workloads (though not as well as Docker volumes).
+
+      - For lots of small writes or containers with many layers or deep filesystems, overlay may perform better than overlay2,
+        but consumes more inodes, which can lead to inode exhaustion.
+
+      - btrfs and zfs require a lot of memory.
+
+      - zfs is a good choice for high-density workloads such as PaaS.
+
+  More information about performance, suitability, and best practices is available in the documentation for each storage driver.
+
+
+----------
+Shared storage systems and the storage driver
+
+  If your enterprise uses SAN, NAS, hardware RAID, or other shared storage systems, they may provide high availability,
+  increased performance, thin provisioning, deduplication, and compression. In many cases,
+  Docker can work on top of these storage systems, but Docker does not closely integrate with them.
+
+  Each Docker storage driver is based on a Linux filesystem or volume manager. Be sure to follow existing
+  best practices for operating your storage driver (filesystem or volume manager) on top of
+  your shared storage system. For example, if using the ZFS storage driver on top of a shared storage system,
+  be sure to follow best practices for operating ZFS filesystems on top of that specific shared storage system.
+
+
+----------
+Stability
+
+  For some users, stability is more important than performance. Though Docker considers all of the storage drivers
+  mentioned here to be stable, some are newer and are still under active development.
+  In general, 'overlay2', aufs, overlay, and devicemapper are the choices with the highest stability.
+
+
+----------
+Test with your own workloads
+
+  You can test Docker’s performance when running your own workloads on different storage drivers.
+  Make sure to use equivalent hardware and workloads to match production conditions,
+  so you can see which storage driver offers the best overall performance.
+
+
+
+--------------------------------------------------
+Check your current storage driver
+
+    https://docs.docker.com/storage/storagedriver/select-storage-driver/
+
+The detailed documentation for each individual storage driver details all of the set-up steps to use a given storage driver.
+
+To see what storage driver Docker is currently using, use docker info and look for the Storage Driver line:
+
+[root@node01 ~]# docker info  #在命令 `docker info` 的输出结果中可以查看到 当前使用的 Storage Driver
+    Client:
+     Debug Mode: false
+
+    Server:
+     Containers: 5
+      Running: 5
+      Paused: 0
+      Stopped: 0
+     Images: 3
+     Server Version: 19.03.4
+     Storage Driver: overlay2  <----观察, 当前使用的存储驱动
+      Backing Filesystem: xfs
+      Supports d_type: true
+      Native Overlay Diff: true
+     Logging Driver: json-file
+     Cgroup Driver: cgroupfs
+     Plugins:
+      Volume: local
+      Network: bridge host ipvlan macvlan null overlay
+      Log: awslogs fluentd gcplogs gelf journald json-file local logentries splunk syslog
+     Swarm: inactive
+     Runtimes: runc
+     Default Runtime: runc
+     Init Binary: docker-init
+     containerd version: b34a5c8af56e510852c35414db4c1f4fa6172339
+     runc version: 3e425f80a8c931f88e6d94a8c831b9d5aa481657
+     init version: fec3683
+     Security Options:
+      seccomp
+       Profile: default
+     Kernel Version: 3.10.0-693.el7.x86_64
+     Operating System: CentOS Linux 7 (Core)
+     OSType: linux
+     Architecture: x86_64
+     CPUs: 1
+     Total Memory: 976.3MiB
+     Name: node01
+     ID: O75Q:DJJA:5HHT:R4M6:YZPH:4SDH:FHMV:RYRW:5MIR:CWFO:SAFW:GNEB
+     Docker Root Dir: /var/lib/docker
+     Debug Mode: false
+     Registry: https://index.docker.io/v1/
+     Labels:
+     Experimental: false
+     Insecure Registries:
+      127.0.0.0/8
+     Registry Mirrors:
+      https://xxxxxxxxxxxxxxxx.mirror.aliyuncs.com/
+     Live Restore Enabled: false
+
+
+To change the storage driver, see the specific instructions for the new storage driver.
+Some drivers require additional configuration, including configuration to physical or logical disks on the Docker host.
+
+
+Important(重要): When you change the storage driver, any existing images and containers become inaccessible.
+                 This is because their layers cannot be used by the new storage driver. If you revert your changes,
+                 you can access the old images and containers again,
+                 but any that you pulled or created using the new driver are then inaccessible.
+// 重要: 当你 修改了 storage driver, 任何现有的 images 和 containers  将变得不可访问,
+         这时因为 它们的 layers 无法被 新的 storage driver 所使用, 如果你还原你的修改,
+         你可以再一次访问 旧的 images 和 containers, 但是 任何 你 通过 新的 驱动来 pulled 和 created 的 images 和 containers
+         会变得不可访问
+
+更多 关于 overlay2 的信息, 见:   https://docs.docker.com/storage/storagedriver/overlayfs-driver/
+
+
+----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
 
 
 
