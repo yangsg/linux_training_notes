@@ -3912,6 +3912,230 @@ The following parser directives are supported:
 
 
 
+--------------------------------------------------
+syntax
+
+    https://docs.docker.com/engine/reference/builder/
+
+# syntax=[remote image reference]
+
+For example:
+
+      # syntax=docker/dockerfile
+      # syntax=docker/dockerfile:1.0
+      # syntax=docker.io/docker/dockerfile:1
+      # syntax=docker/dockerfile:1.0.0-experimental
+      # syntax=example.com/user/repo:tag@sha256:abcdef...
+
+
+This feature is only enabled if the BuildKit backend is used.
+// 该 特性 仅在 使用 BuildKit backend 时 被启用(enabled)
+
+The syntax directive defines the location of the Dockerfile builder that is used for building the current Dockerfile.
+The BuildKit backend allows to seamlessly use external implementations of builders that are distributed
+as Docker images and execute inside a container sandbox environment.
+// syntax 指令定义了 用于构建 当前 Dockerfile 的 Dockerfile builder 的 location.
+// BuildKit backend 允许 无缝地 使用 builders 的 外部实现.  其 作为 Docker images 被 发布 且 在 容器的 沙箱环境中执行.
+
+
+Custom Dockerfile implementation allows you to:
+// 自定义 Dockerfile 实现的 好处:
+
+    - Automatically get bugfixes without updating the daemon
+      // 自动 获取 bugfixes 而 无需 更新 daemon
+
+    - Make sure all users are using the same implementation to build your Dockerfile
+      // 确保 所有的 users 正在 使用 相同的 实现 来 构建 你的 Dockerfile
+
+    - Use the latest features without updating the daemon
+    - Try out new experimental or third-party features
+
+
+
+Official releases
+
+Docker distributes official versions of the images that can be used for building Dockerfiles
+under docker/dockerfile repository on Docker Hub.
+There are two channels where new images are released: stable and experimental.
+// Docker 在 Docker Hub 上的 docker/dockerfile 仓库中  分发 官方版本的 可被用于构建 Dockerfiles 的 the images.
+
+      https://hub.docker.com/r/docker/dockerfile
+      https://hub.docker.com/r/docker/dockerfile/tags
+
+
+Stable channel follows semantic versioning. For example:
+
+    - docker/dockerfile:1.0.0 - only allow immutable version 1.0.0
+    - docker/dockerfile:1.0 - allow versions 1.0.*
+    - docker/dockerfile:1 - allow versions 1..
+    - docker/dockerfile:latest - latest release on stable channel
+
+The experimental channel uses incremental versioning with the major and minor component from the stable channel on the time of the release. For example:
+
+    - docker/dockerfile:1.0.1-experimental - only allow immutable version 1.0.1-experimental
+    - docker/dockerfile:1.0-experimental - latest experimental releases after 1.0
+    - docker/dockerfile:experimental - latest release on experimental channel
+
+
+You should choose a channel that best fits your needs. If you only want bugfixes,
+you should use docker/dockerfile:1.0. If you want to benefit from experimental features,
+you should use the experimental channel. If you are using the experimental channel,
+newer releases may not be backwards compatible, so it is recommended to use an immutable full version variant.
+// 建议使用 不可变的 full version variant, 如 'docker/dockerfile:1.0.0'
+
+
+For master builds and nightly feature releases refer to the description in the source repository.
+          https://github.com/moby/buildkit/blob/master/README.md
+
+
+
+
+--------------------------------------------------
+escape
+
+    https://docs.docker.com/engine/reference/builder/
+
+# escape=\ (backslash)
+
+Or
+
+# escape=` (backtick)
+
+
+The escape directive sets the character used to escape characters in a Dockerfile. If not specified, the default escape character is \.
+// escape directive 设置 Dockerfile 中 使用的 转义字符, 如果 没有指定, 默认的 转移字符 是 \.
+
+
+The escape character is used both to escape characters in a line, and to escape a newline.
+This allows a Dockerfile instruction to span multiple lines. Note that regardless of whether
+the escape parser directive is included in a Dockerfile, escaping is not performed in a RUN command, except at the end of a line.
+// 注: 不管 Dockerfile 中 是否包含了 escape 解析器指令,  转移 不会 在 a RUN command 中 被执行, 除了 at the end of a line.
+
+
+Setting the escape character to ` is especially useful on Windows,
+where \ is the directory path separator. ` is consistent with Windows PowerShell.
+// 将 转移字符 设置为 ` 在 Windows 系统上 很有用
+
+
+关于 windows 上 的 Dockerfile 的转义字符 更多讨论见 https://docs.docker.com/engine/reference/builder/
+
+
+
+
+
+
+--------------------------------------------------
+Environment replacement
+
+    https://docs.docker.com/engine/reference/builder/
+
+Environment variables (declared with the `ENV` statement) can also be used in certain instructions as variables
+to be interpreted by the Dockerfile. Escapes are also handled for including variable-like syntax into a statement literally.
+
+Environment variables are notated in the Dockerfile either with $variable_name or ${variable_name}.
+They are treated equivalently and the brace syntax is typically used to address issues with variable names with no whitespace, like ${foo}_bar.
+// 注: Dockerfile 中 环境变量的引用 方式 类似于 bash shell 中对变量的 引用方式, 即 $variable_name 或 ${variable_name}
+
+
+The ${variable_name} syntax also supports a few of the standard bash modifiers as specified below:
+
+      - ${variable:-word} indicates that if variable is set then the result will be that value. If variable is not set then word will be the result.
+      - ${variable:+word} indicates that if variable is set then word will be the result, otherwise the result is the empty string.
+
+In all cases, word can be any string, including additional environment variables.
+
+Escaping is possible by adding a \ before the variable: \$foo or \${foo}, for example, will translate to $foo and ${foo} literals respectively.
+
+
+Example (parsed representation is displayed after the #):
+//示例
+
+        FROM busybox
+        ENV foo /bar
+        WORKDIR ${foo}   # WORKDIR /bar
+        ADD . $foo       # ADD . /bar
+        COPY \$foo /quux # COPY $foo /quux
+
+
+Environment variables are supported by the following list of instructions in the Dockerfile:
+// 如下 Dockerfile 中的指令 支持 环境变量:
+
+          -  ADD
+          -  COPY
+          -  ENV
+          -  EXPOSE
+          -  FROM
+          -  LABEL
+          -  STOPSIGNAL
+          -  USER
+          -  VOLUME
+          -  WORKDIR
+
+as well as(以及):
+
+          -  ONBUILD (when combined with one of the supported instructions above)
+
+Note(注): prior to 1.4, ONBUILD instructions did NOT support environment variable, even when combined with any of the instructions listed above.
+
+
+Environment variable substitution will use the same value for each variable throughout the entire instruction. In other words, in this example:
+// 环境变量 替换 在 entire instruction 中 将使用 每个变量的 相同的值, 如下示例:
+
+        ENV abc=hello
+        ENV abc=bye def=$abc   <---注: 该指令执行后 def 的 value 为  hello
+        ENV ghi=$abc           <---注: 该指令执行后 ghi 的 value 为  bye
+
+will result in def having a value of hello, not bye. However, ghi will have a value of bye because it is not part of the same instruction that set abc to bye.
+
+
+
+
+
+
+
+
+--------------------------------------------------
+.dockerignore file
+
+
+    https://docs.docker.com/engine/reference/builder/
+
+
+    类比 .gitignore 文件
+
+
+Before the docker CLI sends the context to the docker daemon, it looks for a file named .dockerignore
+in the root directory of the context. If this file exists, the CLI modifies the context to
+exclude files and directories that match patterns in it. This helps to avoid unnecessarily
+sending large or sensitive files and directories to the daemon and potentially adding them to images using ADD or COPY.
+// 在 docker CLI 发送 context 到 docker daemon 之前, 其 会在 context 的 root 目录中 查找 文件 .dockerignore .
+// 如果该文件存在, CLI 会 修改 该 context 以 将 匹配 该 .dockerignore 文件中的 patterns 的那些文件 或 目录 排除在外.
+
+
+The CLI interprets the .dockerignore file as a newline-separated list of patterns similar
+to the file globs of Unix shells. For the purposes of matching, the root of the context is
+considered to be both the working and the root directory. For example,
+the patterns /foo/bar and foo/bar both exclude a file or directory named bar in
+the foo subdirectory of PATH or in the root of the git repository located at URL. Neither excludes anything else.
+// .dockerignore 中的 patterns 与 Unix shells 中的 the file globs 类似(见 `man 7 glob`).
+// 匹配的时候, context 的 根目录 会被同时 视为 the working and the root directory.
+
+If a line in .dockerignore file starts with # in column 1, then this line
+is considered as a comment and is ignored before interpreted by the CLI.
+
+
+Here is an example .dockerignore file:
+// .dockerignore 示例文件
+
+        # comment
+        */temp*
+        */*/temp*
+        temp?
+
+
+
+
+
 
 
 
