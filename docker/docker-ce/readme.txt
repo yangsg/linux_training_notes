@@ -6,6 +6,9 @@ https://docs.docker.com/
 https://hub.docker.com/
 
 
+https://docs.docker.com/reference/
+
+
 docker 国内加速地址
   https://www.jianshu.com/p/b5006ebf1522
 
@@ -1742,7 +1745,7 @@ Populate a volume using a container
 
 
 // 使用 容器 填充 新的空卷 'nginx-vol'
-// 注: 该命令中 volume 'nginx-vol' 不存在, 随意会自动被新建, 而同时卷所挂载到的 容器中的目录 /usr/share/nginx/html 为非空目录
+// 注: 该命令中 volume 'nginx-vol' 不存在, 所以会自动被新建, 而同时卷所挂载到的 容器中的目录 /usr/share/nginx/html 为非空目录
 //     所以 该容器目录 /usr/share/nginx/html 下的 内容(contents) 会被自动 copy 到 挂载卷中
 [root@node01 ~]# docker run -d --name=nginxtest --mount source=nginx-vol,destination=/usr/share/nginx/html  nginx:latest
     5d4657d8354f7ac7a5fa252dfe93f316c7a4f12395e67fa72b875f95de486b12
@@ -3508,7 +3511,83 @@ If you are on Docker 17.06.1 or higher and want to also prune volumes, add the -
 
 
 
+
 ----------------------------------------------------------------------------------------------------
+Format command and log output
+
+
+    https://docs.docker.com/config/formatting/
+
+    Go templates(需要翻墙): https://golang.org/pkg/text/template/
+
+Docker uses Go templates which you can use to manipulate the output format of certain commands and log drivers.
+
+Docker provides a set of basic functions to manipulate template elements.
+All of these examples use the docker inspect command, but many other CLI
+commands have a --format flag, and many of the CLI command
+references include examples of customizing the output format.
+
+[root@node01 ~]# docker container run --rm -d --name nginx_c01 nginx:latest
+    678370437e5b8c93ef33e3a911e0ca6318f9edfec413f5346992c32abc866a48
+
+
+-  join
+      join concatenates a list of strings to create a single string. It puts a separator between each element in the list.
+
+[root@node01 ~]# docker inspect --format '{{join .Args " , "}}' nginx_c01
+    -g , daemon off;
+
+-  json
+      json encodes an element as a json string.
+
+[root@node01 ~]# docker container run --rm -dit --mount destination=/dbdata --name centos7_c01 centos:7
+[root@node01 ~]# docker container inspect --format '{{json .Mounts}}' centos7_c01
+      [{"Type":"volume","Name":"8b74e8c86a888883027834d8f6492785a3b9e003247d228c76d028ce17ec4f06","Source":"/var/lib/docker/volumes/8b74e8c86a888883027834d8f6492785a3b9e003247d228c76d028ce17ec4f06/_data","Destination":"/dbdata","Driver":"local","Mode":"z","RW":true,"Propagation":""}]
+
+
+
+-  lower
+      lower transforms a string into its lowercase representation.
+
+[root@node01 ~]# docker container inspect --format "{{lower .Name}}" centos7_c01
+    /centos7_c01
+
+
+-  upper
+      upper transforms a string into its uppercase representation.
+
+[root@node01 ~]# docker container inspect --format "{{upper .Name}}" centos7_c01
+    /CENTOS7_C01
+
+
+
+-  split
+      split slices a string into a list of strings separated by a separator.
+
+[root@node01 ~]# docker container inspect --format '{{split .Image ":"}}' centos7_c01
+    [sha256 67fa590cfc1c207c30b837528373f819f6262c884b7e69118d060a0c04d70ab8]
+
+
+
+-  title
+      title capitalizes the first character of a string.
+
+[root@node01 ~]# docker container inspect --format "{{title .Name}}" centos7_c01
+    /Centos7_c01
+
+
+-  println
+      println prints each value on a new line.
+
+[root@node01 ~]# docker container inspect --format='{{range .NetworkSettings.Networks}}{{println .IPAddress}}{{end}}' centos7_c01
+    172.17.0.2
+
+
+Hint (提示)
+      To find out what data can be printed, show all content as json:
+
+[root@node01 ~]# docker container ls --format='{{json .}}'
+    {"Command":"\"/bin/bash\"","CreatedAt":"2019-11-01 14:27:00 +0800 CST","ID":"5c1db6025050","Image":"centos:7","Labels":"org.label-schema.vendor=CentOS,org.label-schema.build-date=20190801,org.label-schema.license=GPLv2,org.label-schema.name=CentOS Base Image,org.label-schema.schema-version=1.0","LocalVolumes":"1","Mounts":"8b74e8c86a8888…","Names":"centos7_c01","Networks":"bridge","Ports":"","RunningFor":"19 minutes ago","Size":"0B","Status":"Up 19 minutes"}
 
 
 
@@ -3518,7 +3597,7 @@ If you are on Docker 17.06.1 or higher and want to also prune volumes, add the -
 
 
 
-
+----------------------------------------------------------------------------------------------------
 
 
 
