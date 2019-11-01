@@ -3598,6 +3598,320 @@ Hint (提示)
 
 
 ----------------------------------------------------------------------------------------------------
+Dockerfile reference  (Dockerfile 参考)
+
+    https://docs.docker.com/engine/reference/builder/
+    https://docs.docker.com/reference/
+    https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
+
+  关于 Dockerfile 的作用, 可以类比一下 Makefile
+
+
+            [root@node01 ~]# docker build --help
+
+            Usage:  docker build [OPTIONS] PATH | URL | -
+
+            Build an image from a Dockerfile
+
+            Options:
+                  --add-host list           Add a custom host-to-IP mapping (host:ip)
+                  --build-arg list          Set build-time variables
+                  --cache-from strings      Images to consider as cache sources
+                  --cgroup-parent string    Optional parent cgroup for the container
+                  --compress                Compress the build context using gzip
+                  --cpu-period int          Limit the CPU CFS (Completely Fair Scheduler) period
+                  --cpu-quota int           Limit the CPU CFS (Completely Fair Scheduler) quota
+              -c, --cpu-shares int          CPU shares (relative weight)
+                  --cpuset-cpus string      CPUs in which to allow execution (0-3, 0,1)
+                  --cpuset-mems string      MEMs in which to allow execution (0-3, 0,1)
+                  --disable-content-trust   Skip image verification (default true)
+              -f, --file string             Name of the Dockerfile (Default is 'PATH/Dockerfile')
+                  --force-rm                Always remove intermediate containers
+                  --iidfile string          Write the image ID to the file
+                  --isolation string        Container isolation technology
+                  --label list              Set metadata for an image
+              -m, --memory bytes            Memory limit
+                  --memory-swap bytes       Swap limit equal to memory plus swap: '-1' to enable unlimited swap
+                  --network string          Set the networking mode for the RUN instructions during build (default "default")
+                  --no-cache                Do not use cache when building the image
+                  --pull                    Always attempt to pull a newer version of the image
+              -q, --quiet                   Suppress the build output and print image ID on success
+                  --rm                      Remove intermediate containers after a successful build (default true)
+                  --security-opt strings    Security options
+                  --shm-size bytes          Size of /dev/shm
+              -t, --tag list                Name and optionally a tag in the 'name:tag' format
+                  --target string           Set the target build stage to build.
+                  --ulimit ulimit           Ulimit options (default [])
+
+
+
+
+
+Docker can build images automatically by reading the instructions from a Dockerfile.
+A Dockerfile is a text document that contains all the commands a user could call on
+the command line to assemble an image. Using docker build users can create an
+automated build that executes several command-line instructions in succession.
+
+This page describes the commands you can use in a Dockerfile. When you
+are done reading this page, refer to the Dockerfile Best Practices for a tip-oriented guide.
+
+  Dockerfile 的最佳实践 见: https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
+
+
+Usage (用法)
+
+The `docker build` command builds an image from a `Dockerfile` and a context.
+The build’s context is the set of files at a specified location 'PATH' or 'URL'.
+The PATH is a directory on your local filesystem. The URL is a Git repository location.
+// 构建上下文(build’s context) 是 位于 'PATH' 或 'URL' 处的 文件集.
+
+A context is processed recursively. So, a PATH includes any subdirectories and
+the URL includes the repository and its submodules.
+This example shows a build command that uses the current directory as context:
+// A context 是 被 递归地处理的, 因此, a PATH 包含 其任意 子目录 且 the URL 包含 其 仓库和其 submodules.
+
+      $ docker build .
+      Sending build context to Docker daemon  6.51 MB
+      ...
+
+The build is run by the Docker daemon, not by the CLI. The first thing a build process does
+is send the entire context (recursively) to the daemon. In most cases, it’s best to start
+with an empty directory as context and keep your Dockerfile in that directory. Add only the files needed for building the Dockerfile.
+// build 是通过 Docker 守护进程 执行的, 不是可通过 CLI. build 过程做的 第一件 事情 就是将
+// 整个上下文(recursively) 发送给 Docker daemon. 大多数情况下, 最好 开始时 以 一个 空目录 作为 context
+// 并将 Dockerfile 放入其中。 而后仅添加 构建 Dockerfile 所需要的 files.
+
+
+    Warning(警告): Do not use your root directory, /, as the PATH as it causes the build to
+             transfer the entire contents of your hard drive to the Docker daemon.
+
+
+To use a file in the build context, the Dockerfile refers to the file specified in an instruction,
+for example, a `COPY` instruction. To increase the build’s performance, exclude files and directories
+by adding a '.dockerignore'(类比 '.gitignore' 文件) file to the context directory.
+For information about how to create a '.dockerignore' file see the documentation on this page.
+
+
+Traditionally, the Dockerfile is called Dockerfile and located in the root of the context.
+You use the -f flag with docker build to point to a Dockerfile anywhere in your file system.
+// 习惯地, Dockerfile 被命名为 Dockerfile 并置于 context 的 root 下.
+// 可以使用 `docker build` 的 -f 选项 来指定 文件系统中 任意位置的 a Dockerfile
+
+      $ docker build -f /path/to/a/Dockerfile .   #注意: 此处的 点 '.' 表示当前目录作为 PATH(即 context 的 root)
+
+
+You can specify a repository and tag at which to save the new image if the build succeeds:
+
+      $ docker build -t shykes/myapp .  #使用 -t 选项指定 build 成功后 该 new image 所 save 到的 repository 和 tag
+
+To tag the image into multiple repositories after the build, add multiple -t parameters when you run the build command:
+
+      $ docker build -t shykes/myapp:1.0.2 -t shykes/myapp:latest .   #选项 -t 可重复多次 以指定 多个仓库(repositories)
+
+
+Before the Docker daemon runs the instructions in the Dockerfile,
+it performs a preliminary validation of the Dockerfile and returns an error if the syntax is incorrect:
+// 在 Docker daemon 执行 Dockerfile 中的 指令(instructions) 之前, Docker daemon 会初步地 检查验证 Dockerfile,
+// 如果 Dockerfile 存在语法错误, 其会 返回 an error
+
+      $ docker build -t test/myapp .
+      Sending build context to Docker daemon 2.048 kB
+      Error response from daemon: Unknown instruction: RUNCMD
+
+The Docker daemon runs the instructions in the Dockerfile one-by-one, committing the result of
+each instruction to a new image if necessary, before finally outputting the ID of your new image.
+The Docker daemon will automatically clean up the context you sent.
+// Docker daemon 会逐一运行  Dockerfile 中的 instructions, 在 最终 输出 生成的 new image 的 ID 之间,
+// 会根据需要 把 每个 instruction 的 结果 提交到 a new image.
+
+
+Note that each instruction is run independently, and causes a new image
+to be created - so RUN cd /tmp will not have any effect on the next instructions.
+// 注意: 每个 instruction 是 独立运行的, 并导致 一个新的 image 被创建.
+//       因此, 指令 'RUN cd /tmp' 对于 下一条指定 不会起到任何作用
+
+Whenever possible, Docker will re-use the intermediate images (cache),
+to accelerate the docker build process significantly. This is indicated
+by the 'Using cache' message in the console output. (For more information,
+see the Build cache section in the Dockerfile best practices guide):
+// 只要有可能, Docker 就会 重用 中间过程中的 images (cache),
+// 以 显著地 加速 docker build 过程. 这在 console output 中 通过 'Using cache' 消息给出了指示.
+
+$ docker build -t svendowideit/ambassador .
+    Sending build context to Docker daemon 15.36 kB
+    Step 1/4 : FROM alpine:3.2
+     ---> 31f630c65071
+    Step 2/4 : MAINTAINER SvenDowideit@home.org.au
+     ---> Using cache  <----观察 'Using cache' 指示
+     ---> 2a1c91448f5f
+    Step 3/4 : RUN apk update &&      apk add socat &&        rm -r /var/cache/
+     ---> Using cache
+     ---> 21ed6e7fbb73
+    Step 4/4 : CMD env | grep _TCP= | (sed 's/.*_PORT_\([0-9]*\)_TCP=tcp:\/\/\(.*\):\(.*\)/socat -t 100000000 TCP4-LISTEN:\1,fork,reuseaddr TCP4:\2:\3 \&/' && echo wait) | sh
+     ---> Using cache
+     ---> 7ea8aef582cc
+    Successfully built 7ea8aef582cc
+
+
+Build cache is only used from images that have a local parent chain. This means that these images
+were created by previous builds or the whole chain of images was loaded with docker load.
+If you wish to use build cache of a specific image you can specify it with '--cache-from' option.
+Images specified with '--cache-from' do not need to have a parent chain and may be pulled from other registries.
+
+
+When you’re done with your build, you’re ready to look into Pushing a repository to its registry.
+
+
+
+
+--------------------------------------------------
+BuildKit
+
+
+    https://docs.docker.com/engine/reference/builder/
+    https://github.com/moby/buildkit
+
+BuildKit has been integrated to docker build since Docker 18.06 .
+//从 Docker 18.09 开始, BuildKit 已经被 集成到了 docker build 中
+
+
+Starting with version 18.09, Docker supports a new backend for executing your builds that is provided by the moby/buildkit project.
+The BuildKit backend provides many benefits compared to the old implementation. For example, BuildKit can:
+
+    - Detect and skip executing unused build stages
+    - Parallelize building independent build stages
+    - Incrementally transfer only the changed files in your build context between builds
+    - Detect and skip transferring unused files in your build context
+    - Use external Dockerfile implementations with many new features
+    - Avoid side-effects with rest of the API (intermediate images and containers)
+    - Prioritize your build cache for automatic pruning
+
+To use the BuildKit backend, you need to set an environment variable DOCKER_BUILDKIT=1 on the CLI before invoking docker build.
+// 为了使用 BuildKit backend, 你需要在调用命令 `docker build` 之前 在 命令行(CLI) 上设置 环境变量  `DOCKER_BUILDKIT=1`
+
+To learn about the experimental Dockerfile syntax available to BuildKit-based builds refer to the documentation in the BuildKit repository.
+        https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/experimental.md
+
+
+--------------------------------------------------
+Format
+
+    https://docs.docker.com/engine/reference/builder/
+
+Here is the format of the Dockerfile:
+
+      # Comment
+      INSTRUCTION arguments
+
+The instruction is not case-sensitive. However, convention is for them to be UPPERCASE to distinguish them from arguments more easily.
+// instruction 大小写不敏感, 但是, 约定 使用 大写 以 使其 更容易与 指令的 arguments 进行区分.
+
+Docker runs instructions in a Dockerfile in order. A Dockerfile must begin with a `FROM` instruction.
+This may be after parser directives, comments, and globally scoped ARGs.
+The FROM instruction specifies the Parent Image from which you are building.
+FROM may only be preceded by one or more ARG instructions,
+which declare arguments that are used in FROM lines in the Dockerfile.
+// Docker 按顺序执行 Dockerfile 中的 instructions. 一个 Dockerfile 必须以 一个 `FROM` instruction 开始.
+// 不过该 `FROM` instruction 可以位于 parser directives, comments, 和 globally scoped ARGs 之后,
+// FROM 指令 指定了 你 正在构建 做 基于的 父镜像(the Parent Image).
+// FROM 仅能 前面 有 一个 或 多个 ARG instructions, 其声明了 在 Dockerfile 中 FROM lines 中所使用的 arguments.
+
+Docker treats lines that begin with # as a comment, unless the line is a valid parser directive.
+A # marker anywhere else in a line is treated as an argument. This allows statements like:
+// Docker 视 以 # 起始的行 为注释, 除非 该行是一个 有效的 解析器指令(parser directive)
+
+      # Comment
+      RUN echo 'we are running some # of cool things'
+
+Line continuation characters are not supported in comments.
+// comments 中 不支持 续行字符
+
+
+
+
+
+--------------------------------------------------
+Parser directives
+
+    https://docs.docker.com/engine/reference/builder/
+
+Parser directives are optional, and affect the way in which subsequent lines in a Dockerfile are handled.
+Parser directives do not add layers to the build, and will not be shown as a build step.
+Parser directives are written as a special type of comment in the form # directive=value.
+A single directive may only be used once.
+
+
+Once a comment, empty line or builder instruction has been processed, Docker no longer looks for parser directives.
+Instead it treats anything formatted as a parser directive as a comment and does not attempt to validate
+if it might be a parser directive. Therefore, all parser directives must be at the very top of a Dockerfile.
+// 所有的 parser directives 必须位于 Dockerfile 文件中的 最上面/最顶上(包括 注释 和 空行).
+// 因为 一旦 a comment, empty line 或 builder instruction 被处理了, Docker 就不会再查找 parser directives.
+// 而会将 所有 遇到的 形如 parser directives 的内容 视为 注释(comment)
+
+Parser directives are not case-sensitive. However, convention is for them to be lowercase.
+Convention is also to include a blank line following any parser directives.
+Line continuation characters are not supported in parser directives.
+// Parser directives 大小写 不敏感. 但是, 约定 其 使用小写.
+// 约定 还 包括在 任意 多个 parser directives 之后 再 跟随一个空白行(a blank line)
+// parser directives 不支持 续行符
+
+
+Due to these rules, the following examples are all invalid:
+// 根据这些规则, 如下的示例 都是 无效的:
+
+Invalid due to line continuation:
+
+      # direc \   <----非法(invalid), 因为 Parser directives 不支持 续行符
+      tive=value
+
+
+Invalid due to appearing twice:
+
+    # directive=value1
+    # directive=value2 <------非法(invalid),因为 单个 指令仅被使用一次
+
+    FROM ImageName
+
+
+Treated as a comment due to appearing after a builder instruction:
+
+    FROM ImageName
+    # directive=value  <-----非法(invalid),因为 parser directives 必须出现在 Dockerfile 的最上面(包括注释和空行), 否则其会被视为注释(comment)
+
+Treated as a comment due to appearing after a comment which is not a parser directive:
+
+    # About my dockerfile
+    # directive=value  <-----非法(invalid),因为 parser directives 必须出现在 Dockerfile 的最上面(包括注释和空行), 否则其会被视为注释(comment)
+    FROM ImageName
+
+
+The unknown directive is treated as a comment due to not being recognized.
+In addition, the known directive is treated as a comment due to appearing after a comment which is not a parser directive.
+
+      # unknowndirective=value  <-----非法(invalid),因为 未知的(unknown) directive 被视为 注释, 所以该错误还会导致 后面的 所有 Parser directives  被视为注释(comment)
+      # knowndirective=value
+
+
+
+Non line-breaking whitespace is permitted in a parser directive. Hence, the following lines are all treated identically(等价):
+
+            #directive=value
+            # directive =value
+            # directive= value
+            # directive = value
+            #   dIrEcTiVe=value
+
+
+
+
+The following parser directives are supported:
+
+        syntax
+        escape
+
+
+
+
 
 
 
