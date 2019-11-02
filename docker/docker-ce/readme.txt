@@ -4743,7 +4743,7 @@ Note: The first encountered ADD instruction will invalidate the cache for all fo
 
 
 ADD obeys the following rules:
-// 指令 ADD 需要 遵循 如下 规则:
+// 指令 ADD 遵循 如下 规则:
 
     - The <src> path must be inside the context of the build; you cannot ADD ../something /something,
       because the first step of a docker build is to send the context directory (and subdirectories) to the docker daemon.
@@ -4803,6 +4803,528 @@ ADD obeys the following rules:
 
 
 --------------------------------------------------
+COPY
+
+    https://docs.docker.com/engine/reference/builder/
+
+COPY has two forms:
+
+语法: COPY [--chown=<user>:<group>] <src>... <dest>
+语法: COPY [--chown=<user>:<group>] ["<src>",... "<dest>"] (this form is required for paths containing whitespace)
+
+
+Note: The --chown feature is only supported on Dockerfiles used to build Linux containers,
+      and will not work on Windows containers. Since user and group ownership concepts do not
+      translate between Linux and Windows, the use of /etc/passwd and /etc/group for translating user
+      and group names to IDs restricts this feature to only be viable for Linux OS-based containers.
+
+
+The COPY instruction copies new files or directories from <src> and adds them to the filesystem of the container at the path <dest>.
+
+Multiple <src> resources may be specified but the paths of files and directories will be interpreted as relative to the source of the context of the build.
+
+Each <src> may contain wildcards and matching will be done using Go’s filepath.Match rules. For example:
+
+    COPY hom* /mydir/        # adds all files starting with "hom"
+    COPY hom?.txt /mydir/    # ? is replaced with any single character, e.g., "home.txt"
+
+The <dest> is an absolute path, or a path relative to WORKDIR, into which the source will be copied inside the destination container.
+
+    COPY test relativeDir/   # adds "test" to `WORKDIR`/relativeDir/
+    COPY test /absoluteDir/  # adds "test" to /absoluteDir/
+
+When copying files or directories that contain special characters (such as [ and ]),
+you need to escape those paths following the Golang rules to prevent them from being treated as
+a matching pattern. For example, to copy a file named arr[0].txt, use the following;
+
+    COPY arr[[]0].txt /mydir/    # copy a file named "arr[0].txt" to /mydir/
+
+All new files and directories are created with a UID and GID of 0, unless the optional --chown flag specifies
+a given username, groupname, or UID/GID combination to request specific ownership of the copied content.
+The format of the --chown flag allows for either username and groupname strings or
+direct integer UID and GID in any combination. Providing a username without groupname or a UID
+without GID will use the same numeric UID as the GID. If a username or groupname is provided,
+the container’s root filesystem /etc/passwd and /etc/group files will be used to perform the
+translation from name to integer UID or GID respectively. The following examples show valid definitions for the --chown flag:
+
+      COPY --chown=55:mygroup files* /somedir/
+      COPY --chown=bin files* /somedir/
+      COPY --chown=1 files* /somedir/
+      COPY --chown=10:11 files* /somedir/
+
+If the container root filesystem does not contain either /etc/passwd or /etc/group files and either
+user or group names are used in the --chown flag, the build will fail on the COPY operation.
+Using numeric IDs requires no lookup and will not depend on container root filesystem content.
+
+Note: If you build using STDIN (docker build - < somefile), there is no build context, so COPY can’t be used.
+
+Optionally COPY accepts a flag --from=<name|index> that can be used to set the source location to
+a previous build stage (created with FROM .. AS <name>) that will be used instead of a build context
+sent by the user. The flag also accepts a numeric index assigned for all previous build stages started
+with FROM instruction. In case a build stage with a specified name can’t
+be found an image with the same name is attempted to be used instead.
+// 可选地, COPY 可 接受 --from=<name|index> 选项, 其能 被用于 将 source location 设置为  一个 先前的 build stage(created with FROM .. AS <name>)
+// 以 代替 由 user 发送的 a build context. 该 选项 也 可以接受 从 FROM 指令开始的 所有先前 build stages 分配的 a numeric index.
+// 如果 具有 指定 name 的 build stage 无法被找到, 则 替换为 使用 具有 相同 name 的 an image.
+
+COPY obeys the following rules:
+// COPY 遵循 如下的规则:
+
+    - The <src> path must be inside the context of the build; you cannot COPY ../something /something,
+      because the first step of a docker build is to send the context directory (and subdirectories) to the docker daemon.
+
+    - If <src> is a directory, the entire contents of the directory are copied, including filesystem metadata.
+
+    Note: The directory itself is not copied, just its contents.
+
+    - If <src> is any other kind of file, it is copied individually along with its metadata. In this case,
+      if <dest> ends with a trailing slash /, it will be considered a directory and the contents of <src> will be written at <dest>/base(<src>).
+
+    - If multiple <src> resources are specified, either directly or due to the use of a wildcard,
+      then <dest> must be a directory, and it must end with a slash /.
+
+    - If <dest> does not end with a trailing slash, it will be considered a regular file and the contents of <src> will be written at <dest>.
+
+    - If <dest> doesn’t exist, it is created along with all missing directories in its path.
+
+
+
+
+--------------------------------------------------
+ENTRYPOINT
+
+    https://docs.docker.com/engine/reference/builder/
+
+ENTRYPOINT has two forms:
+
+语法: ENTRYPOINT ["executable", "param1", "param2"] (exec form, preferred)
+语法: ENTRYPOINT command param1 param2 (shell form)
+
+An ENTRYPOINT allows you to configure a container that will run as an executable.
+// ENTRYPOINT 允许你 配置 作为 an executable 运行的 容器
+
+
+For example, the following will start nginx with its default content, listening on port 80:
+
+    docker run -i -t --rm -p 80:80 nginx
+
+Command line arguments to docker run <image> will be appended after all elements in an exec form ENTRYPOINT,
+and will override all elements specified using CMD. This allows arguments to be passed to the entry point,
+i.e., docker run <image> -d will pass the -d argument to the entry point.
+You can override the ENTRYPOINT instruction using the docker run --entrypoint flag.
+// `docker run <image>` 的 命令行 arguments  将被 追加(appended) 所有 exec form ENTRYPOINT 的 元素(elements) 之后,
+// 并 会 覆盖掉 由指令 CMD 指定 的 所有 elements. 这 运行了 将 arguments 传递给 the entry point.
+// 例如, `docker run <image> -d`  会将 -d 参数 传递 给 the entry point.
+// 你可以 使用 'docker run --entrypoint' 选项 来覆盖 ENTRYPOINT 指令.
+
+
+The shell form prevents any CMD or run command line arguments from being used, but has the disadvantage
+that your ENTRYPOINT will be started as a subcommand of /bin/sh -c, which does not pass signals.
+This means that the executable will not be the container’s PID 1 - and will not
+receive Unix signals - so your executable will not receive a SIGTERM from docker stop <container>.
+// shell form 可防止 CMD 或 run 命令行参数 被使用, 但缺点是 ENTRYPOINT 被作为 命令 `/bin/sh -c` 的子命令启动.
+// 而其 不会 传递信号(signals).
+// 这意味着 该 executable 将不会成为  容器的 PID 1 且  无法接收到 Unix signals.
+// 因此 你的 executable 无法 接收到 `docker stop <container>` 发送过来的 a SIGTERM 信号.
+
+Only the last ENTRYPOINT instruction in the Dockerfile will have an effect.
+
+
+
+
+--------------------
+Exec form ENTRYPOINT example
+
+    https://docs.docker.com/engine/reference/builder/
+
+You can use the exec form of ENTRYPOINT to set fairly stable default commands and arguments
+and then use either form of CMD to set additional defaults that are more likely to be changed.
+// 你可以 使用 ENTRYPOINT 的 exec form 来 设置 相当 稳定的 default commands 和 arguments
+// 并 使用 CMD 的 exec form 来 设置 额外的 很可能会被修改的 defaults
+
+      FROM ubuntu
+      ENTRYPOINT ["top", "-b"]
+      CMD ["-c"]
+
+
+When you run the container, you can see that top is the only process:
+
+    $ docker run -it --rm --name test  top -H
+    top - 08:25:00 up  7:27,  0 users,  load average: 0.00, 0.01, 0.05
+    Threads:   1 total,   1 running,   0 sleeping,   0 stopped,   0 zombie
+    %Cpu(s):  0.1 us,  0.1 sy,  0.0 ni, 99.7 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+    KiB Mem:   2056668 total,  1616832 used,   439836 free,    99352 buffers
+    KiB Swap:  1441840 total,        0 used,  1441840 free.  1324440 cached Mem
+
+      PID USER      PR  NI    VIRT    RES    SHR S %CPU %MEM     TIME+ COMMAND
+        1 root      20   0   19744   2336   2080 R  0.0  0.1   0:00.04 top
+
+
+To examine the result further, you can use docker exec:
+
+    $ docker exec -it test ps aux
+    USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+    root         1  2.6  0.1  19752  2352 ?        Ss+  08:24   0:00 top -b -H  <---观察, CMD ["-c"]  指定的默认参数 "-c" 已经被 docker run 命令中的 -H 所覆盖了
+    root         7  0.0  0.1  15572  2164 ?        R+   08:25   0:00 ps aux
+
+
+And you can gracefully request top to shut down using `docker stop test`.
+// 使用 命令 `docker stop test` 停止 容器.
+
+
+The following Dockerfile shows using the ENTRYPOINT to run Apache in the foreground (i.e., as PID 1):
+// Apache 的 Dockerfile 简单示例:
+
+      FROM debian:stable
+      RUN apt-get update && apt-get install -y --force-yes apache2
+      EXPOSE 80 443
+      VOLUME ["/var/www", "/var/log/apache2", "/etc/apache2"]
+      ENTRYPOINT ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
+
+
+If you need to write a starter script for a single executable,
+you can ensure that the final executable receives the Unix signals by using exec and gosu commands:
+// 如果你 需要 为 a single executable 编写 启动脚本,
+// 你 可以使用 命令 exec 和 命令 gosu 确保 最终的 executable  接收 Unix signals.
+
+          #!/usr/bin/env bash
+          set -e
+
+          if [ "$1" = 'postgres' ]; then
+              chown -R postgres "$PGDATA"
+
+              if [ -z "$(ls -A "$PGDATA")" ]; then
+                  gosu postgres initdb
+              fi
+
+              exec gosu postgres "$@"
+          fi
+
+          exec "$@"
+
+
+关于 gosu:
+    https://blog.csdn.net/boling_cavalry/article/details/93380447
+    https://stackoverflow.com/questions/36781372/docker-using-gosu-vs-user
+    https://hub.docker.com/r/gosu/centos
+
+
+Lastly, if you need to do some extra cleanup (or communicate with other containers) on shutdown,
+or are co-ordinating more than one executable, you may need to ensure that the ENTRYPOINT script
+receives the Unix signals, passes them on, and then does some more work:
+
+
+        #!/bin/sh
+        # Note: I've written this using sh so it works in the busybox container too
+
+        # USE the trap if you need to also do manual cleanup after the service is stopped,
+        #     or need to start multiple services in the one container
+        trap "echo TRAPed signal" HUP INT QUIT TERM
+
+        # start service in background here
+        /usr/sbin/apachectl start
+
+        echo "[hit enter key to exit] or run 'docker stop <container>'"
+        read
+
+        # stop service and clean up here
+        echo "stopping apache"
+        /usr/sbin/apachectl stop
+
+        echo "exited $0"
+
+
+If you run this image with `docker run -it --rm -p 80:80 --name test apache`,
+you can then examine the container’s processes with docker exec, or docker top, and then ask the script to stop Apache:
+
+        $ docker exec -it test ps aux
+        USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+        root         1  0.1  0.0   4448   692 ?        Ss+  00:42   0:00 /bin/sh /run.sh 123 cmd cmd2
+        root        19  0.0  0.2  71304  4440 ?        Ss   00:42   0:00 /usr/sbin/apache2 -k start
+        www-data    20  0.2  0.2 360468  6004 ?        Sl   00:42   0:00 /usr/sbin/apache2 -k start
+        www-data    21  0.2  0.2 360468  6000 ?        Sl   00:42   0:00 /usr/sbin/apache2 -k start
+        root        81  0.0  0.1  15572  2140 ?        R+   00:44   0:00 ps aux
+
+        $ docker top test
+        PID                 USER                COMMAND
+        10035               root                {run.sh} /bin/sh /run.sh 123 cmd cmd2
+        10054               root                /usr/sbin/apache2 -k start
+        10055               33                  /usr/sbin/apache2 -k start
+        10056               33                  /usr/sbin/apache2 -k start
+
+        $ /usr/bin/time docker stop test
+        test
+        real  0m 0.27s
+        user  0m 0.03s
+        sys 0m 0.03s
+
+
+Note: you can override the ENTRYPOINT setting using --entrypoint, but this can only set the binary to exec (no sh -c will be used).
+// 注: 你可以 使用 --entrypoint 选项 来 覆盖 ENTRYPOINT 设置, 但是这仅能把 the binary 设置为 exec (`sh -c` 不会被使用)
+
+
+Note: The exec form is parsed as a JSON array, which means that you must use double-quotes (“) around words not single-quotes (‘).
+
+Note: Unlike the shell form, the exec form does not invoke a command shell. This means that normal
+      shell processing does not happen. For example, ENTRYPOINT [ "echo", "$HOME" ] will not do variable
+      substitution on $HOME. If you want shell processing then either use the shell form or execute
+      a shell directly, for example: ENTRYPOINT [ "sh", "-c", "echo $HOME" ]. When using
+      the exec form and executing a shell directly, as in the case for the shell form,
+      it is the shell that is doing the environment variable expansion, not docker.
+
+
+
+
+
+--------------------------------------------------
+Shell form ENTRYPOINT example
+
+    https://docs.docker.com/engine/reference/builder/
+
+      注: 使用 Shell form 的 ENTRYPOINT 时, ENTRYPOINT 会 忽略 指令 CMD 和 `docker run` 命令指定的参数
+
+You can specify a plain string for the ENTRYPOINT and it will execute in /bin/sh -c.
+This form will use shell processing to substitute shell environment variables,
+and will ignore any CMD or docker run command line arguments. To ensure that docker stop
+will signal any long running ENTRYPOINT executable correctly, you need to remember to start it with exec:
+
+    FROM ubuntu
+    ENTRYPOINT exec top -b
+
+When you run this image, you’ll see the single PID 1 process:
+
+    $ docker run -it --rm --name test top
+    Mem: 1704520K used, 352148K free, 0K shrd, 0K buff, 140368121167873K cached
+    CPU:   5% usr   0% sys   0% nic  94% idle   0% io   0% irq   0% sirq
+    Load average: 0.08 0.03 0.05 2/98 6
+      PID  PPID USER     STAT   VSZ %VSZ %CPU COMMAND
+        1     0 root     R     3164   0%   0% top -b
+
+
+Which will exit cleanly on docker stop:
+
+    $ /usr/bin/time docker stop test
+    test
+    real  0m 0.20s
+    user  0m 0.02s
+    sys 0m 0.04s
+
+If you forget to add exec to the beginning of your ENTRYPOINT:
+
+    FROM ubuntu
+    ENTRYPOINT top -b
+    CMD --ignored-param1
+
+
+You can then run it (giving it a name for the next step):
+
+    $ docker run -it --name test top --ignored-param2
+    Mem: 1704184K used, 352484K free, 0K shrd, 0K buff, 140621524238337K cached
+    CPU:   9% usr   2% sys   0% nic  88% idle   0% io   0% irq   0% sirq
+    Load average: 0.01 0.02 0.05 2/101 7
+      PID  PPID USER     STAT   VSZ %VSZ %CPU COMMAND
+        1     0 root     S     3168   0%   0% /bin/sh -c top -b cmd cmd2
+        7     1 root     R     3164   0%   0% top -b  <----观察, 没有使用 exec 时 其 command 的 pid 不为 1
+
+You can see from the output of top that the specified ENTRYPOINT is not PID 1.
+
+If you then run docker stop test, the container will not exit cleanly -
+the stop command will be forced to send a SIGKILL after the timeout:
+
+      $ docker exec -it test ps aux
+      PID   USER     COMMAND
+          1 root     /bin/sh -c top -b cmd cmd2
+          7 root     top -b
+          8 root     ps aux
+      $ /usr/bin/time docker stop test
+      test
+      real  0m 10.19s
+      user  0m 0.04s
+      sys 0m 0.03s
+
+
+
+
+
+--------------------------------------------------
+Understand how CMD and ENTRYPOINT interact
+
+    https://docs.docker.com/engine/reference/builder/
+
+
+Both CMD and ENTRYPOINT instructions define what command gets executed when running a container.
+There are few rules that describe their co-operation.
+
+    1. Dockerfile should specify at least one of CMD or ENTRYPOINT commands.
+    // Dockerfile 应该 指定 至少 一个 CMD 或 ENTRYPOINT commands.
+
+    2. ENTRYPOINT should be defined when using the container as an executable.
+    // 当将 container 作为 an executable 使用时 应该 定义 ENTRYPOINT.
+
+    3. CMD should be used as a way of defining default arguments for an ENTRYPOINT command or for executing an ad-hoc command in a container.
+    // CMD 应该被  用于作为 定义 an ENTRYPOINT command 的 default arguments 或 在容器中 执行 ad-hoc 命令的 的方式
+
+    4. CMD will be overridden when running the container with alternative arguments.
+    // 当使用 替代的 arguments 运行 容器时, CMD 将被 覆盖.
+
+
+The table below shows what command is executed for different ENTRYPOINT / CMD combinations:
+
+--------------------------+---------------------------+--------------------------------+---------------------------------------
+                          | No ENTRYPOINT             | ENTRYPOINT exec_entry p1_entry |ENTRYPOINT [“exec_entry”, “p1_entry”]
+--------------------------|---------------------------|--------------------------------|---------------------------------------
+No CMD                    | error, not allowed        | /bin/sh -c exec_entry p1_entry |exec_entry p1_entry
+--------------------------|---------------------------|--------------------------------|---------------------------------------
+CMD [“exec_cmd”, “p1_cmd”]| exec_cmd p1_cmd           | /bin/sh -c exec_entry p1_entry |exec_entry p1_entry exec_cmd p1_cmd
+--------------------------|---------------------------|--------------------------------|---------------------------------------
+CMD [“p1_cmd”, “p2_cmd”]  | p1_cmd p2_cmd             | /bin/sh -c exec_entry p1_entry |exec_entry p1_entry p1_cmd p2_cmd
+--------------------------|---------------------------|--------------------------------|---------------------------------------
+CMD exec_cmd p1_cmd       |/bin/sh -c exec_cmd p1_cmd | /bin/sh -c exec_entry p1_entry |exec_entry p1_entry /bin/sh -c exec_cmd p1_cmd
+--------------------------+---------------------------+--------------------------------+---------------------------------------
+
+
+Note: If CMD is defined from the base image, setting ENTRYPOINT will reset CMD to an empty value.
+      In this scenario, CMD must be defined in the current image to have a value.
+// 注：如果 the base image 中定义了 CMD, 则设置 ENTRYPOINT 将 将 CMD 重置为 一个空值(empty value)
+//     在 这种情况下,  在 当前的 image 中 必须定义 CMD 以 使其 拥有 a value.
+
+
+
+
+--------------------------------------------------
+VOLUME
+
+      https://docs.docker.com/engine/reference/builder/
+
+VOLUME ["/data"]
+
+
+The VOLUME instruction creates a mount point with the specified name and marks it as holding
+externally mounted volumes from native host or other containers. The value can be a JSON array,
+VOLUME ["/var/log/"], or a plain string with multiple arguments, such as VOLUME /var/log or VOLUME /var/log /var/db.
+For more information/examples and mounting instructions via the Docker client, refer to Share Directories via Volumes documentation.
+// 指令 VOLUME 使用 指定的 name 创建一个  挂载点(mount point), 并将其 标记为 具有 来自
+// native host 或 other containers 的 外部挂载卷. 该 value 可以是 a JSON array, VOLUME ["/var/log/"],
+// 或普通的 具有 多个 arguments 的 字符串, 如 VOLUME /var/log 或 VOLUME /var/log /var/db.
+// 更多 information/examples 和 通过  Docker client 挂载的指令 见 https://docs.docker.com/storage/volumes/
+
+
+
+The docker run command initializes the newly created volume with any data that exists at the specified
+location within the base image. For example, consider the following Dockerfile snippet:
+
+      FROM ubuntu
+      RUN mkdir /myvol
+      RUN echo "hello world" > /myvol/greeting
+      VOLUME /myvol
+
+This Dockerfile results in an image that causes docker run to create
+a new mount point at /myvol and copy the greeting file into the newly created volume.
+
+
+
+Notes about specifying volumes
+
+Keep the following things in mind about volumes in the Dockerfile.
+
+  - Volumes on Windows-based containers: When using Windows-based containers, the destination of a volume inside the container must be one of:
+        - a non-existing or empty directory
+        - a drive other than C:
+
+  - Changing the volume from within the Dockerfile: If any build steps change the data within
+    the volume after it has been declared, those changes will be discarded.
+
+  - JSON formatting: The list is parsed as a JSON array. You must enclose words with double quotes (") rather than single quotes (').
+
+  - The host directory is declared at container run-time: The host directory (the mountpoint) is,
+    by its nature, host-dependent. This is to preserve image portability, since a given host directory can’t
+    be guaranteed to be available on all hosts. For this reason, you can’t mount a host directory
+    from within the Dockerfile. The VOLUME instruction does not support specifying a host-dir parameter.
+    You must specify the mountpoint when you create or run the container.
+
+
+
+
+
+
+--------------------------------------------------
+USER
+
+    https://docs.docker.com/engine/reference/builder/
+
+语法: USER <user>[:<group>] or
+语法: USER <UID>[:<GID>]
+
+The USER instruction sets the user name (or UID) and optionally the user group (or GID) to use when
+running the image and for any RUN, CMD and ENTRYPOINT instructions that follow it in the Dockerfile.
+// 指令 USER 设置 user name (或 UID) 和 可选的 user group (或 GID), 其被用于 运行 the image 和
+// Dockerfile 中 随后的 任意RUN, CMD 和 ENTRYPOINT 指令.
+
+
+Warning: When the user doesn’t have a primary group then the image (or the next instructions) will be run with the root group.
+// 警告: 当 user 没有 a primary group 时, 该 the image (或 the next instructions) 将以 root group 运行.
+
+On Windows, the user must be created first if it’s not a built-in account. This can be done with the net user command called as part of a Dockerfile.
+
+
+    FROM microsoft/windowsservercore
+    # Create Windows user in the container
+    RUN net user /add patrick
+    # Set it for subsequent commands
+    USER patrick
+
+
+
+--------------------------------------------------
+WORKDIR
+
+    https://docs.docker.com/engine/reference/builder/
+
+语法: WORKDIR /path/to/workdir
+
+
+The WORKDIR instruction sets the working directory for any RUN, CMD, ENTRYPOINT, COPY and ADD instructions that
+follow it in the Dockerfile. If the WORKDIR doesn’t exist, it will be created even if it’s not used in any subsequent Dockerfile instruction.
+// 指令 WORKDIR 为 Dockerfile 中随后的 指令 RUN, CMD, ENTRYPOINT, COPY and ADD 设置 工作目录(working directory).
+// 如果 WORKDIR 不存在, 其将会被创建, 即使 其在 后续的 Dockerfile 指令中没有被使用.
+
+
+The WORKDIR instruction can be used multiple times in a Dockerfile. If a relative path is provided,
+it will be relative to the path of the previous WORKDIR instruction. For example:
+// 指令 WORKDIR 在 a Dockerfile 中可以被 多次使用. 如果提供的是 相对路径,
+// 则其 是相对于 先前 WORKDIR 指令 的 path, 例如:
+
+        WORKDIR /a
+        WORKDIR b
+        WORKDIR c
+        RUN pwd
+
+The output of the final pwd command in this Dockerfile would be /a/b/c.
+
+
+The WORKDIR instruction can resolve environment variables previously set using ENV.
+You can only use environment variables explicitly set in the Dockerfile. For example:
+// 指令 WORKDIR  可以 解析 先前 用 指令 ENV 设置的 环境变量,
+// 你仅能 使用在 该 Dockerfile 中 显示设置的 环境变量. 例如:
+
+      ENV DIRPATH /path
+      WORKDIR $DIRPATH/$DIRNAME
+      RUN pwd
+
+The output of the final pwd command in this Dockerfile would be /path/$DIRNAME
+
+
+
+
+
+
+--------------------------------------------------
+
+
+
+
+
+
 
 
 
