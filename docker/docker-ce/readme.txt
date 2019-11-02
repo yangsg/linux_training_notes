@@ -5319,6 +5319,97 @@ The output of the final pwd command in this Dockerfile would be /path/$DIRNAME
 
 
 --------------------------------------------------
+ARG
+
+    https://docs.docker.com/engine/reference/builder/
+
+语法: ARG <name>[=<default value>]
+
+
+The ARG instruction defines a variable that users can pass at build-time to the builder
+with the docker build command using the --build-arg <varname>=<value> flag.
+If a user specifies a build argument that was not defined in the Dockerfile, the build outputs a warning.
+// 指令  ARG 定义 一个变量, users 可以 在 build-time 时 使用 `docker build` 命令的 `--build-arg <varname>=<value>`
+// 选项 将其 传递给 builder. 如果 user 指定了 在  Dockerfile 中没有被定义的 build argument, 则 the build 会输出 警告:
+
+    [Warning] One or more build-args [foo] were not consumed.
+
+A Dockerfile may include one or more ARG instructions. For example, the following is a valid Dockerfile:
+// Dockerfile 可以包含 一个 或 多个 ARG 指令. 例如:
+
+          FROM busybox
+          ARG user1
+          ARG buildno
+          ...
+
+Warning: It is not recommended to use build-time variables for passing secrets like github keys,
+         user credentials etc. Build-time variable values are visible to any user of the image with the docker history command.
+// 警告: 不建议使用 build-time variables 来传递 保密的 信息(如 github keys, user credentials 等).
+//       使用 命令 `docker history`, image 的任意 user  都可以看到 Build-time variable values.
+
+
+
+
+Default values
+
+An ARG instruction can optionally include a default value:
+// 一个 ARG 指令 可以 可选择地 包含 一个 默认值:
+
+        FROM busybox
+        ARG user1=someuser
+        ARG buildno=1
+        ...
+
+If an ARG instruction has a default value and if there is no value passed at build-time, the builder uses the default.
+
+
+
+Scope
+
+An ARG variable definition comes into effect from the line on which it is defined in the Dockerfile
+not from the argument’s use on the command-line or elsewhere. For example, consider this Dockerfile:
+// 一个 ARG variable definition 从 Dockerfile 中 其定义所在行 开始 起作用,
+// 而非从 在 在 命令行中 使用该 argument 的时候 或 其他地方, 如下:
+
+
+    1 FROM busybox
+    2 USER ${user:-some_user}  <---注: 最终效果为 USER some_user , 因为 第 3 行才 定义 参数 user, 所以参数 user 从第 3 行开始其动作
+    3 ARG user
+    4 USER $user
+    ...
+
+
+A user builds this file by calling:
+
+    $ docker build --build-arg user=what_user .
+
+The USER at line 2 evaluates to some_user as the user variable is defined on the subsequent line 3.
+The USER at line 4 evaluates to what_user as user is defined and the what_user value was passed on
+the command line. Prior to its definition by an ARG instruction, any use of a variable results in an empty string.
+
+
+An ARG instruction goes out of scope at the end of the build stage where it was defined.
+To use an arg in multiple stages, each stage must include the ARG instruction.
+// An ARG instruction 在 其 所 定义的 build stage 的 end 就 超出了 scope.
+// 为了在 多个 stages 中 使用 an arg, 则每个 stage 必须包含 该 ARG instruction.
+
+      FROM busybox
+      ARG SETTINGS
+      RUN ./run/setup $SETTINGS
+
+      FROM busybox
+      ARG SETTINGS
+      RUN ./run/other $SETTINGS
+
+
+
+
+
+
+Using ARG variables
+
+
+
 
 
 
