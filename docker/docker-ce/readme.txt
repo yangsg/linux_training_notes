@@ -4461,7 +4461,355 @@ Note: Don’t confuse RUN with CMD. RUN actually runs a command and commits the 
 
 
 
-----------------------------------------------------------------------------------------------------
+--------------------------------------------------
+LABEL
+
+    https://docs.docker.com/engine/reference/builder/
+
+语法: LABEL <key>=<value> <key>=<value> <key>=<value> ...
+
+The LABEL instruction adds metadata to an image. A LABEL is a key-value pair.
+To include spaces within a LABEL value, use quotes and backslashes as you would in command-line parsing. A few usage examples:
+
+        LABEL "com.example.vendor"="ACME Incorporated"
+        LABEL com.example.label-with-value="foo"
+        LABEL version="1.0"
+        LABEL description="This text illustrates \
+        that label-values can span multiple lines."
+
+An image can have more than one label. You can specify multiple labels on a single line.
+Prior to Docker 1.10, this decreased the size of the final image, but this is no longer the case.
+You may still choose to specify multiple labels in a single instruction, in one of the following two ways:
+// 在 Docker 1.10 之前, 在单行 上 指定 multiple labels 可以 减小 最终 image 的大小, 但是 现在情况不再如此.
+
+    LABEL multi.label1="value1" multi.label2="value2" other="value3"
+
+    LABEL multi.label1="value1" \
+          multi.label2="value2" \
+          other="value3"
+
+
+Labels included in base or parent images (images in the FROM line) are inherited by your image.
+If a label already exists but with a different value,
+the most-recently-applied value overrides any previously-set value.
+// base 或 parent images 中包含的 Labels 会被 你的 image 继承.
+// 如果 一个 label 已经存在 但是 具有一个 不同的 value,
+// 则 最近 被 应用的 value 会 覆盖掉 任何 之前 设置的 value.
+
+To view an image’s labels, use the docker inspect command.
+// 使用命令 `docker inspect` 可以查看 一个 image 的 labels
+
+      "Labels": {
+          "com.example.vendor": "ACME Incorporated"
+          "com.example.label-with-value": "foo",
+          "version": "1.0",
+          "description": "This text illustrates that label-values can span multiple lines.",
+          "multi.label1": "value1",
+          "multi.label2": "value2",
+          "other": "value3"
+      },
+
+
+--------------------------------------------------
+MAINTAINER (deprecated)
+
+    https://docs.docker.com/engine/reference/builder/
+
+语法: MAINTAINER <name>   <---注: 指令 MAINTAINER 已经过时, 可以使用如 LABEL maintainer="SvenDowideit@home.org.au" 这样的 LABEL 指令替代
+
+
+The MAINTAINER instruction sets the Author field of the generated images.
+The LABEL instruction is a much more flexible version of this and you should use it instead,
+as it enables setting any metadata you require, and can be viewed easily,
+for example with docker inspect. To set a label corresponding to the MAINTAINER field you could use:
+
+
+    LABEL maintainer="SvenDowideit@home.org.au"
+
+
+This will then be visible from docker inspect with the other labels.
+
+
+--------------------------------------------------
+EXPOSE
+
+    https://docs.docker.com/engine/reference/builder/
+
+语法: EXPOSE <port> [<port>/<protocol>...]   <---注: protocol 默认为 TCP
+
+The EXPOSE instruction informs Docker that the container listens on the specified network ports at runtime.
+You can specify whether the port listens on TCP or UDP, and the default is TCP if the protocol is not specified.
+// 指令 EXPOSE 告知 Docker 在运行的时候 容器 所 监听的 特定的 network ports.
+// 你可以 指定 port 监听在 TCP 或 UDP 协议上, 默认协议为 TCP
+
+
+The EXPOSE instruction does not actually publish the port. It functions as a type of documentation
+between the person who builds the image and the person who runs the container,
+about which ports are intended to be published. To actually publish the port
+when running the container, use the -p flag on docker run to publish and map one or more ports,
+or the -P flag to publish all exposed ports and map them to high-order ports.
+// 指令 EXPOSE 不会 实际地 发布 port, 它的作用是 作为 builds the image 的人员 与 runs the container 的 人员
+// 之间的 一种文档(documentation), 当 运行 容器时, 可以在命令 `docker run` 上使用 -p 选项 来 发布 和 映射 一个 one or more ports,
+// 或使用 -P (即 大写 P) 选项 来发布 所有的 暴露 ports 并 将其  映射到 高阶端口(high-order ports).
+
+By default, EXPOSE assumes TCP. You can also specify UDP:
+
+    EXPOSE 80/udp
+
+To expose on both TCP and UDP, include two lines:
+// 同时 暴露 TCP 和 UDP 时 需要 2 行:
+
+    EXPOSE 80/tcp
+    EXPOSE 80/udp
+
+In this case, if you use -P with docker run, the port will be exposed once for TCP and once for UDP.
+Remember that -P uses an ephemeral high-ordered host port on the host, so the port will not be the same for TCP and UDP.
+// 在这种情况下, 如果你使用指令 `docker run -P`, 则 port 对于 TCP 和 UDP 都会 暴露一次.
+// 记住 -P 使用的是 临时的 high-ordered host port, 因此 该 port 对于 TCP 和 UDP 将 不会是相同的
+
+Regardless of the EXPOSE settings, you can override them at runtime by using the -p flag. For example
+// 不管 EXPOSE 的设置, 你可以 在 运行时 使用 -p 选项来 对其进行覆盖. 例如:
+
+      docker run -p 80:80/tcp -p 80:80/udp ...
+
+To set up port redirection on the host system, see using the -P flag. The docker network command supports
+creating networks for communication among containers without the need to expose or publish specific ports,
+because the containers connected to the network can communicate with each other over any port.
+For detailed information, see the overview of this feature).
+
+    https://docs.docker.com/engine/reference/run/#expose-incoming-ports
+    https://docs.docker.com/network/
+
+
+
+
+--------------------------------------------------
+ENV
+
+    https://docs.docker.com/engine/reference/builder/
+
+语法: ENV <key> <value>
+语法: ENV <key>=<value> ...
+
+
+The ENV instruction sets the environment variable <key> to the value <value>.
+This value will be in the environment for all subsequent instructions in the build stage and can be replaced inline in many as well.
+
+The ENV instruction has two forms. The first form, ENV <key> <value>, will set a single variable to a value.
+The entire string after the first space will be treated as the <value> - including whitespace characters.
+The value will be interpreted for other environment variables, so quote characters will be removed if they are not escaped.
+
+The second form, ENV <key>=<value> ..., allows for multiple variables to be set at one time.
+Notice that the second form uses the equals sign (=) in the syntax, while the first form does not.
+Like command line parsing, quotes and backslashes can be used to include spaces within values.
+
+For example:
+
+    ENV myName="John Doe" myDog=Rex\ The\ Dog \
+        myCat=fluffy
+
+
+and
+
+    ENV myName John Doe
+    ENV myDog Rex The Dog
+    ENV myCat fluffy
+
+
+will yield the same net results in the final image.
+
+The environment variables set using ENV will persist when a container is run from the resulting image.
+You can view the values using docker inspect, and change them using docker run --env <key>=<value>.
+// 当 从 the resulting image 运行一个 容器时, 那些使用 ENV 设置的 环境变量 将会 继续存在.
+// 可以使用 命令 `docker inspect` 观察 这些变量值, 和 使用命令 `docker run --env <key>=<value>` 对其 进行修改
+
+
+Note: Environment persistence can cause unexpected side effects.
+      For example, setting ENV DEBIAN_FRONTEND noninteractive may confuse apt-get users
+      on a Debian-based image. To set a value for a single command, use RUN <key>=<value> <command>.
+
+// 注: Environment 的持久存在 可能 导致 非预期的  副作用.
+       例如, `ENV DEBIAN_FRONTEND noninteractive` 设置 可能会 对  基于 Debian 镜像上 的 apt-get users 造成迷惑.
+       要为 单个 command 设置  a value, 可以使用  `RUN <key>=<value> <command>`
+
+
+
+
+
+--------------------------------------------------
+ADD
+
+    https://docs.docker.com/engine/reference/builder/
+
+
+ADD has two forms:
+
+    语法: ADD [--chown=<user>:<group>] <src>... <dest>    <---注:<src> 路径 必须 位于 build 的 context 之内. <dest> 是 绝对路径 或  相对于 WORKDIR 的 的相对路径
+    语法: ADD [--chown=<user>:<group>] ["<src>",... "<dest>"] (this form is required for paths containing whitespace)
+
+      注: 如果 <src> 为 a URL, 此时 <dest> 是否包含 a trailing slash 对于 下载文件后 该文件保存的路径有影响
+      注: 如果 直接 或 通过 a wildcard 指定了 多个 <src> resources, 则 <dest> 必须是一个 目录 且 其必须 以 a slash / 结尾.
+      注: 如果 <dest> 不以 a trailing slash 结尾, 其被 视为 a regular file 且 the contents of <src> 会被写在 <dest> 上。
+      注: 如果 <dest> 实际不存在, 其 会与 其路径中 缺少的 directories 一起被创建.
+
+
+Note: The --chown feature is only supported on Dockerfiles used to build Linux containers,
+      and will not work on Windows containers. Since user and group ownership concepts do not
+      translate between Linux and Windows, the use of /etc/passwd and /etc/group for translating
+      user and group names to IDs restricts this feature to only be viable for Linux OS-based containers.
+// 注: --chown 特性 仅在 构建 Linux containers 的 Dockerfiles 上 得到支持
+
+The ADD instruction copies new files, directories or remote file URLs
+from <src> and adds them to the filesystem of the image at the path <dest>.
+//  指令 ADD 拷贝 <src> 指定的 new files, directories or remote file  并 将其
+//  添加到 image 的文件系统中的  <dest> 指定的 路径位置
+
+Multiple <src> resources may be specified but if they are files or directories,
+their paths are interpreted as relative to the source of the context of the build.
+// 可以指定 多个 <src> 资源 但是 如果 它们为 files 或 directories, 则
+// 它们的 路径 被解释为 相对于 build 的 context 的 source
+
+
+Each <src> may contain wildcards and matching will be done using Go’s filepath.Match rules. For example:
+// 每个 <src> 可以包含 通配符 并 使用 Go 语言的 filepath.Match 规则进行匹配. 例如:
+
+    ADD hom* /mydir/        # adds all files starting with "hom"
+    ADD hom?.txt /mydir/    # ? is replaced with any single character, e.g., "home.txt"
+
+        http://golang.org/pkg/path/filepath#Match
+
+
+The <dest> is an absolute path, or a path relative to WORKDIR, into which the source will be copied inside the destination container.
+// <dest> 是 绝对路径 或  相对于 WORKDIR 的 的相对路径
+
+      ADD test relativeDir/          # adds "test" to `WORKDIR`/relativeDir/
+      ADD test /absoluteDir/         # adds "test" to /absoluteDir/
+
+
+When adding files or directories that contain special characters (such as [ and ]),
+you need to escape(转义) those paths following the Golang rules to prevent them from being treated as a matching pattern.
+For example, to add a file named arr[0].txt, use the following;
+
+      ADD arr[[]0].txt /mydir/    # copy a file named "arr[0].txt" to /mydir/
+
+All new files and directories are created with a UID and GID of 0, unless the optional --chown flag
+specifies a given username, groupname, or UID/GID combination to request specific ownership of
+the content added. The format of the --chown flag allows for either username and groupname strings
+or direct integer UID and GID in any combination. Providing a username without groupname
+or a UID without GID will use the same numeric UID as the GID. If a username or groupname is provided,
+the container’s root filesystem /etc/passwd and /etc/group files will be used to perform the translation
+from name to integer UID or GID respectively. The following examples show valid definitions for the --chown flag:
+// 所有的 new files and directories 使用 UID(0)  和 GID(0) 来创建, 除非 使用 可选的 --chown 选项
+// 指定了 username, groupname, 或 UID/GID combination 来 要求 特定的 被添加内容的 所属关系.
+// 如果 提供了 username 而没 提供 groupname, 或 提供了 UID 而每提供 GID, 则 GID 将使用 与 UID 相同的数值.
+// 如果提供的是 username 或 groupname, 则 容器的 root filesystem 中的 /etc/passwd 和 /etc/group 文件
+// 会被分别用于执行 name 到 整数的 UID 或 GID 之间的转换翻译。
+// 如下是 一些 有效的 示例;
+
+        ADD --chown=55:mygroup files* /somedir/
+        ADD --chown=bin files* /somedir/
+        ADD --chown=1 files* /somedir/
+        ADD --chown=10:11 files* /somedir/
+
+
+If the container root filesystem does not contain either /etc/passwd or /etc/group files and either user
+or group names are used in the --chown flag, the build will fail on the ADD operation.
+Using numeric IDs requires no lookup and will not depend on container root filesystem content.
+
+
+In the case where <src> is a remote file URL, the destination will have permissions of 600.
+If the remote file being retrieved has an HTTP Last-Modified header, the timestamp from that
+header will be used to set the mtime on the destination file. However, like any other file
+processed during an ADD, mtime will not be included in the determination of
+whether or not the file has changed and the cache should be updated.
+
+
+Note: If you build by passing a Dockerfile through STDIN (docker build - < somefile),
+there is no build context, so the Dockerfile can only contain a URL based ADD instruction.
+You can also pass a compressed archive through STDIN: (docker build - < archive.tar.gz),
+the Dockerfile at the root of the archive and the rest of the archive will be used as the context of the build.
+
+Note: If your URL files are protected using authentication, you will need to use RUN wget,
+      RUN curl or use another tool from within the container as the ADD instruction does not support authentication.
+      // 如果你的 URL files 使用了 authentication 来保护, 则你 需要使用 `RUN wget`, `RUN curl` 或 容器中的其他工具
+      // 因为 指令 ADD 不支持 authentication.
+
+
+Note: The first encountered ADD instruction will invalidate the cache for all following instructions
+      from the Dockerfile if the contents of <src> have changed. This includes invalidating the
+      cache for RUN instructions. See the Dockerfile Best Practices guide for more information.
+
+            https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
+
+
+ADD obeys the following rules:
+// 指令 ADD 需要 遵循 如下 规则:
+
+    - The <src> path must be inside the context of the build; you cannot ADD ../something /something,
+      because the first step of a docker build is to send the context directory (and subdirectories) to the docker daemon.
+      // <src> 路径 必须 位于 build 的 context 之内. 因为 `docker build` 的第一步 就是将 context 目录(和 子目录) 发送到 docker daemon.
+
+    - If <src> is a URL and <dest> does not end with a trailing slash, then a file is downloaded from the URL and copied to <dest>.
+      // 如果 <src> 为 URL 且 <dest> 不以 a trailing slash 结尾, 则 a file 会从 URL 下载 并 复制到 <dest>.
+
+    - If <src> is a URL and <dest> does end with a trailing slash, then the filename is inferred from
+      the URL and the file is downloaded to <dest>/<filename>. For instance,
+      ADD http://example.com/foobar / would create the file /foobar. The URL must have
+      a nontrivial path so that an appropriate filename can be discovered in this case (http://example.com will not work).
+      // 如果 <src> 为 URL 且 <dest> 以 a trailing slash 结尾, 那么 filename 会从 该 URL 中被推断 出 且 该 file 被下载到
+      // <dest>/<filename>. 例如, `ADD http://example.com/foobar /` 会创建 文件 /foobar.
+      // URL 必须具有 a nontrivial path 从而 在 这种情况下 可以 发现 一个 适当的 filename(而 http://example.com 无法工作).
+
+    - If <src> is a directory, the entire contents of the directory are copied, including filesystem metadata.
+      // 如果 <src> 是 一个 目录, 则 整个 directory 的 内容都会被 copied, 包括 filesystem metadata.
+
+        Note: The directory itself is not copied, just its contents.
+        // 注: directory 本身 不会被 copied, 仅复制其 contents.
+
+    - If <src> is a local tar archive in a recognized compression format (identity, gzip, bzip2 or xz) then
+      it is unpacked as a directory. Resources from remote URLs are not decompressed.
+      When a directory is copied or unpacked, it has the same behavior as tar -x, the result is the union of:
+      // 如果 <src> 是一个本地的 其压缩格式 可被识别的 tar 归档文件(identity, gzip, bzip2 or xz),
+      // 则 其会被 解包(unpacked) 为 一个 目录. Resources from remote URLs are not decompressed.
+      // 当一个 directory 被 copied 或 unpacked 时, 其 行为与 命令 `tar -x` 行为相同, 结果如下:
+
+            1. Whatever existed at the destination path and
+            2. The contents of the source tree, with conflicts resolved in favor of “2.” on a file-by-file basis.
+
+      Note: Whether a file is identified as a recognized compression format or not is done solely based
+            on the contents of the file, not the name of the file. For example, if an empty file happens
+            to end with .tar.gz this will not be recognized as a compressed file and will not generate any
+            kind of decompression error message, rather the file will simply be copied to the destination.
+
+
+
+    - If <src> is any other kind of file, it is copied individually along with its metadata. In this case,
+      if <dest> ends with a trailing slash /, it will be considered a directory and the contents of <src> will be written at <dest>/base(<src>).
+
+
+    - If multiple <src> resources are specified, either directly or due to the use of a wildcard,
+      then <dest> must be a directory, and it must end with a slash /.
+      // 如果 直接 或 通过 a wildcard 指定了 多个 <src> resources, 则 <dest> 必须是一个 目录 且 其必须 以 a slash / 结尾.
+
+    - If <dest> does not end with a trailing slash, it will be considered a regular file and the contents of <src> will be written at <dest>.
+      // 如果 <dest> 不以 a trailing slash 结尾, 其被 视为 a regular file 且 the contents of <src> 会被写在 <dest> 上。
+
+    - If <dest> doesn’t exist, it is created along with all missing directories in its path.
+      // 如果 <dest> 实际不存在, 其 会与 其路径中 缺少的 directories 一起被创建.
+
+
+
+
+
+
+--------------------------------------------------
+
+
+
+
+
+
+
 
 
 
