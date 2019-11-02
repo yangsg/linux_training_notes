@@ -3917,15 +3917,15 @@ syntax
 
     https://docs.docker.com/engine/reference/builder/
 
-# syntax=[remote image reference]
+语法: syntax=[remote image reference]
 
 For example:
 
-      # syntax=docker/dockerfile
-      # syntax=docker/dockerfile:1.0
-      # syntax=docker.io/docker/dockerfile:1
-      # syntax=docker/dockerfile:1.0.0-experimental
-      # syntax=example.com/user/repo:tag@sha256:abcdef...
+      示例:  syntax=docker/dockerfile
+      示例:  syntax=docker/dockerfile:1.0
+      示例:  syntax=docker.io/docker/dockerfile:1
+      示例:  syntax=docker/dockerfile:1.0.0-experimental
+      示例:  syntax=example.com/user/repo:tag@sha256:abcdef...
 
 
 This feature is only enabled if the BuildKit backend is used.
@@ -3995,11 +3995,11 @@ escape
 
     https://docs.docker.com/engine/reference/builder/
 
-# escape=\ (backslash)
+语法: escape=\ (backslash)
 
 Or
 
-# escape=` (backtick)
+语法: escape=` (backtick)
 
 
 The escape directive sets the character used to escape characters in a Dockerfile. If not specified, the default escape character is \.
@@ -4128,9 +4128,355 @@ Here is an example .dockerignore file:
 // .dockerignore 示例文件
 
         # comment
-        */temp*
-        */*/temp*
-        temp?
+        */temp*   <---匹配 root 的直接子目录下的 name 以 'temp' 开始的 文件和目录 并 排除, 如文件 /somedir/temporary.txt 或 /somedir/temp
+        */*/temp* <---匹配 root 的二级子目录下的 name 以 'temp' 开始的 文件和目录 并 排除, 如文件 /somedir/subdir/temporary.txt
+        temp?     <---匹配 root 下的 name 以 'temp' 开始 且以 一个字符结束 的 文件和目录并排除, 如 /tempa 和 /tempb
+
+This file causes the following build behavior:
+-----------+----------------------------------------------------------------------------------------
+Rule       |    Behavior
+-----------|----------------------------------------------------------------------------------------
+# comment  |    Ignored.
+-----------|----------------------------------------------------------------------------------------
+*/temp*    |    Exclude files and directories whose names start with temp in any immediate subdirectory of the root.
+           |    For example, the plain file /somedir/temporary.txt is excluded, as is the directory /somedir/temp.
+-----------|----------------------------------------------------------------------------------------
+*/*/temp*  |    Exclude files and directories starting with temp from any subdirectory that is two levels below the root.
+           |    For example, /somedir/subdir/temporary.txt is excluded.
+-----------|----------------------------------------------------------------------------------------
+temp?      |    Exclude files and directories in the root directory whose names are a one-character extension of temp.
+           |    For example, /tempa and /tempb are excluded.
+-----------+----------------------------------------------------------------------------------------
+
+Matching is done using Go’s filepath.Match rules. A preprocessing step removes leading
+and trailing whitespace and eliminates . and .. elements using Go’s filepath.Clean.
+Lines that are blank after preprocessing are ignored.
+// 匹配时 通过 Go 语言的  filepath.Match 规则完成的, 一个 预处理步骤 会 移除 leading
+// and trailing whitespace 并 使用 Go 语言的 filepath.Clean 计算出 . 和 .. 元素.
+// blank 行 在 云处理之后 会被 ignored.
+
+Beyond Go’s filepath.Match rules, Docker also supports a special wildcard string ** that matches
+any number of directories (including zero). For example, **/*.go will exclude all files
+that end with .go that are found in all directories, including the root of the build context.
+// 除了 Go 的 filepath.Match 规则之外, Docker 还 支持特殊的 通配字符串 ** 以 匹配 任意
+// 数量的 directories(包括 zero).
+
+
+Lines starting with ! (exclamation mark) can be used to make exceptions to exclusions.
+The following is an example .dockerignore file that uses this mechanism:
+// 感叹号 ! 用于指定 例外
+
+      *.md
+      !README.md  <---这两行表示 排除  context的root 下的 所有 以 .md 结尾的文件或目录, 但 README.md 例外
+
+The placement of ! exception rules influences the behavior: the last line of the .dockerignore that
+matches a particular file determines whether it is included or excluded. Consider the following example:
+// ! exception rules 的 位置 会 影响 其 行为: .dockerignore 中 匹配 特定 文件的 的 最后那行(the last line)
+// 将确定 其是 被 包含还是 被 排除.
+
+    *.md
+    !README*.md
+    README-secret.md  <---这3行的效果是: 排除所有的 *.md 和 README-secret.md, 但其他的 README*.md 除外.
+
+No markdown files are included in the context except README files other than README-secret.md.
+
+Now consider this example:
+
+    *.md
+    README-secret.md
+    !README*.md  <---这3行的效果是: 排除 所有的 *.md 但是 包含 所有的 README*.md, 即 第二行被 第3行的规则所覆盖了,所以不再起作用
+
+All of the README files are included. The middle line has no effect because !README*.md matches README-secret.md and comes last.
+
+You can even use the .dockerignore file to exclude the Dockerfile and .dockerignore files.
+These files are still sent to the daemon because it needs them to do its job. But the ADD and COPY instructions do not copy them to the image.
+// 你甚至 可以使用 .dockerignore 来排除 文件 Dockerfile 和 .dockerignore.
+// 这些文件 仍然会被 发送给 docker daemon 因为 这些文件 是其 完成任务 所需要的.
+// 但是 指令 ADD 和 COPY 则 不会将这些文件 复制到 image 中.
+
+Finally, you may want to specify which files to include in the context, rather than which to exclude.
+To achieve this, specify * as the first pattern, followed by one or more ! exception patterns.
+// 一种实现类似 白名单 的 技巧: 先排除所有, 然后在 添加 例外.
+
+Note: For historical reasons, the pattern . is ignored.
+// 注: 因为历史原因，模式 . 会被忽略
+
+
+
+--------------------------------------------------
+FROM 指令
+
+    https://docs.docker.com/engine/reference/builder/
+
+      注: 指令 ARG 是 仅有的 在 Dockerfile 中 可以在 指令 ARG 之前的指令
+
+语法: FROM <image> [AS <name>]     <---注: 如果忽略 [:<tag>] 或 [@<digest>], 则默认使用 tag 'latest', 如果找不到给tag, 则返回错误
+
+Or
+
+语法: FROM <image>[:<tag>] [AS <name>]
+Or
+语法: FROM <image>[@<digest>] [AS <name>]
+
+
+The FROM instruction initializes a new build stage and sets the Base Image for subsequent instructions.
+As such, a valid Dockerfile must start with a FROM instruction. The image can be
+any valid image – it is especially easy to start by pulling an image from the Public Repositories.
+
+  - ARG is the only instruction that may precede FROM in the Dockerfile. See Understand how ARG and FROM interact.
+    // 指令 ARG 是 仅有的 在 Dockerfile 中 可以在 指令 ARG 之前的指令
+          https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
+
+  - FROM can appear multiple times within a single Dockerfile to create multiple images or use one
+    build stage as a dependency for another. Simply make a note of the last image ID output by
+    the commit before each new FROM instruction. Each FROM instruction clears any state created by previous instructions.
+    // 指令 FROM 在 单个 Dockerfile 中 可以出现 多次 以 创建多个 images 或 将 一个构件阶段(build stage) 作为 另一个构件阶段的依赖.
+
+  - Optionally a name can be given to a new build stage by adding AS name to the FROM instruction.
+    The name can be used in subsequent FROM and `COPY --from=<name|index>` instructions to refer to the image built in this stage.
+
+  - The tag or digest values are optional. If you omit either of them, the builder assumes
+    a latest tag by default. The builder returns an error if it cannot find the tag value.
+
+
+----------
+Understand how ARG and FROM interact  (理解 指令 ARG 和 FROM 的交互)
+
+FROM instructions support variables that are declared by any ARG instructions that occur before the first FROM.
+// 在 第一个 指令 FROM 之前 可以使用 任意多个 指令 ARG 来声明 变量(variables)
+
+        ARG  CODE_VERSION=latest
+        FROM base:${CODE_VERSION}
+        CMD  /code/run-app
+
+        FROM extras:${CODE_VERSION}
+        CMD  /code/run-extras
+
+An ARG declared before a FROM is outside of a build stage, so it can’t be used in any instruction after a FROM.
+To use the default value of an ARG declared before the first FROM use an ARG instruction without a value inside of a build stage:
+// 在 a FROM 之前 声明的 的 An ARG 在 构件阶段 之外(即超出了 build stage, 不属于构件阶段内),
+// 因此其 无法被 FROM 之后 的 任意 指令 使用.
+// 要使用 the first FROM 之前的 指令 ARG 声明的 变量的 默认值, 在以在 a build stage 内部 使用 不带 value 的 ARG 指令
+
+      ARG VERSION=latest
+      FROM busybox:$VERSION
+      ARG VERSION  <----注:为了使用第一行变量的默认值,这里在 FROM 指令初始化的 build stage 内 使用了不带 value 的 ARG 指令
+      RUN echo $VERSION > image_version
+
+
+
+
+--------------------------------------------------
+RUN
+
+    https://docs.docker.com/engine/reference/builder/
+
+
+                                     RUN                                CMD
+      Dockerfile(with context) --------------------->  new image  ---------------------> container
+                                 docker build                         docker run
+
+RUN has 2 forms:
+
+- RUN <command> (shell form, the command is run in a shell, which by default is /bin/sh -c on Linux or cmd /S /C on Windows)
+  // RUN <command> 为 shell 的形式, 该 command 在 shell 中被执行, Linux 上默认为 `/bin/sh -c` 或 Windows 上默认为 `cmd /S /C`
+
+- RUN ["executable", "param1", "param2"] (exec form)  <---注:exec form 中是作为 a JSON array来解析,所以只能使用双引号不能使用单引号
+
+The RUN instruction will execute any commands in a new layer on top of the current image and commit the results.
+The resulting committed image will be used for the next step in the Dockerfile.
+// 指令 RUN 会在 当前 image 顶部 的  一个 新层(a new layer) 中 执行 任意 commands 并 提交结果.
+// 该 结果提交后 产生的 image 会被用于 该 Dockerfile 的 下一步中.
+
+
+Layering RUN instructions and generating commits conforms to the core concepts of Docker
+where commits are cheap and containers can be created from any point in an image’s history, much like source control.
+
+
+The exec form makes it possible to avoid shell string munging, and to RUN commands
+using a base image that does not contain the specified shell executable.
+// exec form 能够避免 shell 的 字符串整理(string munging). 并 使用 不包含 特定 shell 可执行程序
+// 的 base image 来 RUN commands
+
+The default shell for the shell form can be changed using the SHELL command.
+// shell form 中的 默认 shell 可以通过 命令 SHELL 来修改
+
+In the shell form you can use a \ (backslash) to continue a single RUN instruction onto the next line.
+For example, consider these two lines:
+// 在 shell form 中 可以使用 \ (backslash) 来 将 a single RUN instruction 延续到 下一行, 如:
+
+      RUN /bin/bash -c 'source $HOME/.bashrc; \
+      echo $HOME'
+
+Together they are equivalent to this single line(等价于):
+
+      RUN /bin/bash -c 'source $HOME/.bashrc; echo $HOME'
+
+Note: To use a different shell, other than ‘/bin/sh’, use the exec form passing in the desired shell.
+For example, RUN ["/bin/bash", "-c", "echo hello"]
+// 注: RUN ["/bin/bash", "-c", "echo hello"] 中以 exec form 的方式来使用 bash 运行命令 echo
+
+Note: The exec form is parsed as a JSON array, which means that you must use double-quotes (“) around words not single-quotes (‘).
+// 注:exec form 中是作为 a JSON array来解析,所以只能使用双引号不能使用单引号
+
+
+Note: Unlike the shell form, the exec form does not invoke a command shell.
+      This means that normal shell processing does not happen.
+      For example, RUN [ "echo", "$HOME" ] will not do variable substitution on $HOME.
+      If you want shell processing then either use the shell form or execute a shell directly,
+      for example: RUN [ "sh", "-c", "echo $HOME" ]. When using the exec form and executing a shell directly,
+      as in the case for the shell form, it is the shell that is doing the environment variable expansion, not docker.
+//注: 不同于 shell form, exec form 不会 调用 shell 命令.
+//    这意味着 不会执行 shell 处理(shell processing).
+//    例如, RUN [ "echo", "$HOME" ] 不会 执行 $HOME 的 变量替换.
+//    如果你 需要 shell processing, 则即可以使用 shell form, 也可以 直接执行 shell,
+//    例如: RUN [ "sh", "-c", "echo $HOME" ]. 当 使用 exec form 并 执行执行 一个 shell 时,
+//    与 shell form 一样, 是由 shell 来 完成 environment variable expansion 而非 docker.
+
+
+Note: In the JSON form, it is necessary to escape backslashes. This is particularly relevant on Windows
+where the backslash is the path separator. The following line would otherwise be treated as shell form
+due to not being valid JSON, and fail in an unexpected way: RUN ["c:\windows\system32\tasklist.exe"]
+The correct syntax for this example is: RUN ["c:\\windows\\system32\\tasklist.exe"]
+// 注: 在 JSON form 中, 需要对 反斜线('\') 进行转义.  很重要的第一点是 在 Windows 系统上
+// backslash('\') 是 路径分隔符.
+// 错误形式: RUN ["c:\windows\system32\tasklist.exe"]
+// 正确形式: RUN ["c:\\windows\\system32\\tasklist.exe"]
+
+
+The cache for RUN instructions isn’t invalidated automatically during the next build.
+The cache for an instruction like RUN apt-get dist-upgrade -y will be reused during the next build.
+The cache for RUN instructions can be invalidated by using the --no-cache flag, for example docker build --no-cache.
+// RUN 指令的 缓存(cache) 在 下一个 build 期间 不会 自动地 被 invalidated.
+// 像 `RUN apt-get dist-upgrade -y` 这样的指令的 cache 会在 下一个 build 期间 被 重用(reused).
+// 指令 RUN  的 cache 可以 通过 --no-cache 选项来使其 invalidated.  例如 `docker build --no-cache`
+
+
+See the Dockerfile Best Practices guide for more information.
+      https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
+
+The cache for RUN instructions can be invalidated by ADD instructions. See below for details.
+      https://docs.docker.com/engine/reference/builder/#add
+
+    ------------------------------
+    Known issues (RUN) (该 issues 与使用 AUFS 文件系统有关)
+        Issue 783 is about file permissions problems that can occur when using the AUFS file system.
+        You might notice it during an attempt to rm a file, for example.
+
+        For systems that have recent aufs version (i.e., dirperm1 mount option can be set),
+        docker will attempt to fix the issue automatically by mounting the layers with dirperm1 option.
+        More details on dirperm1 option can be found at aufs man page
+
+        If your system doesn’t have support for dirperm1, the issue describes a workaround.
+    ------------------------------
+
+
+
+
+
+
+--------------------------------------------------
+CMD
+
+    https://docs.docker.com/engine/reference/builder/
+
+
+                                     RUN                                CMD
+      Dockerfile(with context) --------------------->  new image  ---------------------> container
+                                 docker build                         docker run
+
+
+The CMD instruction has three forms:
+
+    - CMD ["executable","param1","param2"] (exec form, this is the preferred form)
+    - CMD ["param1","param2"] (as default parameters to ENTRYPOINT) <--默认参数意味着 其可以被运行 `docker run` 命令时指定的参数所覆盖
+    - CMD command param1 param2 (shell form)`
+
+
+There can only be one CMD instruction in a Dockerfile. If you list more than one CMD then only the last CMD will take effect.
+// 一个 Dockerfile 中 仅能 有 一个 CMD 指令, 如果你 列出 多个 CMD 指令, 则 最后的 那个 CMD 将 起作用
+
+
+The main purpose of a CMD is to provide defaults for an executing container.
+These defaults can include an executable, or they can omit the executable,
+in which case you must specify an ENTRYPOINT instruction as well.
+// CMD 的主要目的 是为 执行中的 container 提供 defaults,
+// 这些 defaults 可以包含 可执行程序(executable),  或 其 也 可以 忽略 可执行程序(executable),
+// 在忽略 executable 的情况中, 你 还必须同时 指定 ENTRYPOINT 指令
+
+
+Note: If CMD is used to provide default arguments for the ENTRYPOINT instruction,
+both the CMD and ENTRYPOINT instructions should be specified with the JSON array format.
+// 注:  如果 CMD 被用户 为 ENTRYPOINT 提供 默认的 arguments,
+//      则 指令 CMD 和 指令 ENTRYPOINT 都应该 被 指定为 JSON array format.
+
+Note: The exec form is parsed as a JSON array, which means that you must use double-quotes (“) around words not single-quotes (‘).
+// 注: exec form 被 当做 a JSON array 来 解析, 这意味着 你必须使用 双引号(“) 而 不是 单引号(‘).
+
+Note: Unlike the shell form, the exec form does not invoke a command shell.
+      This means that normal shell processing does not happen.
+      For example, CMD [ "echo", "$HOME" ] will not do variable substitution on $HOME.
+      If you want shell processing then either use the shell form or execute a shell directly,
+      for example: CMD [ "sh", "-c", "echo $HOME" ]. When using the exec form and executing a shell directly,
+      as in the case for the shell form, it is the shell that is doing the environment variable expansion, not docker.
+
+
+When used in the shell or exec formats, the CMD instruction sets the command to be executed when running the image.
+// shell form  和 exec form 中, 指令 CMD 被用户指定 在 运行 image(即基于 image 运行容器) 时被执行的 command.
+
+
+If you use the shell form of the CMD, then the <command> will execute in /bin/sh -c:
+// 采用 shell form 的 CMD 指令时, <command> 是通过 /bin/sh -c 来执行的
+
+    FROM ubuntu
+    CMD echo "This is a test." | wc -
+
+If you want to run your <command> without a shell then you must express the command as a JSON array
+and give the full path to the executable. This array form is the preferred format of CMD.
+Any additional parameters must be individually expressed as strings in the array:
+
+      FROM ubuntu
+      CMD ["/usr/bin/wc","--help"]   <----注: 这里命令 wc 必须使用 full path 指定, 因为这里 无法 使用 bash 等 shell 的一些特性
+
+If you would like your container to run the same executable every time,
+then you should consider using ENTRYPOINT in combination with CMD. See ENTRYPOINT.
+// 如果你想让 你的容器 每次 都 执行相同的 executable, 则 你应该考虑  使用 ENTRYPOINT 与 CMD 结合的方式
+
+            https://docs.docker.com/engine/reference/builder/#entrypoint
+
+If the user specifies arguments to docker run then they will override the default specified in CMD.
+// 如果 user 在 命令 `docker run` 中 指定 arguments,  则 这些 arguments  会 覆盖 指令 CMD 指定的 默认值(the default)
+
+Note: Don’t confuse RUN with CMD. RUN actually runs a command and commits the result;
+      CMD does not execute anything at build time, but specifies the intended command for the image.
+// 注: 不要混淆 指令 RUN 和 指令 CMD. RUN 实际上 执行  a command 并 提交 the result;
+//     而 CMD 不会在 构建时 执行任何操作, 而是为 the image 指定 与其 命令.
+
+
+                                     RUN                                CMD
+      Dockerfile(with context) --------------------->  new image  ---------------------> container
+                                 docker build                         docker run
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
