@@ -20,6 +20,10 @@ docker 架构:
   https://docs.docker.com/engine/docker-overview/#docker-architecture
 
 
+Docker - 从入门到实践
+    https://yeasy.gitbooks.io/docker_practice/
+
+
 
 ----------------------------------------------------------------------------------------------------
 docker 概览:
@@ -5408,6 +5412,282 @@ To use an arg in multiple stages, each stage must include the ARG instruction.
 
 Using ARG variables
 
+You can use an ARG or an ENV instruction to specify variables that are available to the RUN instruction.
+Environment variables defined using the ENV instruction always override an ARG instruction of the same name.
+Consider this Dockerfile with an ENV and ARG instruction.
+// 你可以使用 ARG 或 ENV 指令 指定 其 在 指令 RUN 中 可用的 variables.
+// 使用 指令 ENV 定义的 环境变量 总是会 覆盖 由 指令 ARG 定义的 相同 name 的 变量.
+
+        1 FROM ubuntu
+        2 ARG CONT_IMG_VER
+        3 ENV CONT_IMG_VER v1.0.0
+        4 RUN echo $CONT_IMG_VER
+
+
+Then, assume this image is built with this command:
+
+    $ docker build --build-arg CONT_IMG_VER=v2.0.1 .
+
+In this case, the RUN instruction uses v1.0.0 instead of the ARG setting passed by the user:v2.0.1
+This behavior is similar to a shell script where a locally scoped variable overrides
+the variables passed as arguments or inherited from environment, from its point of definition.
+
+
+Using the example above but a different ENV specification you can create more useful interactions between ARG and ENV instructions:
+
+        1 FROM ubuntu
+        2 ARG CONT_IMG_VER
+        3 ENV CONT_IMG_VER ${CONT_IMG_VER:-v1.0.0}
+        4 RUN echo $CONT_IMG_VER
+
+
+Unlike an ARG instruction, ENV values are always persisted in the built image. Consider a docker build without the --build-arg flag:
+
+    $ docker build .
+
+
+Using this Dockerfile example, CONT_IMG_VER is still persisted in the image but its value
+would be v1.0.0 as it is the default set in line 3 by the ENV instruction.
+
+The variable expansion technique in this example allows you to pass arguments from
+the command line and persist them in the final image by leveraging the ENV instruction.
+Variable expansion is only supported for a limited set of Dockerfile instructions.
+      --------------------
+      https://docs.docker.com/engine/reference/builder/#environment-replacement
+
+        Environment variables are supported by the following list of instructions in the Dockerfile:
+
+              - ADD
+              - COPY
+              - ENV
+              - EXPOSE
+              - FROM
+              - LABEL
+              - STOPSIGNAL
+              - USER
+              - VOLUME
+              - WORKDIR
+        as well as:
+
+              - ONBUILD (when combined with one of the supported instructions above)
+        --------------------
+
+
+
+Predefined ARGs  (预定义的 ARGs: 使用时无需 对应的 ARG 指令)
+
+Docker has a set of predefined ARG variables that you can use without a corresponding ARG instruction in the Dockerfile.
+
+      - HTTP_PROXY
+      - http_proxy
+      - HTTPS_PROXY
+      - https_proxy
+      - FTP_PROXY
+      - ftp_proxy
+      - NO_PROXY
+      - no_proxy
+
+
+To use these, simply pass them on the command line using the flag:
+
+    --build-arg <varname>=<value>
+
+
+
+By default, these pre-defined variables are excluded from the output of docker history.
+Excluding them reduces the risk of accidentally leaking sensitive authentication information in an HTTP_PROXY variable.
+// 默认, 这些 预定义的 variables 是 被排除在 命令 `docker history` 的输出之外的,
+// 排除它们 降低了 意外 泄露 HTTP_PROXY 变量中 敏感的 认证信息的 风险。
+
+For example, consider building the following Dockerfile using --build-arg HTTP_PROXY=http://user:pass@proxy.lon.example.com
+
+      FROM ubuntu
+      RUN echo "Hello World"
+
+
+In this case, the value of the HTTP_PROXY variable is not available in the docker history
+and is not cached. If you were to change location, and your proxy server
+changed to http://user:pass@proxy.sfo.example.com, a subsequent build does not result in a cache miss.
+
+
+If you need to override this behaviour then you may do so by adding an ARG statement in the Dockerfile as follows:
+
+    FROM ubuntu
+    ARG HTTP_PROXY
+    RUN echo "Hello World"
+
+When building this Dockerfile, the HTTP_PROXY is preserved in the docker history, and changing its value invalidates the build cache.
+
+
+
+
+
+
+--------------------
+Automatic platform ARGs in the global scope
+
+      https://docs.docker.com/engine/reference/builder/
+
+
+This feature is only available when using the BuildKit backend.
+// 该特性 仅在 使用  BuildKit backend 才有效.
+
+
+Docker predefines a set of ARG variables with information on the platform of the node performing
+the build (build platform) and on the platform of the resulting image (target platform).
+The target platform can be specified with the --platform flag on docker build.
+
+
+The following ARG variables are set automatically:
+
+      - TARGETPLATFORM - platform of the build result. Eg linux/amd64, linux/arm/v7, windows/amd64.
+      - TARGETOS - OS component of TARGETPLATFORM
+      - TARGETARCH - architecture component of TARGETPLATFORM
+      - TARGETVARIANT - variant component of TARGETPLATFORM
+      - BUILDPLATFORM - platform of the node performing the build.
+      - BUILDOS - OS component of BUILDPLATFORM
+      - BUILDARCH - architecture component of BUILDPLATFORM
+      - BUILDVARIANT - variant component of BUILDPLATFORM
+
+
+These arguments are defined in the global scope so are not automatically available inside build stages
+or for your RUN commands. To expose one of these arguments inside the build stage redefine it without value.
+// 这些 arguments 被定义在 global scope 中, 因此不会再 build stages 或 RUN 命令 中 自动可用.
+// 为了 导出 这些 其中的 某个变量 到 build stage 中 需要 通过 不加 value 的方式对于 重定义(redefine).
+
+
+For example:
+
+      FROM alpine
+      ARG TARGETPLATFORM  <---注: redefine 全局变量 TARGETPLATFORM 是其被导入到 build stage 中
+      RUN echo "I'm building for $TARGETPLATFORM"
+
+
+Impact on build caching
+
+
+ARG variables are not persisted into the built image as ENV variables are. However,
+ARG variables do impact the build cache in similar ways. If a Dockerfile defines
+an ARG variable whose value is different from a previous build, then a “cache miss”
+occurs upon its first usage, not its definition. In particular,
+all RUN instructions following an ARG instruction use the ARG variable implicitly (as an environment variable),
+thus can cause a cache miss. All predefined ARG variables are exempt from caching unless there is a matching ARG statement in the Dockerfile.
+// ARG variables 不会 像 ENV variables 那样 被 持久化 到 被构建的 image 中.
+// 但是, ARG variables 会以 相似的方式 影响 build cache.
+// 如果 Dockerfile 定义了一个 其值 与 先前 build  不同的 的 ARG variable,
+// 那么在  其第一次 被使用时 会 发生 a “cache miss”, 而不是再其 definition 时.
+// 特别地, 所有的 在 ARG 指令之后的 RUN 指令 都隐式的 使用 ARG variable(类似于 an environment variable)
+// 因此 也会 导致 a cache miss.
+// All predefined ARG variables are exempt from caching unless there is a matching ARG statement in the Dockerfile.
+
+
+For example, consider these two Dockerfile:
+
+
+      1 FROM ubuntu
+      2 ARG CONT_IMG_VER
+      3 RUN echo $CONT_IMG_VER
+
+
+      1 FROM ubuntu
+      2 ARG CONT_IMG_VER
+      3 RUN echo hello
+
+
+If you specify --build-arg CONT_IMG_VER=<value> on the command line, in both cases, the specification
+on line 2 does not cause a cache miss; line 3 does cause a cache miss.ARG CONT_IMG_VER causes
+the RUN line to be identified as the same as running CONT_IMG_VER=<value> echo hello,
+so if the <value> changes, we get a cache miss.
+
+Consider another example under the same command line:
+
+      1 FROM ubuntu
+      2 ARG CONT_IMG_VER
+      3 ENV CONT_IMG_VER $CONT_IMG_VER
+      4 RUN echo $CONT_IMG_VER
+
+
+In this example, the cache miss occurs on line 3. The miss happens because the variable’s value
+in the ENV references the ARG variable and that variable is changed through the command line.
+In this example, the ENV command causes the image to include the value.
+
+If an ENV instruction overrides an ARG instruction of the same name, like this Dockerfile:
+
+      1 FROM ubuntu
+      2 ARG CONT_IMG_VER
+      3 ENV CONT_IMG_VER hello
+      4 RUN echo $CONT_IMG_VER
+
+Line 3 does not cause a cache miss because the value of CONT_IMG_VER is a constant (hello).
+As a result, the environment variables and values used on the RUN (line 4) doesn’t change between builds.
+
+
+
+
+
+
+--------------------------------------------------
+ONBUILD
+
+    https://docs.docker.com/engine/reference/builder/
+
+语法: ONBUILD [INSTRUCTION]
+
+The ONBUILD instruction adds to the image a trigger instruction to be executed at a later time,
+when the image is used as the base for another build. The trigger will be executed in the context
+of the downstream build, as if it had been inserted immediately after the FROM instruction in the downstream Dockerfile.
+// 指令 ONBUILD 向 image 添加 a trigger instruction. 其在 以后的时间被 执行.
+// 当 该 image 被 用作 another build 的 base 时. 该 trigger 在 下游构建的 context 中被执行,
+// 就像是 其 被 直接 inserted 在 downstream Dockerfile 的 FROM 指令 之后一样.
+
+Any build instruction can be registered as a trigger.
+// 任何 构建指令 都能够被 注册为 a trigger.
+
+
+This is useful if you are building an image which will be used as a base to build other images,
+for example an application build environment or a daemon which may be customized with user-specific configuration.
+
+
+For example, if your image is a reusable Python application builder, it will require
+application source code to be added in a particular directory, and it might require
+a build script to be called after that. You can’t just call ADD and RUN now,
+because you don’t yet have access to the application source code,
+and it will be different for each application build. You could simply provide application
+developers with a boilerplate Dockerfile to copy-paste into their application,
+but that is inefficient, error-prone and difficult to update because it mixes with application-specific code.
+
+The solution is to use ONBUILD to register advance instructions to run later, during the next build stage.
+
+Here’s how it works:
+// 工作方式:
+
+    - When it encounters an ONBUILD instruction, the builder adds a trigger to the metadata
+      of the image being built. The instruction does not otherwise affect the current build.
+
+    - At the end of the build, a list of all triggers is stored in the image manifest,
+      under the key OnBuild. They can be inspected with the docker inspect command.
+
+    - Later the image may be used as a base for a new build, using the FROM instruction.
+      As part of processing the FROM instruction, the downstream builder looks for ONBUILD triggers,
+      and executes them in the same order they were registered. If any of the triggers fail,
+      the FROM instruction is aborted which in turn causes the build to fail. If all triggers succeed,
+      the FROM instruction completes and the build continues as usual.
+
+    - Triggers are cleared from the final image after being executed. In other words they are not inherited by “grand-children” builds.
+      // Triggers 会从 其 被执行过的 最终的 image 中 清除. 换句话说 就是 它们不会被 继承到 “grand-children” builds 中。
+
+
+For example you might add something like this:
+
+    [...]
+    ONBUILD ADD . /app/src
+    ONBUILD RUN /usr/local/bin/python-build --dir /app/src
+    [...]
+
+Warning: Chaining ONBUILD instructions using ONBUILD ONBUILD isn’t allowed.
+// 警告: ONBUILD ONBUILD 这种 链接 ONBUILD 指令是不被允许的
+
+Warning: The ONBUILD instruction may not trigger FROM or MAINTAINER instructions.
 
 
 
@@ -5418,6 +5698,16 @@ Using ARG variables
 
 
 
+--------------------------------------------------
+STOPSIGNAL
+
+  https://docs.docker.com/engine/reference/builder/
+
+语法: STOPSIGNAL signal   <---注: signal 可以是有效的 unsigned number 或 形如 'SIGKILL' 这样的 signal name
+
+The STOPSIGNAL instruction sets the system call signal that will be sent to the container to exit.
+This signal can be a valid unsigned number that matches a position in the kernel’s syscall table,
+for instance 9, or a signal name in the format SIGNAME, for instance SIGKILL.
 
 
 
@@ -5425,25 +5715,235 @@ Using ARG variables
 
 
 
+--------------------------------------------------
+HEALTHCHECK
+
+    https://docs.docker.com/engine/reference/builder/
+
+
+The HEALTHCHECK instruction has two forms:
+
+语法: HEALTHCHECK [OPTIONS] CMD command (check container health by running a command inside the container)
+语法: HEALTHCHECK NONE (disable any healthcheck inherited from the base image)
+
+The HEALTHCHECK instruction tells Docker how to test a container to check that it is still working.
+This can detect cases such as a web server that is stuck in an infinite loop and unable
+to handle new connections, even though the server process is still running.
+
+When a container has a healthcheck specified, it has a health status in addition to its normal status.
+This status is initially 'starting'. Whenever a health check passes,
+it becomes 'healthy' (whatever state it was previously in). After a certain number of consecutive failures, it becomes 'unhealthy'.
+
+
+The options that can appear before CMD are:
+
+        --interval=DURATION (default: 30s)
+        --timeout=DURATION (default: 30s)
+        --start-period=DURATION (default: 0s)
+        --retries=N (default: 3)
+
+The health check will first run interval seconds after the container is started, and then again interval seconds after each previous check completes.
+
+If a single run of the check takes longer than timeout seconds then the check is considered to have failed.
+
+It takes retries consecutive failures of the health check for the container to be considered unhealthy.
+
+start period provides initialization time for containers that need time to bootstrap.
+Probe failure during that period will not be counted towards the maximum number of retries.
+However, if a health check succeeds during the start period, the container is considered started and
+all consecutive failures will be counted towards the maximum number of retries.
+
+
+There can only be one HEALTHCHECK instruction in a Dockerfile.
+If you list more than one then only the last HEALTHCHECK will take effect.
+// Dockerfile 中 仅能 有 一个 HEALTHCHECK 指令. 如果出现多个, 则最后一个 HEALTHCHECK 指令将其作用
+
+The command after the CMD keyword can be either a shell command (e.g. HEALTHCHECK CMD /bin/check-running)
+or an exec array (as with other Dockerfile commands; see e.g. ENTRYPOINT for details).
+
+The command’s exit status indicates the health status of the container. The possible values are:
+
+    0: success - the container is healthy and ready for use
+    1: unhealthy - the container is not working correctly
+    2: reserved - do not use this exit code
+
+For example, to check every five minutes or so that a web-server is able to serve the site’s main page within three seconds:
+
+      HEALTHCHECK --interval=5m --timeout=3s \
+        CMD curl -f http://localhost/ || exit 1
+
+
+
+To help debug failing probes, any output text (UTF-8 encoded) that the command writes on
+stdout or stderr will be stored in the health status and can be queried with docker inspect.
+Such output should be kept short (only the first 4096 bytes are stored currently).
+
+When the health status of a container changes, a health_status event is generated with the new status.
+
+The HEALTHCHECK feature was added in Docker 1.12.
+
+
+
+--------------------------------------------------
+SHELL
+
+    https://docs.docker.com/engine/reference/builder/
+
+语法: SHELL ["executable", "parameters"]   <--注: linux 上默认为 ["/bin/sh", "-c"]
+
+
+The SHELL instruction allows the default shell used for the shell form of commands to be overridden.
+The default shell on Linux is ["/bin/sh", "-c"], and on Windows is ["cmd", "/S", "/C"].
+The SHELL instruction must be written in JSON form in a Dockerfile.
+
+The SHELL instruction is particularly useful on Windows where there are two commonly used and
+quite different native shells: cmd and powershell, as well as alternate shells available including sh.
+
+The SHELL instruction can appear multiple times. Each SHELL instruction overrides
+all previous SHELL instructions, and affects all subsequent instructions. For example:
+// 指令 SHELL 可以出现 多次. 每个 SHELL 指令 都会 覆盖 先前的 SHELL instructions,
+// 并对 所有 后续的指令其作用. 例如:
+
+      FROM microsoft/windowsservercore
+
+      # Executed as cmd /S /C echo default
+      RUN echo default
+
+      # Executed as cmd /S /C powershell -command Write-Host default
+      RUN powershell -command Write-Host default
+
+      # Executed as powershell -command Write-Host hello
+      SHELL ["powershell", "-command"]
+      RUN Write-Host hello
+
+      # Executed as cmd /S /C echo hello
+      SHELL ["cmd", "/S", "/C"]
+      RUN echo hello
+
+
+The following instructions can be affected by the SHELL instruction when
+the shell form of them is used in a Dockerfile: RUN, CMD and ENTRYPOINT.
+
+The following example is a common pattern found on Windows which can be streamlined by using the SHELL instruction:
+
+    ...
+    RUN powershell -command Execute-MyCmdlet -param1 "c:\foo.txt"
+    ...
+
+The command invoked by docker will be:
+
+    cmd /S /C powershell -command Execute-MyCmdlet -param1 "c:\foo.txt"
+
+
+This is inefficient for two reasons. First, there is an un-necessary cmd.exe command processor (aka shell) being invoked.
+Second, each RUN instruction in the shell form requires an extra powershell -command prefixing the command.
+
+To make this more efficient, one of two mechanisms can be employed. One is to use the JSON form of the RUN command such as:
+
+    ...
+    RUN ["powershell", "-command", "Execute-MyCmdlet", "-param1 \"c:\\foo.txt\""]
+    ...
+
+
+While the JSON form is unambiguous and does not use the un-necessary cmd.exe, it does require more verbosity
+through double-quoting and escaping. The alternate mechanism is to use the SHELL instruction and the shell form,
+making a more natural syntax for Windows users, especially when combined with the escape parser directive:
+
+      # escape=`
+
+      FROM microsoft/nanoserver
+      SHELL ["powershell","-command"]
+      RUN New-Item -ItemType Directory C:\Example
+      ADD Execute-MyCmdlet.ps1 c:\example\
+      RUN c:\example\Execute-MyCmdlet -sample 'hello world'
+
+The SHELL instruction could also be used to modify the way in which a shell operates. For example,
+using SHELL cmd /S /C /V:ON|OFF on Windows, delayed environment variable expansion semantics could be modified.
+
+The SHELL instruction can also be used on Linux should an alternate shell be required such as zsh, csh, tcsh and others.
+
+The SHELL feature was added in Docker 1.12.
 
 
 
 
 
 
+--------------------------------------------------
+External implementation features
+
+  https://docs.docker.com/engine/reference/builder/
+
+This feature is only available when using the BuildKit backend.
+
+Docker build supports experimental features like cache mounts, build secrets and ssh forwarding
+that are enabled by using an external implementation of the builder with a syntax directive.
+To learn about these features, refer to the documentation in BuildKit repository.
+
+    https://docs.docker.com/engine/reference/builder/#buildkit
+    https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/experimental.md
 
 
 
 
 
+--------------------------------------------------
+Dockerfile examples
+
+    https://docs.docker.com/engine/reference/builder/
+    https://docs.docker.com/engine/examples/
+
+Below you can see some examples of Dockerfile syntax. If you’re interested in something more realistic,
+take a look at the list of Dockerization examples.
+
+------------------------------
+      # Nginx
+      #
+      # VERSION               0.0.1
+
+      FROM      ubuntu
+      LABEL Description="This image is used to start the foobar executable" Vendor="ACME Products" Version="1.0"
+      RUN apt-get update && apt-get install -y inotify-tools nginx apache2 openssh-server
+
+
+------------------------------
+      # Firefox over VNC
+      #
+      # VERSION               0.3
+
+      FROM ubuntu
+
+      # Install vnc, xvfb in order to create a 'fake' display and firefox
+      RUN apt-get update && apt-get install -y x11vnc xvfb firefox
+      RUN mkdir ~/.vnc
+      # Setup a password
+      RUN x11vnc -storepasswd 1234 ~/.vnc/passwd
+      # Autostart firefox (might not be the best way, but it does the trick)
+      RUN bash -c 'echo "firefox" >> /.bashrc'
+
+      EXPOSE 5900
+      CMD    ["x11vnc", "-forever", "-usepw", "-create"]
+
+
+------------------------------
+      # Multiple images example
+      #
+      # VERSION               0.1
+
+      FROM ubuntu
+      RUN echo foo > bar
+      # Will output something like ===> 907ad6c2736f
+
+      FROM ubuntu
+      RUN echo moo > oink
+      # Will output something like ===> 695d7793cbe4
+
+      # You'll now have two images, 907ad6c2736f with /bar, and 695d7793cbe4 with
+      # /oink.
 
 
 
 
-
-
-
-
-
+----------------------------------------------------------------------------------------------------
 
 
