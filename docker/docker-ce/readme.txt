@@ -1,6 +1,9 @@
 
 docker 是使用 go 语言实现的
 
+编写 Dockerfiles 的最佳实践:
+https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
+
 https://docs.docker.com/
 
 https://hub.docker.com/
@@ -5945,5 +5948,43 @@ take a look at the list of Dockerization examples.
 
 
 ----------------------------------------------------------------------------------------------------
+Best practices for writing Dockerfiles  (编写 Dockerfiles 的 最佳实践)
+
+
+    https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
