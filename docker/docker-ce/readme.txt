@@ -1394,9 +1394,91 @@ Networking using the host network
     d30997a78cc3        hello-world         "/hello"            46 hours ago        Exited (0) 46 hours ago                              nervous_hugle
 
 
+----------------------------------------------------------------------------------------------------
+示例: 让 容器 'centos7_02' 去 使用 另一个容器 'centos7_01' 的 network stack
+      即 容器 'centos7_02' 共享 'centos7_01' 的 网络名称空间
+
+
+https://docs.docker.com/engine/reference/run/#network-settings
+https://forums.docker.com/t/shared-network-namespaces-using-net-container/16697
+https://stackoverflow.com/questions/55399695/attaching-a-docker-container-to-another-containers-network-with-net-container
+
+[root@node01 ~]# docker container run -dit --name centos7_01 centos:7
+    5c87327b1c9edc9d9b3c003e901a473db38eabc0c7f1b2aa0ef87a4c5062ecd2
+
+[root@node01 ~]# docker container run -dit --name centos7_02 --network=container:centos7_01  centos:7  #容器'centos7_02' 使用容器 'centos7_01' 的 network stack
 
 
 
+[root@node01 ~]# docker container inspect centos7_02
+
+            "NetworkMode": "container:5c87327b1c9edc9d9b3c003e901a473db38eabc0c7f1b2aa0ef87a4c5062ecd2",
+
+
+
+[root@node01 ~]# docker container exec -it centos7_01 bash    #在容器 'centos7_01' 中 执行如下操作
+
+      [root@5c87327b1c9e /]# yum -y install net-tools
+
+      [root@5c87327b1c9e /]# ifconfig eth0
+      eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+              inet 172.17.0.2  netmask 255.255.0.0  broadcast 172.17.255.255
+              ether 02:42:ac:11:00:02  txqueuelen 0  (Ethernet)
+              RX packets 1466  bytes 10026523 (9.5 MiB)
+              RX errors 0  dropped 0  overruns 0  frame 0
+              TX packets 1324  bytes 75238 (73.4 KiB)
+              TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+      [root@5c87327b1c9e /]# yum -y install httpd
+      [root@5c87327b1c9e /]# httpd -k start
+      [root@5c87327b1c9e /]# netstat -anptu
+      Active Internet connections (servers and established)
+      Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+      tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      105/httpd
+
+
+
+
+[root@node01 ~]# docker container exec -it centos7_02 bash   #在容器 'centos7_02' 中 执行如下操作
+      [root@5c87327b1c9e /]# yum -y install net-tools
+
+      [root@5c87327b1c9e /]# ifconfig eth0
+      eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+              inet 172.17.0.2  netmask 255.255.0.0  broadcast 172.17.255.255
+              ether 02:42:ac:11:00:02  txqueuelen 0  (Ethernet)
+              RX packets 2855  bytes 20047967 (19.1 MiB)
+              RX errors 0  dropped 0  overruns 0  frame 0
+              TX packets 2506  bytes 143388 (140.0 KiB)
+              TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+      [root@5c87327b1c9e /]# curl -I http://localhost    #通过 localhost 访问 容器 'centos7_01' httpd 服务
+          HTTP/1.1 403 Forbidden
+          Date: Mon, 04 Nov 2019 09:57:37 GMT
+          Server: Apache/2.4.6 (CentOS)
+          Last-Modified: Thu, 16 Oct 2014 13:20:58 GMT
+          ETag: "1321-5058a1e728280"
+          Accept-Ranges: bytes
+          Content-Length: 4897
+          Content-Type: text/html; charset=UTF-8
+
+
+
+// 关闭容器 'centos7_01'
+[root@node01 ~]# docker container stop centos7_01
+centos7_01
+[root@node01 ~]# docker container ls
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+786405fef4a5        centos:7            "/bin/bash"         27 minutes ago      Up 27 minutes                           centos7_02
+
+[root@node01 ~]# docker container exec -it centos7_02 bash    #在容器 'centos7_02' 中 执行如下操作
+    [root@5c87327b1c9e /]# ifconfig      #可以观察到, 容器 centos7_02 去使用 centos7_01 的 network stack 时, 如果关闭了 centos7_01, 则 centos7_02 也就失去了 network stack
+    lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+            inet 127.0.0.1  netmask 255.0.0.0
+            loop  txqueuelen 1  (Local Loopback)
+            RX packets 74  bytes 21060 (20.5 KiB)
+            RX errors 0  dropped 0  overruns 0  frame 0
+            TX packets 74  bytes 21060 (20.5 KiB)
+            TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
 
 
 
@@ -6111,7 +6193,20 @@ Best practices for writing Dockerfiles  (编写 Dockerfiles 的 最佳实践)
 
 
 ----------------------------------------------------------------------------------------------------
+// 查看容器日志
 
+[root@node01 ~]# docker container run -d --name c1 centos:7 bash -c 'for i in {1..100}; do echo $i; sleep 2; done'
+    2a159b3affa4311a6696e1b7049e2f59ef682e6a34d46fda8b93648d728d8fc9
+
+
+[root@node01 ~]# docker container logs -f c1   #获取查看 容器日志
+1
+2
+3
+4
+
+
+----------------------------------------------------------------------------------------------------
 
 
 
