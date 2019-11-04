@@ -5956,6 +5956,169 @@ Best practices for writing Dockerfiles  (编写 Dockerfiles 的 最佳实践)
 
 
 
+----------------------------------------------------------------------------------------------------
+其他:
+
+--------------------
+// 优先使用 `docker container exec` 而非 `docker container attach`, 因为使用 attach 后 exit 会使容器退出, 而使用 exec 是 exit 后容器不会退出
+[root@node01 ~]# docker container run -dit --name centos7_c1 centos:7
+    2ed270039ffa3a950bf5367e5f6fee164fce7a626bd8417d03c96e9531149bea
+
+[root@node01 ~]# docker container ls
+    CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+    2ed270039ffa        centos:7            "/bin/bash"         19 seconds ago      Up 17 seconds                           centos7_c1
+
+[root@node01 ~]# docker container exec -it centos7_c1 bash
+[root@2ed270039ffa /]# cat /etc/redhat-release
+    CentOS Linux release 7.6.1810 (Core)
+[root@2ed270039ffa /]# exit
+    exit
+
+[root@node01 ~]# docker container ls
+    CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+    2ed270039ffa        centos:7            "/bin/bash"         3 minutes ago       Up 3 minutes                            centos7_c1 <--观察: 处于运行状态
+
+[root@node01 ~]# docker container attach centos7_c1   #注:应优先使用 exec 子命令 而非 attach
+[root@2ed270039ffa /]# exit
+    exit
+[root@node01 ~]# docker container ls -a
+    CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                     PORTS               NAMES
+    2ed270039ffa        centos:7            "/bin/bash"         5 minutes ago       Exited (0) 4 seconds ago                       centos7_c1 <--观察: 处于退出状态
+
+
+--------------------
+// 导出 和 导入 容器
+
+[root@node01 ~]# man docker-image-import
+[root@node01 ~]# man docker-container-export
+
+
+
+[root@node01 ~]# docker container export --help  #详细见  man docker-container-export
+
+    Usage:  docker container export [OPTIONS] CONTAINER
+
+    Export a container's filesystem as a tar archive
+
+    Options:
+      -o, --output string   Write to a file, instead of STDOUT
+
+[root@node01 ~]# docker image import --help  #详细见 man docker-image-import
+
+    Usage:  docker image import [OPTIONS] file|URL|- [REPOSITORY[:TAG]]
+
+    Import the contents from a tarball to create a filesystem image
+
+    Options:
+      -c, --change list      Apply Dockerfile instruction to the created image
+      -m, --message string   Set commit message for imported image
+
+[root@node01 ~]# docker container ls -a
+    CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                     PORTS               NAMES
+    2ed270039ffa        centos:7            "/bin/bash"         14 minutes ago      Exited (0) 9 minutes ago                       centos7_c1
+
+
+[root@node01 ~]# docker container export centos7_c1 -o /tmp/centos7_c1_export.tar   #导出容器快照
+
+[root@node01 ~]# docker image import /tmp/centos7_c1_export.tar local/centos7_c1_export:v1.0  #将容器快照导入为镜像
+    sha256:71fc55196c9e4bac94064208f9cec447a53be643c8a2473145f19937ce60d6b1
+
+[root@node01 ~]# docker image ls local/centos7_c1_export
+    REPOSITORY                TAG                 IMAGE ID            CREATED              SIZE
+    local/centos7_c1_export   v1.0                71fc55196c9e        About a minute ago   202MB
+
+[root@node01 ~]# docker image history local/centos7_c1_export:v1.0
+    IMAGE               CREATED             CREATED BY          SIZE                COMMENT
+    71fc55196c9e        2 minutes ago                           202MB               Imported from -
+
+
+[root@node01 ~]# docker container export centos7_c1 | gzip > /tmp/centos7_c1_export.tar.gz
+
+[root@node01 ~]# docker image import /tmp/centos7_c1_export.tar.gz local/centos7_c1_export:v2.0
+    sha256:2e92070858bf4c2a1c36835cccf122080f3b31b53ff679052ea87b7132041aeb
+
+[root@node01 ~]# docker image ls local/centos7_c1_export
+    REPOSITORY                TAG                 IMAGE ID            CREATED              SIZE
+    local/centos7_c1_export   v2.0                2e92070858bf        About a minute ago   202MB <---
+    local/centos7_c1_export   v1.0                71fc55196c9e        About an hour ago    202MB
+
+
+
+
+----------------------------------------------------------------------------------------------------
+// 保存 和 加载 镜像  (注: 使用此方式前, 应考虑 是否应该 使用 registry 的方式)
+
+[root@node01 ~]# docker image save --help
+
+    Usage:  docker image save [OPTIONS] IMAGE [IMAGE...]
+
+    Save one or more images to a tar archive (streamed to STDOUT by default)
+
+    Options:
+      -o, --output string   Write to a file, instead of STDOUT
+
+
+[root@node01 ~]# docker image load --help
+
+    Usage:  docker image load [OPTIONS]
+
+    Load an image from a tar archive or STDIN
+
+    Options:
+      -i, --input string   Read from tar archive file, instead of STDIN
+      -q, --quiet          Suppress the load output
+
+
+
+[root@node01 ~]# docker image ls centos
+    REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+    centos              7                   67fa590cfc1c        2 months ago        202MB
+
+[root@node01 ~]# docker image save centos:7 -o /tmp/centos_7_save.tar
+
+
+[root@node01 ~]# docker image rm centos:7
+[root@node01 ~]# docker image ls
+    REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+
+
+[root@node01 ~]# docker image load -i /tmp/centos_7_save.tar
+    877b494a9f30: Loading layer [==================================================>]  209.6MB/209.6MB
+    Loaded image: centos:7
+
+[root@node01 ~]# docker image ls
+    REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+    centos              7                   67fa590cfc1c        2 months ago        202MB
+[root@node01 ~]# docker image history centos:7
+    IMAGE               CREATED             CREATED BY                                      SIZE                COMMENT
+    67fa590cfc1c        2 months ago        /bin/sh -c #(nop)  CMD ["/bin/bash"]            0B
+    <missing>           2 months ago        /bin/sh -c #(nop)  LABEL org.label-schema.sc…   0B
+    <missing>           2 months ago        /bin/sh -c #(nop) ADD file:4e7247c06de9ad117…   202MB
+
+
+
+[root@node01 ~]# docker image save centos:7 | gzip > /tmp/centos_7_save.tar.gz
+
+[root@node01 ~]# docker image rm centos:7
+
+[root@node01 ~]# docker image load -i /tmp/centos_7_save.tar.gz
+    877b494a9f30: Loading layer [==================================================>]  209.6MB/209.6MB
+    Loaded image: centos:7
+
+[root@node01 ~]# docker image ls
+    REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+    centos              7                   67fa590cfc1c        2 months ago        202MB
+
+
+----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
 
 
 
