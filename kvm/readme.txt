@@ -1136,9 +1136,7 @@ kvm 中 nat 模式 网络通信的 常规 3 个要点: (注: 网络故障排错�
       https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-bridge-mode
 
             virtual machine 01  |
-            virtual machine 02  | <---------------------> 桥接网络(网卡) <-------------------->
-                                |
-                      物理网卡  |
+            virtual machine 02  | <-----------> 桥接网络(网卡) <-----------> 物理网卡 <-----> Network(Internet)
 
 
 
