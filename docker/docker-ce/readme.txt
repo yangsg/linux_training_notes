@@ -6223,8 +6223,6 @@ https://www.linuxsysadmins.com/how-to-create-a-linux-network-bridge/
 
 
 
-[root@node01 ~]# yum -y install bridge-utils
-
 [root@node01 ~]# ip link add name bridge0 type bridge
 [root@node01 ~]# ip addr add 192.168.5.1/24 dev bridge0
 [root@node01 ~]# ip link set dev bridge0 up
@@ -6241,6 +6239,11 @@ https://www.linuxsysadmins.com/how-to-create-a-linux-network-bridge/
                 TYPE=Bridge
                 IPADDR=192.168.5.1
                 PREFIX=24
+
+          //注: ifup 相关的脚本中 会使用 brctl 命令,所以如果不安装 bridge-utils, 在执行 后面 `ifup bridge0` 命令时会报如下错误:
+          // ERROR     : [/etc/sysconfig/network-scripts/ifup-eth] Bridge support not available: brctl not found
+          [root@node01 ~]# yum -y install bridge-utils
+          [root@node01 ~]# ifdown bridge0 && ifup bridge0
           --------------------------------------------------
 
 
