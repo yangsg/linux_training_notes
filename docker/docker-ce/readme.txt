@@ -6207,6 +6207,122 @@ Best practices for writing Dockerfiles  (编写 Dockerfiles 的 最佳实践)
 
 
 ----------------------------------------------------------------------------------------------------
+Build your own bridge  (创建自定义网桥)
+
+
+
+https://docs.docker.com/v17.09/engine/userguide/networking/default_network/build-bridges/
+https://developer.ibm.com/recipes/tutorials/bridge-the-docker-containers-to-external-network/
+https://unix.stackexchange.com/questions/255484/how-can-i-bridge-two-interfaces-with-ip-iproute2
+https://www.baturin.org/docs/iproute2/#Overview%20of%20iproute2
+https://www.lartc.org/howto/index.html
+https://wiki.linuxfoundation.org/networking/iproute2
+
+https://www.golinuxcloud.com/how-to-configure-network-bridge-nmtui-linux/
+https://www.linuxsysadmins.com/how-to-create-a-linux-network-bridge/
+
+
+
+[root@node01 ~]# yum -y install bridge-utils
+
+[root@node01 ~]# ip link add name bridge0 type bridge
+[root@node01 ~]# ip addr add 192.168.5.1/24 dev bridge0
+[root@node01 ~]# ip link set dev bridge0 up
+
+          --------------------------------------------------
+          // 如果 要持久化 设置可采用如下方式
+          [root@node01 ~]# vim /etc/sysconfig/network-scripts/ifcfg-bridge0
+                DEVICE=bridge0
+                NAME=bridge0
+                ONBOOT=yes
+                BOOTPROTO=none
+                NM_CONTROLLED="no"
+                STP=no
+                TYPE=Bridge
+                IPADDR=192.168.5.1
+                PREFIX=24
+          --------------------------------------------------
+
+
+[root@node01 ~]# ip addr show bridge0
+6: bridge0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UNKNOWN qlen 1000
+    link/ether 5e:42:be:9e:b3:7a brd ff:ff:ff:ff:ff:ff
+    inet 192.168.5.1/24 scope global bridge0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::5c42:beff:fe9e:b37a/64 scope link
+       valid_lft forever preferred_lft forever
+
+
+// 配置 docker 默认桥接到 "bridge0" 上
+[root@node01 ~]# vim /etc/docker/daemon.json
+
+    {
+      "bridge": "bridge0"
+    }
+
+// 重启 是 配置修改生效
+[root@node01 ~]# systemctl restart docker.service
+
+[root@node01 ~]# iptables -t nat -L -n
+
+    Chain PREROUTING (policy ACCEPT)
+    target     prot opt source               destination
+    DOCKER     all  --  0.0.0.0/0            0.0.0.0/0            ADDRTYPE match dst-type LOCAL
+
+    Chain INPUT (policy ACCEPT)
+    target     prot opt source               destination
+
+    Chain OUTPUT (policy ACCEPT)
+    target     prot opt source               destination
+    DOCKER     all  --  0.0.0.0/0           !127.0.0.0/8          ADDRTYPE match dst-type LOCAL
+
+    Chain POSTROUTING (policy ACCEPT)
+    target     prot opt source               destination
+    MASQUERADE  all  --  192.168.5.0/24       0.0.0.0/0           <----观察
+
+    Chain DOCKER (2 references)
+    target     prot opt source               destination
+    RETURN     all  --  0.0.0.0/0            0.0.0.0/0
+
+
+[root@node01 ~]# docker container run --rm -dit --name c1 centos:7
+    36317afa164c9a468aa8b284b9adcacc1709956819b6bcf58303b260035416cd
+
+[root@node01 ~]# docker container exec -it c1 bash
+      [root@36317afa164c /]# yum -y install net-tools
+
+      [root@36317afa164c /]# ifconfig
+          eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+                  inet 192.168.5.2  netmask 255.255.255.0  broadcast 192.168.5.255
+                  ether 02:42:c0:a8:05:02  txqueuelen 0  (Ethernet)
+                  RX packets 1788  bytes 10043348 (9.5 MiB)
+                  RX errors 0  dropped 0  overruns 0  frame 0
+                  TX packets 1670  bytes 94455 (92.2 KiB)
+                  TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+          lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+                  inet 127.0.0.1  netmask 255.0.0.0
+                  loop  txqueuelen 1  (Local Loopback)
+                  RX packets 0  bytes 0 (0.0 B)
+                  RX errors 0  dropped 0  overruns 0  frame 0
+                  TX packets 0  bytes 0 (0.0 B)
+                  TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+      [root@36317afa164c /]# route  -n
+          Kernel IP routing table
+          Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+          0.0.0.0         192.168.5.1     0.0.0.0         UG    0      0        0 eth0
+          192.168.5.0     0.0.0.0         255.255.255.0   U     0      0        0 eth0
+
+      [root@36317afa164c /]# ping www.baidu.com
+      PING www.a.shifen.com (183.232.231.174) 56(84) bytes of data.
+      64 bytes from 183.232.231.174 (183.232.231.174): icmp_seq=1 ttl=127 time=41.9 ms
+      64 bytes from 183.232.231.174 (183.232.231.174): icmp_seq=2 ttl=127 time=50.4 ms
+
+
+
+
+----------------------------------------------------------------------------------------------------
 
 
 
