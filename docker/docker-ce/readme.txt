@@ -6325,7 +6325,145 @@ https://www.linuxsysadmins.com/how-to-create-a-linux-network-bridge/
 
 
 
+
+
+
+
+
 ----------------------------------------------------------------------------------------------------
+第三方网络配置工具
+
+  pipework
+  weave
+  flannel + etcd
+
+
+
+
+----------------------------------------------------------------------------------------------------
+pipework
+
+      https://github.com/jpetazzo/pipework
+
+
+// 安装 pipework 工具
+[root@node01 ~]# git clone https://github.com/jpetazzo/pipework.git
+[root@node01 ~]# cd pipework/
+[root@node01 pipework]# ls
+    docker-compose.yml  doctoc  LICENSE  pipework  pipework.spec  README.md
+
+[root@node01 pipework]# cp ./pipework /usr/local/bin/
+
+[root@node01 pipework]# pipework --help   #pipework 本身 是 一个 shell 脚本
+    Syntax:
+    pipework <hostinterface> [-i containerinterface] [-l localinterfacename] [-a addressfamily] <guest> <ipaddr>/<subnet>[@default_gateway] [macaddr][@vlan]
+    pipework <hostinterface> [-i containerinterface] [-l localinterfacename] <guest> dhcp [macaddr][@vlan]
+    pipework route <guest> <route_command>
+    pipework rule <guest> <rule_command>
+    pipework tc <guest> <tc_command>
+    pipework --wait [-i containerinterface]
+
+
+--------------------------------------------------
+示例1：通过pipework工具实现桥接模式  (注: 该示例有些 可以改进的地方, 不过这里就略过了)
+         注:  以往 `docker 文档中 提到的 'docker0' 等 docker自己叫的 'bridge' 指定的 nat 桥, 其与此处的 桥 不是一回事
+
+[root@node01 ~]# yum -y install bridge-utils
+
+// 查看一些 类型为 'bridge' 的网卡
+[root@node01 ~]# ip link show type bridge
+3: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN mode DEFAULT
+    link/ether 02:42:14:f8:7d:0c brd ff:ff:ff:ff:ff:ff
+
+
+[root@node01 ~]# docker pull centos:7
+[root@node01 ~]# docker container run -dit --name c1 centos:7
+    64b949d333ac73122170e9549c23bebf1a9f06984f18308e7a087e4a850d185a
+
+
+[root@node01 ~]# docker container exec -it c1 bash
+    [root@64b949d333ac /]# yum -y install net-tools
+
+
+
+// 使用 pipework 为 容器设置 真实网络中的 ip 和 默认网关
+[root@node01 ~]# pipework docker0 c1 192.168.175.51/24@192.168.175.2
+
+
+[root@node01 ~]# docker container exec -it c1 bash
+      [root@64b949d333ac /]# ifconfig
+          eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+                  inet 172.17.0.2  netmask 255.255.0.0  broadcast 172.17.255.255
+                  ether 02:42:ac:11:00:02  txqueuelen 0  (Ethernet)
+                  RX packets 1300  bytes 10017099 (9.5 MiB)
+                  RX errors 0  dropped 0  overruns 0  frame 0
+                  TX packets 1160  bytes 66559 (64.9 KiB)
+                  TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+          eth1: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500  <--观察, pipework 为 容器创建了一块名为 ‘eth1’ 网卡
+                  inet 192.168.175.51  netmask 255.255.255.0  broadcast 192.168.175.255
+                  ether ce:77:c0:34:5a:4a  txqueuelen 1000  (Ethernet)
+                  RX packets 7  bytes 578 (578.0 B)
+                  RX errors 0  dropped 0  overruns 0  frame 0
+                  TX packets 1  bytes 42 (42.0 B)
+                  TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+          lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+                  inet 127.0.0.1  netmask 255.0.0.0
+                  loop  txqueuelen 1  (Local Loopback)
+                  RX packets 0  bytes 0 (0.0 B)
+                  RX errors 0  dropped 0  overruns 0  frame 0
+                  TX packets 0  bytes 0 (0.0 B)
+                  TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+
+      [root@64b949d333ac /]# route -n
+          Kernel IP routing table
+          Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+          0.0.0.0         192.168.175.2   0.0.0.0         UG    0      0        0 eth1  <---观察
+          172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 eth0
+          192.168.175.0   0.0.0.0         255.255.255.0   U     0      0        0 eth1
+
+
+
+
+[root@node01 ~]# ip addr del dev ens33 192.168.175.100/24   \
+                   && ip addr add dev docker0 192.168.175.100/24 \
+                   && brctl addif docker0 ens33
+
+
+[root@node01 ~]# docker container exec -it c1 bash
+    [root@64b949d333ac /]# ping www.baidu.com  <---观察,可以看到,容器可以 ping 百度, 即即可访问外网
+    PING www.baidu.com (183.232.231.172) 56(84) bytes of data.
+    64 bytes from 183.232.231.172 (183.232.231.172): icmp_seq=1 ttl=128 time=148 ms
+    64 bytes from 183.232.231.172 (183.232.231.172): icmp_seq=2 ttl=128 time=36.3 ms
+
+
+
+
+// 此时 宿主机 访问 外网 无法成功(如 ping 一下 baidu)
+[root@node01 ~]# ping www.baidu.com
+    connect: Network is unreachable
+
+// 观察一下 宿主机的路由表, 发现没有 网关
+[root@node01 ~]# route -n
+    Kernel IP routing table
+    Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+    172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0
+    192.168.175.0   0.0.0.0         255.255.255.0   U     0      0        0 docker0
+
+[root@node01 ~]# ip route add default via 192.168.175.2 dev docker0
+[root@node01 ~]# route -n
+    Kernel IP routing table
+    Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+    0.0.0.0         192.168.175.2   0.0.0.0         UG    0      0        0 docker0
+    172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0
+    192.168.175.0   0.0.0.0         255.255.255.0   U     0      0        0 docker0
+
+[root@node01 ~]# ping www.baidu.com
+    PING www.baidu.com (183.232.231.174) 56(84) bytes of data.
+    64 bytes from 183.232.231.174 (183.232.231.174): icmp_seq=1 ttl=128 time=31.3 ms
+    64 bytes from 183.232.231.174 (183.232.231.174): icmp_seq=2 ttl=128 time=97.4 ms
 
 
 
