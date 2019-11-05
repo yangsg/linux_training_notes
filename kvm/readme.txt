@@ -1145,6 +1145,7 @@ kvm 中 nat 模式 网络通信的 常规 3 个要点: (注: 网络故障排错�
       https://www.cnblogs.com/hukey/p/11246126.html
       https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-troubleshooting-common_libvirt_errors_and_troubleshooting
       https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/networking_guide/sec-network_bridging_using_the_command_line_interface
+      https://www.cnblogs.com/yinzhengjie/p/7446226.html
 
 
 
