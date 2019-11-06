@@ -6474,6 +6474,238 @@ pipework
 
 
 
+----------------------------------------------------------------------------------------------------
+示例2：单主机的容器做vlan隔离
+
+
+      openvswitch 安装(适用于 centos7): http://docs.openvswitch.org/en/latest/intro/install/fedora/
+
+[root@node01 ~]# yum -y install rpm-build yum-utils  #注: 命令 yum-builddep 就包含在 yum-utils 包中
+
+[root@node01 ~]# wget https://www.openvswitch.org/releases/openvswitch-2.12.0.tar.gz
+[root@node01 ~]# tar -xvf openvswitch-2.12.0.tar.gz
+[root@node01 ~]# cd openvswitch-2.12.0/
+[root@node01 openvswitch-2.12.0]# ls
+    acinclude.m4  config.h.in       debian         m4               NOTICE      python       tutorial             windows
+    aclocal.m4    configure         Documentation  MAINTAINERS.rst  ofproto     README.rst   utilities            xenserver
+    appveyor.yml  configure.ac      include        Makefile.am      ovn         rhel         Vagrantfile
+    AUTHORS.rst   CONTRIBUTING.rst  ipsec          Makefile.in      ovsdb       selinux      Vagrantfile-FreeBSD
+    boot.sh       datapath          lib            manpages.mk      package.m4  tests        vswitchd
+    build-aux     datapath-windows  LICENSE        NEWS             poc         third-party  vtep
+
+
+// 利用 rhel/openvswitch-fedora.spec.in 文件生成 /tmp/ovs.spec (注: 最好去观察一下 rhel/openvswitch-fedora.spec.in 里面都有什么内容)
+[root@node01 openvswitch-2.12.0]# sed -e 's/@VERSION@/2.12.0/' rhel/openvswitch-fedora.spec.in  > /tmp/ovs.spec
+
+
+// 安装 build 所需要的依赖(该命令会安装 gcc 等 一系列 构建相关工具 和 openvswitch 的 依赖包)
+// (注: 执行之前请确保 配置好了 epel 源)
+[root@node01 openvswitch-2.12.0]# yum-builddep /tmp/ovs.spec
+
+[root@node01 openvswitch-2.12.0]# rm /tmp/ovs.spec
+    rm: remove regular file ‘/tmp/ovs.spec’? y
+
+// 执行 configure 探测环境, 配置 并 生成 Makefile 文件
+// 见  http://docs.openvswitch.org/en/latest/intro/install/general/#general-bootstrapping
+[root@node01 openvswitch-2.12.0]# ./configure --help   #观察一下 简要帮助
+[root@node01 openvswitch-2.12.0]# ./configure --prefix=/usr --localstatedir=/var --sysconfdir=/etc
+
+// 构建 Open vSwitch user-space RPMs
+[root@node01 openvswitch-2.12.0]# make rpm-fedora
+
+[root@node01 openvswitch-2.12.0]# find | grep -E '\.rpm$'
+    ./rpm/rpmbuild/RPMS/x86_64/openvswitch-2.12.0-1.el7.centos.x86_64.rpm  <----
+    ./rpm/rpmbuild/RPMS/x86_64/openvswitch-devel-2.12.0-1.el7.centos.x86_64.rpm
+    ./rpm/rpmbuild/RPMS/x86_64/openvswitch-ipsec-2.12.0-1.el7.centos.x86_64.rpm
+    ./rpm/rpmbuild/RPMS/x86_64/openvswitch-debuginfo-2.12.0-1.el7.centos.x86_64.rpm
+    ./rpm/rpmbuild/RPMS/noarch/openvswitch-selinux-policy-2.12.0-1.el7.centos.noarch.rpm
+    ./rpm/rpmbuild/RPMS/noarch/python-openvswitch-2.12.0-1.el7.centos.noarch.rpm
+    ./rpm/rpmbuild/RPMS/noarch/openvswitch-test-2.12.0-1.el7.centos.noarch.rpm
+    ./rpm/rpmbuild/SRPMS/openvswitch-2.12.0-1.el7.centos.src.rpm
+
+[root@node01 openvswitch-2.12.0]# yum install ./rpm/rpmbuild/RPMS/x86_64/openvswitch-2.12.0-1.el7.centos.x86_64.rpm
+[root@node01 openvswitch-2.12.0]# rpm -q openvswitch
+    openvswitch-2.12.0-1.el7.centos.x86_64
+
+[root@node01 ~]# systemctl start openvswitch.service
+[root@node01 ~]# systemctl enable openvswitch.service
+    Created symlink from /etc/systemd/system/multi-user.target.wants/openvswitch.service to /usr/lib/systemd/system/openvswitch.service.
+
+[root@node01 ~]# systemctl status openvswitch.service
+    ● openvswitch.service - Open vSwitch
+       Loaded: loaded (/usr/lib/systemd/system/openvswitch.service; enabled; vendor preset: disabled)
+       Active: active (exited) since Wed 2019-11-06 17:42:14 CST; 34s ago
+     Main PID: 1977 (code=exited, status=0/SUCCESS)
+
+    Nov 06 17:42:14 node01 systemd[1]: Starting Open vSwitch...
+    Nov 06 17:42:14 node01 systemd[1]: Started Open vSwitch.
+
+
+
+
+
+[root@node01 ~]# docker image pull centos:7
+
+[root@node01 ~]# docker container run -dit --name c1 centos:7
+[root@node01 ~]# docker container run -dit --name c2 centos:7
+
+[root@node01 ~]# docker container run -dit --name c3 centos:7
+[root@node01 ~]# docker container run -dit --name c4 centos:7
+
+[root@node01 ~]# docker container ls
+    CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+    35a2c92856a8        centos:7            "/bin/bash"         10 seconds ago      Up 8 seconds                            c4
+    135ef9525b55        centos:7            "/bin/bash"         13 seconds ago      Up 12 seconds                           c3
+    e389903a58a3        centos:7            "/bin/bash"         16 seconds ago      Up 15 seconds                           c2
+    09861fae32a9        centos:7            "/bin/bash"         26 seconds ago      Up 24 seconds                           c1
+
+
+// 注: vlan 实际使用原则 应该是 不同的 vlan 使用不同的 ip 网段
+//     但 这里 出于 演示目的 仍 配置成相同的网段
+
+
+// 将 容器 c1 和 c2 放到 同一 vlan 中, 将 容器 c3 和 c4 放到另个一 同一 vlan 中
+// 为 容器  c1 设置 ip 为 10.1.1.1/24, 并将其 附加到 虚拟交换机 ovs0 上, 同时 附加到 VLAN ID 为 100 的 vlan 中
+[root@node01 ~]# pipework ovs0 c1 10.1.1.1/24 @100
+[root@node01 ~]# pipework ovs0 c2 10.1.1.2/24 @100
+
+[root@node01 ~]# pipework ovs0 c3 10.1.1.3/24 @200
+[root@node01 ~]# pipework ovs0 c4 10.1.1.4/24 @200
+
+// 在容器 c1 中执行 ping 操作
+[root@node01 ~]# docker container exec -it c1 bash
+      [root@09861fae32a9 /]# ping -c 3 10.1.1.2
+      PING 10.1.1.2 (10.1.1.2) 56(84) bytes of data.
+      64 bytes from 10.1.1.2: icmp_seq=1 ttl=64 time=0.702 ms  <---观察, c1 能 ping 通 c2
+      64 bytes from 10.1.1.2: icmp_seq=2 ttl=64 time=0.070 ms
+      64 bytes from 10.1.1.2: icmp_seq=3 ttl=64 time=0.102 ms
+
+      --- 10.1.1.2 ping statistics ---
+      3 packets transmitted, 3 received, 0% packet loss, time 2001ms
+      rtt min/avg/max/mdev = 0.070/0.291/0.702/0.291 ms
+      [root@09861fae32a9 /]# ping -c 3 10.1.1.3
+      PING 10.1.1.3 (10.1.1.3) 56(84) bytes of data.
+      From 10.1.1.1 icmp_seq=1 Destination Host Unreachable  <---观察, c1 无法 ping 通 c3
+      From 10.1.1.1 icmp_seq=2 Destination Host Unreachable
+      From 10.1.1.1 icmp_seq=3 Destination Host Unreachable
+
+      --- 10.1.1.3 ping statistics ---
+      3 packets transmitted, 0 received, +3 errors, 100% packet loss, time 2000ms
+      pipe 3
+
+
+// 在容器 c4 中执行 ping 操作
+[root@node01 ~]# docker container exec -it c4 bash
+      [root@35a2c92856a8 /]# ping -c 3 10.1.1.3
+      PING 10.1.1.3 (10.1.1.3) 56(84) bytes of data.
+      64 bytes from 10.1.1.3: icmp_seq=1 ttl=64 time=0.346 ms  <---观察, c4 能 ping 通 c3
+      64 bytes from 10.1.1.3: icmp_seq=2 ttl=64 time=0.074 ms
+      64 bytes from 10.1.1.3: icmp_seq=3 ttl=64 time=0.083 ms
+
+      --- 10.1.1.3 ping statistics ---
+      3 packets transmitted, 3 received, 0% packet loss, time 2000ms
+      rtt min/avg/max/mdev = 0.074/0.167/0.346/0.127 ms
+      [root@35a2c92856a8 /]# ping -c 3 10.1.1.2
+      PING 10.1.1.2 (10.1.1.2) 56(84) bytes of data.
+      From 10.1.1.4 icmp_seq=1 Destination Host Unreachable  <---观察, c4 无法 ping 通 c2
+      From 10.1.1.4 icmp_seq=2 Destination Host Unreachable
+      From 10.1.1.4 icmp_seq=3 Destination Host Unreachable
+
+      --- 10.1.1.2 ping statistics ---
+      3 packets transmitted, 0 received, +3 errors, 100% packet loss, time 1999ms
+      pipe 3
+
+
+
+示例2结束
+
+
+
+
+
+        --skip--------------------------------------------------------------------------------------------------
+        该段 安装 openvswitch 的 方式 为完成, 略过(skip)
+        TODO: 支持 dpdk 的安装要复杂一点, 具体参考官方文档)
+
+            // 关于 DPDK 见: https://docs.openstack.org/neutron/stein/admin/config-ovs-dpdk.html
+            //               https://www.dpdk.org/
+
+            // 执行 make rpm-fedora 之前先安装一些 packages, 否则 会报错
+            [root@node01 ~]# yum -y install libpcap-devel numactl-devel dpdk-devel libmnl-devel
+            [root@node01 ~]# rpm -q libpcap-devel numactl-devel dpdk-devel libmnl-devel
+                libpcap-devel-1.5.3-11.el7.x86_64
+                numactl-devel-2.0.12-3.el7.x86_64
+                dpdk-devel-18.11.2-1.el7.x86_64
+                libmnl-devel-1.0.3-7.el7.x86_64
+
+            // 构建 Open vSwitch user-space RPMs
+            [root@node01 openvswitch-2.12.0]# make rpm-fedora RPMBUILD_OPT="--with dpdk --without check"   #注: 此处启用了 DPDK
+
+                    --------------------略过(skip)
+                    // 本示例不需要 openvswitch-kmod-2.12.0-1.el7.centos.x86_64.rpm, 所以 其构建步骤可以略过
+
+                    // 构建 the Open vSwitch kernel module for the currently running kernel version
+                    [root@node01 openvswitch-2.12.0]# make rpm-fedora-kmod
+
+                    // 构建时报错: configure: error: source dir /lib/modules/3.10.0-693.el7.x86_64/build doesn't exist
+                    // 解决方法: 安装 kernel-devel, 即 kernel-devel-3.10.0-693.el7.x86_64.rpm
+                    // 因为 yum 仓库中没有找到 与本地 内核 对应版本的 kernel-devel, 所有这里需要自己去下载对应版本的 kernel-devel
+
+                    // 查看一下 内核版本
+                    [root@node01 ~]# uname -r
+                        3.10.0-693.el7.x86_64
+
+                    // 列出 所有可用的 kernel-devel, 发现所有的版本都不对应
+                    [root@node01 ~]# yum list kernel-devel --showduplicates | grep kernel-devel
+                        kernel-devel.x86_64                 3.10.0-1062.el7                      base
+                        kernel-devel.x86_64                 3.10.0-1062.1.1.el7                  updates
+                        kernel-devel.x86_64                 3.10.0-1062.1.2.el7                  updates
+                        kernel-devel.x86_64                 3.10.0-1062.4.1.el7                  updates
+
+
+                    // kernel-devel-3.10.0-693.el7.x86_64.rpm 下载页面:
+                    //    http://rpm.pbone.net/index.php3/stat/4/idpl/37924679/dir/scientific_linux_7/com/kernel-devel-3.10.0-693.el7.x86_64.rpm.html
+                    [root@node01 ~]# wget ftp://ftp.pbone.net/mirror/ftp.scientificlinux.org/linux/scientific/7.0/x86_64/updates/security/kernel-devel-3.10.0-693.el7.x86_64.rpm
+                    [root@node01 ~]# yum  install ./kernel-devel-3.10.0-693.el7.x86_64.rpm
+                    [root@node01 ~]# rpm -q kernel-devel
+                        kernel-devel-3.10.0-693.el7.x86_64
+
+                    [root@node01 openvswitch-2.12.0]# make rpm-fedora-kmod
+                    --------------------
+
+
+            // 安装
+            // The openvswitch-kmod RPM should be installed first if the Linux OVS tree datapath module is to be used.
+            // The openvswitch-kmod RPM should not be installed if only the in-tree Linux datapath or user-space datapath is needed.
+            // Refer to the Open vSwitch FAQ for more information about the various Open vSwitch datapath options.
+            //
+            // In most cases only the openvswitch RPM will need to be installed. The python3-openvswitch, openvswitch-test,
+            // openvswitch-devel, and openvswitch-debuginfo RPMs are optional unless required for a specific purpose.
+
+            [root@node01 openvswitch-2.12.0]# yum install ./rpm/rpmbuild/RPMS/x86_64/openvswitch-2.12.0-1.el7.centos.x86_64.rpm
+
+
+            https://software.intel.com/en-us/articles/using-docker-containers-with-open-vswitch-and-dpdk-on-ubuntu-1710
+            https://metonymical.hatenablog.com/entry/2019/07/21/190302
+            https://www.linuxtechi.com/install-use-openvswitch-kvm-centos-7-rhel-7/
+            https://blog.csdn.net/liushen0916/article/details/52599481
+            https://www.openvswitch.org/support/dist-docs-2.5/FAQ.md.html
+            http://docs.openvswitch.org/en/latest/faq/
+            http://docs.openvswitch.org/en/latest/faq/issues/
+            http://docs.openvswitch.org/en/latest/intro/install/dpdk/
+
+        ----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+
+
 
 
 
