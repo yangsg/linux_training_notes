@@ -6890,6 +6890,199 @@ tcp        0      0 192.168.175.100:42853   192.168.175.200:6783    ESTABLISHED 
 
 
 ----------------------------------------------------------------------------------------------------
+flannel + etcd
+
+  flannel:
+      https://github.com/coreos/flannel
+
+  etcd:
+      https://etcd.io/
+      https://etcd.io/docs/v3.4.0/
+      https://github.com/etcd-io/etcd
+
+
+  flannel：
+    1、通过flannel的虚拟网络改变物理机为容器分配IP的方式
+    2、实现跨主机的容器通信
+
+  etcd：
+    NoSQL数据库
+    用于保存flannel子网与物理机的对应关系
+
+
+// 安装 flannel, etcd  (docker 该主机上已经安装过了, 所以此处不再安装 docker)
+[root@node01 ~]# yum -y install flannel etcd
+[root@node01 ~]# rpm -q flannel etcd
+    flannel-0.7.1-4.el7.x86_64
+    etcd-3.3.11-2.el7.centos.x86_64
+
+
+// 添加主机名解析
+// 注: 该步骤不是必须的, 如果不加主机名解析,则后续配置中应该 直接使用 ip 地址
+[root@node01 ~]# vim /etc/hosts
+
+    127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+    ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+
+    192.168.175.100  node01
+    192.168.175.200  node02
+    # 此处添加 etcd 仅为 后续配置时 可以使用 名称 'etcd' 来配置
+    192.168.175.100  etcd
+
+
+[root@node01 ~]# rsync -av /etc/hosts  root@192.168.175.200:/etc/hosts
+
+
+// 编辑etcd配置文件，启动etcd数据库
+[root@node01 ~]# vim /etc/etcd/etcd.conf
+
+    ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"
+
+    ETCD_ADVERTISE_CLIENT_URLS="http://0.0.0.0:2379"
+
+
+[root@node01 ~]# systemctl start etcd.service
+[root@node01 ~]# systemctl enable etcd.service
+    Created symlink from /etc/systemd/system/multi-user.target.wants/etcd.service to /usr/lib/systemd/system/etcd.service.
+
+[root@node01 ~]# systemctl status etcd.service
+    ● etcd.service - Etcd Server
+       Loaded: loaded (/usr/lib/systemd/system/etcd.service; enabled; vendor preset: disabled)
+       Active: active (running) since Thu 2019-11-07 16:12:17 CST; 26s ago
+     Main PID: 1566 (etcd)
+       CGroup: /system.slice/etcd.service
+               └─1566 /usr/bin/etcd --name=default --data-dir=/var/lib/etcd/default.etcd --listen-client-urls=http://0.0.0.0:2379
+
+    Nov 07 16:12:17 node01 etcd[1566]: 8e9e05c52164694d received MsgVoteResp from 8e9e05c52164694d at term 2
+    Nov 07 16:12:17 node01 etcd[1566]: 8e9e05c52164694d became leader at term 2
+    Nov 07 16:12:17 node01 etcd[1566]: raft.node: 8e9e05c52164694d elected leader 8e9e05c52164694d at term 2
+    Nov 07 16:12:17 node01 etcd[1566]: published {Name:default ClientURLs:[http://0.0.0.0:2379]} to cluster cdf818194e3a8c32
+    Nov 07 16:12:17 node01 etcd[1566]: setting up the initial cluster version to 3.3
+    Nov 07 16:12:17 node01 etcd[1566]: ready to serve client requests
+    Nov 07 16:12:17 node01 etcd[1566]: serving insecure client requests on [::]:2379, this is strongly discouraged!  <---注:生产环境中要注意此问题,此处略过
+    Nov 07 16:12:17 node01 etcd[1566]: set the initial cluster version to 3.3
+    Nov 07 16:12:17 node01 etcd[1566]: enabled capabilities for version 3.3
+    Nov 07 16:12:17 node01 systemd[1]: Started Etcd Server.
+
+
+[root@node01 ~]# netstat -anptu | grep etcd
+    tcp        0      0 127.0.0.1:2380          0.0.0.0:*               LISTEN      1566/etcd
+    tcp        0      0 127.0.0.1:50048         127.0.0.1:2379          ESTABLISHED 1566/etcd
+    tcp6       0      0 :::2379                 :::*                    LISTEN      1566/etcd
+    tcp6       0      0 127.0.0.1:2379          127.0.0.1:50048         ESTABLISHED 1566/etcd
+
+
+测试etcd数据是否正常
+[root@node01 ~]# etcdctl ls
+[root@node01 ~]# etcdctl set testdir/key1 yangsg
+yangsg
+[root@node01 ~]# etcdctl ls
+/testdir
+[root@node01 ~]# etcdctl get testdir/key1
+yangsg
+
+
+
+// 编辑 flannel 的配置文件
+[root@node01 ~]# vim /etc/sysconfig/flanneld
+
+    FLANNEL_ETCD_ENDPOINTS="http://etcd:2379"
+
+    FLANNEL_ETCD_PREFIX="/atomic.io/network"
+
+
+// 在etcd数据库保存flannel虚拟网络使用的网段
+[root@node01 ~]# etcdctl mk /atomic.io/network/config '{ "Network": "10.1.0.0/16" }'
+    { "Network": "10.1.0.0/16" }
+
+
+
+// 启动flanneld服务，重启docker服务
+[root@node01 ~]# systemctl start flanneld.service
+[root@node01 ~]# systemctl enable flanneld.service
+    Created symlink from /etc/systemd/system/multi-user.target.wants/flanneld.service to /usr/lib/systemd/system/flanneld.service.
+    Created symlink from /etc/systemd/system/docker.service.wants/flanneld.service to /usr/lib/systemd/system/flanneld.service.
+
+
+[root@node01 ~]# systemctl status flanneld.service
+    ● flanneld.service - Flanneld overlay address etcd agent
+       Loaded: loaded (/usr/lib/systemd/system/flanneld.service; enabled; vendor preset: disabled)
+       Active: active (running) since Thu 2019-11-07 16:42:38 CST; 1min 16s ago
+     Main PID: 19042 (flanneld)
+       CGroup: /system.slice/flanneld.service
+               └─19042 /usr/bin/flanneld -etcd-endpoints=http://etcd:2379 -etcd-prefix=/atomic.io/network
+
+    Nov 07 16:42:37 node01 systemd[1]: Starting Flanneld overlay address etcd agent...
+    Nov 07 16:42:37 node01 flanneld-start[19042]: I1107 16:42:37.869179   19042 main.go:132] Installing signal handlers
+    Nov 07 16:42:37 node01 flanneld-start[19042]: I1107 16:42:37.869339   19042 manager.go:136] Determining IP address of default interface
+    Nov 07 16:42:37 node01 flanneld-start[19042]: I1107 16:42:37.870106   19042 manager.go:149] Using interface with name ens33 and address 192.168.175.100
+    Nov 07 16:42:37 node01 flanneld-start[19042]: I1107 16:42:37.870131   19042 manager.go:166] Defaulting external address to interface address (192.168.175.100)
+    Nov 07 16:42:37 node01 flanneld-start[19042]: I1107 16:42:37.888157   19042 local_manager.go:179] Picking subnet in range 10.1.1.0 ... 10.1.255.0
+    Nov 07 16:42:37 node01 flanneld-start[19042]: I1107 16:42:37.976589   19042 manager.go:250] Lease acquired: 10.1.82.0/24
+    Nov 07 16:42:37 node01 flanneld-start[19042]: I1107 16:42:37.983302   19042 network.go:98] Watching for new subnet leases
+    Nov 07 16:42:38 node01 systemd[1]: Started Flanneld overlay address etcd agent.
+
+[root@node01 ~]# systemctl restart docker.service
+
+
+[root@node01 ~]# ifconfig
+
+    flannel0: flags=4305<UP,POINTOPOINT,RUNNING,NOARP,MULTICAST>  mtu 1472  <---观察,新添加了一块 flannel0 网卡
+            inet 10.1.82.0  netmask 255.255.0.0  destination 10.1.82.0
+            inet6 fe80::dcde:4631:3636:9580  prefixlen 64  scopeid 0x20<link>
+            unspec 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00  txqueuelen 500  (UNSPEC)
+            RX packets 0  bytes 0 (0.0 B)
+            RX errors 0  dropped 0  overruns 0  frame 0
+            TX packets 3  bytes 144 (144.0 B)
+            TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+
+
+
+[root@node01 ~]# cat /run/flannel/subnet.env
+    FLANNEL_NETWORK=10.1.0.0/16
+    FLANNEL_SUBNET=10.1.82.1/24
+    FLANNEL_MTU=1472
+    FLANNEL_IPMASQ=false
+
+// 见   https://www.ibm.com/developerworks/library/l-flannel-overlay-network-VXLAN-docker-trs/index.html
+//      https://www.cnblogs.com/hh2737/p/10168579.html
+//      https://www.cnblogs.com/zhangeamon/p/6140074.html
+//      https://coreos.com/os/docs/latest/using-systemd-drop-in-units.html
+//      https://blog.csdn.net/liukuan73/article/details/54897594
+[root@node01 ~]# cat /run/flannel/docker
+    DOCKER_OPT_BIP="--bip=10.1.82.1/24"
+    DOCKER_OPT_IPMASQ="--ip-masq=true"
+    DOCKER_OPT_MTU="--mtu=1472"
+    DOCKER_NETWORK_OPTIONS=" --bip=10.1.82.1/24 --ip-masq=true --mtu=1472"
+
+[root@node01 ~]# systemctl show docker.service  | grep -i flannel
+    EnvironmentFile=/run/flannel/docker (ignore_errors=yes)
+    Wants=flanneld.service system.slice network-online.target
+    After=flanneld.service system.slice docker.socket systemd-journald.socket containerd.service network-online.target basic.target firewalld.service
+    DropInPaths=/usr/lib/systemd/system/docker.service.d/flannel.conf
+
+[root@node01 ~]# cat /usr/lib/systemd/system/docker.service.d/flannel.conf
+    [Service]
+    EnvironmentFile=-/run/flannel/docker
+
+[root@node01 ~]# vim /usr/lib/systemd/system/docker.service.d/local_make_docker_use_flannel_by_ExecStart.conf
+    [Service]
+    # 见 man 5 systemd.unit  #Overriding vendor settings
+    ExecStart=
+    # 如下 copy 自 /usr/lib/systemd/system/docker.service, 并添加了 /run/flannel/docker 中的 DOCKER_NETWORK_OPTIONS 变量参数
+    ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock $DOCKER_NETWORK_OPTIONS
+
+
+// 查看一下
+// 见   https://coreos.com/os/docs/latest/using-systemd-drop-in-units.html
+[root@node01 ~]# systemd-delta --type=extended | grep local
+    [EXTENDED]   /usr/lib/systemd/system/docker.service → /usr/lib/systemd/system/docker.service.d/local_make_docker_use_flannel_by_ExecStart.conf
+
+[root@node01 ~]# systemctl daemon-reload
+[root@node01 ~]# systemctl restart docker.service
+
 
 
 
