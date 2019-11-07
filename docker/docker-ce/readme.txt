@@ -6983,6 +6983,10 @@ yangsg
 yangsg
 
 
+// 在etcd数据库保存flannel虚拟网络使用的网段
+[root@node01 ~]# etcdctl mk /atomic.io/network/config '{ "Network": "10.1.0.0/16" }'
+    { "Network": "10.1.0.0/16" }
+
 
 // 编辑 flannel 的配置文件
 [root@node01 ~]# vim /etc/sysconfig/flanneld
@@ -6991,10 +6995,6 @@ yangsg
 
     FLANNEL_ETCD_PREFIX="/atomic.io/network"
 
-
-// 在etcd数据库保存flannel虚拟网络使用的网段
-[root@node01 ~]# etcdctl mk /atomic.io/network/config '{ "Network": "10.1.0.0/16" }'
-    { "Network": "10.1.0.0/16" }
 
 
 
@@ -7023,8 +7023,6 @@ yangsg
     Nov 07 16:42:37 node01 flanneld-start[19042]: I1107 16:42:37.983302   19042 network.go:98] Watching for new subnet leases
     Nov 07 16:42:38 node01 systemd[1]: Started Flanneld overlay address etcd agent.
 
-[root@node01 ~]# systemctl restart docker.service
-
 
 [root@node01 ~]# ifconfig
 
@@ -7045,6 +7043,9 @@ yangsg
     FLANNEL_SUBNET=10.1.82.1/24
     FLANNEL_MTU=1472
     FLANNEL_IPMASQ=false
+
+
+设置 让 docker 使用 flannel  (注: 也许有的版本不需要额外的设置就可以让 docker 使用 flannel, 但是本示例中需要设置)
 
 // 见   https://www.ibm.com/developerworks/library/l-flannel-overlay-network-VXLAN-docker-trs/index.html
 //      https://www.cnblogs.com/hh2737/p/10168579.html
@@ -7068,6 +7069,7 @@ yangsg
     EnvironmentFile=-/run/flannel/docker
 
 [root@node01 ~]# vim /usr/lib/systemd/system/docker.service.d/local_make_docker_use_flannel_by_ExecStart.conf
+
     [Service]
     # 见 man 5 systemd.unit  #Overriding vendor settings
     ExecStart=
@@ -7084,8 +7086,283 @@ yangsg
 [root@node01 ~]# systemctl restart docker.service
 
 
+[root@node01 ~]# ip a
+    1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+        link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+        inet 127.0.0.1/8 scope host lo
+           valid_lft forever preferred_lft forever
+        inet6 ::1/128 scope host
+           valid_lft forever preferred_lft forever
+    2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+        link/ether 00:0c:29:52:8e:39 brd ff:ff:ff:ff:ff:ff
+        inet 192.168.175.100/24 brd 192.168.175.255 scope global ens33
+           valid_lft forever preferred_lft forever
+        inet6 fe80::20c:29ff:fe52:8e39/64 scope link
+           valid_lft forever preferred_lft forever
+    3: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN
+        link/ether 02:42:8e:2c:d6:88 brd ff:ff:ff:ff:ff:ff
+        inet 10.1.82.1/24 brd 10.1.82.255 scope global docker0  <--观察, docker0 的 ip 为 flannel0 对应网段的 ip, 即 docker0 --> flannel0
+           valid_lft forever preferred_lft forever
+    4: flannel0: <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> mtu 1472 qdisc pfifo_fast state UNKNOWN qlen 500
+        link/none
+        inet 10.1.82.0/16 scope global flannel0
+           valid_lft forever preferred_lft forever
+        inet6 fe80::dcde:4631:3636:9580/64 scope link flags 800
+           valid_lft forever preferred_lft forever
 
 
+    此时，物理机上会出现flannel0虚拟网卡，该网卡用于连接到flannel虚拟网络，同时由flannel虚拟网络为其分配子网。
+    物理机上的docker服务重启后，docker0会自动接入到flannel 0中，由flannel0为其分配IP
+
+// 启动容器 'node01_c1'
+[root@node01 ~]# docker container run -dit --name node01_c1  centos:7
+
+[root@node01 ~]# docker container exec -it node01_c1  bash
+    [root@bf64d10ec7c7 /]# yum -y install net-tools
+
+    [root@bf64d10ec7c7 /]# ifconfig
+    eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1472
+            inet 10.1.82.2  netmask 255.255.255.0  broadcast 10.1.82.255
+            ether 02:42:0a:01:52:02  txqueuelen 0  (Ethernet)
+            RX packets 13204  bytes 10606990 (10.1 MiB)
+            RX errors 0  dropped 0  overruns 0  frame 0
+            TX packets 4340  bytes 239098 (233.4 KiB)
+            TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+    lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+            inet 127.0.0.1  netmask 255.0.0.0
+            loop  txqueuelen 1  (Local Loopback)
+            RX packets 0  bytes 0 (0.0 B)
+            RX errors 0  dropped 0  overruns 0  frame 0
+            TX packets 0  bytes 0 (0.0 B)
+            TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+    [root@bf64d10ec7c7 /]# route  -n
+    Kernel IP routing table
+    Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+    0.0.0.0         10.1.82.1       0.0.0.0         UG    0      0        0 eth0
+    10.1.82.0       0.0.0.0         255.255.255.0   U     0      0        0 eth0
+
+
+
+
+------------------------------
+在node02安装配置flannel
+
+[root@node02 ~]# yum -y install flannel
+[root@node02 ~]# rpm -q flannel
+    flannel-0.7.1-4.el7.x86_64
+
+
+// 编辑 flannel 的配置文件
+[root@node02 ~]# vim /etc/sysconfig/flanneld
+
+    FLANNEL_ETCD_ENDPOINTS="http://etcd:2379"
+
+    FLANNEL_ETCD_PREFIX="/atomic.io/network"
+
+[root@node02 ~]# systemctl start flanneld.service
+[root@node02 ~]# systemctl enable flanneld.service
+    Created symlink from /etc/systemd/system/multi-user.target.wants/flanneld.service to /usr/lib/systemd/system/flanneld.service.
+    Created symlink from /etc/systemd/system/docker.service.wants/flanneld.service to /usr/lib/systemd/system/flanneld.service.
+
+[root@node02 ~]# systemctl status flanneld.service
+    ● flanneld.service - Flanneld overlay address etcd agent
+       Loaded: loaded (/usr/lib/systemd/system/flanneld.service; enabled; vendor preset: disabled)
+       Active: active (running) since Thu 2019-11-07 20:11:56 CST; 39s ago
+     Main PID: 18489 (flanneld)
+       CGroup: /system.slice/flanneld.service
+               └─18489 /usr/bin/flanneld -etcd-endpoints=http://etcd:2379 -etcd-prefix=/atomic.io/network
+
+    Nov 07 20:11:55 node02 systemd[1]: Starting Flanneld overlay address etcd agent...
+    Nov 07 20:11:55 node02 flanneld-start[18489]: I1107 20:11:55.869424   18489 main.go:132] Installing signal handlers
+    Nov 07 20:11:55 node02 flanneld-start[18489]: I1107 20:11:55.869568   18489 manager.go:136] Determining IP address of default interface
+    Nov 07 20:11:55 node02 flanneld-start[18489]: I1107 20:11:55.869906   18489 manager.go:149] Using interface with name ens33 and address 192.168.175.200
+    Nov 07 20:11:55 node02 flanneld-start[18489]: I1107 20:11:55.869918   18489 manager.go:166] Defaulting external address to interface address (192.168.175.200)
+    Nov 07 20:11:56 node02 flanneld-start[18489]: I1107 20:11:56.285505   18489 local_manager.go:179] Picking subnet in range 10.1.1.0 ... 10.1.255.0
+    Nov 07 20:11:56 node02 flanneld-start[18489]: I1107 20:11:56.393955   18489 manager.go:250] Lease acquired: 10.1.94.0/24
+    Nov 07 20:11:56 node02 flanneld-start[18489]: I1107 20:11:56.394319   18489 network.go:98] Watching for new subnet leases
+    Nov 07 20:11:56 node02 flanneld-start[18489]: I1107 20:11:56.494587   18489 network.go:191] Subnet added: 10.1.82.0/24
+    Nov 07 20:11:56 node02 systemd[1]: Started Flanneld overlay address etcd agent.
+
+
+
+[root@node02 ~]# ip a
+
+[root@node02 ~]# ifconfig
+
+  flannel0: flags=4305<UP,POINTOPOINT,RUNNING,NOARP,MULTICAST>  mtu 1472  <---观察,新添加了一块 flannel0 网卡
+          inet 10.1.94.0  netmask 255.255.0.0  destination 10.1.94.0
+          inet6 fe80::57ab:76d1:6796:94cc  prefixlen 64  scopeid 0x20<link>
+          unspec 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00  txqueuelen 500  (UNSPEC)
+          RX packets 0  bytes 0 (0.0 B)
+          RX errors 0  dropped 0  overruns 0  frame 0
+          TX packets 3  bytes 144 (144.0 B)
+          TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+
+
+[root@node02 ~]# vim /usr/lib/systemd/system/docker.service.d/local_make_docker_use_flannel_by_ExecStart.conf
+
+    [Service]
+    # 见 man 5 systemd.unit  #Overriding vendor settings
+    ExecStart=
+    # 如下 copy 自 /usr/lib/systemd/system/docker.service, 并添加了 /run/flannel/docker 中的 DOCKER_NETWORK_OPTIONS 变量参数
+    ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock $DOCKER_NETWORK_OPTIONS
+
+
+[root@node02 ~]# systemctl daemon-reload
+[root@node02 ~]# systemctl restart docker.service
+
+
+[root@node02 ~]# ip a
+    1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+        link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+        inet 127.0.0.1/8 scope host lo
+           valid_lft forever preferred_lft forever
+        inet6 ::1/128 scope host
+           valid_lft forever preferred_lft forever
+    2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+        link/ether 00:0c:29:4b:42:6a brd ff:ff:ff:ff:ff:ff
+        inet 192.168.175.200/24 brd 192.168.175.255 scope global ens33
+           valid_lft forever preferred_lft forever
+        inet6 fe80::20c:29ff:fe4b:426a/64 scope link
+           valid_lft forever preferred_lft forever
+    3: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN
+        link/ether 02:42:87:d4:72:ef brd ff:ff:ff:ff:ff:ff
+        inet 10.1.94.1/24 brd 10.1.94.255 scope global docker0  <---观察, docker0 已经连接到了 flannel0 网络
+           valid_lft forever preferred_lft forever
+    4: flannel0: <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> mtu 1472 qdisc pfifo_fast state UNKNOWN qlen 500
+        link/none
+        inet 10.1.94.0/16 scope global flannel0
+           valid_lft forever preferred_lft forever
+        inet6 fe80::57ab:76d1:6796:94cc/64 scope link flags 800
+           valid_lft forever preferred_lft forever
+
+
+[root@node02 ~]# docker container run -dit --name node02_c1  centos:7
+
+      [root@node02 ~]# docker container exec -it node02_c1 bash
+          [root@500962ab7e08 /]# yum -y install net-tools
+
+      [root@500962ab7e08 /]# ifconfig
+          eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1472
+                  inet 10.1.94.2  netmask 255.255.255.0  broadcast 10.1.94.255
+                  ether 02:42:0a:01:5e:02  txqueuelen 0  (Ethernet)
+                  RX packets 12517  bytes 10516374 (10.0 MiB)
+                  RX errors 0  dropped 0  overruns 0  frame 0
+                  TX packets 5530  bytes 303021 (295.9 KiB)
+                  TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+          lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+                  inet 127.0.0.1  netmask 255.0.0.0
+                  loop  txqueuelen 1  (Local Loopback)
+                  RX packets 0  bytes 0 (0.0 B)
+                  RX errors 0  dropped 0  overruns 0  frame 0
+                  TX packets 0  bytes 0 (0.0 B)
+                  TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+      [root@500962ab7e08 /]# route -n
+      Kernel IP routing table
+      Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+      0.0.0.0         10.1.94.1       0.0.0.0         UG    0      0        0 eth0
+      10.1.94.0       0.0.0.0         255.255.255.0   U     0      0        0 eth0
+
+      [root@500962ab7e08 /]# ping -c 3 www.baidu.com
+      PING www.a.shifen.com (183.232.231.172) 56(84) bytes of data.
+      64 bytes from 183.232.231.172 (183.232.231.172): icmp_seq=1 ttl=127 time=30.7 ms
+      64 bytes from 183.232.231.172 (183.232.231.172): icmp_seq=2 ttl=127 time=30.9 ms
+      64 bytes from 183.232.231.172 (183.232.231.172): icmp_seq=3 ttl=127 time=31.2 ms
+
+      --- www.a.shifen.com ping statistics ---
+      3 packets transmitted, 3 received, 0% packet loss, time 2003ms
+      rtt min/avg/max/mdev = 30.734/30.989/31.267/0.218 ms
+      [root@500962ab7e08 /]# ping -c 3 10.1.82.2   <----注: 此时无法 ping 通  10.1.82.0 网段
+      PING 10.1.82.2 (10.1.82.2) 56(84) bytes of data.
+
+      --- 10.1.82.2 ping statistics ---
+      3 packets transmitted, 0 received, 100% packet loss, time 1999ms
+
+
+
+
+// 观察一下防火墙 中的 filter 表  (发现存在 隔离规则, 且 默认策略为不支持 FORWARD)
+[root@node02 ~]# iptables -t filter -nL
+    Chain INPUT (policy ACCEPT)
+    target     prot opt source               destination
+
+    Chain FORWARD (policy DROP)  <-----观察
+    target     prot opt source               destination
+    DOCKER-USER  all  --  0.0.0.0/0            0.0.0.0/0
+    DOCKER-ISOLATION-STAGE-1  all  --  0.0.0.0/0            0.0.0.0/0  <----观察
+    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+    DOCKER     all  --  0.0.0.0/0            0.0.0.0/0
+    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+
+    Chain OUTPUT (policy ACCEPT)
+    target     prot opt source               destination
+
+    Chain DOCKER (1 references)
+    target     prot opt source               destination
+
+    Chain DOCKER-ISOLATION-STAGE-1 (1 references)
+    target     prot opt source               destination
+    DOCKER-ISOLATION-STAGE-2  all  --  0.0.0.0/0            0.0.0.0/0  <-----观察
+    RETURN     all  --  0.0.0.0/0            0.0.0.0/0
+
+    Chain DOCKER-ISOLATION-STAGE-2 (1 references)
+    target     prot opt source               destination
+    DROP       all  --  0.0.0.0/0            0.0.0.0/0  <-----观察这里的 DROP
+    RETURN     all  --  0.0.0.0/0            0.0.0.0/0
+
+    Chain DOCKER-USER (1 references)
+    target     prot opt source               destination
+    RETURN     all  --  0.0.0.0/0            0.0.0.0/0
+
+
+
+// 此时让事情简单一点, 直接清除  filter 表中的格则, 并将 FORWARD 链的策略改为 ACCEPT 以允许转发
+[root@node02 ~]# iptables -t filter -F
+[root@node02 ~]# iptables -t filter -P FORWARD ACCEPT
+
+[root@node01 ~]# iptables -t filter -F
+[root@node01 ~]# iptables -t filter -P FORWARD ACCEPT
+
+
+[root@node02 ~]# docker container exec -it node02_c1 bash
+    [root@500962ab7e08 /]# ping -c 3 10.1.82.2
+    PING 10.1.82.2 (10.1.82.2) 56(84) bytes of data.
+    64 bytes from 10.1.82.2: icmp_seq=1 ttl=60 time=0.773 ms
+    64 bytes from 10.1.82.2: icmp_seq=2 ttl=60 time=0.548 ms
+    64 bytes from 10.1.82.2: icmp_seq=3 ttl=60 time=0.429 ms
+
+    --- 10.1.82.2 ping statistics ---
+    3 packets transmitted, 3 received, 0% packet loss, time 2001ms
+    rtt min/avg/max/mdev = 0.429/0.583/0.773/0.144 ms
+
+
+[root@node01 ~]# docker container exec -it node01_c1  bash
+    [root@bf64d10ec7c7 /]# ping -c 3 10.1.94.2
+    PING 10.1.94.2 (10.1.94.2) 56(84) bytes of data.
+    64 bytes from 10.1.94.2: icmp_seq=1 ttl=60 time=0.678 ms
+    64 bytes from 10.1.94.2: icmp_seq=2 ttl=60 time=0.964 ms
+    64 bytes from 10.1.94.2: icmp_seq=3 ttl=60 time=0.914 ms
+
+    --- 10.1.94.2 ping statistics ---
+    3 packets transmitted, 3 received, 0% packet loss, time 2002ms
+    rtt min/avg/max/mdev = 0.678/0.852/0.964/0.124 ms
+
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
 
 
 
