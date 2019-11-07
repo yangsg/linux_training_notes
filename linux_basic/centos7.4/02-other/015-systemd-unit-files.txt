@@ -525,6 +525,90 @@ Important  重要!!!!!!!!!!!!!!!
   然后, 将 修改的值(modified values) 放到 该 drop-in 文件 中.
   注意: systemd 把 network service 当做 network.service, 这也是为什么 被创建的 目录 必须 被 called network.service.d.
 
+--------------------------------------------------
+man 5 systemd.unit
+
+Using systemd drop-in units   #man 5 systemd.unit
+    https://coreos.com/os/docs/latest/using-systemd-drop-in-units.html
+
+       Example 2. Overriding vendor settings
+
+       There are two methods of overriding vendor settings in unit files: copying the unit file from /usr/lib/systemd/system to
+       /etc/systemd/system and modifying the chosen settings. Alternatively, one can create a directory named unit.d/ within
+       /etc/systemd/system and place a drop-in file name.conf there that only changes the specific settings one is interested in. Note that
+       multiple such drop-in files are read if present.
+
+       The advantage of the first method is that one easily overrides the complete unit, the vendor unit is not parsed at all anymore. It has
+       the disadvantage that improvements to the unit file by the vendor are not automatically incorporated on updates.
+
+       The advantage of the second method is that one only overrides the settings one specifically wants, where updates to the unit by the
+       vendor automatically apply. This has the disadvantage that some future updates by the vendor might be incompatible with the local
+       changes.
+
+       Note that for drop-in files, if one wants to remove entries from a setting that is parsed as a list (and is not a dependency), such as
+       ConditionPathExists= (or e.g.  ExecStart= in service units), one needs to first clear the list before re-adding all entries except the
+       one that is to be removed. See below for an example.
+
+       Suppose there is a vendor-supplied unit /usr/lib/systemd/system/httpd.service with the following contents:
+
+           [Unit]
+           Description=Some HTTP server
+           After=remote-fs.target sqldb.service
+           Requires=sqldb.service
+           AssertPathExists=/srv/webserver
+
+           [Service]
+           Type=notify
+           ExecStart=/usr/sbin/some-fancy-httpd-server
+           Nice=5
+
+           [Install]
+           WantedBy=multi-user.target
+
+       Now one wants to change some settings as an administrator: firstly, in the local setup, /srv/webserver might not exist, because the
+       HTTP server is configured to use /srv/www instead. Secondly, the local configuration makes the HTTP server also depend on a memory
+       cache service, memcached.service, that should be pulled in (Requires=) and also be ordered appropriately (After=). Thirdly, in order
+       to harden the service a bit more, the administrator would like to set the PrivateTmp= setting (see systemd.service(5) for details).
+       And lastly, the administrator would like to reset the niceness of the service to its default value of 0.
+
+       The first possibility is to copy the unit file to /etc/systemd/system/httpd.service and change the chosen settings:
+
+           [Unit]
+           Description=Some HTTP server
+           After=remote-fs.target sqldb.service memcached.service
+           Requires=sqldb.service memcached.service
+           AssertPathExists=/srv/www
+
+           [Service]
+           Type=notify
+           ExecStart=/usr/sbin/some-fancy-httpd-server
+           Nice=0
+           PrivateTmp=yes
+
+           [Install]
+           WantedBy=multi-user.target
+
+       Alternatively, the administrator could create a drop-in file /etc/systemd/system/httpd.service.d/local.conf with the following
+       contents:
+
+           [Unit]
+           After=memcached.service
+           Requires=memcached.service
+           # Reset all assertions and then re-add the condition we want
+           AssertPathExists=               <-----注意这里
+           AssertPathExists=/srv/www
+
+           [Service]
+           Nice=0
+           PrivateTmp=yes
+
+       Note that dependencies (After=, etc.) cannot be reset to an empty list, so dependencies can only be added in drop-ins. If you want to
+       remove dependencies, you have to override the entire unit.
+
+
+--------------------------------------------------
+
+
 
 
 ---------------------------------------------------------------------------------------------------------------------------
@@ -622,7 +706,7 @@ Overriding the Default Unit Configuration (覆盖 默认的 Unit Configuration)
 cp /usr/lib/systemd/system/name.service /etc/systemd/system/name.service
 
 其中 name 代表 你 希望 修改的 service unit 的 name. 如上的语法 可应用于 所有 unit types.
- 
+
 使用 text editor 打开 文件 /etc/systemd/system/name.service 并做 期望的修改. 要 应用 the unit changes, 以 root 身份执行:
 
 systemctl daemon-reload
