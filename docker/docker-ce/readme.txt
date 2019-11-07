@@ -15,6 +15,13 @@ https://docs.docker.com/reference/
 docker 国内加速地址
   https://www.jianshu.com/p/b5006ebf1522
 
+    vim /etc/docker/daemon.json
+        {
+          "registry-mirrors": [ "https://docker.mirrors.ustc.edu.cn", "https://registry.docker-cn.com" ]
+        }
+
+    systemctl restart docker.service
+
 
 docker 概览:
   https://docs.docker.com/engine/docker-overview/
@@ -6624,7 +6631,7 @@ pipework
 
 
         --skip--------------------------------------------------------------------------------------------------
-        该段 安装 openvswitch 的 方式 为完成, 略过(skip)
+        该段 安装 openvswitch 的 方式 未完成, 略过(skip)
         TODO: 支持 dpdk 的安装要复杂一点, 具体参考官方文档)
 
             // 关于 DPDK 见: https://docs.openstack.org/neutron/stein/admin/config-ovs-dpdk.html
@@ -6704,6 +6711,198 @@ pipework
 
 
 ----------------------------------------------------------------------------------------------------
+weave
+
+  Weave Net
+
+    https://github.com/weaveworks/weave
+    https://www.weave.works/docs/net/latest/overview/
+
+    工作原理: https://www.weave.works/docs/net/latest/concepts/how-it-works/
+
+    https://blog.51cto.com/dengaosky/2069478
+
+
+    +--------------------+             +--------------------+
+    |                    |             |                    |
+    | +----------------+ |             | +----------------+ |
+    | |  weave router  |<--------------->|  weave router  | | <---weave 构建出了另外一个 虚拟网络
+    | +----------------+ |             | +----------------+ |
+    |     Λ       Λ      |             |     Λ       Λ      |
+    |     |       |      |             |     |       |      |
+    |     |       |      |             |     |       |      |
+    |     V       V      |             |     V       V      |
+    |  +----+  +----+    |             |  +----+  +----+    |
+    |  | c1 |  | c2 |    |             |  | c1 |  | c2 |    |
+    |  +----+  +----+    |             |  +----+  +----+    |
+    |                    |             |                    |
+    +------node01--------+             +------node02--------+
+
+
+
+示例：跨主机间的容器通信 (将主机 node01 和 node02 上的容器 放到 weave 虚拟网络中)
+
+
+[root@node01 ~]# ip addr show ens33  | awk '/inet / {print $2}'  # 查看 ip 地址
+  192.168.175.100/24
+[root@node02 ~]# ip addr show ens33  | awk '/inet / {print $2}'  # 查看 ip 地址
+  192.168.175.200/24
+
+
+安装, 设置，启动 docker (略)
+
+
+
+// 安装 weave,    见 https://www.weave.works/docs/net/latest/install/installing-weave/
+[root@node01 ~]# git clone https://github.com/weaveworks/weave.git
+[root@node01 ~]# cd weave/
+[root@node01 weave]# cp ./weave /usr/local/bin/
+[root@node01 weave]# ls -l /usr/local/bin/weave
+    -rwxr-xr-x 1 root root 52232 Nov  7 09:37 /usr/local/bin/weave
+
+[root@node01 ~]# weave --help
+
+// 启动 weave,  见 https://www.weave.works/docs/net/latest/install/using-weave/
+
+[root@node01 ~]# weave setup  #下载(preload) 相关 images, 当然, 也可以执行执行 `weave launch`,
+
+[root@node01 ~]# docker image ls
+    REPOSITORY             TAG                 IMAGE ID            CREATED             SIZE
+    weaveworks/weaveexec   latest              21dd24b02d6c        32 hours ago        140MB
+    weaveworks/weave       latest              aafb924b4540        32 hours ago        89.8MB
+    weaveworks/weavedb     latest              6898eac75586        34 hours ago        698B
+
+// 启动 weave router
+[root@node01 ~]# weave launch
+    98341210ea06536ce23e1da0518feab389e42e49448cd26d9107afa5c364fd11
+
+[root@node01 ~]# docker container ls
+    CONTAINER ID        IMAGE                     COMMAND                  CREATED             STATUS              PORTS               NAMES
+    98341210ea06        weaveworks/weave:latest   "/home/weave/weaver …"   51 seconds ago      Up 50 seconds                           weave
+
+
+[root@node01 ~]# netstat -anptu | grep weaver
+    tcp        0      0 172.17.0.1:53           0.0.0.0:*               LISTEN      1801/weaver
+    tcp        0      0 127.0.0.1:6782          0.0.0.0:*               LISTEN      1801/weaver
+    tcp        0      0 127.0.0.1:6784          0.0.0.0:*               LISTEN      1801/weaver
+    tcp        0      0 127.0.0.1:6784          127.0.0.1:46574         ESTABLISHED 1801/weaver
+    tcp        0      0 127.0.0.1:46574         127.0.0.1:6784          ESTABLISHED 1801/weaver
+    tcp6       0      0 :::6783                 :::*                    LISTEN      1801/weaver
+    udp        0      0 172.17.0.1:53           0.0.0.0:*                           1801/weaver
+    udp        0      0 0.0.0.0:6783            0.0.0.0:*                           1801/weaver
+
+// 按如上相同的方式 在 node02 上 安装并启动 weaver router (略)
+
+
+
+// 启用容器 c1
+[root@node01 ~]# docker container run -dit --name node01_c1 centos:7
+    1fdf58be1c94ccc2a899b4066fef1e6f9bc906947b078fdeabebb7cfa9ea4175
+
+// 将 容器 'node01_c1' 连接到 宿主机 'node01' 上的  weave 虚拟路由器, 并为其 分配 ip 10.1.1.1/24
+// 见  https://www.weave.works/docs/net/latest/tasks/manage/dynamically-attach-containers/
+[root@node01 ~]# weave attach 10.1.1.1/24 node01_c1
+    10.1.1.1
+
+[root@node01 ~]# docker container exec -it node01_c1 bash
+    [root@1fdf58be1c94 /]# yum -y install net-tools
+    [root@1fdf58be1c94 /]# ifconfig
+    eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+            inet 172.17.0.2  netmask 255.255.0.0  broadcast 172.17.255.255
+            ether 02:42:ac:11:00:02  txqueuelen 0  (Ethernet)
+            RX packets 1540  bytes 10032691 (9.5 MiB)
+            RX errors 0  dropped 0  overruns 0  frame 0
+            TX packets 1420  bytes 80379 (78.4 KiB)
+            TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+    ethwe: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1376  <-----观察
+            inet 10.1.1.1  netmask 255.255.255.0  broadcast 10.1.1.255
+            ether 96:dc:bf:c6:7e:d9  txqueuelen 0  (Ethernet)
+            RX packets 9  bytes 690 (690.0 B)
+            RX errors 0  dropped 0  overruns 0  frame 0
+            TX packets 1  bytes 42 (42.0 B)
+            TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+    lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+            inet 127.0.0.1  netmask 255.0.0.0
+            loop  txqueuelen 1  (Local Loopback)
+            RX packets 0  bytes 0 (0.0 B)
+            RX errors 0  dropped 0  overruns 0  frame 0
+            TX packets 0  bytes 0 (0.0 B)
+            TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+[root@1fdf58be1c94 /]# route -n
+    Kernel IP routing table
+    Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+    0.0.0.0         172.17.0.1      0.0.0.0         UG    0      0        0 eth0
+    10.1.1.0        0.0.0.0         255.255.255.0   U     0      0        0 ethwe  <---观察
+    172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 eth0
+    224.0.0.0       0.0.0.0         240.0.0.0       U     0      0        0 ethwe  <---
+
+
+在 node02 上 创建 测试容器 node02_c1
+[root@node02 ~]# docker container run -dit --name node02_c1 centos:7
+[root@node02 ~]# weave attach 10.1.1.2/24 node02_c1
+    10.1.1.2
+
+// 将 node01 上的 weave router 连接到 node02 上的 weave router
+[root@node01 ~]# weave connect 192.168.175.200
+
+[root@node01 ~]# netstat -anptu | grep weaver | grep 192.168.175.200
+tcp        0      0 192.168.175.100:42853   192.168.175.200:6783    ESTABLISHED 1801/weaver
+
+// 在 容器 'node01_c1' 中 ping  容器 'node02_c1'
+[root@node01 ~]# docker container exec -it node01_c1 bash
+    [root@1fdf58be1c94 /]# ping -c 3 10.1.1.2
+    PING 10.1.1.2 (10.1.1.2) 56(84) bytes of data.
+    64 bytes from 10.1.1.2: icmp_seq=1 ttl=64 time=0.705 ms
+    64 bytes from 10.1.1.2: icmp_seq=2 ttl=64 time=0.614 ms
+    64 bytes from 10.1.1.2: icmp_seq=3 ttl=64 time=0.367 ms
+
+    --- 10.1.1.2 ping statistics ---
+    3 packets transmitted, 3 received, 0% packet loss, time 2001ms
+    rtt min/avg/max/mdev = 0.367/0.562/0.705/0.142 ms
+
+
+
+// 在 容器 'node02_c1' 中 ping  容器 'node01_c1'
+[root@node02 ~]# docker container exec -it node02_c1 bash
+    [root@e434a694b2fb /]# ping -c 3 10.1.1.1
+    PING 10.1.1.1 (10.1.1.1) 56(84) bytes of data.
+    64 bytes from 10.1.1.1: icmp_seq=1 ttl=64 time=0.593 ms
+    64 bytes from 10.1.1.1: icmp_seq=2 ttl=64 time=0.577 ms
+    64 bytes from 10.1.1.1: icmp_seq=3 ttl=64 time=0.511 ms
+
+    --- 10.1.1.1 ping statistics ---
+    3 packets transmitted, 3 received, 0% packet loss, time 2001ms
+    rtt min/avg/max/mdev = 0.511/0.560/0.593/0.040 ms
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
