@@ -146,3 +146,33 @@ Number of days of warning before password expires       : 7
 [root@basic ~]#
 
 
+[root@localhost ~]# usermod -e 1 user01     #注:该命令也可写成 `usermod -e 1970-01-02 user01`  #-e, --expiredate EXPIRE_DATE: 将 EXPIRE_DATE 设置为 1(即 1970-01-02), 可以将其理解为 立刻使账号作废
+[root@localhost ~]# grep user01 /etc/shadow
+user01:$6$xxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:18288:0:99999:7::1:
+[root@localhost ~]# chage --list user01
+Last password change          : Jan 27, 2020  <----观察, 账号过期日期为 1970-01-02
+Password expires          : never
+Password inactive         : never
+Account expires           : Jan 02, 1970
+Minimum number of days between password change    : 0
+Maximum number of days between password change    : 99999
+Number of days of warning before password expires : 7
+
+
+
+[root@localhost ~]# usermod -e 0 user01
+[root@localhost ~]# grep user01 /etc/shadow
+user01:$6$xxxxxxxx$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:18288:0:99999:7::0:    #man 5 shadow
+[root@localhost ~]# chage --list user01
+Last password change          : Jan 27, 2020
+Password expires          : never
+Password inactive         : never
+Account expires           : Jan 01, 1970  <---观察
+Minimum number of days between password change    : 0
+Maximum number of days between password change    : 99999
+Number of days of warning before password expires : 7
+
+
+
+
+
