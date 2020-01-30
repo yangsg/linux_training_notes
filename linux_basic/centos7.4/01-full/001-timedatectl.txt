@@ -67,3 +67,16 @@ https://www.maketecheasier.com/timedatectl-control-system-time-date-linux/
 https://www.linuxprobe.com/centos7-chrony-time.html
 
 
+==================================================
+补充:
+
+centos6 中修改时区的方式:
+[root@centos_6 ~]# cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime   #centos6 中修改时区的方式
+[root@centos_6 ~]# date -R
+  Thu, 30 Jan 2020 16:52:57 +0800
+
+
+
+
+
+
