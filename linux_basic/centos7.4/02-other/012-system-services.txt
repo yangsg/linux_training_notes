@@ -243,3 +243,13 @@ Removed symlink /etc/systemd/system/httpd.service.
       例如, 如果你 运行了 postfix service(即该服务处于 running 状态), 同时你尝试 启动(start) sendmail service, 则 systemd 首先 自动停止(stops) postfix,
       因为这两个 services 存在冲突 且 不能 运行在 相同的端口(port) 上.
 
+
+
+[root@centos_7 ~]# systemctl list-dependencies multi-user.target --reverse   #查看反向依赖
+    multi-user.target
+    ● └─graphical.target
+
+
+
+
+
