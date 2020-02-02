@@ -1,5 +1,12 @@
 
 
+计算 hash 值的 GUI 工具(包括windows系统)
+Quick Hash GUI:
+  https://quickhash-gui.org/
+  https://quickhash-gui.org/downloads/
+
+
+
 online tools
 
 ip在线工具:
