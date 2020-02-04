@@ -19,7 +19,7 @@ bash 中的特殊目录符号：
 
 
 
-关于文件类型的一些帮助信息 (man page的快捷键类似于vim或less, 而 info page的快捷键类似于emacs)
+关于文件类型的一些帮助信息 (man page的快捷键类似于vim或less, 而 info page的快捷键类似于emacs, 如果想使用类似 vim的命令查看info page, 可以使用 pinfo 命令)
 [root@basic ~]# man find  #/-type
        -type c
               File is of type c:
