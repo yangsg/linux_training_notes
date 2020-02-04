@@ -201,6 +201,8 @@ man 7 glob
 包含 kernel, kernel modules 即其 相应参数 information 的文档
 yum install kernel-doc   # /usr/share/doc/kernel-doc-<kernel_version>/Documentation/
 
+网络配置文件(ifcfg-* 和 route-*)中可用的参数可以参考 /usr/share/doc/initscripts-9.49.39/sysconfig.txt 以及手册 man nm-settings-ifcfg-rh
+
 ---------------------------------------------------------
 网上资料:
     http://www.linux-tutorial.info/modules.php?name=MContent&pageid=224
