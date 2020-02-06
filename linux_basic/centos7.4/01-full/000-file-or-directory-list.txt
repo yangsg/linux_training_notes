@@ -208,4 +208,36 @@ yum install kernel-doc   # /usr/share/doc/kernel-doc-<kernel_version>/Documentat
     http://www.linux-tutorial.info/modules.php?name=MContent&pageid=224
     http://www.linux-tutorial.info/sitemap
 
+---------------------------------------------------------
+关于 centos7 安全性相关的更新:
+[root@centos_7 ~]# vim /etc/yum.conf
+
+    # https://access.redhat.com/solutions/10185
+    # https://www.processio.com/exclude-yum-kernel-updates-centos/
+    # https://www.cnblogs.com/52php/p/5673220.html
+    # http://www.imooc.com/article/78937
+    # https://blog.csdn.net/veylian/article/details/80514746
+    # https://blog.csdn.net/akaiziyou/article/details/17262049
+    exclude=kernel* redhat-release* centos-release*
+    # NOTE: If there are multiple package to be excluded then separate them using
+    # a single space or comma. Also, do not add multiple exclude= lines in
+    # the configuration file because yum only considers the last exclude entry.
+
+    # 仅更新安全补丁
+    # https://www.2daygeek.com/check-list-view-find-available-security-updates-on-redhat-rhel-centos-system/
+    # https://www.2daygeek.com/install-security-updates-on-redhat-rhel-centos-system/
+    # https://blog.csdn.net/veylian/article/details/80514746
+    # https://www.cnblogs.com/oskb/p/3748141.html
+    # https://www.frost.net.cn/wordpress/archives/1152
+    # https://ywnz.com/linuxaq/5164.html
+    # https://www.cnblogs.com/liuhedong/p/10663757.html
+    # man yum   #/--security
+    # yum updateinfo list security  #等价于 `yum updateinfo list updates security`, 因为默认就是 updates
+    # yum --security check-update
+    # yum --security update         #更新到最新可用版本
+    # yum --security update-minimal #更新到最新安全勘误版本
+
+
+
+
 
