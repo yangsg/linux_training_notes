@@ -11,6 +11,15 @@ other
        /etc/skel/
        /etc/login.defs      # Shadow password suite configuration.
 
+
+man authconfig    # https://www.server-world.info/en/note?os=CentOS_7&p=password   # Set Password Rules  设置密码规则
+
+[root@centos_7 ~]# authconfig --passminlen=8 --update
+[root@centos_7 ~]# grep "^minlen" /etc/security/pwquality.conf
+minlen = 8
+
+
+
 [root@basic ~]# head -n 1 /etc/passwd  # man 5 passwd
 root:x:0:0:root:/root:/bin/bash
 用户名:密码占位符:uid:gid:说明信息:宿主目录:shell
