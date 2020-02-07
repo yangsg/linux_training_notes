@@ -238,6 +238,23 @@ yum install kernel-doc   # /usr/share/doc/kernel-doc-<kernel_version>/Documentat
     # yum --security update-minimal #更新到最新安全勘误版本
 
 
+---------------------------------------------------------
+关于 TCP Wrappers (此为过时的技术)
 
+注: redhat7 中 TCP Wrappers 被视为过时的(deprecated)技术, RHEL 8 及以后的版本中 TCP Wrappers 已不可用.正确的解决方法应该是正确的配置防火墙规则.
+
+
+https://access.redhat.com/solutions/3906701
+https://fedoraproject.org/wiki/Changes/Deprecate_TCP_wrappers
+
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/security_guide/sect-security_guide-tcp_wrappers_and_xinetd-tcp_wrappers_configuration_files
+https://linuxschool.net/note?os=CentOS_7&p=tcp_wrapper
+
+
+  /etc/hosts.allow
+  /etc/hosts.deny
+
+
+---------------------------------------------------------
 
 
