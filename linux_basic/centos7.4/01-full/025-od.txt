@@ -114,3 +114,14 @@ abcdefghijklmnopqrstuvwxyz
 abcdefghijklmnopqrstuvwxyz[root@basic ~]#
 
 
+vim as hex editor:
+  https://vi.stackexchange.com/questions/2232/how-can-i-use-vim-as-a-hex-editor
+  https://vi.stackexchange.com/questions/2232/how-can-i-use-vim-as-a-hex-editor?noredirect=1
+  http://timmurphy.org/2013/07/27/editing-a-file-in-hex-mode-in-vim/
+  https://www.kevssite.com/using-vi-as-a-hex-editor/
+
+    :%!xxd
+    :%!xxd -r
+
+
+
