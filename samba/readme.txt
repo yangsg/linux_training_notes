@@ -173,6 +173,7 @@ smb: \>
     https://www.serverlab.ca/tutorials/linux/storage-file-systems-linux/mounting-smb-shares-centos-7/
     https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/storage_administration_guide/mounting_an_smb_share
     https://blog.headlessdev.com/tutorial-to-mount-samba-on-centos/
+    https://linuxtechlab.com/guide-mounting-drives-rhel-centos/
 
 
 
