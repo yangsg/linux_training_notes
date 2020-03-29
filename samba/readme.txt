@@ -169,6 +169,13 @@ smb: \>
     https://www.cyberciti.biz/faq/samba-restrict-access-to-ipc-share/
     https://support.microsoft.com/en-us/help/3034016/ipc-share-and-null-session-behavior-in-windows
 
+关于 centos7 上挂载 samba 共享目录
+    https://www.serverlab.ca/tutorials/linux/storage-file-systems-linux/mounting-smb-shares-centos-7/
+    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/storage_administration_guide/mounting_an_smb_share
+    https://blog.headlessdev.com/tutorial-to-mount-samba-on-centos/
+
+
+
 man samba
 man 5 smb.conf
 man smbpasswd
