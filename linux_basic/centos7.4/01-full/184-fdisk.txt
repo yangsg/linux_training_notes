@@ -17,6 +17,19 @@ man fdisk
                   2TB(换算率1024) == 2.2TB(换算率1000)
 
           fdisk 支持 mbr, gdisk 支持 gpt, parted 即支持 mbr 也支持 gpt
+-------------------------------
+注: centos8 中的 fdisk 工具已经可以理解 gpt 了
+
+[root@centos_8 ~]# fdisk -v
+fdisk from util-linux 2.32.1
+
+[root@centos_8 ~]# man fdisk
+DESCRIPTION (如下这句描述来自 centos8)
+       fdisk is a dialog-driven program for creation and manipulation of partition tables.  It understands GPT, MBR, Sun, SGI and BSD partition tables.
+-------------------------------
+[root@centos_7 ~]# fdisk -v
+fdisk from util-linux 2.23.2
+
 
 说明:
        fdisk  (in  the  first form of invocation) is a menu-driven program for creation and manipulation of partition tables.  It understands DOS-type partition tables and BSD- or SUN-
