@@ -820,6 +820,7 @@ troubleshoot:
 
 ------------------------------------------
 TUN, TAP and Veth
+https://developers.redhat.com/blog/2019/05/17/an-introduction-to-linux-virtual-interfaces-tunnels/
 https://developers.redhat.com/blog/2018/10/22/introduction-to-linux-interfaces-for-virtual-networking/
 https://blog.scottlowe.org/2013/09/04/introducing-linux-network-namespaces/
 https://www.fir3net.com/Networking/Terms-and-Concepts/virtual-networking-devices-tun-tap-and-veth-pairs-explained.html
