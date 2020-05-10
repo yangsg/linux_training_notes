@@ -819,4 +819,17 @@ troubleshoot:
                     down /etc/openvpn/client.down
 
 ------------------------------------------
+TUN, TAP and Veth
+https://developers.redhat.com/blog/2018/10/22/introduction-to-linux-interfaces-for-virtual-networking/
+https://blog.scottlowe.org/2013/09/04/introducing-linux-network-namespaces/
+https://www.fir3net.com/Networking/Terms-and-Concepts/virtual-networking-devices-tun-tap-and-veth-pairs-explained.html
+https://github.com/torvalds/linux/blob/master/Documentation/networking/tuntap.txt
+https://en.wikipedia.org/wiki/TUN/TAP
+http://www.zzvips.com/article/5531.html
+http://www.naturalborncoder.com/virtualization/2014/10/17/understanding-tun-tap-interfaces/
+
+------------------------------------------
+其他:
+	VirtualBox Network Settings
+	https://www.nakivo.com/blog/virtualbox-network-setting-guide/
 
