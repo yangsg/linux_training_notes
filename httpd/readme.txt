@@ -206,8 +206,17 @@ FastCGI
 
 
 ---------------------------------------------------------------------------------------------------
-
-
+httpd(Apache) 禁止 通过 ip 访问
+[root@centos_8_server ~]# rpm -q httpd
+  httpd-2.4.37-16.module_el8.1.0+256+ae790463.x86_64
+[root@centos_8_server ~]# cat /etc/httpd/conf.d/00-default.conf 
+    <VirtualHost _default_>
+      ServerName _default_
+      <Location />
+        Order Allow,Deny
+        Deny from all
+      </Location>
+    </VirtualHost>
 
 
 
