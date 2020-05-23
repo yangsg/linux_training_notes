@@ -271,4 +271,56 @@ Firewalld : IP Masquerade
 
 
 ---------------------------------------------------------------------------------------------------
+注: 类似如下指令
+# firewall-cmd --permanent --zone=internal --add-rich-rule='rule family=ipv4 source address="1.1.1.0/8" service name="samba" accept'
+会在如 /etc/firewalld/zones/internal.xml 这样的 zone 的 xml 配置文件中 插入如下这样的配置:
+
+  <rule family="ipv4">
+    <source address="1.1.1.0/8"/>
+    <service name="samba"/>
+    <accept/>
+  </rule>
+
+更多 rich rule language 在 zone 配置文件中的表示形式(语法规则) 见 `man firewalld.zone`, 如下所示:
+----
+           <?xml version="1.0" encoding="utf-8"?>
+           <zone [version="versionstring"] [target="ACCEPT|%%REJECT%%|DROP"]>
+             [ <short>short description</short> ]
+             [ <description>description</description> ]
+             [ <interface name="string"/> ]
+             [ <source address="address[/mask]"|mac="MAC"|ipset="ipset"/> ]
+             [ <service name="string"/> ]
+             [ <port port="portid[-portid]" protocol="tcp|udp|sctp|dccp"/> ]
+             [ <protocol value="protocol"/> ]
+             [ <icmp-block name="string"/> ]
+             [ <icmp-block-inversion/> ]
+             [ <masquerade/> ]
+             [ <forward-port port="portid[-portid]" protocol="tcp|udp|sctp|dccp" [to-port="portid[-portid]"] [to-addr="IP address"]/> ]
+             [ <source-port port="portid[-portid]" protocol="tcp|udp|sctp|dccp"/> ]
+             [
+               <rule [family="ipv4|ipv6"]>
+               [ <source address="address[/mask]"|mac="MAC"|ipset="ipset" [invert="True"]/> ]
+               [ <destination address="address[/mask]" [invert="True"]/> ]
+               [
+                 <service name="string"/> |
+                 <port port="portid[-portid]" protocol="tcp|udp|sctp|dccp"/> |
+                 <protocol value="protocol"/> |
+                 <icmp-block name="icmptype"/> |
+                 <icmp-type name="icmptype"/> |
+                 <masquerade/> |
+                 <forward-port port="portid[-portid]" protocol="tcp|udp|sctp|dccp" [to-port="portid[-portid]"] [to-addr="address"]/>
+               ]
+               [ <log [prefix="prefixtext"] [level="emerg|alert|crit|err|warn|notice|info|debug"]> [<limit value="rate/duration"/>] </log> ]
+               [ <audit> [<limit value="rate/duration"/>] </audit> ]
+               [
+                 <accept> [<limit value="rate/duration"/>] </accept> |
+                 <reject [type="rejecttype"]> [<limit value="rate/duration"/>] </reject> |
+                 <drop> [<limit value="rate/duration"/>] </drop> |
+                 <mark set="mark[/mask]"> [<limit value="rate/duration"/>] </mark>
+               ]
+               </rule>
+             ]
+           </zone>
+
+----
 
