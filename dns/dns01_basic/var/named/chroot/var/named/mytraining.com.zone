@@ -1,6 +1,6 @@
 ; filepath: /var/named/chroot/var/named/mytraining.com.zone
 $TTL 1D                         ;<<<=== 此处为宏定义
-; 注意：邮箱地址中的'@'要用点'.'代替
+; 注意：邮箱地址中的'@'要用点'.'代替, 因为 @ 在该配置文件中有特殊的含义
 @	IN SOA	mytraining.com. 1234567.qq.com. (
                               1	    ; serial  ; 如果是 master-slave 架构, 修改 该配置后 记得更新(加 1) 该 序列号
                               1D	  ; refresh
