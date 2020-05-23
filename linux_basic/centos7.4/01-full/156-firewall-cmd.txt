@@ -984,6 +984,15 @@ success
   [root@snatserver ~]# firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 0 -i ens33 -o ens37 -m state --state RELATED,ESTABLISHED -j ACCEPT
   [root@snatserver ~]# firewall-cmd --reload
 ------
+注: 类似 命令 `firewall-cmd --permanent --direct --add-rule ipv4 nat POSTROUTING 0 -o ens37 -j MASQUERADE` 这种会在文件 /etc/firewalld/direct.xml 中插入如下配置:
+
+	<?xml version="1.0" encoding="utf-8"?>
+	<direct>
+	  <rule ipv="ipv4" table="nat" chain="POSTROUTING" priority="0">-o ens37 -j MASQUERADE</rule>
+	</direct>
+
+    如果文件 /etc/firewalld/direct.xml 不存在, 如上命令会自动将其创建出来
+------
 
 [root@snatserver ~]# firewall-cmd --direct --get-all-rules
 ipv4 nat POSTROUTING 0 -o ens37 -j MASQUERADE
