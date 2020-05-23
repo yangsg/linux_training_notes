@@ -119,6 +119,18 @@ Linux（RHEL7及CentOS7）下DNS服务器的搭建与配置
 ---------------------------------------------------------------------------------------------------
 
 
+---------------------------------------------------------------------------------------------------
+其他:
+     DNS污染
+	https://baike.baidu.com/item/DNS%E6%B1%A1%E6%9F%93/8620359?fr=aladdin
+	https://zhuanlan.zhihu.com/p/101908711
+
+	GitHub的raw.githubusercontent.com的DNS被污染，修改Hosts解决
+		https://blog.csdn.net/qq_23204557/article/details/105934126
+
+
+
+
 
 
 
