@@ -17,6 +17,17 @@ https://fedoraproject.org/wiki/Firewalld?rd=FirewallD
 
 
 ---------------------------------------------------------------------------------------------------
+注: 如果熟悉 iptables, 也不一定非得使用 firewalld.
+
+iptables 和 firewalld 可能存在某些差异:
+比如(实验环境: centos8) 如下命令1 和 命令2 执行后并不会对之前已经建立(存在)的 ssh 连接起作用, 仅当在当前连接断开并重新建立新连接时才有效.
+而命令3 在执行后立刻起效, 即之前已经建立(存在)的 ssh 连接立刻会被中断.
+	# firewall-cmd --permanent --zone=public --remove-service=ssh   #命令1
+	# firewall-cmd --reload   #命令2
+
+	# iptables -A INPUT -p tcp --dport 22 -j REJECT   #命令3
+
+---------------------------------------------------------------------------------------------------
 
 关于 D-Bus 的 一些资料:
   英文:
