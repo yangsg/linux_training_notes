@@ -267,7 +267,7 @@ Firewalld : IP Masquerade
 
       - Debugging
           // 查看 firewalld 背后干的事情:
-          # iptables -S
+          # iptables -S   #在 centos8及以后版本中 已经不能使用 iptables 来debug了,因为firewalld 后端已改为使用 nftables, 所以需要时只能使用 nftables 相关命令了
 
 
 ---------------------------------------------------------------------------------------------------

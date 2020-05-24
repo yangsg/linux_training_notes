@@ -28,6 +28,20 @@ iptables 和 firewalld 可能存在某些差异:
 	# iptables -A INPUT -p tcp --dport 22 -j REJECT   #命令3
 
 ---------------------------------------------------------------------------------------------------
+centos8
+
+注: 现在最好开始熟悉习惯使用 firewalld 了, 因为在 centos8 中 iptables 已经被视为 过时的技术了, 而
+    firewalld 底层后端从 centos8 开始 从 iptables 变成了 nftables. 所以如果要在 centos8 查看 firewalld
+    背后做的事情 就无法再使用 iptables 相关命令了, 而应该使用 nftables 相关的命令。因为 nftables 比较复杂底层,
+    所有在没有大量时间学习研究 nftables 或 不存在特别复杂需求的情况下 使用 firewalld 是最为轻松划算的。
+
+nftables 网上资料:
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/getting-started-with-nftables_configuring-and-managing-networking
+https://developers.redhat.com/blog/2017/01/10/migrating-my-iptables-setup-to-nftables/
+https://www.redhat.com/en/blog/using-nftables-red-hat-enterprise-linux-8
+https://farkasity.gitbooks.io/nftables-howto-zh/content/
+
+---------------------------------------------------------------------------------------------------
 
 关于 D-Bus 的 一些资料:
   英文:
