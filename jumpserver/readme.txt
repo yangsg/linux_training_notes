@@ -310,8 +310,10 @@ Redis
 
 
 
-// 安装 依赖的 python modules 之前先升级一下 pip 和 setuptools 工具
-(py3) [root@jump_server requirements]# pip install --upgrade pip setuptools
+// 安装 依赖的 python modules 之前先升级一下 pip 和 setuptools 工具(注:最好分两步分别安装 pip 和 setuptools, 因为有时用旧的 pip 安装 setuptools 会出错失败)
+//  (py3) [root@jump_server requirements]# pip install --upgrade pip setuptools  #<---不推荐
+(py3) [root@jump_server requirements]# pip install --upgrade pip
+(py3) [root@jump_server requirements]# pip install --upgrade setuptools
 
 
 // 安装 依赖的 python modules
