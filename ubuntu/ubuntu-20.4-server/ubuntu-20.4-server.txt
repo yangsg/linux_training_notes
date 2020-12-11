@@ -1,0 +1,409 @@
+
+
+ysg@vm01:~$ cat /etc/os-release
+    NAME="Ubuntu"
+    VERSION="20.04.1 LTS (Focal Fossa)"
+    ID=ubuntu
+    ID_LIKE=debian
+    PRETTY_NAME="Ubuntu 20.04.1 LTS"
+    VERSION_ID="20.04"
+    HOME_URL="https://www.ubuntu.com/"
+    SUPPORT_URL="https://help.ubuntu.com/"
+    BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+    PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+    VERSION_CODENAME=focal
+    UBUNTU_CODENAME=focal
+
+ysg@vm01:~$ timedatectl set-timezone Asia/Shanghai
+
+ysg@vm01:~$ uname -r
+  5.4.0-54-generic
+
+
+---------------------------------------------------------------------
+
+[配置 阿里 的 ubuntu 镜像源](https://developer.aliyun.com/mirror/ubuntu?spm=a2c6h.13651102.0.0.3e221b11dLd8mL)
+
+ubuntu 20.04(focal) 配置如下
+
+  1) 编辑仓库设置文件：
+  ysg@vm01:~$ sudo vim /etc/apt/sources.list
+
+      在vim 中执行的替换命令 :%s/cn.archive.ubuntu.com/mirrors.aliyun.com
+
+  2) 查看设置文件替换结果
+  ysg@vm01:~$ cat /etc/apt/sources.list | grep -v '^#'
+      deb http://mirrors.aliyun.com/ubuntu focal main restricted
+      
+      deb http://mirrors.aliyun.com/ubuntu focal-updates main restricted
+      
+      deb http://mirrors.aliyun.com/ubuntu focal universe
+      deb http://mirrors.aliyun.com/ubuntu focal-updates universe
+      
+      deb http://mirrors.aliyun.com/ubuntu focal multiverse
+      deb http://mirrors.aliyun.com/ubuntu focal-updates multiverse
+      
+      deb http://mirrors.aliyun.com/ubuntu focal-backports main restricted universe multiverse
+      
+      
+      deb http://mirrors.aliyun.com/ubuntu focal-security main restricted
+      deb http://mirrors.aliyun.com/ubuntu focal-security universe
+      deb http://mirrors.aliyun.com/ubuntu focal-security multiverse
+
+  3)更新 package index 文件
+  ysg@vm01:~$ sudo apt update
+
+---------------------------------------------------------------------
+开始学习 ubuntu
+
+
+
+https://ubuntu.com/server/docs/installation
+
+  For amd64, download the install image from https://releases.ubuntu.com/20.04/.
+
+
+https://ubuntu.com/server/docs/package-management
+包管理
+
+
+ubuntu 的 package management system 衍生自 Debian GNU/Linux distribution. 
+
+Debian package files 典型的扩展名为 .deb, 且通常存在与 repositories 中。
+Packages 通常是 一种 预编译过的 二进制格式，所以安装快速且无需再编译。
+
+
+------------------------
+Apt
+   Ubuntu’s Advanced Packaging Tool (APT)
+
+apt 的功能类似于 centos 中的 yum
+
+Install a Package:
+
+	$ sudo apt install nmap  #安装 nmap 包
+
+Remove a Package
+
+	$ sudo apt remove nmap   #卸载 nmap 包
+	
+tip:
+  Multiple Packages: 可以同时安装多个包, 各个包的名称以 space 分隔。
+
+Notice:
+  Scripting:
+	apt 命令主要用于交互式的场景
+	而脚本(scripts) 中应该使用 apt-get ((perhaps with the --quiet flag).)
+    对于基本的命令，这 2 个 工具的语法是相同的。
+
+  $ apt remove --purge nmap  #注: 带上 --purge 选项还会删除 package 的配置文件，可也许是或不是你期望的效果，所以请小心使用。
+
+  *)Update the Package Index:
+	The APT package index 本质上是
+	来自文件 /etc/apt/sources.list 和 目录 /etc/apt/sources.list.d
+	所定义的 可用包(available packages) 的一个数据库。
+	
+	使用最新的 repositories 中的 changes 来更新(update) 本地 package index:
+	$ sudo apt update
+
+  *)Upgrade Packages:
+	 要更新系统，首先要想如上命令那样更新 package index，然后键入如下命令:
+	$ sudo apt upgrade
+
+   更多升级到新版 Ubuntu的信息见 [Upgrading](https://ubuntu.com/server/docs/upgrade-introduction)
+
+
+  apt 命令的行为，如 包 的 安装 和 移除, 都会被记录到日志文件 /var/log/dpkg.log 中。
+
+  查看 apt 更多的使用帮助:
+  $ man apt
+
+  $ apt help
+     Most used commands(apt 的常用子命令如下):
+        list - list packages based on package names
+        search - search in package descriptions
+        show - show package details
+        install - install packages
+        reinstall - reinstall packages
+        remove - remove packages
+        autoremove - Remove automatically all unused packages
+        update - update list of available packages
+        upgrade - upgrade the system by installing/upgrading packages
+        full-upgrade - upgrade the system by removing/installing/upgrading packages
+        edit-sources - edit the source information file
+        satisfy - satisfy dependency strings
+
+    其他一些命令: apt-get, apt-cache
+
+------------------------
+Aptitude
+ Aptitude 是 apt 系统的 a menu-driven, text-based front-end 工具.
+ 
+ 安装 aptitude 工具
+ $ sudo apt-get install aptitude
+
+ 直接启动进入 Aptitude 菜单界面:
+ $ sudo aptitude
+ 
+ Command Line Aptitude (也可将 Aptitude 当成命令行工具来使用)
+ $ sudo aptitude install nmap
+ $ sudo aptitude remove nmap
+
+
+------------------------ 
+dpkg
+  dpkg 工具类似于 centos 中的 rpm (redhat package manager)
+
+	dpkg is a package manager for Debian-based systems.
+    dpkg 不提供网络功能(如下载 以及 依赖解决等)
+
+	apt 和 dpkg 的关系可以理解为:
+		apt = dpkg + 网络功能
+
+
+*) 列出系统的 package database 中所有的 packages, 包括被安装的和被卸载了的
+ $ dpkg -l
+ $ dpkg -l | grep nmap   #通过管道查看指定的包
+
+ 查看 指定包所安装的 files(To list the files installed by a package)：
+ $ dpkg -L ufw  #查看包 ufw 所安装的文件
+
+ 查看 被安装的文件 所属的 包:
+ $ dpkg -S /etc/host.conf   
+ base-files: /etc/host.conf <--观察: 根据输出结果，可以看到文件 /etc/host.conf 属于包 base-files
+
+  Note(注):
+  
+    许多的 files 是在 package 的安装过程中自动生成的，
+    尽管这些 files 存在于 filesystem 上，但是命令
+    `dpkg -S` 可能并不知道它们属于哪一个包。
+
+
+  直接安装某个本地的 .deb 文件
+  $ sudo dpkg -i zip_3.0-4_amd64.deb
+
+  卸载某个包
+  $ sudo dpkg -r zip
+
+
+  Caution(小心):
+	大多数情况下，并不推荐使用 dpkg 卸载 package, 最好使用 一个 package manager(如 apt, apt-get)
+	来处理依赖以保证系统处于一致的状态。例如, 命令 `dpkg -r zip` 会移除 zip 包，依赖
+	zip 包的 任意 packages 仍然处于 installed 且其不能够在正常工作。
+
+
+
+  $ man dpkg  #查看更多 dpkg 信息
+  
+  
+  
+
+  https://stackoverflow.com/questions/4471327/ubuntu-equivalent-of-yums-whatprovides-to-find-which-package-provides-a-file
+  https://nicholaskuechler.com/2011/02/10/debian-ubuntu-equivalents-of-yum-whatprovides/
+  
+  $ sudo apt-get install apt-file
+  $ sudo apt-file update
+  $ apt-file search bin/vim  #类似于 `yum provides '*bin/vim'` 的作用  
+     注:
+		apt-file 的 search 命令默认将其 pattern 解释为 substring匹配,就如同指定了--substring-match 选项，
+	    -x 选项用于将 pattern 解释为 perl 风格的正则表达式
+  $ apt-file search -x '.*bin/nginx$'
+  ysg@vm01:~$ apt-file search -x '.*bin/screen$'
+    screen: /usr/bin/screen
+  ysg@vm01:~$ apt-file search bin/screen | grep -E 'bin/screen$'  #注:比起如上方式，借助管道的这种方式速度更快
+     screen: /usr/bin/screen
+
+
+------------------------
+
+APT 配置
+
+  Advanced Packaging Tool (APT) system repositories 的配置是被存储在
+  文件 /etc/apt/sources.list 和目录 /etc/apt/sources.list.d 中的。
+  
+  可以通过该文件来 enable 或 disable repositories.
+
+
+Extra Repositories
+
+除了官方支持的用于 Ubuntu 的 package repositories,
+还存在其他的 社区维护的repositories, 其中最流行的 2 个为
+universe 和 multiverse repositories。这些 repositories 不是被 Ubuntu
+官方支持的，但是它们由社区维护，因此它们提供了在 你的 Ubuntu computer
+上可安全使用的 packages.
+
+
+注:
+  仓库 multiverse 中的 Packages 常常具有 许可问题(licensing issues)，
+  其阻止它们同 a free operating system 一起分发，其它们在您所在的区域可能是非法的。
+  
+
+    Warning(警告）
+      请注意，universe 或 multiverse 仓库均未包含官方支持的程序包。
+      特别是，这些软件包可能没有安全更新(security updates)。
+
+
+许多其他的 package sources 可以使用，有时甚至其仅提供了 one package,
+特别是在 a single application 的开发者 所提供的 package sources 的情况。
+在使用 non-standard package sources 时应该非常小心谨慎。
+在执行任何安装之前，请仔细研究源代码和软件包，
+因为某些软件包源及其软件包可能会使您的系统在某些方面不稳定或无法正常工作。
+
+
+默认情况下，仓库 universe 和 multiverse 都是 被启用(enabled)了的，
+但是如果你想 disable 掉它们，则可以编辑文件 /etc/apt/sources.list 并
+注释掉如下这些行:
+
+	deb http://archive.ubuntu.com/ubuntu DISTRO-SHORT-CODENAME universe multiverse
+	deb-src http://archive.ubuntu.com/ubuntu DISTRO-SHORT-CODENAME universe multiverse
+
+	deb http://us.archive.ubuntu.com/ubuntu/ DISTRO-SHORT-CODENAME universe
+	deb-src http://us.archive.ubuntu.com/ubuntu/ DISTRO-SHORT-CODENAME universe
+	deb http://us.archive.ubuntu.com/ubuntu/ DISTRO-SHORT-CODENAME-updates universe
+	deb-src http://us.archive.ubuntu.com/ubuntu/ DISTRO-SHORT-CODENAME-updates universe
+
+	deb http://us.archive.ubuntu.com/ubuntu/ DISTRO-SHORT-CODENAME multiverse
+	deb-src http://us.archive.ubuntu.com/ubuntu/ DISTRO-SHORT-CODENAME multiverse
+	deb http://us.archive.ubuntu.com/ubuntu/ DISTRO-SHORT-CODENAME-updates multiverse
+	deb-src http://us.archive.ubuntu.com/ubuntu/ DISTRO-SHORT-CODENAME-updates multiverse
+
+	deb http://security.ubuntu.com/ubuntu DISTRO-SHORT-CODENAME-security universe
+	deb-src http://security.ubuntu.com/ubuntu DISTRO-SHORT-CODENAME-security universe
+	deb http://security.ubuntu.com/ubuntu DISTRO-SHORT-CODENAME-security multiverse
+	deb-src http://security.ubuntu.com/ubuntu DISTRO-SHORT-CODENAME-security multiverse
+
+------------------
+
+
+Automatic Updates(自动更新)
+
+包 unattended-upgrades 可被用于自动安装 updated packages 且可以被配置为 更新所有 packages
+或 仅安装 安全包(security updates).
+首先，执行如下命令安装该包:
+
+    $ sudo apt install unattended-upgrades
+
+要配置 unattended-upgrades，编辑文件 /etc/apt/apt.conf.d/50unattended-upgrades
+并调整 如下内容以适应你的需求:
+
+$ vim /etc/apt/apt.conf.d/50unattended-upgrades
+    //注: 双斜线 "//" 起注释的作用,所以 "//" 后面的内容不会被计算求值，
+	Unattended-Upgrade::Allowed-Origins {
+			"${distro_id}:${distro_codename}";
+			"${distro_id}:${distro_codename}-security";
+	//      "${distro_id}:${distro_codename}-updates";
+	//      "${distro_id}:${distro_codename}-proposed";
+	//      "${distro_id}:${distro_codename}-backports";
+	};
+
+Certain packages can also be blacklisted and therefore will not be automatically updated. 
+To blacklist a package, add it to the list:
+
+	Unattended-Upgrade::Package-Blacklist {
+	//      "vim";
+	//      "libc6";
+	//      "libc6-dev";
+	//      "libc6-i686";
+	};
+	
+	
+	Note(注)
+      The double “//” serve as comments, so whatever follows “//” will not be evaluated.
+
+
+
+要 启用(enable) 自动更新(automatic updates), 编辑文件 /etc/apt/apt.conf.d/20auto-upgrades 
+并 设置恰当的 apt 配置选项:
+
+	APT::Periodic::Update-Package-Lists "1";
+	APT::Periodic::Download-Upgradeable-Packages "1";
+	APT::Periodic::AutocleanInterval "7";
+	APT::Periodic::Unattended-Upgrade "1";
+
+
+如上的配置内容为 每天 更新 package list, 下载 和 安装 available upgrades，
+下载到本地的 归档文件(archive) 会被每周(7天)清理。 
+在升级到Ubuntu较新版本的服务器上，
+根据您的回复，上面列出的文件可能不存在。 在这种情况下，
+新建出同名的文件也可以工作。
+
+Note
+  可以 查看 apt.conf(5) manpage 和文件 /usr/lib/apt/apt.systemd.daily 
+  的 script header 获取更多关于 apt Periodic configuration options 的信息。
+
+
+unattended-upgrades 的结果会被记录到目录 /var/log/unattended-upgrades 中。
+
+
+Notifications(通知):
+
+在文件 /etc/apt/apt.conf.d/50unattended-upgrades 中配置
+Unattended-Upgrade::Mail 可以启用  unattended-upgrades 来
+想 系统管理员 发送电子邮件，详细说明需要 upgrading 或 have problems
+的 所有 packages.
+
+
+另一个有用的 包是  apticron.  apticron 会配置一个 cron job 来
+向 administrator 发送邮件，其包含关于系统上 有可用更新的所有 packages 的信息以及
+每个 package 中 changes 的摘要信息。
+
+  *) 安装 apticron 包
+    $ sudo apt install apticron  
+
+  一旦安装了 apticron 包后，就可以修改 /etc/apticron/apticron.conf, 就可以设置
+  邮件地址 和 其他 选项了 ：
+
+    EMAIL="root@example.com"
+
+-----------------------
+其他资料链接:
+
+InstallingSoftware
+	https://help.ubuntu.com/community/InstallingSoftware?_ga=2.60601517.1658294165.1607525897-1599442783.1603113861
+	
+    包含如下主题介绍:
+	    Source packages 
+	    Binary packages
+	    Backup/Restore installed packages
+	    PEAR packages (for web servers)
+		
+	术语表:
+	  apt
+	  Architecture
+	  Binary Package
+	  deb
+	  Dependency
+	  Package Manager
+	  Repository/Software Channel
+	  Source Package
+
+
+	See also
+		SoftwareManagement
+
+		CompilingEasyHowTo
+
+	External links
+		What Package Did This File Come From?
+
+		Create backup of installed packages using APTonCD
+
+		http://www.getdeb.net
+
+		Troubleshooting apt-get or aptitude or Synaptic package manager errors
+		https://help.ubuntu.com/community/PackageManagerTroubleshootingProcedure
+		
+APT User’s Guide
+	https://www.debian.org/doc/user-manuals#apt-guide
+
+The Adding Repositories HOWTO (Ubuntu Wiki) page contains more details on adding repositories.
+	https://help.ubuntu.com/community/Repositories/Ubuntu?_ga=2.64420783.1658294165.1607525897-1599442783.1603113861
+-----------------------
+
+
+
+
+
+
+
+
