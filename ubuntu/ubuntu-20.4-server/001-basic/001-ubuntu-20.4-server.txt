@@ -1,5 +1,7 @@
 
 
+:) 查看一些系统基本信息
+
 ysg@vm01:~$ cat /etc/os-release
     NAME="Ubuntu"
     VERSION="20.04.1 LTS (Focal Fossa)"
@@ -21,6 +23,7 @@ ysg@vm01:~$ uname -r
 
 
 ---------------------------------------------------------------------
+:) 一些基本的初始配置
 
 [配置 阿里 的 ubuntu 镜像源](https://developer.aliyun.com/mirror/ubuntu?spm=a2c6h.13651102.0.0.3e221b11dLd8mL)
 
@@ -29,7 +32,7 @@ ubuntu 20.04(focal) 配置如下
   1) 编辑仓库设置文件：
   ysg@vm01:~$ sudo vim /etc/apt/sources.list
 
-      在vim 中执行的替换命令 :%s/cn.archive.ubuntu.com/mirrors.aliyun.com
+      在vim 中执行的替换命令 :%s/cn.archive.ubuntu.com/mirrors.aliyun.com/g
 
   2) 查看设置文件替换结果
   ysg@vm01:~$ cat /etc/apt/sources.list | grep -v '^#'
@@ -52,6 +55,44 @@ ubuntu 20.04(focal) 配置如下
 
   3)更新 package index 文件
   ysg@vm01:~$ sudo apt update
+  
+---------------------------------------------------------------------
+我的一些配置:
+
+
+ysg@vm01:~$ vim .screenrc
+hardstatus alwayslastline "%{.bW}%-w%{.rW}%n %t%{-}%+w %=%{..G} %H %{..Y} %Y-%m-%d %c"
+shell "bash"
+startup_message off
+vbell off
+altscreen on
+attrcolor b ".I"
+defbce "on"
+termcapinfo xterm* 'is=\E[r\E[m\E[2J\E[H\E[?7h\E[?1;4;6l'
+termcapinfo xterm 'Co#256:AB=\E[48;5;%dm:AF=\E[38;5;%dm'
+term screen-256color
+
+
+---------------------------------------------------------------------
+ysg@vm01:~$ cat .vimrc
+"TAB settings.
+set tabstop=2
+set shiftwidth=2
+set softtabstop=2
+set expandtab
+set number
+
+" Enable Mouse
+set mouse=a
+
+" >>>>>>>> note: the following setting can work on ubuntu but CentOS6.x. 
+" the following setting prevents the scrolling up and down in the right way on CentOS
+set mouse+=a
+if &term =~ '^screen'
+    " tmux knows the extended mouse mode
+    set ttymouse=xterm2
+endif
+" <<<<<<<<
 
 ---------------------------------------------------------------------
 开始学习 ubuntu
@@ -399,6 +440,314 @@ APT User’s Guide
 The Adding Repositories HOWTO (Ubuntu Wiki) page contains more details on adding repositories.
 	https://help.ubuntu.com/community/Repositories/Ubuntu?_ga=2.64420783.1658294165.1607525897-1599442783.1603113861
 -----------------------
+Network Configuration(网络配置)
+
+https://ubuntu.com/server/docs/network-configuration
+
+
+Ethernet Interfaces
+
+*)Identify Ethernet Interfaces
+
+ysg@vm01:~$ ip a  #识别所有的一台网接口
+
+
+//命令 lshw 指定的 adapters 的 硬件功能 的更加详细的信息. 
+ysg@vm01:~$ sudo lshw -class network
+[sudo] password for ysg:
+  *-network
+       description: Ethernet interface
+       product: 82545EM Gigabit Ethernet Controller (Copper)
+       vendor: Intel Corporation
+       physical id: 1
+       bus info: pci@0000:02:01.0
+       logical name: ens33
+       version: 01
+       serial: 00:0c:29:d5:3a:f8
+       size: 1Gbit/s
+       capacity: 1Gbit/s
+       width: 64 bits
+       clock: 66MHz
+       capabilities: pm pcix bus_master cap_list rom ethernet physical logical tp 10bt 10bt-fd 100bt 100bt-fd 1000bt-fd autonegotiation
+       configuration: autonegotiation=on broadcast=yes driver=e1000 driverversion=7.3.21-k8-NAPI duplex=full ip=192.168.175.133 latency=0 link=yes mingnt=255 multicast=yes port=twisted pair speed=1Gbit/s
+       resources: irq:19 memory:fd5c0000-fd5dffff memory:fdff0000-fdffffff ioport:2000(size=64) memory:fd500000-fd50ffff
+
+
+*)Ethernet Interface Logical Names
+
+ysg@vm01:~$ cat /etc/netplan/00-installer-config.yaml  #查看默认的配置
+# This is the network config written by 'subiquity'
+network:
+  ethernets:
+    ens33:
+      dhcp4: true
+  version: 2
+
+
+//编辑文件 /etc/netplan/99_config.yaml 来自定义网络配置(注:  如果该文件不存在，则可以自己新建一个)
+ysg@vm01:~$ cat /etc/netplan/99_config.yaml #修改一台网卡的 logical name
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    ens37:
+      dhcp4: true
+      match:
+        macaddress: 00:0c:29:d5:3a:f8
+      set-name: ens37
+
+
+
+ysg@vm01:~$ sudo reboot
+
+
+ethtool is a program that displays and changes Ethernet card settings 
+such as auto-negotiation, port speed, duplex mode, and Wake-on-LAN. 
+
+//查看 某个 以太网接口 所支持的 features 和 configured settings.
+
+ysg@vm01:~$ sudo ethtool ens37
+[sudo] password for ysg:
+Settings for ens37:
+        Supported ports: [ TP ]
+        Supported link modes:   10baseT/Half 10baseT/Full
+                                100baseT/Half 100baseT/Full
+                                1000baseT/Full
+        Supported pause frame use: No
+        Supports auto-negotiation: Yes
+        Supported FEC modes: Not reported
+        Advertised link modes:  10baseT/Half 10baseT/Full
+                                100baseT/Half 100baseT/Full
+                                1000baseT/Full
+        Advertised pause frame use: No
+        Advertised auto-negotiation: Yes
+        Advertised FEC modes: Not reported
+        Speed: 1000Mb/s
+        Duplex: Full
+        Port: Twisted Pair
+        PHYAD: 0
+        Transceiver: internal
+        Auto-negotiation: on
+        MDI-X: off (auto)
+        Supports Wake-on: d
+        Wake-on: d
+        Current message level: 0x00000007 (7)
+                               drv probe link
+        Link detected: yes
+
+
+ip 地址:
+ysg@vm01:~$ sudo ip addr add 10.102.66.200/24 dev ens37  #临时性地追加一个新的 ip 地址
+ysg@vm01:~$ sudo ip addr del 10.102.66.200/24 dev ens37  #临时性地删除一个新的 ip 地址
+
+
+
+链路:
+ysg@vm01:~$ sudo ip link set dev ens37 down  #临时性地 关闭 dev 所在链路
+ysg@vm01:~$ sudo ip link set dev ens37 up    #临时性地 启用 dev 所在链路
+
+
+ysg@vm01:~$ ip addr show dev ens37  #显示指定网卡的 ip 地址配置
+
+
+路由
+ysg@vm01:~$ ip route show  #显示路由信息
+default via 192.168.175.2 dev ens37 proto dhcp src 192.168.175.133 metric 100
+192.168.175.0/24 dev ens37 proto kernel scope link src 192.168.175.133
+192.168.175.2 dev ens37 proto dhcp scope link src 192.168.175.133 metric 100
+
+ysg@vm01:~$ sudo ip route del default via 192.168.175.2 dev ens37
+ysg@vm01:~$ sudo ip route add default via 192.168.175.2 dev ens37
+
+
+临时性地修改 dns server ip 可以通过编辑 /etc/resolv.conf 文件来实现，
+通常不建议这么做，因为其修改是临时性的(即非持久的)
+
+
+ysg@vm01:~$ cat /etc/resolv.conf  #查看当前的 dns server 配置
+# This file is managed by man:systemd-resolved(8). Do not edit.
+nameserver 127.0.0.53
+options edns0
+search localdomain
+
+
+ysg@vm01:~$ sudo vim /etc/resolv.conf
+
+ysg@vm01:~$ cat /etc/resolv.conf  #临时性地添加 2个 google dns servers ip
+# This file is managed by man:systemd-resolved(8). Do not edit.
+nameserver 127.0.0.53
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+options edns0
+search localdomain
+
+ysg@vm01:~$ sudo ip addr flush ens37  #临时性地清除所有 ens37 上的所有 ip 配置(注:该命令并不会 clear 掉  /etc/resolv.conf 中的内容)。
+
+要调整 /etc/resolv.conf 中的内容，可以手动删除和编辑其中的 entries 或 re-boot 使文件
+/etc/resolv.conf(注其实 /run/systemd/resolve/stub-resolv.conf 的符号链接) 被 rewriten 
+You must remove or modify those entries manually, or re-boot which should also cause /etc/resolv.conf
+
+
+
+
+ysg@vm01:~$ sudo systemctl restart systemd-resolved.service
+ysg@vm01:~$ sudo netplan apply
+
+
+
+ysg@vm01:~$ sudo vim /etc/netplan/99_config.yaml
+network:
+  version: 2
+  #注: 其实 renderer 默认就是 networkd, 因此
+  renderer: networkd
+  ethernets:
+    ens33:
+      dhcp4: false
+      #match:
+      #  macaddress: 00:0c:29:d5:3a:f8
+      #set-name: ens37
+      addresses:
+        - 192.168.175.133/24
+      gateway4: 192.168.175.2
+      nameservers:
+        #search: [mydomain, otherdomain]
+        addresses: [8.8.8.8, 8.8.4.4]
+
+ysg@vm01:~$ sudo netplan apply
+
+
+ysg@vm01:~$ cat /etc/systemd/resolved.conf
+
+
+设置 dns 服务器:
+https://askubuntu.com/questions/1128536/how-to-make-persistent-changes-to-etc-resolv-conf-ubuntu-18-10
+https://askubuntu.com/questions/1156990/netplan-config-not-working
+
+
+
+ysg@vm01:~$ cat /run/systemd/resolve/stub-resolv.conf
+
+	nameserver 127.0.0.53
+	options edns0
+
+
+ysg@vm01:~$ cat /run/systemd/resolve/resolv.conf
+
+	nameserver 8.8.8.8
+	nameserver 8.8.4.4
+
+
+ysg@vm01:~$ systemd-resolve --status | tail -n 3
+  Current DNS Server: 8.8.8.8
+         DNS Servers: 8.8.8.8
+                      8.8.4.4
+
+
+
+ysg@vm01:~$ systemd-resolve --statistics
+ysg@vm01:~$ systemd-resolve --flush-caches
+
+
+ysg@vm01:~$ sudo tcpdump -nn -vv port 53
+tcpdump: listening on ens33, link-type EN10MB (Ethernet), capture size 262144 bytes
+
+    // 如下为执行命令 `dig www.google.com` 后 tcpdump 的结果输出:
+	15:44:46.649589 IP (tos 0x0, ttl 64, id 55892, offset 0, flags [DF], proto UDP (17), length 71)
+		192.168.175.133.33157 > 8.8.8.8.53: [bad udp cksum 0x8082 -> 0xaaa5!] 39743+ [1au] A? www.google.com. ar: . OPT UDPsize=512 (43)
+	15:44:46.653807 IP (tos 0x0, ttl 128, id 9319, offset 0, flags [none], proto UDP (17), length 87)
+		8.8.8.8.53 > 192.168.175.133.33157: [udp sum ok] 39743 q: A? www.google.com. 1/0/1 www.google.com. A 75.126.33.156 ar: . OPT UDPsize=4096 (59)
+
+
+
+ysg@vm01:~$ dig www.google.com
+
+ysg@vm01:~$ ss -lnptu
+Netid              State               Recv-Q              Send-Q                           Local Address:Port                           Peer Address:Port              Process
+udp                UNCONN              0                   0                                127.0.0.53%lo:53                                  0.0.0.0:*
+tcp                LISTEN              0                   4096                             127.0.0.53%lo:53                                  0.0.0.0:*
+tcp                LISTEN              0                   128                                    0.0.0.0:22                                  0.0.0.0:*
+tcp                LISTEN              0                   128                                       [::]:22                                     [::]:*
+
+
+
+
+
+Loopback Interface
+
+loopback interface 有 lo 标识，其 ip 默认为 127.0.0.1
+
+
+
+
+Static Hostnames
+
+ysg@vm01:~$ cat /etc/hosts
+
+	127.0.0.1 localhost
+	127.0.1.1 vm01
+
+	# The following lines are desirable for IPv6 capable hosts
+	::1     ip6-localhost ip6-loopback
+	fe00::0 ip6-localnet
+	ff00::0 ip6-mcastprefix
+	ff02::1 ip6-allnodes
+	ff02::2 ip6-allrouters
+
+
+
+  注:  Entries in the hosts file will have precedence over DNS by default. 
+       即默认情况下 文件 /etc/hosts 中的 entries 比 DNS 具有更高的优先级。
+	   
+
+
+
+	127.0.0.1   localhost
+	127.0.1.1   ubuntu-server
+	10.0.0.11   server1 server1.example.com vpn
+	10.0.0.12   server2 server2.example.com mail
+	10.0.0.13   server3 server3.example.com www
+	10.0.0.14   server4 server4.example.com file
+
+
+Name Service Switch Configuration
+
+
+The order in which your system selects a method of resolving hostnames 
+to IP addresses is controlled by the Name Service Switch (NSS) 
+configuration file /etc/nsswitch.conf
+
+
+
+
+ysg@vm01:~$ cat /etc/nsswitch.conf
+		# /etc/nsswitch.conf
+		#
+		# Example configuration of GNU Name Service Switch functionality.
+		# If you have the `glibc-doc-reference' and `info' packages installed, try:
+		# `info libc "Name Service Switch"' for information about this file.
+
+		passwd:         files systemd
+		group:          files systemd
+		shadow:         files
+		gshadow:        files
+
+		#观察 hosts 设置
+		hosts:          files dns
+		networks:       files
+
+		protocols:      db files
+		services:       db files
+		ethers:         db files
+		rpc:            db files
+
+		netgroup:       nis
+
+
+
+Bridging  //TODO
+
+networkd-dispatcher for pre-up, post-up, etc. hook scripts //TODO
+
 
 
 
