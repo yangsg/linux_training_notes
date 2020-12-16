@@ -29,11 +29,9 @@ ip地址：192.168.175.123/24
     # https://help.aliyun.com/document_detail/92704.html
     server ntp1.aliyun.com iburst
     server ntp2.aliyun.com iburst
-    server ntp3.aliyun.com iburst
-    server ntp4.aliyun.com iburst
-    server ntp5.aliyun.com iburst
-    server ntp6.aliyun.com iburst
-    server ntp7.aliyun.com iburst
+    server 0.cn.pool.ntp.org iburst
+    server 1.cn.pool.ntp.org iburst
+
 
     allow 192.168.175.0/24
 
