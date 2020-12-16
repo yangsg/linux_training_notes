@@ -61,6 +61,9 @@ ysg@vm01:~$ sudo ss -anptu | grep chrony
 
 参考:
 https://github.com/yangsg/linux_training_notes/tree/master/ntp_chrony_basic
+https://www.server-world.info/en/note?os=Ubuntu_20.04&p=ntp&f=2
+https://ubuntu.com/server/docs/network-ntp
+
 
 
 
