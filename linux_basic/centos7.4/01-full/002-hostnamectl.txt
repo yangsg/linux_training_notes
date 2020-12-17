@@ -1,0 +1,33 @@
+# keyword hostnamectl
+man hostnamectl
+hostnamectl --help
+
+作用： hostnamectl (1)      - Control the system hostname
+
+语法： hostnamectl [OPTIONS...] COMMAND ...
+
+
+[root@localhost ~]# hostnamectl
+   Static hostname: localhost.localdomain
+         Icon name: computer-vm
+           Chassis: vm
+        Machine ID: cbf8b71be72d4602b4809bf8f00a636d
+           Boot ID: c380b69d44dc4590a3b695221889bbc1
+    Virtualization: vmware
+  Operating System: CentOS Linux 7 (Core)
+       CPE OS Name: cpe:/o:centos:centos:7
+            Kernel: Linux 3.10.0-693.el7.x86_64
+      Architecture: x86-64
+
+
+
+[root@localhost ~]# hostnamectl set-hostname vm01  #持久性地修改主机名
+
+[root@vm01 ~]# hostname
+vm01
+
+
+
+
+
+
