@@ -42,7 +42,16 @@ NTP synchronized: no
 
 [root@basic ~]# timedatectl set-time 2015-11-20
 
-[root@basic ~]# timedatectl set-time '2015-11-20 16:14:50'
+[root@basic ~]# timedatectl set-time '2015-11-20 16:14:50'  #注: set-time 修改的是当前 local time (时区)的时间, 所以执行 set-time 前最好确认当前的本地时区是否设置正确
+
+
+[root@localhost ~]# TZ=Asia/Shanghai timedatectl set-time '2020-12-18 04:55:25'  #修改的时间为对应于 TZ=Asia/Shanghai 的指定时间
+[root@localhost ~]# TZ=UTC timedatectl set-time '2020-12-18 04:55:25'  #修改的时间为对应于 TZ=UTC 的指定时间
+
+[root@localhost ~]# TZ=Asia/Shanghai date --date='2020-12-18 04:55:25' '+%F %T %z' -u
+2020-12-18 04:55:25 +0000
+
+
 
 
 [root@basic ~]# yum -y install chrony
@@ -55,6 +64,8 @@ NTP synchronized: no
 [root@basic ~]# timedatectl set-ntp true
 [root@basic ~]# timedatectl  | grep 'NTP enabled'
      NTP enabled: yes
+
+
 
 
 
