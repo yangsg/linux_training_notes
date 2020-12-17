@@ -304,6 +304,14 @@ ysg@vm01:~$ sudo pkill -f pts/4
 将SSH访问限制为只允许拥有SSH的用户帐户。例如，您可以创建一个名为“sshlogin”的组，
 
 
+   man sshd_config
+
+
+/etc/ssh/sshd_config
+
+
+
+
 
 External User Database Authentication(外部用户数据库验证)
 
