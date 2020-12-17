@@ -1,0 +1,53 @@
+# keyword jq
+man jq
+jq --help
+
+作用： jq - Command-line JSON processor
+
+语法： jq [options...] filter [files...]
+
+
+
+[root@localhost ~]# yum -y install jq
+
+
+// 使用 Identity: . ,  其是一个 identity operator, 其 利用 input 产生原样(unchanged)输出,
+// 而 jq 命令默认又会 格式化地 输出 output, 所以 命令  `jq '.'` 可用于格式化整个 json 输入.
+[root@localhost ~]# echo '{"fruit":{"name":"apple","color":"green","price":1.20}}' | jq '.'
+{
+  "fruit": {
+    "name": "apple",
+    "color": "green",
+    "price": 1.2
+  }
+}
+
+
+[root@localhost ~]# cat a.json
+{
+  "fruit": {
+    "name": "apple",
+    "color": "green",
+    "price": 1.2
+  }
+}
+
+
+// 以压缩的形式输出
+[root@localhost ~]# jq '.' a.json  -c  # 选项: -c               compact instead of pretty-printed output;
+{"fruit":{"name":"apple","color":"green","price":1.2}}
+
+
+
+
+更多 jq 的其他功能见相关文档
+
+
+其他参考资料：
+  https://www.baeldung.com/linux/jq-command-json#:~:text=%20Guide%20to%20Linux%20jq%20Command%20for%20JSON,input%20and%20emits%20JSON%20to%20standard...%20More%20
+
+
+
+
+
+
