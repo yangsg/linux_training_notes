@@ -81,6 +81,10 @@ DBM_Filter::null (3pm) - filter for DBM_Filter
 null (4)             - data sink
 
 
+[root@localhost ~]# man -k ctl
+
+
+
   #-f     Equivalent to whatis.  The whatis database is created using the command /usr/sbin/makewhatis
 [root@basic ~]# man -f null
 null (4)             - data sink

@@ -3,6 +3,9 @@
 man timedatectl
 timedatectl --help
 
+[root@localhost ~]# man -k ctl  #查看 command name 或其 description 中包含 字符串 ctl 的 man page 列表
+
+
 作用： timedatectl - Control the system time and date
 
 语法： timedatectl [OPTIONS...] {COMMAND}
