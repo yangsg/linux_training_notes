@@ -1,0 +1,75 @@
+
+
+
+https://ubuntu.com/server/docs/security-introduction
+
+
+User Management(用户管理)
+	https://ubuntu.com/server/docs/security-users
+
+
+
+所有的 ubuntu 在安装后 默认都会禁用 root 管理员账户,
+但这并不意味着 root 被删除了 或 无法被访问，它仅仅是
+给予了一个不会与任何 可能的 value 匹配的 password hash,
+因此无法直接 使用 root 来登录。
+
+相反，users 被鼓励使用 `sudo` 来执行系统管理职责。
+
+
+
+:) 如果要启用 root 账号，则为其设置一个 password 即可:
+ysg@vm01:~$ sudo passwd
+ysg@vm01:~# sudo grep root /etc/shadow
+root:$6$XTwbqHe87ZYkxUY0$BosdzOJDuIz06uM99plWcOfhMv0icQHAb4/TKmk2N8LH9bNsxjbaDfB4FBF5KX0ox64iH7PLEx7vQqbizHEKp.:18613:0:99999:7:::
+
+ysg@vm01:~$ sudo passwd -S root
+root P 12/17/2020 0 99999 7 -1
+
+
+:) 锁住 root 账号 
+ysg@vm01:~$ sudo passwd -l root
+ysg@vm01:~$ sudo passwd -S root
+root L 12/17/2020 0 99999 7 -1
+
+ysg@vm01:~$ sudo grep root /etc/shadow
+root:!$6$XTwbqHe87ZYkxUY0$BosdzOJDuIz06uM99plWcOfhMv0icQHAb4/TKmk2N8LH9bNsxjbaDfB4FBF5KX0ox64iH7PLEx7vQqbizHEKp.:18613:0:99999:7:::
+
+
+更多 sudo 信息见 `man sudo`
+
+
+默认，由 Ubuntu installer 创建的 初始 user 是 组 sudo 的 成员(member), 
+其被 添加到了 /etc/sudoers 以作为一个 sudo user.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
