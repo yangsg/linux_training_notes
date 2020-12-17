@@ -20,6 +20,12 @@ OPTIONS
 //           An argument of - is equivalent to --.
 
 
+[root@localhost 01-full]# bash -x -c 'echo $PATH'  #有时可以利用选项 -x 观察 shell expansion 的结果
++ echo /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin
+
+
+
 [root@basic ~]# bash -c 'echo hello'
 hello
 
