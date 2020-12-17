@@ -25,6 +25,7 @@ ysg@vm01:~$ uname -r
 ---------------------------------------------------------------------
 :) 一些基本的初始配置
 
+
 [配置 阿里 的 ubuntu 镜像源](https://developer.aliyun.com/mirror/ubuntu?spm=a2c6h.13651102.0.0.3e221b11dLd8mL)
 
 ubuntu 20.04(focal) 配置如下
@@ -93,6 +94,18 @@ if &term =~ '^screen'
     set ttymouse=xterm2
 endif
 " <<<<<<<<
+
+---------------------------------------------------------------------
+
+ysg@vm01:~$ sudo apt install tree
+ysg@vm01:~$ sudo apt-get -y install dos2unix
+
+
+
+
+
+
+
 
 ---------------------------------------------------------------------
 开始学习 ubuntu

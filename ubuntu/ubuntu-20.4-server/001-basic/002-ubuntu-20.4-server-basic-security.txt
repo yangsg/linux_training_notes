@@ -40,29 +40,276 @@ root:!$6$XTwbqHe87ZYkxUY0$BosdzOJDuIz06uM99plWcOfhMv0icQHAb4/TKmk2N8LH9bNsxjbaDf
 
 
 默认，由 Ubuntu installer 创建的 初始 user 是 组 sudo 的 成员(member), 
-其被 添加到了 /etc/sudoers 以作为一个 sudo user.
+其被 添加到了 /etc/sudoers 以作为一个 sudo user. 如果你想 通过 sudo 给予 其他 account
+所有的 root 访问权限，则简单地将其 加入 sudo 组即可.
+
+
+
+ysg@vm01:~$ sudo grep -B1 %sudo /etc/sudoers
+# Allow members of group sudo to execute any command
+%sudo   ALL=(ALL:ALL) ALL
+
+ysg@vm01:~$ id ysg
+uid=1000(ysg) gid=1000(ysg) groups=1000(ysg),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),116(lxd)
+
+
+Adding and Deleting Users (新增或删除 Users)
+
+管理本地 users 和 groups 的过程非常简单，与大多数其他的 GNU/Linux 操作系统有点不同.
+Ubuntu 和 其他的基于 Debian 的发行版 鼓励使用  ‘adduser’ 包来管理 account.
+
+
+ysg@vm01:~$ sudo adduser user01
+		Adding user `user01' ...
+		Adding new group `user01' (1001) ...
+		Adding new user `user01' (1001) with group `user01' ...
+		Creating home directory `/home/user01' ...
+		Copying files from `/etc/skel' ...
+		New password:
+		Retype new password:
+		passwd: password updated successfully
+		Changing the user information for user01
+		Enter the new value, or press ENTER for the default
+						Full Name []:  <---注: 其实为了安全考虑，服务器上不应该提供这种私密信息
+						Room Number []:
+						Work Phone []:
+						Home Phone []:
+						Other []:
+		Is the information correct? [Y/n] y
+
+
+ysg@vm01:~$ id user01
+uid=1001(user01) gid=1001(user01) groups=1001(user01)
+
+
+ysg@vm01:~$ sudo deluser user01   #注: 该命令不会删除目录 /home/user01 
+		Removing user `user01' ...
+		Warning: group `user01' has no more members.
+		Done.
+
+
+ysg@vm01:~$ sudo adduser user02
+
+ysg@vm01:~$ sudo deluser --remove-home user02   #选项 --remove-home 用于指定同时删除 宿主目录和其 mailspool.
+    Looking for files to backup/remove ...
+    Removing files ...
+    Removing user `user02' ...
+    Warning: group `user02' has no more members.
+    Done.
+
+
+删除帐户不会删除其各自的主文件夹。 由您决定是手动删除文件夹还是根据所需的保留策略保留文件夹。
+
+
+!!! 记住, 如果你没有采取必要的预防措施，那么以后添加的 具有与 之前的 owner 拥有相同 UID/GID 的 user 可以访问此文件夹。
+
+
+You may want to change these UID/GID values to something more appropriate, such as the root account, and perhaps even relocate the folder to avoid future conflicts:
+
+你可能需要将这些 UID/GID values 更改为 更合适的值，如 root account, 甚至可能将该 folder 移到一个新的位置 以避免将来发生冲突。
+
+
+ysg@vm01:~$ sudo chown -R root:root /home/user01
+ysg@vm01:~$ sudo mkdir /home/archived_users/
+ysg@vm01:~$ sudo mv /home/user01 /home/archived_users/
+
+
+临时地 锁住 和 解锁 一个 user 的 password
+$ sudo passwd -l username
+$ sudo passwd -u username
+
+
+添加 或 删除个性化 group:
+$ sudo addgroup groupname
+$ sudo delgroup groupname
+
+将 a user 添加到 group:
+$ sudo adduser username groupname
+
+
+
+User Profile Security(用户配置文件安全)
+
+创建新用户后，adduser实用程序将创建一个名为 /home/username 的全新主目录。 默认概要文件是根据 /etc/skel 目录中包含所有概要文件基础内容的内容建模的。
+
+
+ysg@vm01:~$ tree /etc/skel/
+/etc/skel/
+
+
+如果您的服务器被多个用户共用,则应密切关注 user home directory permissions，以确保机密性。
+默认情况下，Ubuntu中的用户主目录是使用world read/execute权限创建的。
+这意味着所有用户都可以浏览和访问其他 users 主目录的内容。这可能不适合您的环境。
+
+
+ysg@vm01:~$ sudo adduser user03
+ysg@vm01:~$ ls -ld /home/user03  #显示 用户宿主目录的 permissions
+drwxr-xr-x 2 user03 user03 4096 Dec 17 13:54 /home/user03 <--可以看到默认该目录具有 world-readable permissions
+
+
+ysg@vm01:~$ sudo chmod 0750 /home/user03  #移除目录 /home/user03 的 world readable-permissions
+
+Note(注):
+  某些人倾向于 不加选择的 使用 recursive option (-R), 其会修改所有的 child folders 和 files,
+  但是这并没有必要, 甚至可能导致其他 非期待的结果。仅修改该 parent directory 一个就足够阻止对
+  该 parent 下的任何东西的 未被授权的访问。
+
+更有效的方法是在创建用户主文件夹时修改adduser全局默认权限。
+只需编辑文件 /etc/adduser.conf 并将 DIR_MODE 变量修改为适当的值，以便所有新的主目录都将获得正确的权限。
+
+
+			DIR_MODE=0750
+
+
+// 观察一下 /etc/adduser.conf 中的默认配置
+ysg@vm01:~$ grep -vE '^(#|$)' /etc/adduser.conf
+		DSHELL=/bin/bash
+		DHOME=/home
+		GROUPHOMES=no
+		LETTERHOMES=no
+		SKEL=/etc/skel
+		FIRST_SYSTEM_UID=100
+		LAST_SYSTEM_UID=999
+		FIRST_SYSTEM_GID=100
+		LAST_SYSTEM_GID=999
+		FIRST_UID=1000
+		LAST_UID=59999
+		FIRST_GID=1000
+		LAST_GID=59999
+		USERGROUPS=yes
+		USERS_GID=100
+		DIR_MODE=0755  <--观察
+		SETGID_HOME=no
+		QUOTAUSER=""
+		SKEL_IGNORE_REGEX="dpkg-(old|new|dist|save)"
+
+
+
+ysg@vm01:~$ sudo vim /etc/adduser.conf
+
+		DIR_MODE=0750
+
+
+ysg@vm01:~$ sudo adduser user04
+
+ysg@vm01:~$ ls -ld /home/user04
+drwxr-x--- 2 user04 user04 4096 Dec 17 14:55 /home/user04
+
+
+
+Password Policy(密码策略)
+
+Minimum Password Length(最小密码长度)
+
+默认, Ubuntu 需要的最小密码长度为 6 characters, 以及一些基础的 entropy checks.
+这些 values 是在 /etc/pam.d/common-password 中控制的
+
+
+// 观察一下默认的配置
+ysg@vm01:~$ grep -vE '^#|^$' /etc/pam.d/common-password
+password        [success=1 default=ignore]      pam_unix.so obscure sha512
+password        requisite                       pam_deny.so
+password        required                        pam_permit.so
+
+
+ysg@vm01:~$ sudo vim /etc/pam.d/common-password
+#通过在如下行最后添加 minlen=8 调整 Minimum Password Length 为 8 characters
+password        [success=1 default=ignore]      pam_unix.so obscure sha512 minlen=8
+
+
+note(注)
+	基本密码熵检查和最小长度规则不适用于使用 sudo 级别命令设置新用户的管理员
+
+
+Password Expiration(密码过期)
+
+在创建用户帐户时，您应该制定一项策略，
+即设置最短和最长密码使用期限，以强制用户在密码过期时更改密码。
+
+
+ysg@vm01:~$ sudo chage -l user04
+Last password change                                    : Dec 17, 2020
+Password expires                                        : never
+Password inactive                                       : never
+Account expires                                         : never
+Minimum number of days between password change          : 0
+Maximum number of days between password change          : 99999
+Number of days of warning before password expires       : 7
+
+
+
+ysg@vm01:~$ sudo chage user04   #进入 chage 的交互模式进行修改
+Changing the aging information for user04
+Enter the new value, or press ENTER for the default
+
+        Minimum Password Age [0]:
+        Maximum Password Age [99999]:
+        Last Password Change (YYYY-MM-DD) [2020-12-17]:
+        Password Expiration Warning [7]:
+        Password Inactive [-1]:
+        Account Expiration Date (YYYY-MM-DD) [-1]:
+
+
+
+ysg@vm01:~$ sudo chage -E 01/31/2022 -m 5 -M 90 -I 30 -W 14 user04
+ysg@vm01:~$ sudo chage -l user04
+Last password change                                    : Dec 17, 2020
+Password expires                                        : Mar 17, 2021
+Password inactive                                       : Apr 16, 2021
+Account expires                                         : Jan 31, 2022
+Minimum number of days between password change          : 5
+Maximum number of days between password change          : 90
+Number of days of warning before password expires       : 14
+
+
+
+Other Security Considerations(其他安全考虑)
+
+许多应用程序使用备用身份验证机制，即使是经验丰富的系统管理员也很容易忽略这些机制。
+因此，了解和控制用户如何对服务器上的服务和应用程序进行身份验证和访问，这一点非常重要。
+
+
+SSH Access by Disabled Users
+
+
+如果用户以前设置了SSH公钥身份验证，那么简单地禁用/锁定用户密码不会阻止他们远程登录到您的服务器。
+他们仍然可以获得shell对服务器的访问权限，而不需要任何密码。
+请记住检查users主目录中是否有允许这种类型的经过身份验证的SSH访问的文件, 如: /home/username/.ssh/authorized_keys
+
+删除或重命名用户主文件夹中的目录.ssh/以阻止进一步的ssh身份验证功能。
+ysg@vm01:~$ sudo rm -rf /home/user04/.ssh
+ysg@vm01:~$ sudo mv /home/user04/.ssh  /home/user04/.ssh_disabled
 
 
 
 
+一定要检查被禁用的用户是否有任何已建立的SSH连接，因为它们可能具有现有的 inbound 或 outbound 连接。杀死所有被发现的人。
+ysg@vm01:~$ who | grep user04   #to get the pts/# terminal
+user04      pts/0        2020-12-17 12:38 (192.168.175.1)
+user04      pts/1        2020-12-17 12:38 (:pts/0:S.0)
+user04      pts/2        2020-12-17 12:38 (:pts/0:S.1)
+user04      pts/3        2020-12-17 12:57 (:pts/0:S.2)
+user04      pts/4        2020-12-17 13:00 (:pts/0:S.3)
+
+
+执行命令 `sudo pkill -f pts/#`, 其中 # 为对应的 number, 如下:
+ysg@vm01:~$ sudo pkill -f pts/0
+ysg@vm01:~$ sudo pkill -f pts/1
+ysg@vm01:~$ sudo pkill -f pts/2
+ysg@vm01:~$ sudo pkill -f pts/3
+ysg@vm01:~$ sudo pkill -f pts/4
 
 
 
+将SSH访问限制为只允许拥有SSH的用户帐户。例如，您可以创建一个名为“sshlogin”的组，
 
 
 
+External User Database Authentication(外部用户数据库验证)
 
-
-
-
-
-
-
-
-
-
-
-
+	大多数企业网络要求对所有系统资源进行集中身份验证和访问控制。
+	如果已将服务器配置为针对外部数据库对用户进行身份验证，
+	请确保在外部和本地禁用用户帐户。这样可以确保本地回退身份验证是不可能的。
 
 
 
