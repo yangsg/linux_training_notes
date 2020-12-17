@@ -1,0 +1,30 @@
+
+
+Firewall
+
+https://ubuntu.com/server/docs/security-firewall
+
+
+ufw - Uncomplicated Firewall
+
+  个人感觉在 Ubuntu 上使用 iptables 可能还要方便一点
+
+
+https://help.ubuntu.com/community/IptablesHowTo?_ga=2.39761891.1934293902.1607865963-1599442783.1603113861
+
+
+
+其他笔记:
+	https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/01-full/151-iptables.txt
+	https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/01-full/152-iptables-extensions.txt
+
+
+
+
+
+
+
+
+
+
+
