@@ -58,6 +58,99 @@ a\b
 cd
 
 
+double quotes 中的 characters 保留该 quotes 中的 all characters 中的 the literal value, 但是例外情况是
+$, `, \, 以及 history expansion 为 enabled  时的 !.
+The characters $ and ` 在 double quotes 中时仍保留了其特殊含义(special meaning).
+The backslash 仅当其后 跟随 characters 中的 $, `, ", \, 或 <newline> 任意一个 character 时 保留期特殊含义(special meaning)，
+
+A double quote 可以被包含在 double quotes, 只要其前缀 a backslash 即可.
+If enabled, history expansion will be performed unless an !   appearing
+in double quotes is escaped using a backslash.  The backslash preceding the !  is not removed.
+
+
+
+
+[root@localhost ~]# echo "=$PWD=${PWD}=$(date '+%F %T %z')=$((2+3))="
+=/root=/root=2020-12-18 16:21:13 +0000=5=
+
+
+[root@localhost ~]# echo "`cal`"
+    December 2020
+Su Mo Tu We Th Fr Sa
+       1  2  3  4  5
+ 6  7  8  9 10 11 12
+13 14 15 16 17 18 19
+20 21 22 23 24 25 26
+27 28 29 30 31
+
+
+[root@localhost ~]# echo "a\"b"  #只要双引号 前缀一个 反斜线(\), 其就可以被包含在 一对双引号中,如类似 "\"" 这样的写法是被允许的
+a"b
+
+
+
+// history expansion
+[root@localhost ~]# date
+Fri Dec 18 17:00:34 UTC 2020
+[root@localhost ~]# echo "!!"
+echo "date"
+date
+
+[root@localhost ~]# date
+Fri Dec 18 17:02:14 UTC 2020
+[root@localhost ~]# "!!"
+"date"
+Fri Dec 18 17:02:18 UTC 2020
+
+
+
+
+
+//特殊参数 * 和 @
+The special parameters * 和 @ 在 double quotes 中时拥有特殊的含义(see PARAMETERS below).
+
+//形如 $'string' 的 Words
+形如 $'string' 的 Words 会被特殊的对待, The word expands to string,
+with backslash-escaped characters replaced as specified by the ANSI C standard.
+Backslash escape sequences, if present, are decoded as follows:
+
+    \a     alert (bell)
+    \b     backspace
+    \e
+    \E     an escape character
+    \f     form feed
+    \n     new line
+    \r     carriage return
+    \t     horizontal tab
+    \v     vertical tab
+    \\     backslash
+    \'     single quote
+    \"     double quote
+    \nnn   the eight-bit character whose value is the octal value nnn (one to three digits)
+    \xHH   the eight-bit character whose value is the hexadecimal value HH (one or two hex digits)
+    \uHHHH the Unicode (ISO/IEC 10646) character whose value is the hexadecimal value HHHH (one to four hex digits)
+    \UHHHHHHHH
+           the Unicode (ISO/IEC 10646) character whose value is the hexadecimal value HHHHHHHH (one to eight hex digits)
+    \cx    a control-x character
+
+
+
+  The expanded result is single-quoted, as if the dollar sign had not been present.
+
+  A double-quoted string preceded by a dollar sign ($"string") will
+  cause the string to be translated according to the current locale.
+  If the current locale is C  or  POSIX,  the dollar sign is ignored.
+  If the string is translated and replaced, the replacement is double-quoted.
+
+
+
+
+// 见 https://github.com/yangsg/linux_training_notes/blob/master/linux_basic/centos7.4/01-full/025-od.txt
+[root@localhost ~]# IFS=$' \t\n' echo -n "$IFS" | od -t cxC   #注: 变量 IFS 的正确设置 对于 awk 命令非常重要
+0000000      \t  \n
+         20  09  0a
+0000003
+
 
 
 
