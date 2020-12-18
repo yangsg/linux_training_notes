@@ -5,6 +5,11 @@ man useradd
 info useradd
 
 
+
+注: 在 创建 user 时需要主要的一些安全问题见:
+  https://github.com/yangsg/linux_training_notes/blob/master/ubuntu/ubuntu-20.4-server/001-basic/002-ubuntu-20.4-server-basic-security.txt
+
+
 作用: useradd - create a new user or update default new user information
 
 语法: useradd [options] LOGIN
