@@ -62,6 +62,12 @@ INVOCATION
       himBH
       [root@basic ~]#
 
+
+  字符 PS 即  prompt string
+    https://www.cyberciti.biz/tips/howto-linux-unix-bash-shell-setup-prompt.html
+
+
+
       ########
     #试验:简单的测试是否为交互式shell的语句(注：该文档为txt文档，如果在vim编辑器中想看shell的语法高亮，可以在vim中执行设置命令: set syn=sh , 则vim的syntax highlight即为 shell语言风格)：
           if echo $- | grep  i > /dev/null; then
