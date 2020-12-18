@@ -20,6 +20,85 @@ three
 
 
 
+-----------------------
+内容摘自 `info sed`
+
+
+3.2 Selecting lines with `sed'
+
+`/REGEXP/I'
+`\%REGEXP%I'
+     The `I' modifier to regular-expression matching is a GNU extension
+     which causes the REGEXP to be matched in a case-insensitive manner.
+
+
+
+3.3 Overview of Regular Expression Syntax
+
+
+`\DIGIT'
+     Matches the DIGIT-th `\(...\)' parenthesized subexpression in the
+     regular expression.  This is called a "back reference".
+     Subexpressions are implicity numbered by counting occurrences of
+     `\(' left-to-right.
+
+
+3.5 The `s' Command
+
+   The REPLACEMENT can contain `\N' (N being a number from 1 to 9,
+inclusive) references, which refer to the portion of the match which is
+contained between the Nth `\(' and its matching `\)'.  Also, the
+REPLACEMENT can contain unescaped `&' characters which reference the
+whole matched portion of the pattern space.  Finally, as a GNU `sed'
+extension, you can include a special sequence made of a backslash and
+one of the letters `L', `l', `U', `u', or `E'.  The meaning is as
+follows:
+
+`\L'
+     Turn the replacement to lowercase until a `\U' or `\E' is found,
+
+`\l'
+     Turn the next character to lowercase,
+
+`\U'
+     Turn the replacement to uppercase until a `\L' or `\E' is found,
+
+`\u'
+     Turn the next character to uppercase,
+
+`\E'
+     Stop case conversion started by `\L' or `\U'.
+
+
+
+
+[root@localhost 01-full]# echo hello | sed -r 's/(.*)/\U\1/'
+HELLO
+
+[root@localhost 01-full]# echo HELLO | sed -r 's/(.*)/\L\1/'
+hello
+
+
+[root@localhost 01-full]# echo hello | sed -r 's/(.*)/\u\1/'
+Hello
+
+[root@localhost 01-full]# echo HELLO | sed -r 's/(.*)/\l\1/'
+hELLO
+
+
+
+
+
+
+
+-----------------------
+
+
+网上资料:
+  https://www.tutorialspoint.com/unix/unix-regular-expressions.htm
+
+
+
 
 
 
