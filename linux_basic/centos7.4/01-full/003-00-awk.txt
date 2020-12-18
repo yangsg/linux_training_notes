@@ -6,6 +6,25 @@
 
 
 
+[root@localhost ~]# awk -F':' '{print $1}' /etc/passwd
+
+
+[root@localhost ~]# echo -e 'one\ttwo\tthree' | awk -F'\t' '{print $0, "==", $1;}'
+one     two     three == one
+
+
+
+
+
+网上资料:
+
+https://www.gnu.org/software/gawk/manual/gawk.html
+https://www.golinuxcloud.com/awk-examples-with-command-tutorial-unix-linux/
+
+
+
+
+
 
 
 
