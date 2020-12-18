@@ -257,4 +257,8 @@ https://linuxschool.net/note?os=CentOS_7&p=tcp_wrapper
 
 ---------------------------------------------------------
 
+# man pcresyntax   #查看 Perl-compatible regular expressions 的语法
+# man 7 regex      #查看 POSIX.2 regular expressions, 也可以在 man grep 中看到
+
+
 
