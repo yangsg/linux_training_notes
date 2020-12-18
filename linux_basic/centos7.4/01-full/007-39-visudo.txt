@@ -38,3 +38,42 @@ root    ALL=(ALL)       ALL
 
 %wheel        ALL=(ALL)       NOPASSWD: ALL
 
+
+
+#示例: 允许 user01 在 192.168.175.141 上以 root:root (用户:用户组)的身份 执行命令 /usr/bin/yum
+user02 192.168.175.141=(root:root) /usr/bin/yum
+
+
+[root@localhost ~]# ip addr show dev ens33
+2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+    link/ether 00:0c:29:f6:f0:83 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.175.141/24 brd 192.168.175.255 scope global dynamic ens33
+       valid_lft 1480sec preferred_lft 1480sec
+    inet6 fe80::20c:29ff:fef6:f083/64 scope link
+       valid_lft forever preferred_lft forever
+
+
+[user02@localhost ~]$ sudo yum install unix2dos   #此时 user02 利用 sudo 命令来执行 /usr/bin/yum 命令
+    [sudo] password for user02:
+    Loaded plugins: fastestmirror
+    Loading mirror speeds from cached hostfile
+     * base: mirrors.aliyun.com
+     * extras: mirrors.aliyun.com
+     * updates: mirrors.aliyun.com
+    Package dos2unix-6.0.3-7.el7.x86_64 already installed and latest version
+    Nothing to do
+
+
+
+[user02@localhost ~]$ sudo useradd user05   #注: 可以看到,本例中除了 yum 命令, user02 无法以 root:root 身份运行 useradd 命令
+Sorry, user user02 is not allowed to execute '/sbin/useradd user05' as root on localhost.
+
+
+
+
+
+
+
+
+
+
