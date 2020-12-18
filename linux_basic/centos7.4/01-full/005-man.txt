@@ -21,6 +21,20 @@ man proc
 man hier
 
 ---------------------------------------------------------------------------------------------------
+查看正则表达式帮助
+
+man 7 regex  #扩展的正则表达式(Extended Regular Expressions), 或 man grep
+
+yum -y install pcre-devel
+man pcresyntax  #Perl 兼容的正则表达式(Perl-compatible regular expressions)
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------------------------
 
 [root@basic ~]# man man
 
