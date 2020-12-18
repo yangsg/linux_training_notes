@@ -40,7 +40,8 @@ root    ALL=(ALL)       ALL
 
 
 
-#示例: 允许 user01 在 192.168.175.141 上以 root:root (用户:用户组)的身份 执行命令 /usr/bin/yum
+#示例: 允许 user01 在 192.168.175.141 上以 root:root (用户:用户组)的身份 执行命令 /usr/bin/yum,
+#    注:  此例仅为演示目的，其实 在指定 host 时使用 'ALL' 比使用真实的特定 ip 地址(如192.168.175.141) 要简单方便一点
 user02 192.168.175.141=(root:root) /usr/bin/yum
 
 
