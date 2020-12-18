@@ -1,0 +1,47 @@
+
+
+
+https://ubuntu.com/server/docs/security-apparmor
+https://www.jianshu.com/p/2ed5184b9156
+https://www.cyberciti.biz/tips/selinux-vs-apparmor-vs-grsecurity.html
+https://www.linuxprobe.com/selinux-introduction.html
+
+
+
+AppArmor 默认就是被 安装且 loaded 了的，它使用 application 的 profiles
+来决定 该 application 需要哪些 files 和 permissions. 某些 packages 会安装
+自己的 profiles. 而其他的 profiles 可以在 apparmor-profiles package 中找到.
+
+:) 如下命令安装 apparmor-profiles 包
+ysg@vm01:~$ sudo apt install apparmor-profiles
+
+
+:)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
