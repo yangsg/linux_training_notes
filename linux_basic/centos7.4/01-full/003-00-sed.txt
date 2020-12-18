@@ -6,6 +6,21 @@
 
 
 
+man sed
+sed --help
+info sed  #包含example和其他额外更详细的信息, 如 sed 的其他命令的一些 demo
+
+
+
+
+[root@localhost ~]# echo one | sed 'a\ntwo\nthree'
+one
+ntwo
+three
+
+
+
+
 
 
 
