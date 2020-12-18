@@ -32,3 +32,6 @@ https://en.wikipedia.org/wiki/Umask
     Each program (technically called a process) has its own mask, and is able to change its settings using a function call. When the process is a shell, the mask is set with the umask command.
 https://en.wikipedia.org/wiki/File_system_permissions
 
+https://github.com/yangsg/myself_learn_notes/blob/master/linux_command_line_note.md
+
+
