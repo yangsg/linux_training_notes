@@ -4,6 +4,65 @@
 man bash  #/^QUOTING
 
 
+引用
+
+
+Quoting 被用于 将 certain characters 或 words 的 对于 shell 的 特殊意义(special meaning).
+Quoting 可以被用于 disable 掉 对 special characters 的 special treatment. 用于 prevent
+reserved words 被识别为类似的特殊字符, 以及 prevent parameter expansion.
+
+man bash 文档中 DEFINITIONS 小节中所列出的 metacharacters 的每一个 对于 shell 都有特殊的含义(special meaning) 且
+当 其要表示其本省(represent itself) 时，其必须被 quoting.
+
+
+当 command history expansion 正在被使用的时候(see HISTORY EXPANSION below), the history expansion character, usually !,
+必须被 quoted 以阻止 expansion.
+
+
+存在这 3 中引用机制(quoting mechanisms): the escape character, single quotes, and double quotes.
+
+A non-quoted backslash (\) 是  转移字符(escape character). A non-quoted backslash (\) 保留了 紧随它之后的 next character
+的 literal value, 但是 <newline> 是一个例外情况(注: 即 先按 \ 键，然后 仅接着按 enter 键的操作)。如果 a  \<newline>  pair
+appears, 则 此时 the backslash is not itself quoted, \<newline> 被视为是 a line continuation
+(即续行)(that is, it is removed from the input stream and effectively ignored).
+
+
+[root@localhost ~]# echo abc\  <---注: 此处按 \ 键后直接再按 enter, 即被认为是续行(a line continuation)
+> efg
+abcefg
+
+
+
+Enclosing characters in single quotes preserves the literal value of each character within the quotes.
+A single quote may not occur between single quotes, even when preceded by a backslash.
+//中文注释: 被 一对单引号(即 ') 引起来的 characters 保留了 该对单引号中 each character 的 literal value.
+//          A single quote 不能出现在 single quotes 之间, 即使其前缀了 a backslash(即 \).
+// 注释: 上面这句话意思其实是说 一对单引号中的每一个 character 都保留了自己的 字面值.
+//       且 a single quotes 中不能在包含单引号，即使是写成 \' 这样的形式也不可以。
+//   (注 ：如上这句话非常的重要, 除了在该 man bash 手册页上看到对该知识点的描述外，还真没发现其他的一些相关资料
+///        有对这个知识点有提及或描述. 这也使得本人在初学 bash shell 时对这一知识点始终存在困扰和疑惑)
+
+[root@localhost ~]# echo '===$PWD \"=$(date)===' #单引号原样保留其中的 characters 的字面value
+===$PWD \"=$(date)===
+
+
+[root@localhost ~]# echo 'abc''  <--注: 这里'abc'' 并非表示打印 abc', 而是先打印 abc, 后面还有一个没有完结的单引号 '
+> def'
+abc
+def
+
+
+[root@localhost 01-full]# echo 'a\'b'  <--注: 这里的 \'并不应该出现在 '' 中，或者说其含义已经有所不同了
+cd'
+a\b
+cd
+
+
+
+
+
+
+
 
 
 
