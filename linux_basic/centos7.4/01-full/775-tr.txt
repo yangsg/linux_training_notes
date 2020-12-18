@@ -17,6 +17,9 @@ LOWERCASE LETTERS
 [root@basic ~]# tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ <<< 'lowercase letters'
 LOWERCASE LETTERS
 
+
+// Transliterate
+
 注: Only [:lower:] and [:upper:] are guaranteed to expand in ascending order; used in SET2 while translating, they may only be used in pairs to specify case conversion.
 [root@basic ~]# tr [:lower:] [:upper:] <<< 'lowercase letters'   # 小写转换为大写  # Translation  occurs  if -d is not given and both SET1 and SET2 appear.
 LOWERCASE LETTERS
