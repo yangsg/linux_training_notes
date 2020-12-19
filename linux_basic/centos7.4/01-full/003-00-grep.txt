@@ -1,0 +1,19 @@
+
+
+TODO
+
+
+
+
+
+[root@localhost ~]# man find | grep -- -exec   #偶尔可以利用 grep 命令来帮助快速的检索 man page
+
+
+
+
+
+
+
+
+
+
