@@ -9,7 +9,8 @@ TODO
 [root@localhost ~]# man find | grep -- -exec   #偶尔可以利用 grep 命令来帮助快速的检索 man page
 
 
-
+// 注: 如下命令仅为了简单快速的实现目标要求，并没有追求其写法的高效优雅
+[root@localhost ~]# echo $PATH | sed -r 's/:/ /g' | xargs find   | grep ctl  #查找 $PATH 所表示的路径下 command name 带有 ctl 字符的那些命令
 
 
 
