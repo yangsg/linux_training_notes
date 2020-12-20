@@ -1,0 +1,73 @@
+
+# keyword find
+man find
+info find
+
+注: centos7 中 find 的 man page 和 info page 关于 -size 的描述都不完整(即使是 centos8 上也不是特别详细),
+    不过可以在
+      https://man7.org/linux/man-pages/man1/find.1.html
+    或
+      ubuntu 20.04 上的 `man find` 上找到较完整详细的 -size 的描述
+
+
+---------------------------------------------------------------------------------------------------
+摘自  https://man7.org/linux/man-pages/man1/find.1.html
+
+       -size n[cwbkMG]
+              File uses less than, more than or exactly n units of space,
+              rounding up.  The following suffixes can be used:
+
+              `b'    for 512-byte blocks (this is the default if no suffix
+                     is used)
+
+              `c'    for bytes
+
+              `w'    for two-byte words
+
+              `k'    for kibibytes (KiB, units of 1024 bytes)
+
+              `M'    for mebibytes (MiB, units of 1024 * 1024 = 1048576 bytes)
+
+              `G'    for gibibytes (GiB, units of 1024 * 1024 * 1024 = 1073741824 bytes)
+
+              The size is simply the st_size member of the struct stat
+              populated by the lstat (or stat) system call, rounded up as
+              shown above.  In other words, it's consistent with the result
+              you get for ls -l.  Bear in mind that the `%k' and `%b' format
+              specifiers of -printf handle sparse files differently.  The
+              `b' suffix always denotes 512-byte blocks and never 1024-byte
+              blocks, which is different to the behaviour of -ls.
+
+              //注: 如下这段话非常重要，因为 centos7 的 man page 没有该知识点的描述
+              The + and - prefixes signify greater than and less than, as
+              usual; i.e., an exact size of n units does not match.  Bear in
+              mind that the size is rounded up to the next unit.  Therefore
+              -size -1M is not equivalent to -size -1048576c.  The former
+              only matches empty files, the latter matches files from 0 to
+              1,048,575 bytes.
+
+
+---------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
