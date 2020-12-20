@@ -1,0 +1,31 @@
+
+# keyword xargs
+man xargs
+info xargs
+
+
+
+
+
+
+[root@localhost ~]# echo $PATH | sed -r 's/:/ /g' | xargs -I % bash -c 'find % -type f'
+
+
+
+---------------------------------------------------------------------------------------------------
+
+
+ -I replace-str
+        Replace  occurrences  of replace-str in the initial-arguments with names read from standard input.  Also, unquoted
+        blanks do not terminate input items; instead the separator is the newline character.  Implies -x and -L 1.
+
+
+---------------------------------------------------------------------------------------------------
+
+
+
+网上资料:
+  https://www.howtogeek.com/435164/how-to-use-the-xargs-command-on-linux/
+
+
+
