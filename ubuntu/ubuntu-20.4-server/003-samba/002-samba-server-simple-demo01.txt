@@ -1,0 +1,61 @@
+// 一个简单的 samba server 搭建笔记
+
+
+ysg@vm01:~$ sudo apt-get update
+ysg@vm01:~$ sudo apt-get install samba -y
+
+ysg@vm01:~$ smbd --version
+Version 4.11.6-Ubuntu
+
+ysg@vm01:~$ sudo addgroup editors
+ysg@vm01:~$ sudo usermod -aG editors $USER
+ysg@vm01:~$ sudo mkdir /data
+ysg@vm01:~$ sudo chgrp -R editors /data
+ysg@vm01:~$ sudo chmod -R g+rw /data
+
+
+ysg@vm01:~$ sudo cp /etc/samba/smb.conf /etc/samba/smb.conf.org
+ysg@vm01:~$ sudo vim /etc/samba/smb.conf
+[data]
+path = /data
+valid users = @editors
+browsable = yes
+writable = yes
+read only = no
+# 必要时设置 create mask 来修改创建权限
+# create mask = 0700
+
+ysg@vm01:~$ sudo systemctl restart smbd
+ysg@vm01:~$ sudo systemctl enable smbd
+
+
+
+ysg@vm01:~$ sudo smbpasswd -a ysg
+New SMB password:
+Retype new SMB password:
+Added user ysg.
+
+
+===================================
+windows 连接 samba 服务器: \\192.168.175.133
+
+查看 windows 创建的文件的权限:
+ysg@vm01:~$ ls -l /data/
+total 8
+drwxr-xr-x 2 ysg ysg 4096 Jan  4 23:15 adir
+-rwxr--r-- 1 ysg ysg   12 Jan  4 23:13 a.txt
+
+
+
+参考资料:
+	https://devtutorial.io/how-to-install-and-configure-samba-on-ubuntu-server-20-04.html
+	https://www.techrepublic.com/article/how-to-create-a-samba-share-on-ubuntu-server-20-04/
+	https://ubuntu.com/server/docs/samba-file-server
+	https://itsubuntu.com/how-to-install-samba-on-ubuntu-20-04-lts/
+
+	https://github.com/yangsg/linux_training_notes/tree/master/samba
+
+
+
+
+
