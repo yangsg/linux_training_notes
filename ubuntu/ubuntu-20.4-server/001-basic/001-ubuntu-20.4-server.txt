@@ -189,6 +189,51 @@ Notice:
 
     其他一些命令: apt-get, apt-cache
 
+---------------------------------------------------------------
+安装指定版本的 package (install specific version package)
+
+  https://linoxide.com/linux-command/install-specific-version-package-apt-get/
+  https://sourcedigit.com/23234-apt-get-install-specific-version-of-package-ubuntu-apt-get-list/
+
+
+:) list all available versions of the package
+
+  // 执行如下任意一条命令查看可用的版本(以 nginx 为例)
+  // 注: 虽然列出可用的版本，但是某些旧版本可能因为 依赖包的 问题 仍无法被安装,除非自己解决依赖问题
+  $ apt list nginx --all-versions
+  $ apt-cache policy nginx
+  $ apt-cache madison nginx
+
+
+:) install a specific version package
+
+  $ sudo apt install nginx=1.17.10-0ubuntu1   #失败, 存在依赖不符的问题
+  $ sudo apt install nginx=1.18.0-0ubuntu1
+
+:) 模拟安装 (simulate/dry-run), 即不实际安装
+
+	$ sudo apt install nginx -s  # -s, --simulate, --just-print, --dry-run, --recon, --no-act  #见 man apt-get
+
+
+:) 列出 package 的一些信息
+  $ apt-cache showpkg nginx #列出 package 的一些信息, 如 package 的可用版本, 反向依赖(reverse dependencies)和正向依赖(forward dependencies)
+
+  $ apt-cache depends nginx #列出 nginx 包的正向依赖(forward dependencies)
+
+  $ apt-cache rdepends nginx #列出 nginx 包的反向依赖(reverse dependencies)
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------
+
 ------------------------
 Aptitude
  Aptitude 是 apt 系统的 a menu-driven, text-based front-end 工具.
