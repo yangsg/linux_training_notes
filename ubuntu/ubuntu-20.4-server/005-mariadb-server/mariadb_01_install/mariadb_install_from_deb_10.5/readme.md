@@ -32,12 +32,12 @@ ysg@vm01:~$ ip addr show dev ens33  #查看本机 ip
 #### 安装 10.5.8 版本的 mariadb-server
 
 参考资料:
-  https://www.osradar.com/install-mariadb-10-5-ubuntu-20-04-18-04/
+  - https://www.osradar.com/install-mariadb-10-5-ubuntu-20-04-18-04/
 
 
 
-  https://mariadb.com/kb/en/binary-packages/
-  https://mariadb.com/kb/en/installing-mariadb-deb-files/
+  - https://mariadb.com/kb/en/binary-packages/
+  - https://mariadb.com/kb/en/installing-mariadb-deb-files/
 
 
   各 Linux 发行版的 mariadb 包的仓库信息见:
