@@ -4,12 +4,12 @@
 
 
 
+:) 准备 安装目录
+ysg@vm01:~$ sudo mkdir /app
 
 :) 下载  golang tarball 包
 
 ysg@vm01:~$ mkdir download
-ysg@vm01:~$ sudo mkdir /app
-
 ysg@vm01:~$ cd download/
 ysg@vm01:~/download$ wget -O go1.15.6.linux-amd64.tar.gz https://golang.google.cn/dl/go1.15.6.linux-amd64.tar.gz
 ysg@vm01:~/download$ file go1.15.6.linux-amd64.tar.gz
@@ -46,7 +46,123 @@ export GOPROXY=https://goproxy.cn
 
 ysg@vm01:~$ source /etc/profile
 
-ysg@vm01:~$ go env
+
+
+ysg@vm01:~$ go env     #查看一下 go 相关的环境信息
+
+		GO111MODULE="on"
+		GOARCH="amd64"
+		GOBIN=""
+		GOCACHE="/home/ysg/.cache/go-build"
+		GOENV="/home/ysg/.config/go/env"
+		GOEXE=""
+		GOFLAGS=""
+		GOHOSTARCH="amd64"
+		GOHOSTOS="linux"
+		GOINSECURE=""
+		GOMODCACHE="/home/ysg/go/pkg/mod"
+		GONOPROXY=""
+		GONOSUMDB=""
+		GOOS="linux"
+		GOPATH="/home/ysg/go"
+		GOPRIVATE=""
+		GOPROXY="https://goproxy.cn"
+		GOROOT="/app/go"
+		GOSUMDB="sum.golang.org"
+		GOTMPDIR=""
+		GOTOOLDIR="/app/go/pkg/tool/linux_amd64"
+		GCCGO="gccgo"
+		AR="ar"
+		CC="gcc"
+		CXX="g++"
+		CGO_ENABLED="1"
+		GOMOD="/dev/null"
+		CGO_CFLAGS="-g -O2"
+		CGO_CPPFLAGS=""
+		CGO_CXXFLAGS="-g -O2"
+		CGO_FFLAGS="-g -O2"
+		CGO_LDFLAGS="-g -O2"
+		PKG_CONFIG="pkg-config"
+		GOGCCFLAGS="-fPIC -m64 -pthread -fno-caret-diagnostics -Qunused-arguments -fmessage-length=0 -fdebug-prefix-map=/tmp/go-build476533820=/tmp/go-build -gno-record-gcc-switches"
+
+
+
+
+---------------------------------------------------------------------------------------------------
+安装 godoc
+
+ysg@vm01:~$ go get -v golang.org/x/tools/cmd/godoc
+ysg@vm01:~$ sudo cp /home/ysg/go/bin/godoc /app/go/bin/
+ysg@vm01:~$ ls -l /app/go/bin/
+total 33244
+-rwxr-xr-x 1 root root 14244478 Dec  3 17:35 go
+-rwxr-xr-x 1 root root 16299419 Jan  9 06:01 godoc
+-rwxr-xr-x 1 root root  3493260 Dec  3 17:35 gofmt
+
+
+ysg@vm01:~/download$ godoc --help   #查看 godoc 帮助信息
+
+
+
+:) 一些 godoc 的启动方式
+ysg@vm01:~$ godoc -http=:6060
+ysg@vm01:~$ godoc -http=:6060 -goroot /app/go/
+
+
+
+ysg@vm01:~$ tree -L 1 -F /app/go/
+		/app/go/
+		├── api/
+		├── AUTHORS
+		├── bin/
+		├── CONTRIBUTING.md
+		├── CONTRIBUTORS
+		├── doc/
+		├── favicon.ico
+		├── lib/
+		├── LICENSE
+		├── misc/
+		├── PATENTS
+		├── pkg/
+		├── README.md
+		├── robots.txt
+		├── SECURITY.md
+		├── src/
+		├── test/
+		└── VERSION
+
+
+ysg@vm01:~$ ls /app/go/doc/
+  articles         debugging_with_gdb.html  gccgo_install.html  go1.14.html  go1.4.html  go1.9.html         go-logo-blue.png   help.html            progs
+  asm.html         diagnostics.html         go1.10.html         go1.15.html  go1.5.html  go1compat.html     go-logo-white.png  ie.css               share.png
+  cmd.html         editors.html             go1.11.html         go1.1.html   go1.6.html  go1.html           go_mem.html        install.html         tos.html
+  codewalk         effective_go.html        go1.12.html         go1.2.html   go1.7.html  go_faq.html        gopher             install-source.html
+  contribute.html  gccgo_contribute.html    go1.13.html         go1.3.html   go1.8.html  go-logo-black.png  go_spec.html       play
+
+
+:) 浏览器访问相关 doc 文档
+		http://192.168.175.133:6060/doc/go_spec.html
+		http://192.168.175.133:6060/doc/effective_go.html
+		http://192.168.175.133:6060/doc/cmd
+		http://192.168.175.133:6060/doc/install.html
+
+
+		http://192.168.175.133:6060/doc/
+		http://192.168.175.133:6060/pkg/
+		http://192.168.175.133:6060/src/
+		http://192.168.175.133:6060/api/
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
