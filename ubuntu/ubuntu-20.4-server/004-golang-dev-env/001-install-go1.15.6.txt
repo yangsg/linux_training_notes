@@ -91,6 +91,15 @@ ysg@vm01:~$ go env     #查看一下 go 相关的环境信息
 ---------------------------------------------------------------------------------------------------
 安装 godoc
 
+  注: 通常访问 网上的 go document 就可以了
+    https://golang.google.cn/
+    https://golang.google.cn/doc/
+    https://golang.google.cn/doc/effective_go.html
+    https://golang.google.cn/ref/spec
+
+
+
+
 ysg@vm01:~$ go get -v golang.org/x/tools/cmd/godoc
 ysg@vm01:~$ sudo cp /home/ysg/go/bin/godoc /app/go/bin/
 ysg@vm01:~$ ls -l /app/go/bin/
