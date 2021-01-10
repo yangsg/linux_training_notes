@@ -400,6 +400,7 @@ ysg@vm01:~$ mysql -u root -p --default-character-set=utf8mb4
   https://code.i-harness.com/en/docs/mariadb/installing-mariadb-binary-tarballs/index
   https://dev.mysql.com/doc/refman/8.0/en/binary-installation.html
   https://blog.csdn.net/blueboz/article/details/109968308
+  https://www.cnblogs.com/wuvikr/p/13788576.html
 
 
 
