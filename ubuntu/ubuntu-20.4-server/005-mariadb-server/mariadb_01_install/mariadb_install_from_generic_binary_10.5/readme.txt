@@ -1,9 +1,12 @@
 
+//做一些初始化的设置,
+ 如:
+ 设置 主机名, 网络参数(静态ip等), 时区, 时间同步, 国内镜像源(安装其某些依赖包)等
+
 
 
 ysg@vm01:~$ sudo apt-get update
-ysg@vm01:~$ sudo apt-get install libncurses5
-
+ysg@vm01:~$ sudo apt-get install libncurses5 -y
 ysg@vm01:~$ dpkg -l libncurses5
   Desired=Unknown/Install/Remove/Purge/Hold
   | Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend
@@ -16,7 +19,7 @@ ysg@vm01:~$ dpkg -l libncurses5
 
 ysg@vm01:~$ sudo mkdir /app
 ysg@vm01:~$ sudo groupadd mysql
-ysg@vm01:~$ sudo useradd -r -g mysql -s /bin/false mysql
+ysg@vm01:~$ sudo useradd -r -s /bin/false mysql
 
 ysg@vm01:~$ sudo mkdir -p /mydata/data
 ysg@vm01:~$ sudo chown -R mysql:mysql /mydata/data/
@@ -66,7 +69,32 @@ ysg@vm01:/app/mysql$ ./scripts/mysql_install_db --help | less  # 查看一下 my
                        directories that it creates will be owned by you.
 
 
-ysg@vm01:/app/mysql$ sudo ./scripts/mysql_install_db  --user=mysql --basedir=/app/mysql/  --datadir=/mydata/data
+ysg@vm01:/app/mysql$ sudo vim /etc/my.cnf
+
+    [client]  # 注: [client] group 是 所有的 mysql client 工具都会读取的配置文件
+    loose-default-character-set = utf8mb4   # 加 loose- 前缀是为解决 [mysqlbinlog] group 不识别该 选项的 问题
+
+    [mysql]
+    default-character-set = utf8mb4
+
+    [mysqlbinlog]
+    set_charset=utf8mb4
+
+    [mysqld]
+    # 设置 mysql 字符集为 utf8mb4
+    character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
+    collation-server = utf8mb4_unicode_ci
+
+    basedir=/app/mysql
+    datadir=/mydata/data
+    port=3306
+    server_id=133
+    socket=/tmp/mysql.sock
+
+    skip-name-resolve=ON
+
+
+ysg@vm01:/app/mysql$ sudo ./scripts/mysql_install_db --defaults-file=/etc/my.cnf --user=mysql
     [sudo] password for ysg:
     Installing MariaDB/MySQL system tables in '/mydata/data' ...
     OK
@@ -89,7 +117,7 @@ ysg@vm01:/app/mysql$ sudo ./scripts/mysql_install_db  --user=mysql --basedir=/ap
     MySQL manual for more instructions.
 
     You can start the MariaDB daemon with:
-    cd '/app/mysql/' ; /app/mysql//bin/mysqld_safe --datadir='/mydata/data'  <---启动MariaDB daemon 的命令
+    cd '/app/mysql' ; /app/mysql/bin/mysqld_safe --datadir='/mydata/data'  <---启动MariaDB daemon 的命令
 
     You can test the MariaDB daemon with mysql-test-run.pl
     cd '/app/mysql//mysql-test' ; perl mysql-test-run.pl  <---测试 MariaDB daemon 的命令
@@ -103,18 +131,6 @@ ysg@vm01:/app/mysql$ sudo ./scripts/mysql_install_db  --user=mysql --basedir=/ap
     https://mariadb.org/get-involved/
 
 
-
-ysg@vm01:/app/mysql$ sudo vim /etc/my.cnf
-  [mysqld]
-  basedir=/app/mysql
-  datadir=/mydata/data
-  port=3306
-  server_id=133
-  socket=/tmp/mysql.sock
-
-
-
-
 //设置开机自启
 ysg@vm01:/app/mysql$ sudo cp /app/mysql/support-files/mysql.server  /etc/init.d/mysqld
 ysg@vm01:/app/mysql$ sudo chmod a+x /etc/init.d/mysqld
@@ -126,7 +142,7 @@ ysg@vm01:/app/mysql$ sudo chmod a+x /etc/init.d/mysqld
 //     其在启动时也会自动生成文件 '/run/systemd/generator.late/mysqld.service' 来借助 systemd 来管理
 
 // 因为没有采用默认的 /usr/local 安装目录，所以需要编辑修改启动脚本中的 basedir 和 datadir 参数
-ysg@vm01:/app/mysql$ vim /etc/init.d/mysqld
+ysg@vm01:/app/mysql$ sudo vim /etc/init.d/mysqld
 
     basedir=/app/mysql
     datadir=/mydata/data
@@ -300,22 +316,22 @@ ysg@vm01:/app/mysql$ sudo ./bin/mysql_secure_installation --basedir=/app/mysql/
 
 
 
-ysg@vm01:~$ mysql -u root -p
+ysg@vm01:~$ mysql -u root -p --default-character-set=utf8mb4
     Enter password:
     Welcome to the MariaDB monitor.  Commands end with ; or \g.
-    Your MariaDB connection id is 12
+    Your MariaDB connection id is 13
     Server version: 10.5.8-MariaDB MariaDB Server
 
     Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
 
     Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
 
-    MariaDB [(none)]> use mysql;
+    MariaDB [(none)]> use mysql
     Reading table information for completion of table and column names
     You can turn off this feature to get a quicker startup with -A
 
     Database changed
-    MariaDB [mysql]> SELECT User, Host, plugin FROM mysql.user;
+    MariaDB [mysql]> SELECT User, Host, plugin FROM mysql.user;  #观察字符集
     +-------------+-----------+-----------------------+
     | User        | Host      | plugin                |
     +-------------+-----------+-----------------------+
@@ -323,82 +339,72 @@ ysg@vm01:~$ mysql -u root -p
     | root        | localhost | mysql_native_password |
     | mysql       | localhost | mysql_native_password |
     +-------------+-----------+-----------------------+
-    3 rows in set (0.002 sec)
+    3 rows in set (0.001 sec)
+
+    MariaDB [mysql]> SHOW VARIABLES LIKE 'character%';    #观察比较规则
+    +--------------------------+----------------------------------------------------------+
+    | Variable_name            | Value                                                    |
+    +--------------------------+----------------------------------------------------------+
+    | character_set_client     | utf8mb4                                                  |
+    | character_set_connection | utf8mb4                                                  |
+    | character_set_database   | utf8mb4                                                  |
+    | character_set_filesystem | binary                                                   |
+    | character_set_results    | utf8mb4                                                  |
+    | character_set_server     | utf8mb4                                                  |
+    | character_set_system     | utf8                                                     |
+    | character_sets_dir       | /app/mariadb-10.5.8-linux-systemd-x86_64/share/charsets/ |
+    +--------------------------+----------------------------------------------------------+
+    8 rows in set (0.001 sec)
+
+    MariaDB [mysql]> SHOW VARIABLES LIKE 'collation%';
+    +----------------------+--------------------+
+    | Variable_name        | Value              |
+    +----------------------+--------------------+
+    | collation_connection | utf8mb4_general_ci |
+    | collation_database   | utf8mb4_unicode_ci |
+    | collation_server     | utf8mb4_unicode_ci |
+    +----------------------+--------------------+
+    3 rows in set (0.001 sec)
+
+    MariaDB [mysql]> status
+    --------------
+    mysql  Ver 15.1 Distrib 10.5.8-MariaDB, for Linux (x86_64) using readline 5.1
+
+    Connection id:          13
+    Current database:       mysql
+    Current user:           root@localhost
+    SSL:                    Not in use
+    Current pager:          stdout
+    Using outfile:          ''
+    Using delimiter:        ;
+    Server:                 MariaDB
+    Server version:         10.5.8-MariaDB MariaDB Server
+    Protocol version:       10
+    Connection:             Localhost via UNIX socket
+    Server characterset:    utf8mb4
+    Db     characterset:    utf8mb4
+    Client characterset:    utf8mb4
+    Conn.  characterset:    utf8mb4
+    UNIX socket:            /tmp/mysql.sock
+    Uptime:                 7 min 32 sec
+
+    Threads: 2  Questions: 65  Slow queries: 0  Opens: 36  Open tables: 30  Queries per second avg: 0.143
+    --------------
+
+    MariaDB [mysql]> quit
+    Bye
 
 
 
+网上资料:
+  https://code.i-harness.com/en/docs/mariadb/installing-mariadb-binary-tarballs/index
+  https://dev.mysql.com/doc/refman/8.0/en/binary-installation.html
+  https://blog.csdn.net/blueboz/article/details/109968308
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-ysg@vm01:/app/mysql$ ./bin/mysqld_safe --help  #观察一
-    Usage: ./bin/mysqld_safe [OPTIONS]
-      --no-defaults              Don't read the system defaults file
-      --core-file-size=LIMIT     Limit core files to the specified size
-      --defaults-file=FILE       Use the specified defaults file
-      --defaults-extra-file=FILE Also use defaults from the specified file
-      --ledir=DIRECTORY          Look for mysqld in the specified directory
-      --open-files-limit=LIMIT   Limit the number of open files
-      --crash-script=FILE        Script to call when mysqld crashes
-      --timezone=TZ              Set the system timezone
-      --malloc-lib=LIB           Preload shared library LIB if available
-      --mysqld=FILE              Use the specified file as mysqld
-      --mysqld-version=VERSION   Use "mysqld-VERSION" as mysqld
-      --dry-run                  Simulate the start to detect errors but don't start
-      --nice=NICE                Set the scheduling priority of mysqld
-      --no-auto-restart          Exit after starting mysqld
-      --nowatch                  Exit after starting mysqld
-      --plugin-dir=DIR           Plugins are under DIR or DIR/VERSION, if
-                                 VERSION is given
-      --skip-kill-mysqld         Don't try to kill stray mysqld processes
-      --syslog                   Log messages to syslog with 'logger'
-      --skip-syslog              Log messages to error log (default)
-      --syslog-tag=TAG           Pass -t "mysqld-TAG" to 'logger'
-      --flush-caches             Flush and purge buffers/caches before
-                                 starting the server
-      --numa-interleave          Run mysqld with its memory interleaved
-                                 on all NUMA nodes
-
-    All other options are passed to the mysqld program.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  ubuntu 的 update-rc.d (作用类似于 centos 中的 chkconfig)
+    https://stackoverflow.com/questions/20680050/how-do-i-install-chkconfig-on-ubuntu
 
 
 
