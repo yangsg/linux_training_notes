@@ -331,7 +331,7 @@ ysg@vm01:~$ mysql -u root -p --default-character-set=utf8mb4
     You can turn off this feature to get a quicker startup with -A
 
     Database changed
-    MariaDB [mysql]> SELECT User, Host, plugin FROM mysql.user;  #观察字符集
+    MariaDB [mysql]> SELECT User, Host, plugin FROM mysql.user;
     +-------------+-----------+-----------------------+
     | User        | Host      | plugin                |
     +-------------+-----------+-----------------------+
@@ -341,7 +341,7 @@ ysg@vm01:~$ mysql -u root -p --default-character-set=utf8mb4
     +-------------+-----------+-----------------------+
     3 rows in set (0.001 sec)
 
-    MariaDB [mysql]> SHOW VARIABLES LIKE 'character%';    #观察比较规则
+    MariaDB [mysql]> SHOW VARIABLES LIKE 'character%';  #观察字符集
     +--------------------------+----------------------------------------------------------+
     | Variable_name            | Value                                                    |
     +--------------------------+----------------------------------------------------------+
@@ -356,7 +356,7 @@ ysg@vm01:~$ mysql -u root -p --default-character-set=utf8mb4
     +--------------------------+----------------------------------------------------------+
     8 rows in set (0.001 sec)
 
-    MariaDB [mysql]> SHOW VARIABLES LIKE 'collation%';
+    MariaDB [mysql]> SHOW VARIABLES LIKE 'collation%';    #观察比较规则
     +----------------------+--------------------+
     | Variable_name        | Value              |
     +----------------------+--------------------+
