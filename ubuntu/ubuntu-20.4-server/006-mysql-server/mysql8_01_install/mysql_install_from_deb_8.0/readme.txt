@@ -305,6 +305,10 @@ mysql8 比较规则 utf8mb4_0900_ai_ci 的问题:
 
 
 
+Ubuntu 20.04 LTS 上卸载 mysql8 的方式:
+  https://www.fosstechnix.com/tutorial/mysql/uninstall-mysql-8-on-ubuntu-20-04-lts/
+
+
 
 
 
