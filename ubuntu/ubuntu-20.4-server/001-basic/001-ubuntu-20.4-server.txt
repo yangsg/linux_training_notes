@@ -100,11 +100,12 @@ endif
 ysg@vm01:~$ sudo apt install tree
 ysg@vm01:~$ sudo apt-get -y install dos2unix
 
+   #注: apt 也可以使用选项 -y, 即也可以使用类似 `apt install tree -y` 或 `apt -y install tree` 这样的命令来安装 package,
+   #这种使用方式也许可以从 `man 5 apt.conf` 中找到一些线索:
 
-
-
-
-
+   > THE APT GROUP
+   >        This group of options controls general APT behavior as well as holding the options for all of the tools.
+   而 APT::Get::Assume-Yes 正好位于 APT tool group 下.
 
 
 ---------------------------------------------------------------------

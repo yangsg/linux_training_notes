@@ -75,6 +75,9 @@ apt 安装 packages 时避免 自动启动
   https://serverfault.com/questions/861583/how-to-stop-nginx-from-being-automatically-started-on-install
   https://serverfault.com/questions/567474/how-can-i-install-packages-without-starting-their-associated-services
   https://askubuntu.com/questions/74061/install-packages-without-starting-background-processes-and-services
+  https://askubuntu.com/questions/482928/ignore-apt-get-postinstall-scripts-automatically
+
+  方法1: 该方法不一定完整，但在大多数时候应该是可以的
 
       $ sudo vim /usr/sbin/policy-rc.d
         #!/bin/sh
@@ -82,6 +85,28 @@ apt 安装 packages 时避免 自动启动
         EOF
 
       $ sudo chmod a+x /usr/sbin/policy-rc.d
+
+
+
+  方法2:
+
+    ysg@vm01:~$ sudo su -
+    root@vm01:~# dpkg-divert --add --rename --local /sbin/start-stop-daemon
+
+
+    root@vm01:~# echo '
+    #!/bin/sh
+    echo
+    echo "Warning: Fake start-stop-daemon called, doing nothing"' > /sbin/start-stop-daemon
+
+    root@vm01:~# chmod 755 /sbin/start-stop-daemon
+
+       //此时可以执行任意的 package 的安装操作, 如执行 `apt -y install nginx` 等
+
+
+    root@vm01:/home/ysg# chmod 755 "/sbin/start-stop-daemon"
+    root@vm01:/home/ysg# rm /sbin/start-stop-daemon
+    root@vm01:/home/ysg# dpkg-divert --remove --rename /sbin/start-stop-daemon
 
 
 
