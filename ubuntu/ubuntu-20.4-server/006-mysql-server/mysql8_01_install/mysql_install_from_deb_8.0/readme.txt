@@ -209,8 +209,8 @@ ysg@vm01:~$ mysql -u root -p --default-character-set=utf8mb4
     +----------------------+--------------------+
     | Variable_name        | Value              |
     +----------------------+--------------------+
-    | collation_connection | utf8mb4_0900_ai_ci |
-    | collation_database   | utf8mb4_0900_ai_ci |
+    | collation_connection | utf8mb4_0900_ai_ci | <---关于utf8mb4_0900_ai_ci 作用见 https://www.rednn.com/createsite/202004/01209.html
+    | collation_database   | utf8mb4_0900_ai_ci | <--- 最好修改为类似 utf8mb4_unicode_ci或者utf8mb4_general_ci 的排序规则, 见 https://www.rednn.com/createsite/202003/26109.html
     | collation_server     | utf8mb4_0900_ai_ci |
     +----------------------+--------------------+
     3 rows in set (0.01 sec)
@@ -297,6 +297,10 @@ apt 安装 packages 时避免 自动启动
 
 
 
+
+mysql8 比较规则 utf8mb4_0900_ai_ci 的问题:
+  https://www.rednn.com/createsite/202004/01209.html
+  https://www.rednn.com/createsite/202003/26109.html
 
 
 
