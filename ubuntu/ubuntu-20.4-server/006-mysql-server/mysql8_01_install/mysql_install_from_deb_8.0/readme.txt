@@ -80,6 +80,33 @@ ysg@vm01:~$ systemctl is-active mysql.service
 
 此时可以根据需要 通过 `sudo vim /etc/mysql/my.cnf` 等命令 来编辑 my.cnf 使其满足自己的需求
 
+  注: mysql8 默认在 在 Unix and Unix-Like Systems 上读取配置文件的顺序(后读取的具有更高的优先级):
+          https://dev.mysql.com/doc/refman/5.7/en/option-files.html
+
+        On Unix and Unix-like systems, MySQL programs read startup options from the files shown in the following table,
+        in the specified order (files listed first are read first, files read later take precedence).
+
+            Table 4.2 Option Files Read on Unix and Unix-Like Systems
+            ---------------------|---------------------------------------------------------
+            File Name            |  Purpose
+            ---------------------|---------------------------------------------------------
+            /etc/my.cnf          |  Global options
+            ---------------------|---------------------------------------------------------
+            /etc/mysql/my.cnf    |  Global options
+            ---------------------|---------------------------------------------------------
+            SYSCONFDIR/my.cnf    |  Global options
+            ---------------------|---------------------------------------------------------
+            $MYSQL_HOME/my.cnf   |  Server-specific options (server only)
+            ---------------------|---------------------------------------------------------
+            defaults-extra-file  |  The file specified with --defaults-extra-file, if any
+            ---------------------|---------------------------------------------------------
+            ~/.my.cnf            |  User-specific options
+            ---------------------|---------------------------------------------------------
+            ~/.mylogin.cnf       |  User-specific login path options (clients only)
+            ---------------------|---------------------------------------------------------
+
+
+
 
 
 ysg@vm01:~$ sudo systemctl start mysql.service   #启动 mysql 服务
