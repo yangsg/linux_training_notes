@@ -107,6 +107,8 @@ ysg@vm01:~$ sudo apt-get -y install dos2unix
    >        This group of options controls general APT behavior as well as holding the options for all of the tools.
    而 APT::Get::Assume-Yes 正好位于 APT tool group 下.
 
+     https://superuser.com/questions/164553/automatically-answer-yes-when-using-apt-get-install
+
 
 ---------------------------------------------------------------------
 开始学习 ubuntu
