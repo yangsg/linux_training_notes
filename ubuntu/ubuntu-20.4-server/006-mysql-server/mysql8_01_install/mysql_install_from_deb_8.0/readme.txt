@@ -301,6 +301,7 @@ apt 安装 packages 时避免 自动启动
 mysql8 比较规则 utf8mb4_0900_ai_ci 的问题:
   https://www.rednn.com/createsite/202004/01209.html
   https://www.rednn.com/createsite/202003/26109.html
+  https://www.rednn.com/createsite/202003/26108.html
 
 
 
