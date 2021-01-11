@@ -104,9 +104,9 @@ apt 安装 packages 时避免 自动启动
        //此时可以执行任意的 package 的安装操作, 如执行 `apt -y install nginx` 等
 
 
-    root@vm01:/home/ysg# chmod 755 "/sbin/start-stop-daemon"
-    root@vm01:/home/ysg# rm /sbin/start-stop-daemon
-    root@vm01:/home/ysg# dpkg-divert --remove --rename /sbin/start-stop-daemon
+    root@vm01:~# rm /sbin/start-stop-daemon
+    root@vm01:~# dpkg-divert --remove --rename /sbin/start-stop-daemon
+
 
 
 
