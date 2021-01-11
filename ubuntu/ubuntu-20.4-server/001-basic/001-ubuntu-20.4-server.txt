@@ -219,6 +219,12 @@ Notice:
 	$ sudo apt install nginx -s  # -s, --simulate, --just-print, --dry-run, --recon, --no-act  #见 man apt-get
 
 
+
+!!!小心: 在 ubuntu 上使用类似 apt 这样的工具安装 daemon service 的 package 后该 service 会立刻被自动启动,
+         这一特性对于 想自定义配置 并管理 service 的 start/stop 等操作的需求 非常不友好(注: centos 就不需要操心这种事情),
+         其可能的解决办法见: https://github.com/yangsg/linux_training_notes/tree/master/ubuntu/ubuntu-20.4-server/006-mysql-server/mysql8_01_install/mysql_install_from_deb_8.0
+
+
 :) 列出 package 的一些信息
   $ apt-cache showpkg nginx #列出 package 的一些信息, 如 package 的可用版本, 反向依赖(reverse dependencies)和正向依赖(forward dependencies)
 
