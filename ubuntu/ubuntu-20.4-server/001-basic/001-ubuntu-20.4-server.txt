@@ -31,7 +31,7 @@ ysg@vm01:~$ uname -r
 ubuntu 20.04(focal) 配置如下
 
   1) 编辑仓库设置文件：
-  ysg@vm01:~$ sudo vim /etc/apt/sources.list
+  ysg@vm01:~$ sudo vim /etc/apt/sources.list   #关于 sources.list 内容格式说明,见 `man sources.list`
 
       在vim 中执行的替换命令 :%s/cn.archive.ubuntu.com/mirrors.aliyun.com/g
 
