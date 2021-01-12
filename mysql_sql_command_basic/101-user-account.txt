@@ -91,6 +91,11 @@ mysql> DROP USER 'jeffrey'@'localhost';
 
 https://dev.mysql.com/doc/refman/5.7/en/grant.html
 
+        -------------------------------------
+        补充: 查看数据库所支持的 privileges 的方式:
+              MariaDB [mysql]> help %priv%
+              MariaDB [mysql]> show privileges;
+        -------------------------------------
 mysql> help grant;
 
 // 授予 db1 的 所有 object的 所有权限
