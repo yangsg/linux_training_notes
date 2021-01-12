@@ -18,7 +18,6 @@ ysg@vm01:~$ dpkg -l libncurses5
 
 
 ysg@vm01:~$ sudo mkdir /app
-ysg@vm01:~$ sudo groupadd mysql
 ysg@vm01:~$ sudo useradd -r -s /bin/false mysql
 
 ysg@vm01:~$ sudo mkdir -p /mydata/data
