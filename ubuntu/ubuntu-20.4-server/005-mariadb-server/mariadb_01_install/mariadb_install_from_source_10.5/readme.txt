@@ -45,6 +45,7 @@ ysg@vm01:~/download/mariadb-10.5.8$ sudo chown -R mysql:mysql /mydata/data/
 
 ysg@vm01:~/download/mariadb-10.5.8$ mkdir build-mariadb  #创建外部构建目录
 ysg@vm01:~/download/mariadb-10.5.8$ cd build-mariadb/
+ysg@vm01:~/download/mariadb-10.5.8/build-mariadb$ sudo apt-get update
 ysg@vm01:~/download/mariadb-10.5.8/build-mariadb$ sudo apt-get install pkg-config  #安装 pkg-config, 否则执行 cmake .. 时有可能提示找不到 PkgConfig
 
 
@@ -442,7 +443,8 @@ ysg@vm01:~$ mysql -u root -p --default-character-set=utf8mb4
     +----------------------+--------------------+
     | Variable_name        | Value              |
     +----------------------+--------------------+
-    | collation_connection | utf8mb4_general_ci |
+    | collation_connection | utf8mb4_unicode_ci |<----注: 如果不设置 character-set-client-handshake = FALSE, 则 collation_connection 可能就为 utf8mb4_general_ci
+
     | collation_database   | utf8mb4_unicode_ci |
     | collation_server     | utf8mb4_unicode_ci |
     +----------------------+--------------------+
