@@ -81,6 +81,7 @@ ysg@vm01:/app/mysql$ sudo vim /etc/my.cnf
 
     [mysqld]
     # 设置 mysql 字符集为 utf8mb4
+    character-set-client-handshake = FALSE  # 忽略 client 端的 character set 设置
     character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
     collation-server = utf8mb4_unicode_ci
 
@@ -91,6 +92,8 @@ ysg@vm01:/app/mysql$ sudo vim /etc/my.cnf
     socket=/tmp/mysql.sock
 
     skip-name-resolve=ON
+
+
 
 
 ysg@vm01:/app/mysql$ sudo ./scripts/mysql_install_db --defaults-file=/etc/my.cnf --user=mysql
@@ -359,7 +362,7 @@ ysg@vm01:~$ mysql -u root -p --default-character-set=utf8mb4
     +----------------------+--------------------+
     | Variable_name        | Value              |
     +----------------------+--------------------+
-    | collation_connection | utf8mb4_general_ci |
+    | collation_connection | utf8mb4_unicode_ci |
     | collation_database   | utf8mb4_unicode_ci |
     | collation_server     | utf8mb4_unicode_ci |
     +----------------------+--------------------+
