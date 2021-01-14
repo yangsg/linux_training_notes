@@ -362,7 +362,7 @@ ysg@vm01:~$ mysql -u root -p --default-character-set=utf8mb4
     +----------------------+--------------------+
     | Variable_name        | Value              |
     +----------------------+--------------------+
-    | collation_connection | utf8mb4_unicode_ci |
+    | collation_connection | utf8mb4_unicode_ci | <----注: 如果不设置 character-set-client-handshake = FALSE, 则 collation_connection 可能就为 utf8mb4_general_ci
     | collation_database   | utf8mb4_unicode_ci |
     | collation_server     | utf8mb4_unicode_ci |
     +----------------------+--------------------+
