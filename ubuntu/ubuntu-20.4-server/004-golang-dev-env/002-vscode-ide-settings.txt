@@ -1,0 +1,23 @@
+
+
+$ vim .vscode/settings.json   #见 https://code.visualstudio.com/docs/getstarted/settings
+{
+  "editor.tabSize": 2,
+  "files.eol": "\n",
+  "editor.fontSize": 20,
+  "editor.dragAndDrop": false,
+  "files.encoding": "utf8",
+  "editor.fontFamily": "'Courier New', Consolas, monospace",
+  "workbench.colorTheme": "Monokai"
+}
+
+
+安装的扩展插件(extensions):
+  Name: Go
+  Id: golang.go
+
+
+
+
+
+
