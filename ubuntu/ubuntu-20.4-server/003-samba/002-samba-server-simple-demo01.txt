@@ -45,6 +45,26 @@ total 8
 drwxr-xr-x 2 ysg ysg 4096 Jan  4 23:15 adir
 -rwxr--r-- 1 ysg ysg   12 Jan  4 23:13 a.txt
 
+===================================
+ysg@vm01:~$ sudo vim /etc/samba/smb.conf
+
+[data]
+path = /data
+valid users = @editors
+browsable = yes
+writable = yes
+read only = no
+
+# man smb.conf
+# Default: create mask = 0744
+create mask = 0664
+# Default: directory mask = 0755
+directory mask = 0755
+
+
+ysg@vm01:~$ sudo systemctl restart smbd
+
+
 
 
 参考资料:
