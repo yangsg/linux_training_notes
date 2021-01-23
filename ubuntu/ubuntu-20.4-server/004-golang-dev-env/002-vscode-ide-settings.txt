@@ -17,6 +17,22 @@ $ vim .vscode/settings.json   #见 https://code.visualstudio.com/docs/getstarted
   Id: golang.go
 
 
+--------------------------------------------------
+vscode 中安装 vim 插件
+
+	https://github.com/VSCodeVim/Vim
+
+	vscodevim.vim
+
+
+// 默认禁用该插件的配置, 之后可以使用命令 toggleVim 来切换
+"vim.disableExtension": true
+
+
+
+
+
+
 
 
 
