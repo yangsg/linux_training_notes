@@ -28,6 +28,26 @@ yangsg@vm:~$ vim /etc/netplan/01-network-manager-all.yaml
 
 yangsg@vm:~$ sudo netplan apply
 
+---------------------------------------------------------------------------------------------------
+ubuntu20.04|18.04 中 将 gnome 切换成经典模式
+
+	https://websiteforstudents.com/how-to-get-gnome-classic-in-ubuntu-20-04/
+
+
+安装 GNOME shell extension
+
+$ sudo apt update
+$ sudo apt install gnome-shell-extensions
+
+
+
+
+Ctrl + Alt + T : 打开 terminal 的快捷键
+
+
+
+
+
 
 
 
