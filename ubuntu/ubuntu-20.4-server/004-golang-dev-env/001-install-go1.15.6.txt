@@ -97,7 +97,9 @@ $ go doc -all builtin
 $ go doc builtin.append
 $ go doc builtin.int64
 $ go doc sort.Interface
+$ go doc -src -all net/http | vim -R -
 
+  https://stackoverflow.com/questions/230718/redirection-and-vim
 
 
 
