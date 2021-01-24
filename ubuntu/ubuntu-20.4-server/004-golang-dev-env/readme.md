@@ -12,6 +12,12 @@
 
 
 
+#### 一些网上示例 或 教程
+- [Example of Golang CRUD using MySQL from scratch](https://www.golangprograms.com/example-of-golang-crud-using-mysql-from-scratch.html)
+- [A Guide On SQL Database Transactions In Go](https://www.sohamkamani.com/golang/sql-transactions/)
+
+
+
 
 
 
