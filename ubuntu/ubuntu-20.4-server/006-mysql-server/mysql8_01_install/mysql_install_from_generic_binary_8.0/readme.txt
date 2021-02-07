@@ -14,12 +14,8 @@ ysg@vm01:~$ sudo apt update
 ysg@vm01:~$ apt search libaio
 ysg@vm01:~$ sudo apt install libaio1
 
-
-
-ysg@vm01:~$ cd download/
-ysg@vm01:~/download$ tree
-	.
-	└── mysql-8.0.23-linux-glibc2.12-x86_64.tar.xz
+// https://stackoverflow.com/questions/17005654/error-while-loading-shared-libraries-libncurses-so-5
+ysg@vm01:~$ sudo apt install libncurses5
 
 
 ysg@vm01:~$ sudo mkdir /app
@@ -56,14 +52,48 @@ ysg@vm01:/app/mysql$ source /etc/profile
 
 
 
-// 初始化数据库
-ysg@vm01:/app/mysql$ sudo bin/mysqld --initialize --user=mysql --basedir=/app/mysql/  --datadir=/mydata/data    #注意记录下该命令生成的临时密码
-2021-01-24T12:23:06.167686Z 0 [System] [MY-013169] [Server] /app/mysql-8.0.23-linux-glibc2.12-x86_64/bin/mysqld (mysqld 8.0.23) initializing of server in progress as process 5339
-2021-01-24T12:23:06.181670Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
-2021-01-24T12:23:07.082029Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
-2021-01-24T12:23:09.200591Z 6 [Note] [MY-010454] [Server] A temporary password is generated for root@localhost: w?wtfdd%d5)Z  #<<<<<<<记下临时密码
+// 初始化数据库(即初始化 data directory)
+ 参考: https://dev.mysql.com/doc/refman/8.0/en/data-directory-initialization.html
+
+  //注: 除了使用 命令类似 `sudo bin/mysqld --initialize --user=mysql --basedir=/app/mysql/  --datadir=/mydata/data` 这样的命令
+        来初始化 data 目录，也可以指定 option file 来实现初始化选项的指定.
+ysg@vm01:/app/mysql$ sudo vim /etc/my.cnf
+
+	[client]  # 注: [client] group 是 所有的 mysql client 工具都会读取的配置文件
+	loose-default-character-set = utf8mb4   # 加 loose- 前缀是为解决 [mysqlbinlog] group 不识别该 选项的 问题
+
+	[mysql]
+	default-character-set = utf8mb4
+
+	[mysqlbinlog]
+	set_charset=utf8mb4
+
+	[mysqld]
+	# 设置 mysql 字符集为 utf8mb4
+	character-set-client-handshake = FALSE  # 忽略 client 端的 character set 设置
+	character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
+	collation-server = utf8mb4_unicode_ci
+
+	basedir=/app/mysql
+	datadir=/mydata/data
+	port=3306
+	server_id=133
+	socket=/tmp/mysql.sock
+
+	skip-name-resolve=ON
 
 
+
+
+ysg@vm01:/app/mysql$ sudo bin/mysqld --defaults-file=/etc/my.cnf --initialize --user=mysql  #注意记录下该命令生成的临时密码
+2021-02-07T14:07:16.790369Z 0 [System] [MY-013169] [Server] /app/mysql-8.0.23-linux-glibc2.12-x86_64/bin/mysqld (mysqld 8.0.23) initializing of server in progress as process 25129
+2021-02-07T14:07:16.899110Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2021-02-07T14:07:19.567621Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2021-02-07T14:07:21.667113Z 6 [Note] [MY-010454] [Server] A temporary password is generated for root@localhost: ut:5TnMv5tX3   #<<<<<<<记下临时密码
+
+
+
+// 设置开机自启
 ysg@vm01:/app/mysql$ sudo cp /app/mysql/support-files/mysql.server  /etc/init.d/mysqld
 ysg@vm01:/app/mysql$ sudo chmod a+x /etc/init.d/mysqld
 
