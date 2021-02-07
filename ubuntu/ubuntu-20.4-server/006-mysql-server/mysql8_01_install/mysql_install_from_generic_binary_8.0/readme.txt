@@ -17,6 +17,9 @@ ysg@vm01:~$ sudo apt install libaio1
 // https://stackoverflow.com/questions/17005654/error-while-loading-shared-libraries-libncurses-so-5
 ysg@vm01:~$ sudo apt install libncurses5
 
+ 注: 如果不安装 libncurses5, 后面步骤中使用 mysql_secure_installation 做安全初始化设置时可能包如下错误:
+			mysql: error while loading shared libraries: libtinfo.so.5: cannot open shared object file: No such file or directory
+
 
 ysg@vm01:~$ sudo mkdir /app
 ysg@vm01:~$ sudo useradd -r -s /bin/false mysql
@@ -72,7 +75,7 @@ ysg@vm01:/app/mysql$ sudo vim /etc/my.cnf
 	# 设置 mysql 字符集为 utf8mb4
 	character-set-client-handshake = FALSE  # 忽略 client 端的 character set 设置
 	character-set-server = utf8mb4    # 设置了 character-set-server 的 同时也应该设置 collation-server
-	collation-server = utf8mb4_unicode_ci
+	collation-server = utf8mb4_unicode_ci   #注: mysql8 中,如不指定 collation-server,则其采用默认值为 utf8mb4_0900_ai_ci
 
 	basedir=/app/mysql
 	datadir=/mydata/data
@@ -86,10 +89,11 @@ ysg@vm01:/app/mysql$ sudo vim /etc/my.cnf
 
 
 ysg@vm01:/app/mysql$ sudo bin/mysqld --defaults-file=/etc/my.cnf --initialize --user=mysql  #注意记录下该命令生成的临时密码
-2021-02-07T14:07:16.790369Z 0 [System] [MY-013169] [Server] /app/mysql-8.0.23-linux-glibc2.12-x86_64/bin/mysqld (mysqld 8.0.23) initializing of server in progress as process 25129
-2021-02-07T14:07:16.899110Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
-2021-02-07T14:07:19.567621Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
-2021-02-07T14:07:21.667113Z 6 [Note] [MY-010454] [Server] A temporary password is generated for root@localhost: ut:5TnMv5tX3   #<<<<<<<记下临时密码
+	2021-02-07T16:06:40.883195Z 0 [System] [MY-013169] [Server] /app/mysql-8.0.23-linux-glibc2.12-x86_64/bin/mysqld (mysqld 8.0.23) initializing of server in progress as process 3005
+	2021-02-07T16:06:40.925790Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+	2021-02-07T16:06:43.061839Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+	2021-02-07T16:06:44.971051Z 6 [Note] [MY-010454] [Server] A temporary password is generated for root@localhost: Ts-#GoX+=1Jc   #<<<<<<<记下临时密码
+
 
 
 
@@ -122,21 +126,21 @@ ysg@vm01:~$ sudo /etc/init.d/mysqld start  #启动 mysqld 服务
 ysg@vm01:~$ systemctl status mysqld  #使用命令 `systemctl status mysqld` 查看 mysqld 服务状态
 	● mysqld.service - LSB: start and stop MySQL
 			 Loaded: loaded (/etc/init.d/mysqld; generated)
-			 Active: active (running) since Sun 2021-01-24 12:30:36 UTC; 42s ago
+			 Active: active (running) since Mon 2021-02-08 00:09:48 CST; 20s ago
 				 Docs: man:systemd-sysv-generator(8)
-			Process: 5619 ExecStart=/etc/init.d/mysqld start (code=exited, status=0/SUCCESS)
+			Process: 3204 ExecStart=/etc/init.d/mysqld start (code=exited, status=0/SUCCESS)
 				Tasks: 39 (limit: 1041)
-			 Memory: 339.1M
+			 Memory: 359.1M
 			 CGroup: /system.slice/mysqld.service
-							 ├─5627 /bin/sh /app/mysql/bin/mysqld_safe --datadir=/mydata/data --pid-file=/mydata/data/vm01.pid
-							 └─5711 /app/mysql/bin/mysqld --basedir=/app/mysql --datadir=/mydata/data --plugin-dir=/app/mysql/lib/plugin --user=mysql --log-error=vm01.err --pid-file=/mydata/data/vm01.pid
+							 ├─3226 /bin/sh /app/mysql/bin/mysqld_safe --datadir=/mydata/data --pid-file=/mydata/data/vm01.pid
+							 └─3427 /app/mysql/bin/mysqld --basedir=/app/mysql --datadir=/mydata/data --plugin-dir=/app/mysql/lib/plugin --user=mysql --log-error=vm01.err --pid-file=/mydata/data/vm01.pid --socket=/tmp/mysql.sock --port=3306
 
-	Jan 24 12:30:34 vm01 systemd[1]: Starting LSB: start and stop MySQL...
-	Jan 24 12:30:34 vm01 mysqld[5619]: Starting MySQL
-	Jan 24 12:30:34 vm01 mysqld[5619]: .
-	Jan 24 12:30:34 vm01 mysqld[5627]: Logging to '/mydata/data/vm01.err'.
-	Jan 24 12:30:36 vm01 mysqld[5619]: . *
-	Jan 24 12:30:36 vm01 systemd[1]: Started LSB: start and stop MySQL.
+	Feb 08 00:09:46 vm01 systemd[1]: Starting LSB: start and stop MySQL...
+	Feb 08 00:09:46 vm01 mysqld[3204]: Starting MySQL
+	Feb 08 00:09:46 vm01 mysqld[3204]: .
+	Feb 08 00:09:46 vm01 mysqld[3226]: Logging to '/mydata/data/vm01.err'.
+	Feb 08 00:09:48 vm01 mysqld[3204]: . *
+	Feb 08 00:09:48 vm01 systemd[1]: Started LSB: start and stop MySQL.
 
 
 
@@ -181,24 +185,90 @@ ysg@vm01:~$ sudo ss -anptu | grep 3306
 	tcp    LISTEN  0       151                      *:3306                  *:*      users:(("mysqld",pid=5711,fd=33))
 
 
-
+// 安全初始化设置
 ysg@vm01:/app/mysql$ sudo ./bin/mysql_secure_installation --basedir=/app/mysql/
-mysql_secure_installation: [ERROR] unknown variable 'basedir=/app/mysql/'.
+	mysql_secure_installation: [Warning] unknown variable 'loose-default-character-set=utf8mb4'.
+	mysql_secure_installation: [ERROR] unknown variable 'default-character-set=utf8mb4'.
 
-Securing the MySQL server deployment.
+	Securing the MySQL server deployment.
 
-Enter password for user root:
+	Enter password for user root:  <--- 此处键入之前步骤中记录下的临时密码, 如此例中为 Ts-#GoX+=1Jc
+
+	The existing password for the user account root has expired. Please set a new password.
+
+	New password:  <----键入新密码
+
+	Re-enter new password: <----再次键入一遍新密码
+
+	VALIDATE PASSWORD COMPONENT can be used to test passwords
+	and improve security. It checks the strength of password
+	and allows the users to set only those passwords which are
+	secure enough. Would you like to setup VALIDATE PASSWORD component?
+
+	Press y|Y for Yes, any other key for No: n <----直接键入n, 即回答 no
+	Using existing password for root.
+	Change the password for root ? ((Press y|Y for Yes, any other key for No) : n <----直接键入n, 即回答 no
 
 
 
-// https://stackoverflow.com/questions/17005654/error-while-loading-shared-libraries-libncurses-so-5
-ysg@vm01:/app/mysql$ sudo apt install libncurses5
+
+	Remove anonymous users? (Press y|Y for Yes, any other key for No) : y  <--- 删除匿名账号
+	Success.
+
+	Disallow root login remotely? (Press y|Y for Yes, any other key for No) : y <----禁止 root 远程登录
+	Success.
+
+	Remove test database and access to it? (Press y|Y for Yes, any other key for No) : y <---删除 test 示例数据库
+	 - Dropping test database...
+	Success.
+
+	Reload privilege tables now? (Press y|Y for Yes, any other key for No) : y  <----重新加载授权表
+	Success.
+
+	All done!
 
 
-	mysql: error while loading shared libraries: libtinfo.so.5: cannot open shared object file: No such file or directory
 
 
 
+ysg@vm01:~$ mysql -u root -p
+	Enter password:
+	Welcome to the MySQL monitor.  Commands end with ; or \g.
+	Your MySQL connection id is 11
+	Server version: 8.0.23 MySQL Community Server - GPL
+
+	Copyright (c) 2000, 2021, Oracle and/or its affiliates.
+
+	Oracle is a registered trademark of Oracle Corporation and/or its
+	affiliates. Other names may be trademarks of their respective
+	owners.
+
+	Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+	mysql> status
+	--------------
+	mysql  Ver 8.0.23 for Linux on x86_64 (MySQL Community Server - GPL)
+
+	Connection id:          11
+	Current database:
+	Current user:           root@localhost
+	SSL:                    Not in use
+	Current pager:          stdout
+	Using outfile:          ''
+	Using delimiter:        ;
+	Server version:         8.0.23 MySQL Community Server - GPL
+	Protocol version:       10
+	Connection:             Localhost via UNIX socket
+	Server characterset:    utf8mb4
+	Db     characterset:    utf8mb4
+	Client characterset:    utf8mb4
+	Conn.  characterset:    utf8mb4
+	UNIX socket:            /tmp/mysql.sock
+	Binary data as:         Hexadecimal
+	Uptime:                 15 min 19 sec
+
+	Threads: 2  Questions: 13  Slow queries: 0  Opens: 133  Flush tables: 3  Open tables: 49  Queries per second avg: 0.014
+	--------------
 
 	mysql> SELECT User, Host, plugin FROM mysql.user;
 	+------------------+-----------+-----------------------+
@@ -209,7 +279,7 @@ ysg@vm01:/app/mysql$ sudo apt install libncurses5
 	| mysql.sys        | localhost | caching_sha2_password |
 	| root             | localhost | caching_sha2_password |
 	+------------------+-----------+-----------------------+
-	4 rows in set (0.00 sec)
+	4 rows in set (0.11 sec)
 
 	mysql> SHOW VARIABLES LIKE 'character%';
 	+--------------------------+----------------------------------------------------------+
@@ -226,20 +296,21 @@ ysg@vm01:/app/mysql$ sudo apt install libncurses5
 	+--------------------------+----------------------------------------------------------+
 	8 rows in set (0.03 sec)
 
+
 	mysql> SHOW VARIABLES LIKE 'collation%';
 	+----------------------+--------------------+
 	| Variable_name        | Value              |
 	+----------------------+--------------------+
-	| collation_connection | utf8mb4_0900_ai_ci |
-	| collation_database   | utf8mb4_0900_ai_ci |
-	| collation_server     | utf8mb4_0900_ai_ci |
+	| collation_connection | utf8mb4_unicode_ci | <--注: 如果不在 option file 中做 utf8mb4_unicode_ci 的相应配置，则 mysql8 默认采用 utf8mb4_0900_ai_ci
+	| collation_database   | utf8mb4_unicode_ci |
+	| collation_server     | utf8mb4_unicode_ci |
 	+----------------------+--------------------+
 	3 rows in set (0.00 sec)
 
 
+	mysql> quit
+	Bye
 
-
-//TODO:
 
 
 
