@@ -105,6 +105,33 @@ $ ssh-copy-id ysg@192.168.175.133   #将本地的公钥添加到 remote server �
 
 
 
+----------------------------------------------------------------------------------------------------
+
+快捷键:
+
+	https://code.visualstudio.com/shortcuts/keyboard-shortcuts-windows.pdf
+
+
+Rich languages editing
+
+		Ctrl+Space            Trigger suggestion
+		Ctrl+Shift+Space      Trigger parameter hints  <----显示参数信息
+		Shift+Alt+F           Format document
+		Ctrl+K Ctrl+F         Format selection
+		F12                   Go to Definition
+		Alt+F12               Peek Definition
+		Ctrl+K F12            Open Definition to the side
+		Ctrl+.                Quick Fix
+		Shift+F12             Show References
+		F2                    Rename Symbol
+		Ctrl+K Ctrl+X         Trim trailing whitespace
+		Ctrl+K M              Change file language
+
+
+----------------------------------------------------------------------------------------------------
+
+
+
 
 
 
