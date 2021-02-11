@@ -134,6 +134,7 @@ vscode 中 go 的 debug:
 
 	https://www.cnblogs.com/ljhoracle/p/11047083.html
 	https://github.com/golang/vscode-go/blob/master/docs/debugging.md
+	https://vscode-debug-specs.github.io/go/
 
   vscode 中的一些 debug 相关的通用概念, 基本适用于各种语言:
 		https://code.visualstudio.com/Docs/editor/debugging
