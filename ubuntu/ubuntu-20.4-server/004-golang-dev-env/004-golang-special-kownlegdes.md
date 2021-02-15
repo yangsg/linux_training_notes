@@ -75,6 +75,29 @@ func f1() {
 ```
 
 
+```go
+// 类型别名
+// https://yourbasic.org/golang/type-alias/
+// https://golang.google.cn/ref/spec#Type_declarations
+
+
+
+// /app/go/src/builtin/builtin.go
+type byte = uint8
+type rune = int32
+
+
+```
+
+
+[Anonymous Structure and Field in Golang](https://www.geeksforgeeks.org/anonymous-structure-and-field-in-golang/#:~:text=In%20Go%20language%2C%20you%20are%20allowed%20to%20create,%3A%3D%20struct%20%7B%20%2F%2F%20fields%20%7D%20%7B%2F%2F%20Field_values%7D)
+```go
+// 匿名结构体
+var person struct {
+	name string
+	age  int8
+}
+```
 
 
 
