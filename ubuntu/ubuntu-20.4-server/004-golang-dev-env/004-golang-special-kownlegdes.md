@@ -9,3 +9,45 @@ Go 语言中函数的 return 不是原子操作，在底层是分为两步来执
 */
 
 ```
+
+
+```go
+func f1() {
+	x := 100
+
+	if x := 1; true {
+		fmt.Println(x) //output: 1
+		x := 4
+		fmt.Println(x) //output: 4
+	}
+
+	fmt.Println(x) //output: 100
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
