@@ -16,7 +16,8 @@
 	https://www.liwenzhou.com/posts/Go/go_menu/
 
 
-- Golang：数据库ORM框架GoMybatis详解
+- Golang：数据库ORM框架GoMybatis详解 (废弃, 因为 GoMyBatis 好像不能像 java
+		的 mybatis 那样支持 多表查询, 所以可能还是选择其他 框架好一些)
   https://studygolang.com/articles/22386?utm_source=tuicool&utm_medium=referral
 	https://pkg.go.dev/github.com/zhuxiujia/GoMybatis
 
