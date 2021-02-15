@@ -7,6 +7,8 @@
 - [goproxy.cn](https://goproxy.cn/)
 - [gin-gonic/gin](https://github.com/gin-gonic/gin)
 - [zhuxiujia/GoMybatis](https://github.com/zhuxiujia/GoMybatis)
+- [GoMybatis](https://pkg.go.dev/github.com/zhuxiujia/GoMybatis)
+
 
 
 
