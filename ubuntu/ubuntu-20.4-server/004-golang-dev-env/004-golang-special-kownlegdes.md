@@ -1,3 +1,22 @@
+
+
+一些网上资料:
+
+- go语言开发规范建议以及开发过程中各种各样的坑
+	https://www.toutiao.com/a6921504074407985671/
+
+- 20 Best Golang Books You Should Read
+	https://golangexample.com/20-golang-books/
+
+- 李文周的博客
+	https://www.liwenzhou.com/
+	https://www.liwenzhou.com/posts/Go/go_menu/
+
+
+
+
+
+
 ```go
 /*
 https://www.liwenzhou.com/
