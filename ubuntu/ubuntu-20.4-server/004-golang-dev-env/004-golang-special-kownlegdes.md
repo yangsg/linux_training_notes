@@ -2,6 +2,9 @@
 
 一些网上资料:
 
+- Go by Example
+	https://gobyexample.com/
+
 - go语言开发规范建议以及开发过程中各种各样的坑
 	https://www.toutiao.com/a6921504074407985671/
 
@@ -11,6 +14,15 @@
 - 李文周的博客
 	https://www.liwenzhou.com/
 	https://www.liwenzhou.com/posts/Go/go_menu/
+
+
+- Golang：数据库ORM框架GoMybatis详解
+  https://studygolang.com/articles/22386?utm_source=tuicool&utm_medium=referral
+	https://pkg.go.dev/github.com/zhuxiujia/GoMybatis
+
+-	学些 GoMybatis 之前还是应该先学习 java 的 mybatis
+	https://mybatis.org/mybatis-3/
+
 
 
 
