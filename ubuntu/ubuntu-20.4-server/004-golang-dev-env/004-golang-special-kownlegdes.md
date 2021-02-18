@@ -113,6 +113,36 @@ var person struct {
 ```
 
 
+- 关于 time 的 Format 和 Parse 方法/函数 的一个小 demo
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func main() {
+	now := time.Now()
+	fmt.Printf("fmt.Printf now: %s\n", now)
+	//output: fmt.Printf now: 2021-02-18 14:35:29.09133989 +0800 CST m=+0.000043098
+
+	var nowStr string
+	nowStr = now.Format("2006-01-02 15:04:05.999999999 -0700 MST")
+	fmt.Printf("format nowStr01：%s\n", nowStr)
+	//output: format nowStr01：2021-02-18 14:35:29.09133989 +0800 CST
+
+	nowStr = now.Format("2006-01-02 15:04:05.999999999 -0700")
+	fmt.Printf("format nowStr02：%s\n", nowStr)
+	//output: format nowStr02：2021-02-18 14:35:29.09133989 +0800
+
+	time01, _ := time.Parse("2006-01-02 15:04:05.999999999 -0700", "2021-02-18 14:26:43.944726887 +0800")
+	fmt.Printf("parsed time01 is %v\n", time01)
+	//output: parsed time01 is 2021-02-18 14:26:43.944726887 +0800 CST
+}
+
+```
+
 
 
 
