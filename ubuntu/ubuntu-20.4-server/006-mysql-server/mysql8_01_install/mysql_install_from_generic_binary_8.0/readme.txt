@@ -62,14 +62,15 @@ ysg@vm01:/app/mysql$ source /etc/profile
         来初始化 data 目录，也可以指定 option file 来实现初始化选项的指定.
 ysg@vm01:/app/mysql$ sudo vim /etc/my.cnf
 
+  #注: 发现设置了[client], [mysql] 中的  default-character-set 后无法在 mysql 客户端工具中键入中文字符,所以这里将其注释掉, 同时把 [mysqlbinlog] 中的也注释掉
 	[client]  # 注: [client] group 是 所有的 mysql client 工具都会读取的配置文件
-	loose-default-character-set = utf8mb4   # 加 loose- 前缀是为解决 [mysqlbinlog] group 不识别该 选项的 问题
+	#loose-default-character-set = utf8mb4   # 加 loose- 前缀是为解决 [mysqlbinlog] group 不识别该 选项的 问题
 
 	[mysql]
-	default-character-set = utf8mb4
+	#default-character-set = utf8mb4
 
 	[mysqlbinlog]
-	set_charset=utf8mb4
+	#set_charset=utf8mb4
 
 	[mysqld]
 	# 设置 mysql 字符集为 utf8mb4
