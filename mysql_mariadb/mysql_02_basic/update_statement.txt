@@ -1,0 +1,28 @@
+
+
+
+https://dev.mysql.com/doc/refman/8.0/en/update.html
+https://stackoverflow.com/questions/45494/mysql-error-1093-cant-specify-target-table-for-update-in-from-clause
+
+
+You cannot update a table and select directly from the same table in a subquery.
+
+mysql> UPDATE `user` SET `age`=(SELECT `age` FROM `user` WHERE id = 8) WHERE `id` = 9;  # error: 错误, 此处子句中不能引用相同的表
+ERROR 1093 (HY000): You can't specify target table 'user' for update in FROM clause
+
+// 其中一种解决办法: 使用 update 的多表语法:
+mysql> update user as dst, (select age from user where id = 8) as src set dst.age = src.age where dst.id = 9;
+
+// 另一种解决办法, 在 update 中使用 join:
+mysql> update user as l inner join user as r on l.id=9 and r.id=8 set l.age = r.age;
+
+
+
+
+
+
+
+
+
+
+
