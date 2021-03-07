@@ -143,6 +143,10 @@ func main() {
 
 ```
 
+- 关于 mysql 的 INSERT ... ON DUPLICATE KEY UPDATE 语句介绍(注: 类似 gorm 这种 orm 框架会利用到)
+		> - [来自mysql8官方文档](https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html)
+    > - [来自javatpoint](https://www.javatpoint.com/mysql-insert-on-duplicate-key-update#:~:text=The%20Insert%20on%20Duplicate%20Key%20Update%20statement%20is,column%2C%20then%20updation%20of%20the%20existing%20row%20occurs.)
+
 
 
 
