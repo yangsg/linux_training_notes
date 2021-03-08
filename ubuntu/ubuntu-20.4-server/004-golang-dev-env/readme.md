@@ -28,6 +28,12 @@
 
 
 
+#### 开发中一些工具的使用技巧:
+
+- git-fork 工具将 beyond compare 设置为 外部比较工具:
+    > [File] -> [Preferences...] -> 选 [Integration] tab, 然后在 External Diff Tool 部分包含的 'Diff Tool' 下拉框中选中 BeyondCompare, Diff Tool Path 填入 Beyond Compare 可执行程序路径即可.
+
+
 
 
 
