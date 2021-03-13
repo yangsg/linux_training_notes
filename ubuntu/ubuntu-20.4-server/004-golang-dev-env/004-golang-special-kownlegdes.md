@@ -30,7 +30,8 @@
 
 	MyBatis FreeMarker: http://mybatis.org/freemarker-scripting/#
 	sagacity-sqltoy: https://github.com/sagframe/sagacity-sqltoy
-									 https://github.com/sagframe
+                   https://github.com/sagframe
+                   https://gitee.com/sagacity/sagacity-sqltoy
 
 
 
