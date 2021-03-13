@@ -25,6 +25,12 @@
 	https://mybatis.org/mybatis-3/
 
 
+- 一些 java 中 的数据库使用方式:
+	https://zhuanlan.zhihu.com/p/263043522
+
+	MyBatis FreeMarker: http://mybatis.org/freemarker-scripting/#
+	sagacity-sqltoy: https://github.com/sagframe/sagacity-sqltoy
+									 https://github.com/sagframe
 
 
 
