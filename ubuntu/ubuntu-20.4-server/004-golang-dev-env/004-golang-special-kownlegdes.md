@@ -168,6 +168,7 @@ func main() {
 更新指定用户       POST               /put/users/:id
 更新指定用户某部分 POST               /patch/users/:id/state
 获取用户列表       GET                /get/users
+获取指定用户       GET                /get/users/:id
 ```
 
 
