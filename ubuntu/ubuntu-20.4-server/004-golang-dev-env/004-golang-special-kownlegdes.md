@@ -172,6 +172,13 @@ func main() {
 
 
 
+##### MySQL Workbench 中对 database 的 逆向工程(Reverse Engineering)
+	- https://dataedo.com/kb/tools/mysql-workbench/create-database-diagram
+	- https://dataedo.com/kb/tools/mysql-workbench/how-to-reverse-engineer-database
+
+
+
+
 
 
 
