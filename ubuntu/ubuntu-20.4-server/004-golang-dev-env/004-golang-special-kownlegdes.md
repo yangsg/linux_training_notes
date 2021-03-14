@@ -166,6 +166,7 @@ func main() {
 新增用户           POST               /post/users
 删除指定用户       POST               /delete/users/:id
 更新指定用户       POST               /put/users/:id
+更新指定用户某部分 POST               /patch/users/:id/state
 获取用户列表       GET                /get/users
 ```
 
