@@ -156,7 +156,18 @@ func main() {
 
 
 
-
+###### 注: 关于实际中对 Restful Api 的处理：
+现实中完全遵守 Restful Api 规范可能有点困难, 因为偶尔会引起某些问题(如某些浏览器 bug, 防火墙设置等)
+或 使某些处理复杂化, 所以作为妥协，可能还是最好仅使用 GET 和  POST 两种方法, 不过也许
+可以借用 Restful Api 的一些想法，将某些 Api 定义成类似如下这种方式:
+```text
+功能              HTTP方法            路径
+-------------------------------------------------------
+新增用户           POST               /post/users
+删除指定用户       POST               /delete/users/:id
+更新指定用户       POST               /put/users/:id
+获取用户列表       GET                /get/users
+```
 
 
 
