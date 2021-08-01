@@ -191,6 +191,11 @@ Gin: go 的一个 web 框架
 
 
 -----------goland 补充开始-----------------------------------------------------------------------------------------
+注: 远程开发中, 如果觉得 goland 远程调试稍微有点麻烦，
+    则也许可以考虑使用 goland 来编码(因 goland 一些编码的支持功能确实好用, 且与其他jetbrains的产品的使用习惯保持一致),
+		然后使用 vscode 来做远程 debug(因为 debug 方便).
+
+
 补充:
 goland 远程调试 go app 的方式(如 windows 上的 goland ide 与远程调试 linux 上的 go app 进程, 其借助的是 delve 这个 remote debugger)
 
