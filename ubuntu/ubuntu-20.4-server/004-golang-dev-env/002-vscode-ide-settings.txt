@@ -112,6 +112,9 @@ $ ssh-copy-id ysg@192.168.175.133   #将本地的公钥添加到 remote server �
 	https://code.visualstudio.com/shortcuts/keyboard-shortcuts-windows.pdf
 
 
+注: sogou 输入法的一些快捷键可能有 ide 开发工具的一些工具存在冲突, 所以可以在对 sogou 的 "属性设置|高级|系统功能快捷键" 中将那些没用的快捷键取消掉.
+
+
 Rich languages editing
 
 		Ctrl+Space            Trigger suggestion
