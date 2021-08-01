@@ -190,50 +190,58 @@ Gin: go 的一个 web 框架
 
 
 
+-----------goland 补充开始-----------------------------------------------------------------------------------------
+补充:
+goland 远程调试 go app 的方式(如 windows 上的 goland ide 与远程调试 linux 上的 go app 进程, 其借助的是 delve 这个 remote debugger)
+
+goland(以及其他 jetbrains相关的 ide) 坚持采用的是 "本地开发-部署"的模式,
+因为 goland 的一些辅助功能依赖于 index,
+而其 re-index 行为的快速执行只有本地文件(local files)才能提供保证。
+所以这和 vscode 的 remote development 插件的工作模式有点不一样的。
+
+
+linux 端执行如下操作------------------------------
+step01: 如果还没有安装 delve 这个远程调试器的话，则先对其安装(各种安装方式可参考 delve 的 github 官网):
+ysg@vm01:~$ git clone https://github.com/go-delve/delve
+ysg@vm01:~$ cd delve/
+ysg@vm01:~/delve$ go install github.com/go-delve/delve/cmd/dlv
+ysg@vm01:~$ $HOME/go/bin/dlv version
+Delve Debugger
+Version: 1.7.0
+Build: $Id: 03c66357c10892f8b93d05c77ad27c1f4dd0cb2b $
+
+step02: cd 到go project目录:
+ysg@vm01:~$ cd ~/wksp_goland/HelloWorld
+ysg@vm01:~/wksp_goland/HelloWorld$ $HOME/go/bin/dlv --listen=:2345 --headless=true --api-version=2 debug
+API server listening at: [::]:2345
+
+   注: dlv 的其他使用方式还可参考:
+		   https://www.jetbrains.com/help/go/attach-to-running-go-processes-with-debugger.html#step-1-build-the-application
+		   https://www.jetbrains.com/help/go/attach-to-running-go-processes-with-debugger.html#step-2-run-delve-on-the-host-machine
+
+
+windows 端执行如下操作---------------------------
+goland ide 中 创建 Go Remote run/debug configuration:
+1. 菜单 Run|Edit Configuration(或 ctrl + shift + A, 然后键入 edit configuration)
+2. 在弹出对话框中点击 Add 按钮(+), 并选择[Go Remote]项。
+3. 键入 host(即linux的ip) 以及 port(即linux上执行 dlv 命令时指定的监听端口)
+4. 最后,在 goland 编辑器中设置断点, 并选择 toolbar 中 run/debug configurations 列表中被创建好的
+   Go Remote configuration, 然后点击 Debug <configuration_name> 即可开始调试了。
 
 
 
+参考链接:
+https://www.jetbrains.com/help/go/deploying-applications.html
+https://www.jetbrains.com/help/go/attach-to-running-go-processes-with-debugger.html#attach-to-a-process-on-a-remote-machine
+https://github.com/go-delve/delve
+https://github.com/go-delve/delve/blob/master/Documentation/installation/README.md
+https://github.com/go-delve/delve/blob/master/Documentation/cli/getting_started.md
+https://golangforall.com/en/post/go-docker-delve-remote-debug.html
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+注: 所谓的将 debugger(如这里的 remote debugger delve) 附加到被调试进程, 
+    在linux上实际上就是将 debugger 进程设置成为被调试进程的父进程。
+	(参考讲解 linux 内核的一些书籍)
+-----------goland 补充结束-----------------------------------------------------------------------------------------
 
 
 
