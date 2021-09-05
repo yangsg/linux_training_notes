@@ -30,7 +30,8 @@
 - [www.javatpoint.com](https://www.javatpoint.com/)
 
 
-
+##### [github开发人员在七夕搞事情：remote: Support for password authentication was removed on August 13, 2021.](https://blog.csdn.net/weixin_41010198/article/details/119698015)
+- https://namespaceit.com/blog/remote-support-for-password-authentication-was-removed-on-august-13-2021-please-use-a-personal-access-token-instead
 
 
 
