@@ -34,5 +34,17 @@
 - https://namespaceit.com/blog/remote-support-for-password-authentication-was-removed-on-august-13-2021-please-use-a-personal-access-token-instead
 
 
+##### 中国公共的NTP服务器
+```text
+# 阿里云NTP服务器(公网); https://help.aliyun.com/document_detail/92704.html
+ntp1.aliyun.com
+ntp2.aliyun.com
+
+# 腾讯公共NTP; https://cloud.tencent.com/document/product/213/30392
+time1.cloud.tencent.com
+time2.cloud.tencent.com
+# 国家授时中心
+ntp.ntsc.ac.cn
+```
 
 
