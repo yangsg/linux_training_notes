@@ -71,3 +71,14 @@ ABC
 [root@basic ~]# echo 'A-axMBC' | tr -d '[=-=]axM'  #删除字符'a','x','M','-', #More generally,use the character class notation '[=c=]' with '-' (or any other character) in place of the 'c':
 ABC
 
+
+
+
+Convert newlines to null-delimited when using tail
+  https://unix.stackexchange.com/questions/121916/convert-newlines-to-null-delimited-when-using-tail
+$ tail myFile.txt | tr '\n' '\0' | xargs -r0i myCmd {} arg1 arg2
+$ tail myFile.txt | xargs -ri -d '\n' myCmd {} arg1 arg2
+
+
+
+
