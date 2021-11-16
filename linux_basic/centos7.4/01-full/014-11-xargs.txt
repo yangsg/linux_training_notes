@@ -19,8 +19,40 @@ info xargs
         Replace  occurrences  of replace-str in the initial-arguments with names read from standard input.  Also, unquoted
         blanks do not terminate input items; instead the separator is the newline character.  Implies -x and -L 1.
 
+ -i [replace-str], --replace[=replace-str]
+        This  option is a synonym for -Ireplace-str if replace-str is specified.  If the replace-str argument is missing, the
+        effect is the same as -I{}.  This option is deprecated; use -I instead.
+
+ -r, --no-run-if-empty
+        If the standard input does not contain any nonblanks, do not run the command.  Normally, the command is run once even
+        if there is no input.  This option is a GNU extension.
+
+
  -t, --verbose
         Print the command line on the standard error output before executing it.
+
+ --delimiter=delim, -d delim
+        Input  items are terminated by the specified character.  The specified delimiter may be a single character, a C-style
+        character escape such as \n, or an octal or hexadecimal escape code.  Octal and hexadecimal escape codes  are  under‐
+        stood  as  for  the  printf command.   Multibyte characters are not supported.  When processing the input, quotes and
+        backslash are not special; every character in the input is taken literally.  The -d option disables  any  end-of-file
+        string, which is treated like any other argument.  You can use this option when the input consists of simply newline-
+        separated items, although it is almost always better to design your program to use --null where this is possible.
+
+ -0, --null
+       Input items are terminated by a null character instead of by whitespace, and the quotes and backslash are not special
+       (every character is taken literally).  Disables the end of file string, which is treated  like  any  other  argument.
+       Useful when input items might contain white space, quote marks, or backslashes.  The GNU find -print0 option produces
+       input suitable for this mode.
+
+
+ -a file, --arg-file=file
+        Read items from file instead of standard input.  If you use this option, stdin remains unchanged  when  commands  are
+        run.  Otherwise, stdin is redirected from /dev/null.
+
+
+
+
 
 
 ---------------------------------------------------------------------------------------------------
@@ -30,6 +62,38 @@ info xargs
 网上资料:
   https://www.howtogeek.com/435164/how-to-use-the-xargs-command-on-linux/
   https://linuxhandbook.com/xargs-command/
+
+
+Convert newlines to null-delimited when using tail
+  https://unix.stackexchange.com/questions/121916/convert-newlines-to-null-delimited-when-using-tail
+
+$ tail myFile.txt | tr '\n' '\0' | xargs -r0i myCmd {} arg1 arg2
+$ tail myFile.txt | xargs -ri -d '\n' myCmd {} arg1 arg2
+
+
+[root@localhost ~]# tree dir01/
+dir01/
+└── dir\ \ 001
+    ├── a.txt
+    └── b\ b.txt
+
+[root@localhost ~]# find dir01 -type f | xargs -d '\n' tar -zcvf dir01.tar.gz
+
+
+
+[root@localhost ~]# cat file_list.txt
+dir01/dir  001/a.txt
+dir01/dir  001/b b.txt
+
+
+[root@localhost ~]# cat file_list.txt | tr '\n' '\0' | xargs -r0i tar -zcvf dir01.tar.gz {}
+
+[root@localhost ~]# cat file_list.txt | tr '\n' '\0' | cat -A
+dir01/dir  001/a.txt^@dir01/dir  001/b b.txt^@
+
+
+[root@localhost ~]# xargs -0 -a b.txt
+
 
 
 
