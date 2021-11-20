@@ -260,5 +260,39 @@ https://linuxschool.net/note?os=CentOS_7&p=tcp_wrapper
 # man pcresyntax   #查看 Perl-compatible regular expressions 的语法
 # man 7 regex      #查看 POSIX.2 regular expressions, 也可以在 man grep 中看到
 
+---------------------------------------------------------
+
+/sbin/nologin 和  /bin/false 作为 用户 shell 时的区别:
+https://serverfault.com/questions/519215/what-is-the-difference-between-sbin-nologin-and-bin-false
+https://unix.stackexchange.com/questions/10852/whats-the-difference-between-sbin-nologin-and-bin-false
+
+---------------------------------------------------------
+信号:
+[root@localhost ~]# kill -l
+[root@localhost ~]# yum -y install glibc-headers
+centos7中:    [root@localhost ~]# less /usr/include/bits/signum.h
+rocky linux中:[root@localhost ~]# less /usr/include/bits/signum-generic.h
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
