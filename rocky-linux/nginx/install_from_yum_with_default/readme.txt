@@ -159,3 +159,11 @@ LISTEN          0               128                               [::]:22       
 
 
 
+nginx 优化:
+https://geekflare.com/nginx-production-configuration/
+https://www.cnblogs.com/dazhidacheng/p/7772451.html
+https://www.cnblogs.com/cheyunhua/p/10670070.html
+https://blog.csdn.net/hanjinjuan/article/details/119744168
+https://www.cnblogs.com/yuanzai12345/p/5951860.html
+
+
