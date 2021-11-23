@@ -68,6 +68,14 @@ Windows上XShell客户端:
 
 
 
+其他安全设置:
+  AllowUsers
+  AllowGroups
+  DenyUsers
+  DenyGroups
+
+  如:
+  AllowUsers  username01 username02@192.168.175.33
 
 
 
@@ -111,6 +119,8 @@ rsa dsa ecdsa 哪个好
     Are you sure you want to continue connecting (yes/no)?
 
 
+GSS-API GSSAPI 介绍 通用的安全机制
+https://blog.csdn.net/whatday/article/details/104427027/
 
 
 
