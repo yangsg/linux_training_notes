@@ -1,0 +1,198 @@
+
+
+NAME
+       gzip, gunzip, zcat - compress or expand files
+
+SYNOPSIS
+       gzip [ -acdfhklLnNrtvV19 ] [-S suffix] [ name ...  ]
+       gunzip [ -acfhklLnNrtvV ] [-S suffix] [ name ...  ]
+       zcat [ -fhLV ] [ name ...  ]
+
+
+
+       -c --stdout --to-stdout
+              Write output on standard output; keep original files unchanged.  If there are several input files, the  output  consists
+              of a sequence of independently compressed members. To obtain better compression, concatenate all input files before com‐
+              pressing them.
+
+
+
+       -d --decompress --uncompress
+              Decompress.
+
+       -f --force
+              Force compression or decompression even if the file has multiple links or the corresponding file already exists,  or  if
+              the  compressed data is read from or written to a terminal. If the input data is not in a format recognized by gzip, and
+              if the option --stdout is also given, copy the input data without change to the standard output: let zcat behave as cat.
+              If  -f  is  not given, and when not running in the background, gzip prompts to verify whether an existing file should be
+              overwritten.
+
+
+
+       -k --keep
+              Keep (don't delete) input files during compression or decompression.
+
+
+       -l --list
+              For each compressed file, list the following fields:
+
+                  compressed size: size of the compressed file
+                  uncompressed size: size of the uncompressed file
+                  ratio: compression ratio (0.0% if unknown)
+                  uncompressed_name: name of the uncompressed file
+
+              The uncompressed size is given as -1 for files not in gzip format, such as compressed .Z files. To get the  uncompressed
+              size for such a file, you can use:
+
+                  zcat file.Z | wc -c
+
+              In combination with the --verbose option, the following fields are also displayed:
+
+                  method: compression method
+                  crc: the 32-bit CRC of the uncompressed data
+                  date & time: timestamp for the uncompressed file
+
+              The  compression methods currently supported are deflate, compress, lzh (SCO compress -H) and pack.  The crc is given as
+              ffffffff for a file not in gzip format.
+
+              With --name, the uncompressed name,  date and time  are those stored within the compress file if present.
+
+              With --verbose, the size totals and compression ratio for all files is also displayed, unless some  sizes  are  unknown.
+              With --quiet, the title and totals lines are not displayed.
+
+
+       -n --no-name
+              When compressing, do not save the original file name and timestamp by default. (The original name is always saved if the
+              name had to be truncated.) When decompressing, do not restore the original file name if present (remove  only  the  gzip
+              suffix  from the compressed file name) and do not restore the original timestamp if present (copy it from the compressed
+              file). This option is the default when decompressing.
+
+       -N --name
+              When compressing, always save the original file name and timestamp; this is the default. When decompressing, restore the
+              original  file name and timestamp if present. This option is useful on systems which have a limit on file name length or
+              when the timestamp has been lost after a file transfer.
+
+
+
+       -r --recursive
+              Travel the directory structure recursively. If any of the file names specified on the command line are directories, gzip
+              will descend into the directory and compress all the files it finds there (or decompress them in the case of gunzip ).
+
+       -S .suf --suffix .suf
+              When compressing, use suffix .suf instead of .gz.  Any non-empty suffix can be given, but suffixes other than .z and .gz
+              should be avoided to avoid confusion when files are transferred to other systems.
+
+              When decompressing, add .suf to the beginning of the list of suffixes to try, when deriving an output file name from  an
+              input file name.
+
+       -# --fast --best
+              Regulate the speed of compression using the specified digit #, where -1 or  --fast  indicates  the  fastest  compression
+              method  (less  compression)  and  -9 or --best indicates the slowest compression method (best compression).  The default
+              compression level is -6 (that is, biased towards high compression at expense of speed).
+
+
+
+ADVANCED USAGE
+       Multiple compressed files can be concatenated. In this case, gunzip will extract all members at once. For example:
+
+             gzip -c file1  > foo.gz
+             gzip -c file2 >> foo.gz
+
+       Then
+
+             gunzip -c foo
+
+       is equivalent to
+
+             cat file1 file2
+
+       In  case  of  damage to one member of a .gz file, other members can still be recovered (if the damaged member is removed). How‐
+       ever, you can get better compression by compressing all members at once:
+
+             cat file1 file2 | gzip > foo.gz
+
+       compresses better than
+
+             gzip -c file1 file2 > foo.gz
+
+       If you want to recompress concatenated files to get better compression, do:
+
+             gzip -cd old.gz | gzip > new.gz
+
+       If a compressed file consists of several members, the uncompressed size and CRC reported by the --list option  applies  to  the
+       last member only. If you need the uncompressed size for all members, you can use:
+
+             gzip -cd file.gz | wc -c
+
+       If  you wish to create a single archive file with multiple members so that members can later be extracted independently, use an
+       archiver such as tar or zip. GNU tar supports the -z option to invoke gzip transparently. gzip is designed as a  complement  to
+       tar, not as a replacement.
+
+
+
+
+
+
+我的示例:
+
+
+[root@localhost dir01]# man ls > a.txt
+[root@localhost dir01]# gzip -k a.txt
+[root@localhost dir01]# ls
+a.txt  a.txt.gz
+[root@localhost dir01]# gzip -k -f a.txt
+
+
+[root@localhost dir01]# gzip -l a.txt.gz
+         compressed        uncompressed  ratio uncompressed_name
+               3047                7945  62.0% a.txt
+
+
+
+[root@localhost dir01]# ls -l
+total 12
+-rw-r--r-- 1 root root 7945 Nov 23 07:53 a.txt
+-rw-r--r-- 1 root root 3047 Nov 23 07:53 a.txt.gz
+
+
+
+[root@localhost dir01]# gzip -k -f -9 a.txt
+
+
+
+[root@localhost dir01]# gzip -l a.txt.gz
+         compressed        uncompressed  ratio uncompressed_name
+               3033                7945  62.1% a.txt
+
+
+
+
+其他:
+nginx 结合 gzip 的优化:
+https://nginx.org/en/docs/http/ngx_http_gzip_static_module.html#gzip_static
+
+nginx 的 ngx_http_gzip_static_module 模块可以发送预先压缩好的后缀名为 .gz 的文件,
+但该模块默认是没有被构建进来的，所以需要使用 --with-http_gzip_static_module 将其构建进来。
+
+
+		Syntax:	gzip_static on | off | always;
+		Default:	
+		gzip_static off;
+		Context:	http, server, location
+
+
+注: 如果使用命令 gzip 为 nginx 准备预先压缩的.gz 文件，则 gzip 命令的 -k -f 这两个选项应该很有用.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
