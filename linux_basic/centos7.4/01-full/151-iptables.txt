@@ -8,6 +8,10 @@ man iptables-extensions
 man iptables-save
 man iptables-restore
 
+注: rocky linux 上启用 iptables 的方式, 另外，ubuntu 也可以使用 iptables
+      https://docs.rockylinux.org/guides/security/enabling_iptables_firewall/
+
+
 
 
 参考:
