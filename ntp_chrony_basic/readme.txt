@@ -1,6 +1,8 @@
 
 ntp: udp/123
 
+注: ntp 作为 server 是需要防火墙开放双向的 upd/123端口
+
 服务器端：
 基本信息：
 [root@ntp7server ~]# cat /etc/redhat-release
