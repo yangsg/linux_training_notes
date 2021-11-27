@@ -1848,6 +1848,9 @@ Supported formats:
       加密
       压缩
 
+https://fileinfo.com/extension/qcow2
+		A QCOW2 file is a disk image saved in the second version of the QEMU Copy On Write (QCOW2) format, 
+   qcow2 即 QEMU 写时复制的磁盘镜像格式的第2版
 
 [root@host ~]# mkdir /data
 
