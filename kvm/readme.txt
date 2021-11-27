@@ -231,6 +231,12 @@ CentOS Linux release 7.4.1708 (Core)
 // 查看 CPU 是否支持 Hardware Virtualization
 [root@host ~]# grep -E '(vmx|svm)' /proc/cpuinfo
 
+# 注: vmx(virtual-machine extension): Intel 在处理器级别提供的对虚拟化技术的支持。
+      svm(secure virtual machine): AMD’s first virtualization extension for the x86 processor architecture.
+                                   After some time, AMD started trading them under a different name called AMD Virtualization (AMD-V).
+
+
+
 // 或 使用如下方式查看 (此例仅针对 intel 的 cpu)
 [root@host ~]# lscpu | grep VT-x
     Virtualization:        VT-x
