@@ -2124,6 +2124,7 @@ Difference between AMD-v/Intel VT-x and AMD-Vi/Intel VT-d
 				AMD Nested Page tables or (NPT) //内存虚拟化
 				AMD-Vi, Intel VT-d // I/O 虚拟化
 
+    https://stackoverflow.com/questions/51261999/check-if-vt-d-iommu-has-been-enabled-in-the-bios-uefi
 
 
 
