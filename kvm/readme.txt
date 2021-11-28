@@ -2117,10 +2117,12 @@ kvm 的 Snapshots 需要 磁盘格式为 Qcow2.
 
 
 
+Difference between AMD-v/Intel VT-x and AMD-Vi/Intel VT-d
+    https://techgenix.com/difference-between-amd-vintel-vt-x-and-amd-viintel-vt-d-188/
 
-
-
-
+				AMD-V, Intel VT-x //cpu 虚拟化
+				AMD Nested Page tables or (NPT) //内存虚拟化
+				AMD-Vi, Intel VT-d // I/O 虚拟化
 
 
 
