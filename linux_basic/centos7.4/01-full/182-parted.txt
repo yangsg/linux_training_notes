@@ -5,6 +5,9 @@ man parted
 info parted  包含更多详细信息
 
 
+ partition editor
+
+
 作用: parted - a partition manipulation program
 
 语法: parted [options] [device [command [options...]...]]
