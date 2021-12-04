@@ -274,6 +274,10 @@ centos7中:    [root@localhost ~]# less /usr/include/bits/signum.h
 rocky linux中:[root@localhost ~]# less /usr/include/bits/signum-generic.h
  
 
+---------------------------------------------------------
+
+*.d 目录: contains Drop in files
+https://www.redhat.com/sysadmin/etc-configuration-directories
 
 
 
