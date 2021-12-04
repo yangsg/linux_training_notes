@@ -95,8 +95,8 @@ Calculate RSA key fingerprint
 SSH key-type, rsa, dsa, ecdsa, are there easy answers for which to choose when?
     https://security.stackexchange.com/questions/23383/ssh-key-type-rsa-dsa-ecdsa-are-there-easy-answers-for-which-to-choose-when
 
-rsa dsa ecdsa 哪个好
-    https://developer.aliyun.com/ask/126574?spm=a2c6h.13159736
+RSA，DSA，ECDSA，EdDSA和Ed25519的区别
+    https://www.cnblogs.com/cure/p/15389876.html
 
 
 [root@python3lang ~]# grep -Ei 'HostKey' /etc/ssh/sshd_config
