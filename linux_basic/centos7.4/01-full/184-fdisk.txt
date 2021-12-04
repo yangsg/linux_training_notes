@@ -3,6 +3,8 @@
 
 man fdisk
 
+   fdisk stands (for “fixed disk or format disk“)
+
 作用:
        fdisk - manipulate disk partition table
 
@@ -363,6 +365,7 @@ mbr 与 gpt 的区别:
 
 fdisk:
       https://unix.stackexchange.com/questions/340764/should-i-use-fdisk-for-partitioning-or-gpt-aware-tools
+      https://www.tecmint.com/fdisk-commands-to-manage-linux-disk-partitions/
 
 
       设备文件资料:
