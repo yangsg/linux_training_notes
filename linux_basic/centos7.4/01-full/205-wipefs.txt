@@ -123,5 +123,7 @@ offset               type
     https://wiki.archlinux.org/index.php/USB_flash_installation_media
     https://www.cyberciti.biz/faq/howto-use-wipefs-to-wipe-a-signature-from-disk-on-linux/
     https://www.systutorials.com/docs/linux/man/8-wipefs/
+    http://it.ckcest.cn/article-3986563-1.html
+    https://www.linuxprobe.com/wipefs-disk-signature.html
 
 
