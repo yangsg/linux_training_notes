@@ -14,6 +14,13 @@ http://www.subnet-calculator.com/
 http://jodies.de/ipcalc
 http://ip.chacuo.net/ipcalc
 
+```bash
+# ipcalc 172.16.0.1/16
+# yum -y install sipcalc
+# sipcalc 172.16.0.1/16
+# sipcalc 172.16.0.1/16 -a
+```
+
 
 计算机存储单位换算在线工具
 https://cunchu.51240.com/

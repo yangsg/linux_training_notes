@@ -48,3 +48,27 @@ ntp.ntsc.ac.cn
 ```
 
 
+- [ip138.com 查询网](https://www.ip138.com/)
+- [dns大全](https://dnsdaquan.com/)
+
+##### 常见的DNS服务器
+```text
+谷歌:
+  8.8.8.8
+  8.8.4.4
+
+阿里云: https://developer.aliyun.com/mirror/?spm=a2c6h.13651102.0.0.42311b11J16RUO&serviceType=dns
+  223.5.5.5
+  223.6.6.6
+
+百度: https://dudns.baidu.com/support/localdns/Address/index.html
+  180.76.76.76
+
+114 DNS:
+  114.114.114.114
+  114.114.115.115
+
+```
+
+
+

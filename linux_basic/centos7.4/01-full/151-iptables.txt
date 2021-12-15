@@ -711,6 +711,8 @@ num  target     prot opt source               destination
 
 模块(module): -m state
 
+注: centos7 及以后的版本推荐使用 conntrack 模块, 因 centos7 使用的内核版本认为 state 模块已过时. ubuntu 上也是如此.
+
 [root@basic ~]# iptables -m state -h    # man iptables-extensions    #/^   state    #/^   conntrack
 
           state match options:
@@ -746,6 +748,7 @@ num  target     prot opt source               destination
     https://serverfault.com/questions/358996/iptables-whats-the-difference-between-m-state-and-m-conntrack
     https://unix.stackexchange.com/questions/108169/what-is-the-difference-between-m-conntrack-ctstate-and-m-state-state
     http://inai.de/documents/Perfect_Ruleset.pdf
+    https://askubuntu.com/questions/738653/meaning-of-m-in-iptables
 
 
 [root@basic ~]# iptables-restore  < /etc/iptables-save.rules
