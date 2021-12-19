@@ -1,4 +1,11 @@
 
+DNS
+
+  udp/53  默认dns查询使用 udp/53, 但是如果 udp 失败了, 则切换至 tcp/53(即重新发一次到tcp/53 的查询请求), 特别是 packet 相对使用当个 udp packet 传送太大时。
+  tcp/53  区传送(zone transfer)
+
+
+
 ---------------------------------------------------------------------------------------------------
 https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/networking_guide/ch-dns_servers
 
@@ -24,6 +31,9 @@ https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/ne
      example.com.      86400    IN         A           192.0.2.1
        域名             TTL    class       type        hostaddress
 
+  RR 的基本格式:
+    [name]  [ttl]  [class]  type  data
+    注: class 默认就是 IN, 所以不写出 IN 也是可以的, 参考<UNIX/LINUX系统管理技术手册>
 
   Zones 通过 使用 zone files 在 authoritative name servers 上被定义的, 包含了 每个 zone 的 resource records 的 定义.
   Zone files 被存放在 primary name servers (也被称为 master name servers) 上, 可在其上 对 这些 files 做修改.
@@ -130,6 +140,8 @@ Linux（RHEL7及CentOS7）下DNS服务器的搭建与配置
 
 
 
+  Is DNS TCP or UDP port 53? - Infoblox
+  https://www.infoblox.com/dns-security-resource-center/dns-security-faq/is-dns-tcp-or-udp-port-53/#:~:text=Is%20DNS%20TCP%20or%20UDP%20port%2053%3F%20The,will%20rely%20on%20TCP%20Port%2053%20more%20heavily.
 
 
 
