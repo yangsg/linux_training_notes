@@ -144,5 +144,7 @@ Linux（RHEL7及CentOS7）下DNS服务器的搭建与配置
   https://www.infoblox.com/dns-security-resource-center/dns-security-faq/is-dns-tcp-or-udp-port-53/#:~:text=Is%20DNS%20TCP%20or%20UDP%20port%2053%3F%20The,will%20rely%20on%20TCP%20Port%2053%20more%20heavily.
 
 
+  Setup BIND DNS Server in Rocky Linux 8 [Step-by-Step]
+  https://www.golinuxcloud.com/setup-bind-dns-server-rocky-linux-8/
 
 
