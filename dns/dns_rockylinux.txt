@@ -1,0 +1,105 @@
+
+	udp/53
+	tcp/53
+
+	udp/953
+	tcp/953
+		注: udp/953 和 tcp/953 端口为 rndc 服务的端口
+
+# yum -y install bind bind-chroot
+
+# rpm -q bind bind-chroot
+	bind-9.11.26-6.el8.x86_64
+	bind-chroot-9.11.26-6.el8.x86_64
+
+
+# rpm -ql bind |grep -E 'named.conf|sample'
+
+# vim /etc/named.conf    #更新 name.conf 中的如下内容
+
+	options {
+	  //使 named 监听所有网络接口
+	  #listen-on port 53 { 127.0.0.1; };
+	  listen-on port 53 { any; };
+	  // 不提供基于 IPv6 的 DNS 服务
+	  #listen-on-v6 port 53 { ::1; };
+	  listen-on-v6 { none; };
+
+	  //设置允许查询的客户(权威记录)
+	  #allow-query     { localhost; };
+	  allow-query     { any; };
+	  //设置允许查询的客户(非权威记录)
+	  allow-query-cache { any; };
+	};
+
+	zone "example.com" {
+	  type master;
+	  file "example.com.zone";
+	};
+
+
+# cp /usr/share/doc/bind/sample/var/named/named.localhost  /var/named/example.com.zone
+
+# vim /var/named/example.com.zone
+	$TTL 1D
+	@       IN SOA  example.com. admin.qq.com. (
+											0       ; serial
+											1D      ; refresh
+											1H      ; retry
+											1W      ; expire
+											3H )    ; minimum
+
+			NS ns1.example.com.
+	ns1 A 1.1.1.1
+	www A 1.1.1.2
+	web A 1.1.1.2
+
+	audio A 1.1.1.3
+	vedio A 1.1.1.3
+			MX 5  mail1.example.com.
+			MX 10 mail2.example.com.
+	mail1 A 1.1.1.4
+	mail2 A 1.1.1.5
+
+
+# chmod 640 /var/named/example.com.zone
+# chown root:named /var/named/example.com.zone
+# systemctl start named-chroot
+# systemctl enable named-chroot
+
+# ss -anptu |grep named
+	udp   UNCONN    0      0      192.168.175.85:53          0.0.0.0:*    users:(("named",pid=2679,fd=513))
+	udp   UNCONN    0      0           127.0.0.1:53          0.0.0.0:*    users:(("named",pid=2679,fd=512))
+	tcp   LISTEN    0      10     192.168.175.85:53          0.0.0.0:*    users:(("named",pid=2679,fd=22))
+	tcp   LISTEN    0      10          127.0.0.1:53          0.0.0.0:*    users:(("named",pid=2679,fd=21))
+	tcp   LISTEN    0      128         127.0.0.1:953         0.0.0.0:*    users:(("named",pid=2679,fd=23))
+	tcp   LISTEN    0      128             [::1]:953            [::]:*    users:(("named",pid=2679,fd=24))
+
+
+
+# yum -y install bind-utils  #工具 dig, nslookup, host 属于 bind-utils 包
+
+# dig @127.0.0.1 www.example.com A
+# dig @127.0.0.1 mail1.example.com MX
+
+
+-----------------------------------
+
+参考<UNIX/Linux系统管理技术手册>
+
+	address_match_list
+	bind 有 4 个预先定义的 address_match_list:
+
+		any:	所有主机
+		localhost:	本地主机
+		localnets:	本地网络上的所有主机
+		none:	不匹配任何主机
+
+	address_match_list 是 IP 地址的一种推广,它可以包括：
+		- IP 地址, 不是 v4 就是 v6 (例如 199.165.145.4)
+		- 用 CIDR 网络掩码指定的 IP 网络 (例如 199.165/16)
+		- 预先定义好的访问控制列表名 (即 any, localhost, localnets, none)
+		- 加密的身份验证秘钥的名字；
+		- 用于取否的 ! 字符。
+
+
