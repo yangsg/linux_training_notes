@@ -23,8 +23,8 @@ dhcpd client通信用的端口：  udp/68
         range 192.168.11.20 192.168.11.21;    # [20-21]
         range 192.168.11.30;                  # [30]
         range 192.168.11.100 192.168.11.200;  # [100-200]
-        option routers 192.168.175.2;         # 网关地址
-        option domain-name-servers 192.168.175.2, 8.8.8.8; #DNS服务器地址
+        option routers 192.168.11.254;         # 网关地址
+        option domain-name-servers 192.168.175.2, 8.8.8.8; #DNS服务器地址, 其他免费dns服务器: 114.114.114.114, 180.76.76.76
       }
 
       host boss_client_pc {  #根据mac地址绑定固定ip
