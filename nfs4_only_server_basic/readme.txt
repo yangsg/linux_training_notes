@@ -18,6 +18,7 @@ https://help.ubuntu.com/community/NFSv4Howto
 
 [root@nfs4server ~]# vim /etc/sysconfig/nfs
 
+    # man nfsd   # -N 2 -N 3: 告诉 rpc.nfsd 不提供版本 2 和 版本 3 的服务。-U: 指示内核 nfs 服务器不要打开和监听 UDP 套接字 
     RPCNFSDARGS="-N 2 -N 3 -U"
     # -u is optional, disables UDP
     RPCMOUNTDOPTS="-N 2 -N 3 -u"

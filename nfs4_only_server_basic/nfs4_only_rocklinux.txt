@@ -1,0 +1,175 @@
+
+tcp/2049
+
+
+参考<Linux基础及应用教程(基于CentOS7)>
+
+配置 Server 仅支持 NFSv4 可以最小化系统所需要开放的端口 和 运行的服务,
+这是有利于安全和性能的。
+
+NFSv4 不需要 rpcbind 来监听网络
+
+
+
+NFS
+	nfs: network file system  网络文件系统
+	
+	nfsv3:
+
+			client                            -------NFS Server---
+				|                               |                  |
+			 VFS                              -------VFS----------
+				|                               |                  |
+			 NFS                             NFS              Local FS
+				|                               |                  |
+			RPC/XDR                         RPC/XDR           Local disk
+				|                               |
+			TCP/IP                          TCP/IP
+				|                               |
+			Ethernet                       Ethernet
+				|                               |
+				|                               |
+				--------------Network------------
+
+	NFS V4: 内置了远程挂载和文件所协议支持，支持通过 kerberos 进行安全用户身份验证
+	NFS V4.1: 支持更高扩展性和更高性能的并行 NFS (pNFS)
+
+	NFS v4 内置了远程挂载和文件锁定等协议支持，因此 NFS v4 不再需要与 rpcbind、rpc.mountd、
+	rpc.statd 和 lockd 互动。但是，当 NFS 服务器端使用 exportfs 命令时仍然需要 rpc.mountd
+	守护进程，但不参与跨越线路的操作。NFS v4 的 NFS 服务仍然监听 tcp:2049 端口
+
+2. RPC 和 XDR
+
+
+RPC: Remote Procedure Call(远程过程调用)
+	 RPC 工作在 OSI 模型的 会话层(第 5 层)
+
+	rpcbind: REEL/Centos 上的 Portmapper 服务，负责为其他基于 RPC 的服务注册端口。
+	
+	可以在文件 /etc/rpc 文件中看到基于 RPC 的服务程序
+
+
+	XDR: External Data Representation format(外部数据表示格式)
+	
+	为了独立于不同类型的机器，基于 RPC 服务和客户端交换的所有数据都会在发送端
+	转换为外部数据表示格式(XDR), 并在接收端再将数据转换回数据的本机表示。
+	XDR 工作在 OSI 模型的表示层(第6层)。 RPC 依赖于标准的 UDP 和 TCP 套接字
+	将 XDR 格式数据传输到远程主机。
+
+
+
+server 端:
+
+# yum -y install nfs-utils
+# rpm -q nfs-utils
+	nfs-utils-2.3.3-46.el8.x86_64
+
+// 禁用 版本为 2 和 3 的 nfs, 当前版本默认 nfsv3 和 nfsv4 是被启用了的。
+# vim /etc/nfs.conf
+
+	[nfsd]
+	vers2=no
+	vers3=no
+
+// 禁用 NFSv4-only 情况下不需要的服务
+# systemctl mask --now rpc-statd.service rpcbind.service rpcbind.socket
+
+# systemctl start nfs-server  #如果已经启动  nfs-server, 则执行 `systemctl restart nfs-server` 使配置修改生效
+
+// 查看验证端口
+# ss -aptu
+
+	tcp   LISTEN 0      64             0.0.0.0:nfs                 0.0.0.0:*
+	tcp   LISTEN 0      64                [::]:nfs                    [::]:*
+                           [::]:*
+
+# ss -anptu
+
+	tcp   LISTEN 0      64             0.0.0.0:2049        0.0.0.0:*
+	tcp   LISTEN 0      64                [::]:2049           [::]:*
+
+
+
+# useradd ysg
+# id ysg
+uid=1000(ysg) gid=1000(ysg) groups=1000(ysg)
+
+# mkdir -p /nfs4_share/data/
+# chmod -R 750 /nfs4_share/data
+# chown -R ysg:ysg /nfs4_share/data
+
+
+# vim /etc/exports   # man exports
+/nfs4_share/data/  192.168.175.10(rw,all_squash,anonuid=1000,anongid=1000)
+
+
+#注: 其实 sync,root_squash 都已经是 exports 的默认选项。
+     sync 相比 async 能保证数据一致性，但需更多性能开销
+	 root_squash 在 redhat/centos 中默认是映射到 nobody 用户。
+	 可以通过 anonuid 和 anongid 明确指定特定的用户和用户组。
+
+# exportfs -rav
+exporting 192.168.175.10:/nfs4_share/data
+
+// 查看共享目录的访问参数
+# cat /var/lib/nfs/etab 
+/nfs4_share/data	192.168.175.10(rw,sync,wdelay,hide,nocrossmnt,secure,root_squash,all_squash,no_subtree_check,secure_locks,acl,no_pnfs,anonuid=1000,anongid=1000,sec=sys,rw,secure,root_squash,all_squash)
+
+
+---------------------------------------
+client 端:
+
+# yum -y install nfs-utils
+
+
+# mount -t nfs4 -o proto=tcp,port=2049  192.168.175.85:/nfs4_share/data  /data
+# umount /data
+
+
+# vim /etc/fstab   # man 5 nfs   /^EXAMPLES
+192.168.175.85:/nfs4_share/data  /data         nfs4    defaults,proto=tcp,port=2049  0 0
+
+# mount -a
+
+
+---------------------------------------
+
+/var/lib/nfs/etab
+
+
+
+man rpc.nfsd
+man nfs.conf
+	/etc/nfs.conf
+
+
+对于 NFSv4_only 的 server, 防火墙仅需开放 tcp/2049 端口即可
+
+centos8 中配置 NFSV4-ONLY 的服务器
+  CHAPTER 5. CONFIGURING AN NFSV4-ONLY SERVER
+	https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/managing_file_systems/configuring-an-nfsv4-only-server_managing-file-systems
+
+
+导出:
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/managing_file_systems/exporting-nfs-shares_managing-file-systems
+
+关于 nobody(redhat/centos) 和 nfsnobody
+https://stackoverflow.com/questions/62980913/chown-invalid-user-nfsnobody-in-fedora-32-after-install-nfs
+
+挂载:
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/managing_file_systems/mounting-nfs-shares_managing-file-systems#mounting-an-nfs-share-with-mount_mounting-nfs-shares
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
