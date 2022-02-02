@@ -37,3 +37,12 @@ To remove a file whose name starts with a '-', for example '-foo', use one of th
 
 
 
+查找指定目录下所有的 broken symbolic links
+# find /path/to/directory -xtype l
+# unlink symlink_name     #注: symlink_name 后不要追加斜杆 '/', 即不要使用 'symlink_name/', 因为 unlink 无法删除目录
+
+
+
+网上资料:
+https://linuxize.com/post/how-to-remove-symbolic-links-in-linux/
+
