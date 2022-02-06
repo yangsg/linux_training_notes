@@ -40,6 +40,15 @@ man crontab
 
 一般来说，系统默认是保留使用 /etc/cron.deny 的, 所以为了提高安全性, 也许可以改为使用 /etc/cron.allow 来严格明确限制 能够使用 cron 的用户.
 
+注: cron.allow 和 cron.deny 格式为 每个用户名一行(即 one user name per line), 如下所示:
+    参考: https://docs.oracle.com/cd/E23824_01/html/821-1451/sysrescron-23.html
+	https://www.thegeekdiary.com/how-to-allow-only-specific-non-root-users-to-use-crontab/#:~:text=%23%20touch%20%2Fetc%2Fcron.allow%20To%20allow%20a%20user%20or,%22test1%22%20%3E%20%2Fetc%2Fcron.allow%20%23%20echo%20%22test2%22%20%3E%3E%20%2Fetc%2Fcron.allow
+
+# vim /etc/cron.allow   #通常服务器上最好采用 /etc/cron.allow 这种白名单方式
+root
+username1
+username2
+username3
 
 
 其他信息见 man 5 crontab 和 man cron
