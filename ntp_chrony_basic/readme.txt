@@ -3,6 +3,11 @@ ntp: udp/123
 
 注: ntp 作为 server 是需要防火墙开放双向的 upd/123端口
 
+注: chronyd 还开放了 udp/323端口用于 chronyc 命令远程监视和控制.
+    如果要关闭 udp/323端口, 则在 /etc/chrony.conf 中设置 cmdport 0 即可,
+    这并不会关闭 Unix domain command socket, 所以本地运行 chronyc 仍然可行.
+	https://forums.docker.com/t/chronyd-listening-on-udp-323/14987
+
 服务器端：
 基本信息：
 [root@ntp7server ~]# cat /etc/redhat-release
